@@ -11,7 +11,7 @@ export default function MainLayout({
     <ForecastProvider>
       <div className="relative flex min-h-screen bg-muted/30">
         <SideNav />
-        <main className="flex-1">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
       </div>
