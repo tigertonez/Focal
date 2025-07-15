@@ -41,7 +41,7 @@ export function CostTimelineChart({ data, currency, preOrder }: CostTimelineChar
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <BarChart accessibilityLayer data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+      <BarChart accessibilityLayer data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="name"
@@ -50,7 +50,6 @@ export function CostTimelineChart({ data, currency, preOrder }: CostTimelineChar
           axisLine={false}
         />
         <YAxis
-          domain={[0, 'auto']}
           tickFormatter={(value) => formatCurrency(Number(value), currency).slice(0, -3)}
           tickLine={false}
           tickMargin={10}
