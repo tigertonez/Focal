@@ -54,7 +54,7 @@ export default function InputsPage() {
     isFormValid,
   } = useForecast();
 
-  const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParamChange = (section: 'parameters' | 'realtime' ) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
     let finalValue: string | number | boolean = value;
     if (type === 'checkbox') {
@@ -92,14 +92,13 @@ export default function InputsPage() {
 
           <Section title="Fixed Costs">
             <div className="space-y-3">
-              {inputs.fixedCosts.items.map((cost, i) => (
+              {inputs.fixedCosts.map((cost, i) => (
                 <FixedCostForm key={cost.id} cost={cost} index={i} />
               ))}
             </div>
             <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
               <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
             </Button>
-             <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.fixedCosts.planningBuffer} onChange={handleParamChange('fixedCosts')} tooltip="A safety buffer added to total fixed costs." />
           </Section>
 
           <Section title="General Parameters">

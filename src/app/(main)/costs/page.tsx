@@ -11,29 +11,33 @@ import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 const CostTimelineTable = ({ monthlyCosts, currency }: { monthlyCosts: any[], currency: string }) => (
-    <div className="overflow-x-auto">
-        <div className="text-sm text-muted-foreground min-w-[600px]">
-            <div className="grid grid-cols-5 gap-4 font-semibold p-2 rounded-t-md">
-                <span>Month</span>
-                <span>Deposits Paid</span>
-                <span>Final Payments</span>
-                <span>Fixed Costs</span>
-                <span>Total Monthly Cost</span>
-            </div>
-            <div className="space-y-1">
+    <div className="overflow-x-auto rounded-lg border">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-[80px]">Month</TableHead>
+                    <TableHead>Deposits Paid</TableHead>
+                    <TableHead>Final Payments</TableHead>
+                    <TableHead>Fixed Costs</TableHead>
+                    <TableHead className="text-right">Total Monthly Cost</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
                 {monthlyCosts.map((month, i) => (
-                    <div key={i} className="grid grid-cols-5 gap-4 p-2 bg-muted/50 rounded-md">
-                        <span>{i + 1}</span>
-                        <span>{formatCurrency(month.deposits, currency)}</span>
-                        <span>{formatCurrency(month.finalPayments, currency)}</span>
-                        <span>{formatCurrency(month.fixed, currency)}</span>
-                        <span className="font-semibold">{formatCurrency(month.total, currency)}</span>
-                    </div>
+                    <TableRow key={i}>
+                        <TableCell className="font-medium">{i + 1}</TableCell>
+                        <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
+                        <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
+                        <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(month.total, currency)}</TableCell>
+                    </TableRow>
                 ))}
-            </div>
-        </div>
+            </TableBody>
+        </Table>
     </div>
 );
 
@@ -71,7 +75,7 @@ export default function CostsPage() {
     }
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
-    const baseFixedCosts = costSummary.totalFixed - costSummary.planningBuffer;
+    const totalBaseFixedCosts = costSummary.fixedCosts.reduce((acc, cost) => acc + cost.amount, 0);
 
 
     return (
@@ -104,25 +108,18 @@ export default function CostsPage() {
             <section className="space-y-2">
                 <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    {costSummary.fixedCosts.filter(c => c.name !== 'Planning Buffer').map(cost => (
+                    {costSummary.fixedCosts.map(cost => (
                        <CostRow 
                            key={cost.name}
                            label={cost.name}
                            value={formatCurrency(cost.amount, currency)}
-                           percentage={baseFixedCosts > 0 ? (cost.amount / baseFixedCosts * 100).toFixed(1) : "0.0"}
+                           percentage={totalBaseFixedCosts > 0 ? (cost.amount / totalBaseFixedCosts * 100).toFixed(1) : "0.0"}
                        />
                     ))}
-                    <div className="pt-2 border-t">
-                       <CostRow 
-                           label="Planning Buffer"
-                           value={formatCurrency(costSummary.planningBuffer, currency)}
-                           percentage={baseFixedCosts > 0 ? (costSummary.planningBuffer / baseFixedCosts * 100).toFixed(1) : "0.0"}
-                       />
-                    </div>
                     <div className="pt-2 border-t font-bold">
                        <CostRow 
-                           label="Total Fixed"
-                           value={formatCurrency(costSummary.totalFixed, currency)}
+                           label="Total Fixed (Base)"
+                           value={formatCurrency(totalBaseFixedCosts, currency)}
                        />
                     </div>
                 </div>

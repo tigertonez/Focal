@@ -49,14 +49,12 @@ const initialInputs: EngineInput = {
       depositPct: 50,
     },
   ],
-  fixedCosts: {
-    items: [
-        { id: 'fc_1', name: 'Salaries', amount: 15000 },
-        { id: 'fc_2', name: 'Rent', amount: 5000 },
-        { id: 'fc_3', name: 'Marketing', amount: 8000 },
-    ],
-    planningBuffer: 15,
-  },
+  fixedCosts: [
+      { id: 'fc_1', name: 'Salaries', amount: 15000, paymentSchedule: 'Monthly' },
+      { id: 'fc_2', name: 'Rent', amount: 5000, paymentSchedule: 'Monthly' },
+      { id: 'fc_3', name: 'Marketing', amount: 8000, paymentSchedule: 'Up-Front' },
+      { id: 'fc_4', name: 'Planning Buffer', amount: 4200, paymentSchedule: 'Up-Front' },
+  ],
   parameters: {
     forecastMonths: 12,
     taxRate: 20,
@@ -122,9 +120,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFixedCost = (index: number, field: keyof FixedCostItem, value: any) => {
     setInputs(prev => {
-        const newItems = [...prev.fixedCosts.items];
+        const newItems = [...prev.fixedCosts];
         newItems[index] = { ...newItems[index], [field]: value };
-        return { ...prev, fixedCosts: { ...prev.fixedCosts, items: newItems } };
+        return { ...prev, fixedCosts: newItems };
     });
   };
 
@@ -136,20 +134,14 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     };
     setInputs(prev => ({
       ...prev,
-      fixedCosts: {
-        ...prev.fixedCosts,
-        items: [...prev.fixedCosts.items, newCost],
-      }
+      fixedCosts: [...prev.fixedCosts, newCost],
     }));
   };
 
   const removeFixedCost = (id: string) => {
     setInputs(prev => ({
       ...prev,
-       fixedCosts: {
-        ...prev.fixedCosts,
-        items: prev.fixedCosts.items.filter(c => c.id !== id),
-      }
+       fixedCosts: prev.fixedCosts.filter(c => c.id !== id),
     }));
   };
 
