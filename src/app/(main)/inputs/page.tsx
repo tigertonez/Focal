@@ -124,7 +124,7 @@ export default function InputsPage() {
                 <div className="space-y-2">
                     <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
                     <div className="flex items-center pt-2 gap-2">
-                        <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, pre-order: checked } }))} />
+                        <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
                         {inputs.parameters.preOrder && <Badge variant="secondary">+ Month 0</Badge>}
                     </div>
                 </div>
