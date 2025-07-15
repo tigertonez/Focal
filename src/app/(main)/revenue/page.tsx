@@ -14,11 +14,19 @@ import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineCha
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue } = data;
+
+    // Create a mapping from product ID/name to a chart-friendly key.
+    const productChartConfig: Record<string, { label: string }> = {};
+    inputs.products.forEach((p, i) => {
+        // The key in monthlyRevenue data is the raw product name.
+        productChartConfig[p.productName] = { label: p.productName };
+    });
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -29,19 +37,32 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     <KpiCard label="Total Revenue" value={formatCurrency(revenueSummary.totalRevenue, currency)} />
                     <KpiCard label="Total Units Sold" value={revenueSummary.totalSoldUnits.toLocaleString()} icon={<Users />} />
                     <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} />
-                    <KpiCard label="Sell-Through Target" value={`${inputs.products[0]?.sellThrough || 0}%`} icon={<Target />} />
+                    {/* The sell-through can vary per product, so we show an average or from the first product as an example */}
+                    <KpiCard label="Avg. Sell-Through" value={`${(revenueSummary.productBreakdown.reduce((acc, p) => acc + (inputs.products.find(ip => ip.productName === p.name)?.sellThrough || 0), 0) / revenueSummary.productBreakdown.length).toFixed(0)}%`} icon={<Target />} />
                 </div>
             </section>
             
-            <section>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Monthly Revenue Timeline</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full pl-0">
-                       <CostTimelineChart data={monthlyRevenue} currency={currency} />
-                    </CardContent>
-                </Card>
+            <section className="grid md:grid-cols-5 gap-8">
+                <div className="md:col-span-3">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Monthly Revenue Timeline</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full pl-0">
+                           <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="md:col-span-2">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Revenue by Product</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full flex items-center justify-center">
+                            <RevenuePieChart data={revenueSummary.productBreakdown} currency={currency} />
+                        </CardContent>
+                    </Card>
+                </div>
             </section>
 
             <footer className="flex justify-end mt-8 pt-6 border-t">

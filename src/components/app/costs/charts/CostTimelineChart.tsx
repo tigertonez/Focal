@@ -22,7 +22,7 @@ const chartColors = [
   "hsl(var(--chart-6))",
 ];
 
-export function CostTimelineChart({ data, currency }: { data: any[], currency: string }) {
+export function CostTimelineChart({ data, currency, configOverrides }: { data: any[], currency: string, configOverrides?: Record<string, { label: string }> }) {
   const [chartConfig, setChartConfig] = React.useState<ChartConfig>({});
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
 
@@ -31,15 +31,16 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
       allKeys.forEach((key, index) => {
+        const override = configOverrides ? configOverrides[key] : null;
         newConfig[key] = {
-          label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Prettify label
+          label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Use override or prettify
           color: chartColors[index % chartColors.length],
         };
       });
       setChartConfig(newConfig);
       setCostKeys(allKeys);
     }
-  }, [data]);
+  }, [data, configOverrides]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
