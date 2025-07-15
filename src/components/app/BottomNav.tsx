@@ -4,15 +4,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, TrendingUp, CircleDollarSign, LineChart, Banknote } from 'lucide-react';
+import { LayoutGrid, Bell, MessageSquare, Clock, Settings, Wallet } from 'lucide-react';
+
 
 const navItems = [
-  { href: '/', label: 'Summary', icon: LayoutDashboard },
-  { href: '/inputs', label: 'Inputs', icon: FileText },
-  { href: '/revenue', label: 'Revenue', icon: TrendingUp },
-  { href: '/costs', label: 'Costs', icon: CircleDollarSign },
-  { href: '/profit', label: 'Profit', icon: LineChart },
-  { href: '/cash-flow', label: 'Cash Flow', icon: Banknote },
+  { href: '/', label: 'Summary', icon: LayoutGrid },
+  { href: '/inputs', label: 'Inputs', icon: Wallet },
+  { href: '/revenue', label: 'Notifications', icon: Bell },
+  { href: '/costs', label: 'Messages', icon: MessageSquare },
+  { href: '/profit', label: 'History', icon: Clock },
+  { href: '/cash-flow', label: 'Settings', icon: Settings },
 ];
 
 export function BottomNav() {

@@ -1,5 +1,5 @@
 
-import { TopNav } from '@/components/app/TopNav';
+import { SideNav } from '@/components/app/SideNav';
 import { BottomNav } from '@/components/app/BottomNav';
 import { ForecastProvider } from '@/context/ForecastContext';
 
@@ -10,9 +10,9 @@ export default function MainLayout({
 }) {
   return (
     <ForecastProvider>
-      <div className="relative flex min-h-screen flex-col">
-        <TopNav />
-        <main className="flex-1 px-2 py-4 md:p-8 pt-6 md:pt-24 pb-24 md:pb-8">
+      <div className="relative flex min-h-screen">
+        <SideNav />
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
             {children}
         </main>
         <BottomNav />

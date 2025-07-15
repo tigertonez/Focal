@@ -7,7 +7,7 @@ import { ChartWrapper } from "@/components/app/ChartWrapper";
 import { PlaceholderChart } from "@/components/app/PlaceholderChart";
 import { useForecast } from "@/context/ForecastContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, BarChart, Percent, Calendar } from "lucide-react";
+import { DollarSign, TrendingUp, Percent, Calendar } from "lucide-react";
 
 export default function SummaryPage() {
   const { output, loading } = useForecast();
@@ -17,12 +17,12 @@ export default function SummaryPage() {
       <div className="space-y-8">
         <Skeleton className="h-10 w-1/3" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
         </div>
-        <Skeleton className="h-96" />
+        <Skeleton className="h-96 rounded-2xl" />
       </div>
     );
   }
@@ -36,10 +36,10 @@ export default function SummaryPage() {
   return (
     <div className="container mx-auto">
       <SectionHeader
-        title="Financial Summary"
+        title="Financial security report"
         description={`A high-level overview of your ${output.kpis.breakEvenMonth ? '24-month' : ''} forecast.`}
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <KpiCard
           label="Total Revenue"
           value={formatCurrency(totalRevenue)}
@@ -48,7 +48,7 @@ export default function SummaryPage() {
         <KpiCard
           label="Net Profit"
           value={formatCurrency(totalNetProfit)}
-          icon={<BarChart className="h-5 w-5 text-muted-foreground" />}
+          icon={<TrendingUp className="h-5 w-5 text-muted-foreground" />}
         />
         <KpiCard
           label="Gross Margin"
@@ -63,8 +63,9 @@ export default function SummaryPage() {
       </div>
 
       <ChartWrapper
-        title="Revenue vs. Profit"
+        title="Overview"
         description="Monthly revenue and net profit over the forecast period."
+        className="bg-accent/50"
       >
         <PlaceholderChart />
       </ChartWrapper>
