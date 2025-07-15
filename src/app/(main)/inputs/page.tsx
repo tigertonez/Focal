@@ -93,16 +93,17 @@ export default function InputsPage() {
           
 
           <Section title="General Parameters">
-             <InputField 
-                label="Forecast Months" 
-                id="forecastMonths" 
-                type="number" 
-                value={inputs.parameters.forecastMonths} 
-                onChange={handleParamChange('parameters')} 
-                tooltip="How many months into the future to forecast." 
-                badge={inputs.parameters.preOrder ? `+ Month 0` : undefined}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+                 <InputField 
+                    label="Forecast Months" 
+                    id="forecastMonths" 
+                    type="number" 
+                    value={inputs.parameters.forecastMonths} 
+                    onChange={handleParamChange('parameters')} 
+                    tooltip="How many months into the future to forecast." 
+                    badge={inputs.parameters.preOrder ? `+ Month 0` : undefined}
+                    layout="vertical"
+                />
                 <InputField 
                     label="Tax Rate %" 
                     id="taxRate" 
