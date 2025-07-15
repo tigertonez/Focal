@@ -12,6 +12,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
+import { type FixedCostItem } from "@/lib/types"
 
 const HSL_COLORS = [
   "hsl(var(--chart-1))",
@@ -25,16 +26,17 @@ const HSL_COLORS = [
 interface CostTimelineChartProps {
   data: any[];
   currency: string;
+  fixedCostDefs: FixedCostItem[];
 }
 
-export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
+export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelineChartProps) {
   const { chartData, chartConfig, costKeys } = React.useMemo(() => {
     const monthlyData = data.map(month => ({
       ...month,
       name: `M${month.month}`,
     }));
 
-    const allCostKeys = new Set<string>(['deposits', 'finalPayments']);
+    const allCostKeys = new Set<string>();
     monthlyData.forEach(month => {
       Object.keys(month).forEach(key => {
         if (key !== 'month' && key !== 'name' && key !== 'total' && month[key] > 0) {
@@ -43,13 +45,28 @@ export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
       });
     });
 
-    const sortedCostKeys = Array.from(allCostKeys);
+    const sortedCostKeys = Array.from(allCostKeys).sort((a, b) => {
+        // Ensure deposits and final payments are first
+        if (a === 'deposits') return -1;
+        if (b === 'deposits') return 1;
+        if (a === 'finalPayments') return -1;
+        if (b === 'finalPayments') return 1;
+        return a.localeCompare(b);
+    });
     
     const config: ChartConfig = {};
+    const fixedCostMap = new Map(fixedCostDefs.map(fc => [fc.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(), fc]));
+
     sortedCostKeys.forEach((key, index) => {
       let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      
       if (key === 'deposits') label = 'Deposits Paid';
       if (key === 'finalPayments') label = 'Final Payments';
+
+      const fixedCostDef = fixedCostMap.get(key);
+      if (fixedCostDef) {
+        label = `${fixedCostDef.name} (${fixedCostDef.paymentSchedule})`;
+      }
       
       config[key] = {
         label,
@@ -58,7 +75,7 @@ export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
     });
 
     return { chartData: monthlyData, chartConfig: config, costKeys: sortedCostKeys };
-  }, [data]);
+  }, [data, fixedCostDefs]);
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
@@ -95,7 +112,7 @@ export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
               formatter={(value, name) => (
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col">
-                    <span className="capitalize">{chartConfig[name as keyof typeof chartConfig]?.label}</span>
+                    <span>{chartConfig[name as keyof typeof chartConfig]?.label}</span>
                     <span className="font-bold">{formatCurrency(Number(value), currency)}</span>
                   </div>
                 </div>

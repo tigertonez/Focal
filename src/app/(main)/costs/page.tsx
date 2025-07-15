@@ -104,7 +104,7 @@ export default function CostsPage() {
                         <CardTitle>Monthly Cost Timeline</CardTitle>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <CostTimelineChart data={monthlyCosts} currency={currency} />
+                        <CostTimelineChart data={monthlyCosts} currency={currency} fixedCostDefs={inputs.fixedCosts} />
                     </CardContent>
                 </Card>
             </section>
