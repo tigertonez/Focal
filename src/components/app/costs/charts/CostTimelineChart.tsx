@@ -41,7 +41,7 @@ export function CostTimelineChart({ data, currency, preOrder }: CostTimelineChar
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <BarChart accessibilityLayer data={chartData}>
+      <BarChart accessibilityLayer data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="name"
