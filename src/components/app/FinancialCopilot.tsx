@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { usePathname } from 'next/navigation';
 
 
 interface Message {
@@ -36,8 +37,12 @@ export function FinancialCopilot() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen } = useForecast();
+  const pathname = usePathname();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Hide the floating button on the main input pages
+  const hideFab = pathname === '/' || pathname === '/inputs';
 
   useEffect(() => {
     if (proactiveAnalysis && isCopilotOpen) {
@@ -80,7 +85,7 @@ export function FinancialCopilot() {
     }));
 
     try {
-      const canvas = await html2canvas(document.body, { logging: false, useCORS: true, ignoreElements: (el) => el.classList.contains('financial-copilot-fab') });
+      const canvas = await html2canvas(document.body, { logging: false, useCORS: true, ignoreElements: (el) => el.id === 'financial-copilot-container' });
       const screenshotDataUri = canvas.toDataURL('image/png');
 
       const response = await fetch('/api/ask', {
@@ -119,22 +124,24 @@ export function FinancialCopilot() {
   
   return (
     <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
-        <div className="fixed bottom-6 right-6 z-50 financial-copilot-fab">
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <SheetTrigger asChild>
-                            <Button variant="accent" size="icon" className="rounded-full h-14 w-14 shadow-lg">
-                                <Bot size={28} />
-                            </Button>
-                        </SheetTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                        <p>Ask AI for Help</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </div>
+        {!hideFab && (
+          <div id="financial-copilot-container" className="fixed bottom-6 right-6 z-50">
+              <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <SheetTrigger asChild>
+                              <Button variant="accent" size="icon" className="rounded-full h-14 w-14 shadow-lg">
+                                  <Bot size={28} />
+                              </Button>
+                          </SheetTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                          <p>Ask AI for Help</p>
+                      </TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
+          </div>
+        )}
         <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0">
              <SheetHeader className="p-4 border-b">
                 <SheetTitle className="flex items-center gap-2">
