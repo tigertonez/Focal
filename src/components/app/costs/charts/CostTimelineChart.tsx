@@ -50,6 +50,7 @@ export function CostTimelineChart({ data, currency, preOrder }: CostTimelineChar
           axisLine={false}
         />
         <YAxis
+          domain={[0, 'auto']}
           tickFormatter={(value) => formatCurrency(Number(value), currency).slice(0, -3)}
           tickLine={false}
           tickMargin={10}
