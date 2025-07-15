@@ -12,9 +12,16 @@ export function buildFixedCostTimeline(
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
     const schedule = fc.paymentSchedule || 'Up-Front';
-    let isLinkedMarketing = fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false;
 
-    // Distribute based on schedule
+    // Handle special "link to sales model" for marketing
+    if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
+        // Distribute the cost according to sales weights
+        salesWeights.forEach((w, i) => add(i + 1, A * w));
+        // The key fix is to NOT add the base amount again below. We just continue to the next item.
+        return;
+    }
+
+    // Handle all other costs based on their schedule
     switch (schedule) {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) add(m, A);
@@ -29,34 +36,20 @@ export function buildFixedCostTimeline(
         const start = fc.startMonth ?? 1;
         const end = fc.endMonth ?? start;
         const span = end - start + 1;
+        
         let rule = fc.splitRule ?? [];
-        if (!rule.length) {
+
+        // If no rule, create an even split
+        if (!rule.length || rule.reduce((s,v) => s+v, 0) === 0) {
             rule = Array(span).fill(1);
         }
+        
         const totalRuleWeight = rule.reduce((s, v) => s + v, 0);
         const normalizedRule = totalRuleWeight > 0 ? rule.map(w => w / totalRuleWeight) : [];
 
         normalizedRule.forEach((w, i) => add(start + i, A * w));
         break;
       }
-    }
-    
-    // Layer linked marketing on top, but remove the base amount to avoid double counting
-    // if it wasn't already a monthly cost.
-    if(isLinkedMarketing){
-        const totalMarketingCost = A * forecastMonths; // Since marketing is now treated as monthly
-        salesWeights.forEach((w, i) => add(i + 1, totalMarketingCost * w));
-        
-        // We need to remove the "base" amount that was added via the switch statement
-        // to avoid double counting.
-        if (schedule !== 'Monthly') {
-            // This is complex. For now, let's assume marketing costs linked to sales
-            // should have a 'Monthly' schedule for simplicity.
-            // A more robust solution would be needed for other schedules.
-            // Let's adjust the original distribution rather than adding/subtracting.
-            // This part of the logic is deferred for a more precise spec.
-            // The current implementation will over-count linked marketing if not set to 'Monthly'.
-        }
     }
   });
 
