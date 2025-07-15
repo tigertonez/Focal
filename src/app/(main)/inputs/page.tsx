@@ -64,6 +64,7 @@ export default function InputsPage() {
   };
   
   const isManualMode = inputs.realtime.dataSource === 'Manual';
+  const preOrderTooltip = "Enables a 'Month 0' for pre-launch costs (e.g., deposits) and revenue before the main forecast begins in Month 1.";
 
   return (
     <div className="bg-white min-h-screen">
@@ -127,7 +128,15 @@ export default function InputsPage() {
                   <SelectItem value="USD">USD</SelectItem>
                 </SelectField>
                 <div className="space-y-2">
-                    <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
+                    <Label htmlFor="preOrder" className="font-medium text-sm flex items-center gap-2">
+                        Pre-Order Mode
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipContent><p>{preOrderTooltip}</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </Label>
                     <div className="flex items-center pt-2 gap-2">
                         <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
                         {inputs.parameters.preOrder && <Badge variant="secondary">+ Month 0</Badge>}

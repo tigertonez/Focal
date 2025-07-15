@@ -26,15 +26,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, name, value);
   };
 
-  const salesModelTooltip = `
-    Launch: 60/30/10 split over first 3 months.
-    Even: Distributed equally across all months.
-    Seasonal: Bell-curve distribution, peaking mid-period.
-    Growth: Linearly increasing sales month over month.
-  `;
+  const salesModelTooltip = `Defines how sales are distributed over the forecast period:
+- Launch: 60/30/10 split over the first 3 months.
+- Even: Distributed equally across all months.
+- Seasonal: Bell-curve distribution, peaking mid-period.
+- Growth: Linearly increasing sales month over month.`;
   
-  const sellThroughTooltip = "The percentage of your total planned units that you expect to actually sell over the forecast period.";
-  const depositPaidTooltip = "The percentage of the total production cost that you pay to your supplier upfront as a deposit.";
+  const sellThroughTooltip = "The percentage of your planned units you expect to actually sell over the forecast period.";
+  const depositPaidTooltip = "The percentage of the total production cost (Unit Cost * Planned Units) that you pay to your supplier upfront.";
 
 
   return (
@@ -79,7 +78,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                    <TooltipContent className="whitespace-pre-line text-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
+                    <TooltipContent className="whitespace-pre-line text-xs max-w-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
                 </Tooltip>
                 </TooltipProvider>
             </Label>
