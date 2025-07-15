@@ -45,7 +45,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
       
       <div>
         <Label htmlFor={`productName-${index}`} className="text-sm font-medium">Product / Service Name</Label>
-        <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., Premium T-Shirt" />
+        <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-sm px-2" placeholder="e.g., Premium T-Shirt" />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
