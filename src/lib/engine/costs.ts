@@ -71,7 +71,6 @@ function buildFixedCostTimeline(
       }
     }
 
-    // Helper to sanitize cost names into valid object keys
     const sanitizeKey = (name: string) => name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     const add = (m: number, val: number, name: string) => {
@@ -98,14 +97,14 @@ function buildFixedCostTimeline(
           break;
 
         case 'Monthly':
-            const monthlyAmount = totalAmount; // The amount is already monthly
+            const monthlyAmount = totalAmount;
             for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
               add(m, monthlyAmount, fc.name);
             }
           break;
 
         case 'Quarterly':
-            const quarterlyAmount = totalAmount; // The amount is per quarter
+            const quarterlyAmount = totalAmount;
             for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
               add(m, quarterlyAmount, fc.name);
             }
@@ -117,7 +116,6 @@ function buildFixedCostTimeline(
       }
     });
 
-    // Calculate total fixed costs for timeline summary (separate from chart data)
     let totalFixedInTimeline = 0;
     timeline.forEach(month => {
         totalFixedInTimeline += Object.values(month).reduce((sum, val) => sum + val, 0);
@@ -218,7 +216,6 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
         }
         
-        // Add total to each month for tooltip/summary purposes if needed, but not for stacking
         monthlyCosts.forEach(month => {
             month.total = Object.entries(month)
                 .filter(([key]) => key !== 'month' && key !== 'name')
