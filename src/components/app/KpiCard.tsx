@@ -19,7 +19,7 @@ export function KpiCard({ label, value, icon, className }: KpiCardProps) {
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold font-headline">
+        <div className="text-xl font-bold font-headline">
           {value}
         </div>
       </CardContent>

@@ -12,6 +12,9 @@ import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
+import { VariableCostPieChart } from '@/components/app/costs/charts/VariableCostPieChart';
+import { ChartWrapper } from '@/components/app/ChartWrapper';
 
 
 const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: any[], currency: string, preOrder: boolean }) => (
@@ -99,6 +102,15 @@ export default function CostsPage() {
                         <Progress value={depositProgress} />
                     </div>
                 )}
+            </section>
+            
+            <section className="grid md:grid-cols-2 gap-8">
+                <ChartWrapper title="Monthly Cost Timeline">
+                    <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
+                </ChartWrapper>
+                <ChartWrapper title="Variable Cost Distribution">
+                    <VariableCostPieChart data={costSummary.variableCosts} currency={currency} />
+                </ChartWrapper>
             </section>
             
             <section className="space-y-4">
