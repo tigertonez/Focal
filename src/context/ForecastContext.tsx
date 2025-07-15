@@ -49,15 +49,17 @@ const initialInputs: EngineInput = {
       depositPct: 50,
     },
   ],
-  fixedCosts: [
-      { id: 'fc_1', name: 'Salaries', amount: 15000 },
-      { id: 'fc_2', name: 'Rent', amount: 5000 },
-      { id: 'fc_3', name: 'Marketing', amount: 8000 },
-  ],
+  fixedCosts: {
+    items: [
+        { id: 'fc_1', name: 'Salaries', amount: 15000 },
+        { id: 'fc_2', name: 'Rent', amount: 5000 },
+        { id: 'fc_3', name: 'Marketing', amount: 8000 },
+    ],
+    planningBuffer: 15,
+  },
   parameters: {
     forecastMonths: 12,
     taxRate: 20,
-    planningBuffer: 15,
     currency: 'USD',
     preOrder: true,
   },
@@ -120,9 +122,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFixedCost = (index: number, field: keyof FixedCostItem, value: any) => {
     setInputs(prev => {
-        const newCosts = [...prev.fixedCosts];
-        newCosts[index] = { ...newCosts[index], [field]: value };
-        return { ...prev, fixedCosts: newCosts };
+        const newItems = [...prev.fixedCosts.items];
+        newItems[index] = { ...newItems[index], [field]: value };
+        return { ...prev, fixedCosts: { ...prev.fixedCosts, items: newItems } };
     });
   };
 
@@ -134,14 +136,20 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     };
     setInputs(prev => ({
       ...prev,
-      fixedCosts: [...prev.fixedCosts, newCost],
+      fixedCosts: {
+        ...prev.fixedCosts,
+        items: [...prev.fixedCosts.items, newCost],
+      }
     }));
   };
 
   const removeFixedCost = (id: string) => {
     setInputs(prev => ({
       ...prev,
-      fixedCosts: prev.fixedCosts.filter(c => c.id !== id),
+       fixedCosts: {
+        ...prev.fixedCosts,
+        items: prev.fixedCosts.items.filter(c => c.id !== id),
+      }
     }));
   };
 
@@ -160,8 +168,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     try {
         const validatedInputs = EngineInputSchema.parse(inputs);
         
-        // This is where the full engine would run.
-        // For now, we are just calculating costs.
         const costResults = calculateCosts(validatedInputs);
 
         const newResults: EngineOutput = {
@@ -169,7 +175,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
           monthlyCosts: costResults.monthlyCosts,
         };
 
-        // Simulate network delay
         setTimeout(() => {
             setResults(newResults);
             setLoading(false);

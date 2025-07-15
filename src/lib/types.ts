@@ -27,12 +27,17 @@ export const FixedCostItemSchema = z.object({
 });
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
 
+export const FixedCostsSchema = z.object({
+  items: z.array(FixedCostItemSchema),
+  planningBuffer: z.number().min(0).max(100),
+});
+export type FixedCosts = z.infer<typeof FixedCostsSchema>;
+
 
 // --- Section C: General Parameters ---
 export const ParametersSchema = z.object({
   forecastMonths: z.number().min(1).max(36),
   taxRate: z.number().min(0).max(100),
-  planningBuffer: z.number().min(0).max(100),
   currency: z.enum(['EUR', 'USD']),
   preOrder: z.boolean(),
 });
@@ -50,7 +55,7 @@ export type RealtimeSettings = z.infer<typeof RealtimeSettingsSchema>;
 // --- Main Input Schema for Validation ---
 export const EngineInputSchema = z.object({
   products: z.array(ProductSchema).min(1, { message: 'At least one product is required.' }),
-  fixedCosts: z.array(FixedCostItemSchema),
+  fixedCosts: FixedCostsSchema,
   parameters: ParametersSchema,
   realtime: RealtimeSettingsSchema,
 });

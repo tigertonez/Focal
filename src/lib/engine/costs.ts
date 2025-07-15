@@ -13,24 +13,25 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         if (inputs.products.some(p => p.unitCost === undefined || p.sellPrice === undefined)) {
              throw new Error('All products must have a Unit Cost and Sell Price.');
         }
+        const forecastMonths = inputs.parameters.forecastMonths;
 
-        const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
-        const planningBufferAmount = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
+        const baseFixedCosts = inputs.fixedCosts.items.reduce((acc, cost) => acc + (cost.amount || 0), 0);
+        const planningBufferAmount = baseFixedCosts * (inputs.fixedCosts.planningBuffer / 100);
 
         const costsWithBuffer: FixedCostItem[] = [
-            ...inputs.fixedCosts,
+            ...inputs.fixedCosts.items,
             {
                 id: 'planning-buffer',
                 name: 'Planning Buffer',
-                amount: planningBufferAmount / inputs.parameters.forecastMonths, // Treat as a monthly cost
-                paymentSchedule: 'Monthly',
+                amount: planningBufferAmount,
+                paymentSchedule: 'Monthly', // Treat as a monthly cost for distribution
             }
         ];
         
-        const salesWeights = getAggregatedSalesWeights(inputs.products, inputs.parameters.forecastMonths);
+        const salesWeights = getAggregatedSalesWeights(inputs.products, forecastMonths);
         const fixedCostTimeline = buildFixedCostTimeline(
             costsWithBuffer, 
-            inputs.parameters.forecastMonths, 
+            forecastMonths, 
             salesWeights
         );
         
@@ -71,14 +72,14 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             totalVariable: totalVariableCost,
             totalOperating,
             avgCostPerUnit,
-            fixedCosts: inputs.fixedCosts,
+            fixedCosts: inputs.fixedCosts.items,
             planningBuffer: planningBufferAmount,
             variableCosts: variableCostBreakdown,
             totalDepositsPaid,
             totalFinalPayments,
         };
 
-        const months = inputs.parameters.forecastMonths;
+        const months = forecastMonths;
         const monthlyCosts: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
             month: i + 1,
             deposits: 0,

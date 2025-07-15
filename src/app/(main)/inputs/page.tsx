@@ -92,19 +92,19 @@ export default function InputsPage() {
 
           <Section title="Fixed Costs">
             <div className="space-y-3">
-              {inputs.fixedCosts.map((cost, i) => (
+              {inputs.fixedCosts.items.map((cost, i) => (
                 <FixedCostForm key={cost.id} cost={cost} index={i} />
               ))}
             </div>
             <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
               <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
             </Button>
+             <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.fixedCosts.planningBuffer} onChange={handleParamChange('fixedCosts')} tooltip="A safety buffer added to total fixed costs." />
           </Section>
 
           <Section title="General Parameters">
             <InputField label="Forecast Months" id="forecastMonths" type="number" value={inputs.parameters.forecastMonths} onChange={handleParamChange('parameters')} tooltip="How many months into the future to forecast." />
             <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleParamChange('parameters')} tooltip="Your estimated corporate tax rate." />
-            <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.parameters.planningBuffer} onChange={handleParamChange('parameters')} tooltip="A safety buffer added to total fixed costs." />
             <SelectField label="Currency" id="currency" value={inputs.parameters.currency} onValueChange={handleSelectChange('parameters')('currency')}>
               <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
