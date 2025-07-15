@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, ProductSchema, type FixedCostItem, FixedCostItemSchema } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, ProductSchema, type FixedCostItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 
@@ -62,6 +62,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // When switching away from manual, we might need to adjust validation logic
+    // For now, we just re-validate whenever inputs change.
     const result = EngineInputSchema.safeParse(inputs);
     setIsFormValid(result.success);
   }, [inputs]);
