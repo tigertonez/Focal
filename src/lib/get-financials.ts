@@ -1,4 +1,6 @@
 
+'use client';
+
 import { EngineInputSchema, type EngineInput, type EngineOutput } from './types';
 
 interface FinancialsResult {
