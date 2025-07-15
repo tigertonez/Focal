@@ -35,11 +35,13 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                     <KpiCard label="Total Operating Costs" value={formatCurrency(costSummary.totalOperating, currency)} />
                     <KpiCard label="Avg. var. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} />
                 </div>
-                 {isManualMode && (
+                 {isManualMode && costSummary.totalVariable > 0 && (
                     <div className="mt-4 space-y-2">
-                        <div className="flex justify-between text-sm text-muted-foreground">
+                        <div className="flex justify-between items-center text-sm text-muted-foreground">
                             <span>Production Deposit Paid</span>
-                            <span>{depositProgress.toFixed(0)}%</span>
+                             <span className="font-medium text-foreground">
+                                {formatCurrency(costSummary.totalDepositsPaid, currency)} of {formatCurrency(costSummary.totalVariable, currency)}
+                            </span>
                         </div>
                         <Progress value={depositProgress} />
                     </div>
@@ -95,7 +97,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                             ))}
                             <Separator className="my-2" />
                             <CostRow 
-                               label="Total Variable"
+                               label="Total Variable Costs"
                                value={formatCurrency(costSummary.totalVariable, currency)}
                                className="font-bold pt-2"
                            />

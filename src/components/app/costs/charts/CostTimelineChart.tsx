@@ -88,7 +88,11 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
             }}
         />}
         />
-        <ChartLegend content={<ChartLegendContent />} />
+        <ChartLegend content={<ChartLegendContent payload={Object.keys(chartConfig).map(key => ({
+            value: chartConfig[key]?.label,
+            color: chartConfig[key]?.color,
+            dataKey: key
+        })).reverse()} />} />
         
         {reversedCostKeys.map((key, index) => (
            <Bar

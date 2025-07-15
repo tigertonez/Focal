@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 
 const navItems = [
@@ -29,10 +30,25 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
   const isActive = pathname === href || (href === '/inputs' && pathname === '/');
 
   return (
-    <Link href={href} className={cn("flex items-center justify-center p-3 rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary", { "bg-primary/10 text-primary": isActive })}>
-      <Icon className="h-5 w-5" />
-      <span className="sr-only">{label}</span>
-    </Link>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            href={href}
+            className={cn(
+              "flex items-center justify-center p-3 rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+              { "bg-primary/10 text-primary": isActive }
+            )}
+          >
+            <Icon className="h-5 w-5" />
+            <span className="sr-only">{label}</span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p>{label}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
