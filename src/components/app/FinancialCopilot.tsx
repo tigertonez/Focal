@@ -10,7 +10,6 @@ import { Bot, User, Loader2, ArrowUp } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
-import { cn } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -18,6 +17,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 
 interface Message {
@@ -35,14 +40,13 @@ export function FinancialCopilot() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (proactiveAnalysis) {
+    if (proactiveAnalysis && isCopilotOpen) {
         // Clear previous messages when a new proactive analysis comes in
         setMessages([]); 
         handleSendMessage(proactiveAnalysis, true);
-        setIsCopilotOpen(true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, setProactiveAnalysis, setIsCopilotOpen]);
+  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis]);
 
   useEffect(() => {
     if (isCopilotOpen) {
@@ -76,7 +80,7 @@ export function FinancialCopilot() {
     }));
 
     try {
-      const canvas = await html2canvas(document.body, { logging: false, useCORS: true });
+      const canvas = await html2canvas(document.body, { logging: false, useCORS: true, ignoreElements: (el) => el.classList.contains('financial-copilot-fab') });
       const screenshotDataUri = canvas.toDataURL('image/png');
 
       const response = await fetch('/api/ask', {
@@ -115,6 +119,22 @@ export function FinancialCopilot() {
   
   return (
     <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
+        <div className="fixed bottom-6 right-6 z-50 financial-copilot-fab">
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <SheetTrigger asChild>
+                            <Button variant="accent" size="icon" className="rounded-full h-14 w-14 shadow-lg">
+                                <Bot size={28} />
+                            </Button>
+                        </SheetTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        <p>Ask AI for Help</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
         <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0">
              <SheetHeader className="p-4 border-b">
                 <SheetTitle className="flex items-center gap-2">

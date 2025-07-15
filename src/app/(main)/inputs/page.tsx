@@ -46,6 +46,7 @@ export default function InputsPage() {
     addFixedCost,
     saveDraft,
     runProactiveAnalysis,
+    setIsCopilotOpen,
   } = useForecast();
 
   const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,7 +184,10 @@ export default function InputsPage() {
           <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button onClick={runProactiveAnalysis} variant="accent">
+                    <Button onClick={() => {
+                        runProactiveAnalysis();
+                        setIsCopilotOpen(true);
+                    }} variant="accent">
                         <Bot className="mr-2" />
                         Let AI review
                     </Button>
