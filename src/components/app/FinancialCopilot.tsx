@@ -1,14 +1,15 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare, Bot, User, Loader2, Wand2 } from 'lucide-react';
+import { Bot, User, Loader2, Wand2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { useForecast } from '@/context/ForecastContext';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -21,20 +22,30 @@ export function FinancialCopilot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { proactiveAnalysis, setProactiveAnalysis } = useForecast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = async () => {
-    if (input.trim() === '' || isLoading) return;
+  useEffect(() => {
+    if (proactiveAnalysis && messages.length === 0) {
+        const botMessage: Message = { sender: 'bot', text: proactiveAnalysis };
+        setMessages([botMessage]);
+    }
+  }, [proactiveAnalysis, messages.length]);
 
-    const userMessage: Message = { sender: 'user', text: input };
+  const handleSendMessage = async (question?: string) => {
+    const currentInput = question || input;
+    if (currentInput.trim() === '' || isLoading) return;
+
+    const userMessage: Message = { sender: 'user', text: currentInput };
     setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    if (!question) {
+        setInput('');
+    }
     setIsLoading(true);
     setError(null);
     
     try {
-      // Capture the screenshot
       const canvas = await html2canvas(document.body, { logging: false, useCORS: true });
       const screenshotDataUri = canvas.toDataURL('image/png');
 
@@ -43,7 +54,7 @@ export function FinancialCopilot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'copilot',
-          question: input,
+          question: currentInput,
           screenshotDataUri,
         }),
       });
@@ -69,12 +80,22 @@ export function FinancialCopilot() {
       }, 100);
     }
   };
+  
+  const handleSheetOpen = (open: boolean) => {
+    setIsOpen(open);
+    if(open && proactiveAnalysis) {
+        setProactiveAnalysis(null); // Clear the badge when opened
+    }
+  }
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={handleSheetOpen}>
       <SheetTrigger asChild>
         <Button className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50" size="icon">
           <Wand2 className="h-6 w-6" />
+          {proactiveAnalysis && (
+            <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
+          )}
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-3/4 flex flex-col">
@@ -130,7 +151,7 @@ export function FinancialCopilot() {
               type="submit"
               size="sm"
               className="absolute right-2.5 top-1/2 -translate-y-1/2"
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               disabled={isLoading}
             >
               Ask

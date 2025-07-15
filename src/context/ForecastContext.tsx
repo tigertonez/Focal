@@ -6,6 +6,8 @@ import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, 
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 import { calculateCosts } from '@/lib/engine/costs';
+import html2canvas from 'html2canvas';
+
 
 interface ForecastContextType {
   inputs: EngineInput;
@@ -21,6 +23,8 @@ interface ForecastContextType {
   saveDraft: () => void;
   calculateForecast: () => void;
   loading: boolean;
+  proactiveAnalysis: string | null;
+  setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -72,6 +76,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [results, setResults] = useState<EngineOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const { toast } = useToast();
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
@@ -119,6 +124,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       id: `fc_${crypto.randomUUID()}`,
       name: '',
       amount: 0,
+      paymentSchedule: 'Monthly',
     };
     setInputs(prev => ({
       ...prev,
@@ -140,13 +146,44 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         description: "Your inputs have been saved locally.",
     });
   };
+  
+  const runProactiveAnalysis = async () => {
+    try {
+        const canvas = await html2canvas(document.body, { logging: false, useCORS: true });
+        const screenshotDataUri = canvas.toDataURL('image/png');
+        const question = "Review the completed forecast for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
+        
+        const response = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'copilot',
+              question,
+              screenshotDataUri,
+            }),
+        });
+
+        if (!response.ok) return; // Fail silently
+
+        const result = await response.json();
+        // Only show analysis if it's meaningful
+        if (result.answer && !result.answer.toLowerCase().includes("no issues")) {
+           setProactiveAnalysis(result.answer);
+        } else {
+           setProactiveAnalysis(null);
+        }
+
+    } catch (e) {
+        console.error("Proactive analysis failed", e); // Log error but don't bother user
+    }
+  }
 
   const calculateForecast = () => {
     setLoading(true);
     setResults(null);
     setError(null);
+    setProactiveAnalysis(null);
 
-    // Perform validation at the time of calculation
     const validationResult = EngineInputSchema.safeParse(inputs);
     if (!validationResult.success) {
       const errorMessage = validationResult.error.errors[0].message;
@@ -160,7 +197,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Calculation logic
     try {
         const validatedInputs = validationResult.data;
         const costResults = calculateCosts(validatedInputs);
@@ -169,7 +205,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
           monthlyCosts: costResults.monthlyCosts,
         };
 
-        // Simulate async operation
         setTimeout(() => {
             setResults(newResults);
             setLoading(false);
@@ -177,11 +212,13 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
                 title: "Calculation Complete",
                 description: "Forecast results are ready.",
             });
+            // Run proactive analysis after results are set
+            runProactiveAnalysis();
         }, 500);
 
     } catch (e) {
         let errorMessage = 'An unknown error occurred.';
-        if (e instanceof ZodError) { // This case might be redundant now, but good for safety
+        if (e instanceof ZodError) {
             errorMessage = e.errors.map(error => error.message).join(' ');
         } else if (e instanceof Error) {
             errorMessage = e.message;
@@ -210,7 +247,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     saveDraft,
     calculateForecast,
     loading,
-  }), [inputs, results, error, loading]);
+    proactiveAnalysis,
+    setProactiveAnalysis,
+  }), [inputs, results, error, loading, proactiveAnalysis]);
 
   return (
     <ForecastContext.Provider value={value}>
