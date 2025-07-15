@@ -8,16 +8,16 @@ function buildFixedCostTimeline(
     products: Product[],
     forecastMonths: number,
     preOrder: boolean,
-  ): any[] { 
+  ): { timeline: { [key: string]: number }[], totalFixedInTimeline: number } {
     const timeline: { [key: string]: number }[] = Array.from({ length: forecastMonths }, () => ({}));
-  
+
     const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
     const firstSalesMonthIndex = preOrder ? 1 : 0;
-  
+
     const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
       let weights: number[] = Array(months).fill(0);
       if (months <= 0) return weights;
-  
+
       switch (model) {
         case 'launch':
           if (months >= 3) { weights[0] = 0.6; weights[1] = 0.3; weights[2] = 0.1; }
@@ -44,7 +44,7 @@ function buildFixedCostTimeline(
       }
       return weights;
     }
-  
+
     const aggregatedSalesWeights = Array(forecastMonths).fill(0);
     if (products?.length > 0 && salesCurveMonths > 0) {
       let totalRevenue = 0;
@@ -54,7 +54,7 @@ function buildFixedCostTimeline(
         totalRevenue += productRevenue;
         return { weights: singleProductWeights, revenue: productRevenue };
       });
-  
+
       if (totalRevenue > 0) {
         for (let i = 0; i < salesCurveMonths; i++) {
           const timelineIndex = i + firstSalesMonthIndex;
@@ -70,7 +70,7 @@ function buildFixedCostTimeline(
         }
       }
     }
-  
+
     // Helper to sanitize cost names into valid object keys
     const sanitizeKey = (name: string) => name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
@@ -83,11 +83,11 @@ function buildFixedCostTimeline(
         timeline[m][key] += val;
       }
     };
-  
+
     fixedCosts.forEach(fc => {
       const totalAmount = +fc.amount;
       if (totalAmount === 0 || !fc.name) return;
-  
+
       switch (fc.paymentSchedule || 'Up-Front') {
         case 'According to Sales':
           aggregatedSalesWeights.forEach((weight, monthIndex) => {
@@ -96,31 +96,27 @@ function buildFixedCostTimeline(
             }
           });
           break;
-  
+
         case 'Monthly':
-          if (salesCurveMonths > 0) {
             const monthlyAmount = totalAmount; // The amount is already monthly
             for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
               add(m, monthlyAmount, fc.name);
             }
-          }
           break;
-  
+
         case 'Quarterly':
-          if (salesCurveMonths > 0) {
-              const quarterlyAmount = totalAmount; // The amount is per quarter
-              for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
-                add(m, quarterlyAmount, fc.name);
-              }
-          }
+            const quarterlyAmount = totalAmount; // The amount is per quarter
+            for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
+              add(m, quarterlyAmount, fc.name);
+            }
           break;
-          
+
         case 'Up-Front':
           add(0, totalAmount, fc.name);
           break;
       }
     });
-    
+
     // Calculate total fixed costs for timeline summary (separate from chart data)
     let totalFixedInTimeline = 0;
     timeline.forEach(month => {
@@ -152,7 +148,7 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
         const { timeline: fixedCostTimelineData, totalFixedInTimeline } = buildFixedCostTimeline(
-            inputs.fixedCosts, 
+            inputs.fixedCosts,
             inputs.products,
             timelineMonths,
             preOrder
