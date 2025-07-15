@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
-import { type EngineInput, EngineInputSchema, type Product } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, ProductSchema } from '@/lib/types';
 
 interface ForecastContextType {
   inputs: EngineInput;
@@ -33,7 +33,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addProduct = () => {
-    const newProduct = { ...EngineInputSchema.shape.products.element.parse({}) };
+    const newProduct = ProductSchema.parse({});
     setInputs(prev => ({
         ...prev,
         products: [...prev.products, newProduct]
