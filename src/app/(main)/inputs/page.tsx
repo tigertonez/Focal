@@ -8,9 +8,10 @@ import { PlusCircle, Loader2 } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { SelectField } from '@/components/app/inputs/SelectField';
+import { SelectItem } from '@/components/ui/select';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -18,26 +19,6 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
     <h2 className="text-xl font-semibold">{title}</h2>
     <div className="space-y-4">{children}</div>
   </section>
-);
-
-const SelectField: React.FC<{
-  label: string;
-  id: string;
-  value: string;
-  onValueChange: (value: string) => void;
-  children: React.ReactNode;
-}> = ({ label, id, value, onValueChange, children }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-    <Label htmlFor={id} className="font-medium text-sm">
-      {label}
-    </Label>
-    <div className="md:col-span-2">
-      <Select onValueChange={onValueChange} value={value}>
-        <SelectTrigger id={id}><SelectValue /></SelectTrigger>
-        <SelectContent>{children}</SelectContent>
-      </Select>
-    </div>
-  </div>
 );
 
 
@@ -52,7 +33,7 @@ export default function InputsPage() {
     loading,
   } = useForecast();
 
-  const handleParamChange = (section: 'parameters' | 'realtime' ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
     let finalValue: string | number | boolean = value;
     if (type === 'checkbox') {
