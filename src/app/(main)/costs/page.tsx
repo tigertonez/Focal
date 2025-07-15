@@ -74,7 +74,7 @@ export default function CostsPage() {
                  {isManualMode && (
                     <div className="mt-4 space-y-2">
                         <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Total Deposits Paid by You</span>
+                            <span>Production Deposit Paid</span>
                             <span>{depositProgress.toFixed(0)}%</span>
                         </div>
                         <Progress value={depositProgress} />

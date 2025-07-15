@@ -86,13 +86,13 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
         />
         <ChartLegend content={<ChartLegendContent />} />
         
-        {reversedCostKeys.map((key, index) => (
+        {reversedCostKeys.map((key) => (
            <Bar
               key={key}
               dataKey={key}
               fill={chartConfig[key]?.color || "#8884d8"}
               stackId="a"
-              radius={index === reversedCostKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+              radius={[4, 4, 0, 0]}
             />
         ))}
 

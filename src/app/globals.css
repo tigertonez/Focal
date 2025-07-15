@@ -32,10 +32,10 @@
     
     /* Chart Colors (Professional & Distinguishable) */
     --chart-1: 220 80% 60%;  /* Main Blue */
-    --chart-2: 210 30% 60%;  /* Slate Blue */
-    --chart-3: 190 40% 50%;  /* Muted Teal */
-    --chart-4: 260 50% 70%;  /* Soft Purple */
-    --chart-5: 30 80% 65%;   /* Muted Orange */
+    --chart-2: 180 40% 50%;  /* Muted Teal */
+    --chart-3: 260 50% 70%;  /* Soft Purple */
+    --chart-4: 30 80% 65%;   /* Muted Orange */
+    --chart-5: 210 30% 60%;  /* Slate Blue */
     --chart-6: 350 75% 70%;  /* Soft Red/Pink */
   }
  
@@ -62,10 +62,10 @@
     
     /* Chart Colors (Professional & Distinguishable) */
     --chart-1: 220 80% 60%;  /* Main Blue */
-    --chart-2: 210 30% 60%;  /* Slate Blue */
-    --chart-3: 190 40% 50%;  /* Muted Teal */
-    --chart-4: 260 50% 70%;  /* Soft Purple */
-    --chart-5: 30 80% 65%;   /* Muted Orange */
+    --chart-2: 180 40% 50%;  /* Muted Teal */
+    --chart-3: 260 50% 70%;  /* Soft Purple */
+    --chart-4: 30 80% 65%;   /* Muted Orange */
+    --chart-5: 210 30% 60%;  /* Slate Blue */
     --chart-6: 350 75% 70%;  /* Soft Red/Pink */
   }
 }
