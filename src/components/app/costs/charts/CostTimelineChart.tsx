@@ -32,7 +32,7 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
       const newConfig: ChartConfig = {};
       allKeys.forEach((key, index) => {
         newConfig[key] = {
-          label: key,
+          label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Prettify label
           color: chartColors[index % chartColors.length],
         };
       });
@@ -45,6 +45,7 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
   }
   
+  // The last key in this array will be the top-most bar in the stack.
   const reversedCostKeys = [...costKeys].reverse();
 
   return (
@@ -67,32 +68,36 @@ export function CostTimelineChart({ data, currency }: { data: any[], currency: s
           tickLine={false}
           axisLine={false}
           tickMargin={10}
-          tickFormatter={(value) => formatCurrency(Number(value), currency).slice(0, -3)}
+          tickFormatter={(value) => formatCurrency(Number(value), currency).replace(/\.00$/, '')}
         />
         <ChartTooltip
-          cursor={true}
+          cursor={false}
           content={<ChartTooltipContent 
             labelFormatter={(label) => `Month ${label}`}
-            formatter={(value, name) => (
+            formatter={(value, name, props) => {
+               const itemConfig = chartConfig[props.dataKey as string];
+               return (
                 <div className="flex items-center">
-                    <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartConfig[name as string]?.color }}/>
+                    <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
                     <div className="flex flex-1 justify-between">
-                        <span>{chartConfig[name as string]?.label}</span>
+                        <span>{itemConfig?.label}</span>
                         <span className="ml-4 font-bold">{formatCurrency(Number(value), currency)}</span>
                     </div>
                 </div>
-            )}
+              )
+            }}
         />}
         />
         <ChartLegend content={<ChartLegendContent />} />
         
-        {reversedCostKeys.map((key) => (
+        {reversedCostKeys.map((key, index) => (
            <Bar
               key={key}
               dataKey={key}
-              fill={chartConfig[key]?.color || "#8884d8"}
+              fill={chartConfig[key]?.color}
               stackId="a"
-              radius={[4, 4, 0, 0]}
+              // Apply radius only to the top-most bar in the stack
+              radius={index === reversedCostKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />
         ))}
 
