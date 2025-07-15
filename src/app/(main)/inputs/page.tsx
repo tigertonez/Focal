@@ -102,16 +102,32 @@ export default function InputsPage() {
                 tooltip="How many months into the future to forecast." 
                 badge={inputs.parameters.preOrder ? `+ Month 0` : undefined}
             />
-            <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleParamChange('parameters')} tooltip="Your estimated corporate tax rate." />
-            <SelectField label="Currency" id="currency" value={inputs.parameters.currency} onValueChange={handleSelectChange('parameters')('currency')}>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-            </SelectField>
-            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-              <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
-              <div className="md:col-span-2 flex items-center">
-                <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <InputField 
+                    label="Tax Rate %" 
+                    id="taxRate" 
+                    type="number" 
+                    value={inputs.parameters.taxRate} 
+                    onChange={handleParamChange('parameters')} 
+                    tooltip="Your estimated corporate tax rate."
+                    layout="vertical"
+                />
+                <SelectField 
+                    label="Currency" 
+                    id="currency" 
+                    value={inputs.parameters.currency} 
+                    onValueChange={handleSelectChange('parameters')('currency')}
+                    layout="vertical"
+                >
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectField>
+                <div className="space-y-2">
+                    <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
+                    <div className="flex items-center pt-2">
+                        <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
+                    </div>
+                </div>
             </div>
           </Section>
           
