@@ -41,7 +41,7 @@ export function FinancialCopilot() {
         if (messages.length === 0) {
             setMessages([botMessage]);
         }
-        setIsOpen(true);
+        // Do not open the sheet automatically. The user will click.
         setProactiveAnalysis(null);
     }
   }, [proactiveAnalysis, messages.length, setProactiveAnalysis]);
