@@ -13,7 +13,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
-import { VariableCostPieChart } from '@/components/app/costs/charts/VariableCostPieChart';
 import { ChartWrapper } from '@/components/app/ChartWrapper';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 
@@ -97,12 +96,9 @@ export default function CostsPage() {
                 )}
             </section>
             
-            <section className="grid md:grid-cols-2 gap-8">
+            <section>
                 <ChartWrapper title="Monthly Cost Timeline">
                     <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
-                </ChartWrapper>
-                <ChartWrapper title="Variable Cost Distribution">
-                    <VariableCostPieChart data={costSummary.variableCosts} currency={currency} />
                 </ChartWrapper>
             </section>
             
