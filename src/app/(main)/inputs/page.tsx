@@ -21,8 +21,8 @@ import { ChevronRight } from "lucide-react"
 import { cn } from '@/lib/utils';
 
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section className="space-y-4">
+const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
+  <section className={cn("space-y-4", className)}>
     <h2 className="text-xl font-semibold">{title}</h2>
     <div className="space-y-4">{children}</div>
   </section>
@@ -66,28 +66,31 @@ export default function InputsPage() {
           <p className="text-muted-foreground mt-1">Define your forecast assumptions</p>
         </header>
 
-        <div className="space-y-6 max-w-4xl">
-          <Section title="Products & Services">
-            <div className="space-y-4">
-              {inputs.products.map((p, i) => (
-                <ProductForm key={p.id} product={p} index={i} />
-              ))}
-            </div>
-            <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
-              <PlusCircle className="mr-2" size={16} /> Add Product / Service
-            </Button>
-          </Section>
-
-          <Section title="Fixed Costs">
-            <div className="space-y-3">
-              {inputs.fixedCosts.map((cost, i) => (
-                <FixedCostForm key={cost.id} cost={cost} index={i} />
-              ))}
-            </div>
-            <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
-              <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
-            </Button>
-          </Section>
+        <div className="space-y-8">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+             <Section title="Products & Services">
+                <div className="space-y-4">
+                  {inputs.products.map((p, i) => (
+                    <ProductForm key={p.id} product={p} index={i} />
+                  ))}
+                </div>
+                <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
+                  <PlusCircle className="mr-2" size={16} /> Add Product / Service
+                </Button>
+            </Section>
+            
+            <Section title="Fixed Costs">
+              <div className="space-y-3">
+                {inputs.fixedCosts.map((cost, i) => (
+                  <FixedCostForm key={cost.id} cost={cost} index={i} />
+                ))}
+              </div>
+              <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
+                <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
+              </Button>
+            </Section>
+          </div>
+          
 
           <Section title="General Parameters">
              <InputField 
@@ -135,7 +138,7 @@ export default function InputsPage() {
           </Collapsible>
         </div>
 
-        <footer className="flex justify-end items-center gap-4 mt-8 pt-6 max-w-4xl">
+        <footer className="flex justify-center items-center gap-4 mt-8 pt-6">
           <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>

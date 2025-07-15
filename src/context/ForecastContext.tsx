@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
 import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
@@ -59,6 +59,8 @@ const initialInputs: EngineInput = {
   },
 };
 
+const DRAFT_STORAGE_KEY = 'forecastDraft';
+
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
   const [results, setResults] = useState<EngineOutput | null>(null);
@@ -66,6 +68,23 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            // You might want to validate this with Zod before setting state
+            setInputs(parsedDraft);
+             toast({
+                title: "Draft loaded",
+                description: "Your previous session has been restored.",
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load draft from local storage", e);
+    }
+  }, []);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
@@ -128,11 +147,21 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveDraft = () => {
-    console.log("Saving draft:", inputs);
-    toast({
-        title: "Draft saved",
-        description: "Your inputs have been saved locally.",
-    });
+     try {
+        const dataToSave = JSON.stringify(inputs);
+        localStorage.setItem(DRAFT_STORAGE_KEY, dataToSave);
+        toast({
+            title: "Draft saved!",
+            description: "Your inputs have been saved to this browser.",
+        });
+    } catch (e) {
+        console.error("Failed to save draft", e);
+        toast({
+            variant: "destructive",
+            title: "Save failed",
+            description: "Could not save draft to local storage.",
+        });
+    }
   };
   
   const runProactiveAnalysis = async () => {
