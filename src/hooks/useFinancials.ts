@@ -46,7 +46,7 @@ export const useFinancials = () => {
                 localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(result));
             }
             
-            router.push('/costs');
+            router.push('/revenue');
 
         } catch (e: any) {
             setState({ error: e.message || 'An unknown error occurred.', isLoading: false });
