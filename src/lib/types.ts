@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 // --- Product ---
 export const ProductSchema = z.object({
-  id: z.string().default(() => `prod_${crypto.randomUUID()}`),
+  id: z.string().default(''), // Default to an empty string, will be set in context
   name: z.string().default(''), // Allow empty string initially
   sku: z.string().optional(),
   moqUnits: z.number().min(0).default(0),

@@ -82,7 +82,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addProduct = () => {
-    const newProduct = ProductSchema.parse({});
+    // Generate unique ID on the client-side only
+    const newProduct = ProductSchema.parse({
+      id: `prod_${crypto.randomUUID()}`
+    });
     setInputs(prev => ({
         ...prev,
         products: [...prev.products, newProduct]
