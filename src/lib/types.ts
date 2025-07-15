@@ -4,13 +4,13 @@ import { z } from 'zod';
 // --- Section A: Product ---
 export const ProductSchema = z.object({
   id: z.string().default(''), // Default is empty, will be set via crypto.randomUUID() on client
-  productName: z.string().min(1, { message: 'Product name is required.' }),
-  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(1),
-  unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0),
-  sellPrice: z.number({ required_error: 'Sell price is required.' }).min(0),
-  salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }),
-  sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100),
-  depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
+  productName: z.string().min(1, { message: 'Product name is required.' }).default(''),
+  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(1).default(1000),
+  unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0).default(10),
+  sellPrice: z.number({ required_error: 'Sell price is required.' }).min(0).default(25),
+  salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }).default('launch'),
+  sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).default(80),
+  depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100).default(0),
 });
 export type Product = z.infer<typeof ProductSchema>;
 
