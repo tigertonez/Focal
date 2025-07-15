@@ -4,7 +4,7 @@ import { z } from 'zod';
 // --- Product ---
 export const ProductSchema = z.object({
   id: z.string().default(() => `prod_${Math.random().toString(36).substr(2, 9)}`),
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().default(''), // Allow empty string initially
   sku: z.string().optional(),
   moqUnits: z.number().min(0).default(0),
   unitCost: z.number().min(0).default(0),
