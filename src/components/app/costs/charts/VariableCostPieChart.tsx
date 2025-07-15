@@ -12,7 +12,6 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import { CostRow } from "../CostRow"
 
 const chartConfig = {
   totalProductionCost: {
@@ -20,7 +19,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-// A clear, distinguishable color palette for the pie chart
 const COLORS = [
   "#2563eb", // Blue
   "#0d9488", // Teal
@@ -37,47 +35,46 @@ interface VariableCostPieChartProps {
 export function VariableCostPieChart({ data, currency }: VariableCostPieChartProps) {
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.totalProductionCost, 0), [data]);
     const activeData = data.filter(d => d.totalProductionCost > 0);
-
-    // If there is only one product or no products, show a summary view instead of a chart
-    if (activeData.length <= 1) {
-        const singleProduct = activeData.length === 1 ? activeData[0] : null;
+    
+    if (activeData.length === 0) {
         return (
-            <div className="h-full flex flex-col justify-center items-center text-center">
+             <div className="h-full flex flex-col justify-center items-center text-center">
                 <div className="text-3xl font-bold font-headline">
-                    {formatCurrency(total, currency)}
+                    {formatCurrency(0, currency)}
                 </div>
-                <div className="text-muted-foreground mb-4">
+                <div className="text-muted-foreground">
                     Total Variable Cost
                 </div>
-
-                {singleProduct && (
-                    <div className="w-full max-w-xs text-left space-y-2 mt-4 text-sm">
-                        <h3 className="font-semibold text-center mb-2">{singleProduct.name}</h3>
-                        <CostRow label="Planned Units" value={singleProduct.plannedUnits.toLocaleString()} />
-                        <CostRow label="Unit Cost" value={formatCurrency(singleProduct.unitCost, currency)} />
-                        <CostRow label="Total Production Cost" value={formatCurrency(singleProduct.totalProductionCost, currency)} />
-                    </div>
-                )}
-            </div>
+             </div>
         )
     }
 
     return (
         <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square max-h-[250px]"
+            className="mx-auto aspect-square max-h-[300px]"
         >
         <PieChart>
             <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent hideLabel />}
+                content={<ChartTooltipContent 
+                    hideLabel 
+                    formatter={(value, name) => (
+                        <div className="flex flex-col">
+                            <span className="capitalize">{name}</span>
+                            <span className="font-bold">{formatCurrency(Number(value), currency)}</span>
+                        </div>
+                    )}
+                />}
             />
             <Pie
                 data={activeData}
                 dataKey="totalProductionCost"
                 nameKey="name"
-                innerRadius={60}
+                innerRadius={70}
+                outerRadius={90}
                 strokeWidth={5}
+                paddingAngle={activeData.length > 1 ? 2 : 0}
             >
              <Label
                 content={({ viewBox }) => {
@@ -92,14 +89,14 @@ export function VariableCostPieChart({ data, currency }: VariableCostPieChartPro
                       <tspan
                         x={viewBox.cx}
                         y={viewBox.cy}
-                        className="fill-foreground text-3xl font-bold"
+                        className="fill-foreground text-3xl font-bold font-headline"
                       >
-                        {formatCurrency(total, currency)}
+                        {formatCurrency(total, currency).slice(0,-3)}
                       </tspan>
                       <tspan
                         x={viewBox.cx}
-                        y={(viewBox.cy || 0) + 24}
-                        className="fill-muted-foreground"
+                        y={(viewBox.cy || 0) + 20}
+                        className="fill-muted-foreground text-sm"
                       >
                         Total
                       </tspan>
