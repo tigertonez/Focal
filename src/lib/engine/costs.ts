@@ -55,12 +55,10 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 
 const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
     const { preOrder, forecastMonths } = inputs.parameters;
-    const timelineDuration = preOrder ? forecastMonths : forecastMonths + 1;
     const salesStartMonth = preOrder ? 0 : 1;
-    const numberOfSalesMonths = preOrder ? forecastMonths : forecastMonths;
+    const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths + 1; // M0 to M12 or M1 to M12
+    const salesMonths = preOrder ? forecastMonths + 1 : forecastMonths;
 
-
-    // Initialize timeline with empty cost objects for each month
     const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i }));
 
     const salesWeights = getAggregatedSalesWeights(inputs);
@@ -74,9 +72,9 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
             
             case 'Allocated Monthly':
-                if (numberOfSalesMonths > 0) {
-                    const monthlyAmount = cost.amount / numberOfSalesMonths;
-                    for (let i = 0; i < numberOfSalesMonths; i++) {
+                if (salesMonths > 0) {
+                    const monthlyAmount = cost.amount / salesMonths;
+                    for (let i = 0; i < salesMonths; i++) {
                         const timelineIndex = salesStartMonth + i;
                         if (timeline[timelineIndex]) {
                            timeline[timelineIndex][cost.name] = (timeline[timelineIndex][cost.name] || 0) + monthlyAmount;
@@ -86,7 +84,7 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
 
             case 'Allocated Quarterly':
-                const quarters = Math.ceil(numberOfSalesMonths / 3);
+                const quarters = Math.ceil(salesMonths / 3);
                 if (quarters > 0) {
                     const quarterlyAmount = cost.amount / quarters;
                     for (let q = 0; q < quarters; q++) {
@@ -100,9 +98,9 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
 
             case 'Allocated According to Sales':
-                 for (let i = 0; i < numberOfSalesMonths; i++) {
+                 for (let i = 0; i < forecastMonths; i++) {
                     const timelineIndex = salesStartMonth + i;
-                    if (timeline[timelineIndex]) {
+                    if (timeline[timelineIndex] && salesWeights[i]) {
                         const distributedAmount = cost.amount * salesWeights[i];
                         timeline[timelineIndex][cost.name] = (timeline[timelineIndex][cost.name] || 0) + distributedAmount;
                     }
@@ -132,7 +130,7 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             }
         });
 
-        const { preOrder, forecastMonths } = inputs.parameters;
+        const { preOrder } = inputs.parameters;
         
         // --- Variable Costs ---
         let totalPlannedUnits = 0;
@@ -166,17 +164,15 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
         const monthlyTimeline = buildFixedCostTimeline(inputs);
         
         // --- Add variable costs to the timeline ---
-        // Deposit is always paid in Month 0
-        monthlyTimeline[0]['Deposits'] = (monthlyTimeline[0]['Deposits'] || 0) + totalDepositsPaid;
+        const depositPaymentMonth = preOrder ? 0 : 1;
+        const finalPaymentMonth = preOrder ? 1 : 1; // Final payment is now always Month 1
 
-        // Final payment depends on pre-order
-        const finalPaymentMonth = preOrder ? 1 : 2; 
+        if (monthlyTimeline[depositPaymentMonth]) {
+            monthlyTimeline[depositPaymentMonth]['Deposits'] = (monthlyTimeline[depositPaymentMonth]['Deposits'] || 0) + totalDepositsPaid;
+        }
+
         if (monthlyTimeline[finalPaymentMonth]) {
             monthlyTimeline[finalPaymentMonth]['Final Payments'] = (monthlyTimeline[finalPaymentMonth]['Final Payments'] || 0) + totalFinalPayments;
-        } else {
-            // Handle edge case where timeline is too short for final payment
-            const lastMonth = monthlyTimeline.length - 1;
-            monthlyTimeline[lastMonth]['Final Payments'] = (monthlyTimeline[lastMonth]['Final Payments'] || 0) + totalFinalPayments;
         }
         
         const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => sum + cost.amount, 0);
@@ -205,8 +201,12 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             allKeys.forEach(key => {
                 completeMonth[key] = monthData[key] || 0;
             });
+            // remove month 0 if preOrder is false
+             if (!preOrder && completeMonth.month === 0) {
+                return null;
+            }
             return MonthlyCostSchema.parse(completeMonth);
-        });
+        }).filter(Boolean) as MonthlyCost[];
 
 
         return { 
