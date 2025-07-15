@@ -172,28 +172,29 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     setProactiveAnalysis(null);
 
-    const validationResult = EngineInputSchema.safeParse(inputs);
-    if (!validationResult.success) {
-      const errorMessage = validationResult.error.errors[0].message;
-      setError(errorMessage);
-      toast({
-        variant: 'destructive',
-        title: 'Validation Error',
-        description: errorMessage,
-      });
-      setLoading(false);
-      return;
-    }
+    // Defer the heavy calculation to allow the UI to update first
+    setTimeout(() => {
+        const validationResult = EngineInputSchema.safeParse(inputs);
+        if (!validationResult.success) {
+          const errorMessage = validationResult.error.errors[0].message;
+          setError(errorMessage);
+          toast({
+            variant: 'destructive',
+            title: 'Validation Error',
+            description: errorMessage,
+          });
+          setLoading(false);
+          return;
+        }
 
-    try {
-        const validatedInputs = validationResult.data;
-        const costResults = calculateCosts(validatedInputs);
-        const newResults: EngineOutput = {
-          costSummary: costResults.costSummary,
-          monthlyCosts: costResults.monthlyCosts,
-        };
+        try {
+            const validatedInputs = validationResult.data;
+            const costResults = calculateCosts(validatedInputs);
+            const newResults: EngineOutput = {
+              costSummary: costResults.costSummary,
+              monthlyCosts: costResults.monthlyCosts,
+            };
 
-        setTimeout(() => {
             setResults(newResults);
             setLoading(false);
             toast({
@@ -202,23 +203,23 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             });
             // Run proactive analysis after results are set
             runProactiveAnalysis();
-        }, 500);
 
-    } catch (e) {
-        let errorMessage = 'An unknown error occurred.';
-        if (e instanceof ZodError) {
-            errorMessage = e.errors.map(error => error.message).join(' ');
-        } else if (e instanceof Error) {
-            errorMessage = e.message;
+        } catch (e) {
+            let errorMessage = 'An unknown error occurred.';
+            if (e instanceof ZodError) {
+                errorMessage = e.errors.map(error => error.message).join(' ');
+            } else if (e instanceof Error) {
+                errorMessage = e.message;
+            }
+            setError(errorMessage);
+            toast({
+                variant: 'destructive',
+                title: 'Calculation Error',
+                description: errorMessage,
+            });
+            setLoading(false);
         }
-        setError(errorMessage);
-        toast({
-            variant: 'destructive',
-            title: 'Calculation Error',
-            description: errorMessage,
-        });
-        setLoading(false);
-    }
+    }, 50); // A small delay is enough to allow for a re-render
   };
 
   const value = useMemo(() => ({

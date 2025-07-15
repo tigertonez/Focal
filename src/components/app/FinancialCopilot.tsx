@@ -90,18 +90,18 @@ export function FinancialCopilot() {
   };
   
   return (
-    <Card className="fixed bottom-4 left-4 w-96 z-50 flex flex-col shadow-lg rounded-xl">
+    <Card className="fixed bottom-4 left-4 w-80 z-50 flex flex-col shadow-lg rounded-xl">
         <CardHeader 
-            className="flex flex-row items-center justify-between p-2 border-b cursor-pointer" 
+            className="flex flex-row items-center justify-between p-2 border-b cursor-pointer relative" 
             onClick={() => setIsExpanded(!isExpanded)}
         >
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Bot size={16} />
                 Financial Copilot
-                {proactiveAnalysis && !isExpanded && (
-                    <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-destructive" />
-                )}
             </CardTitle>
+            {proactiveAnalysis && !isExpanded && (
+                <span className="absolute top-2 right-10 h-2 w-2 rounded-full bg-destructive" />
+            )}
             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </CardHeader>
         <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-40" : "max-h-0")}>
