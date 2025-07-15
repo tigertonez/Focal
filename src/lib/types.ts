@@ -82,12 +82,21 @@ export const MonthlyCostSchema = z.object({
 }).catchall(z.number());
 export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
 
-// Revenue-related schemas (placeholders)
+// Revenue-related schemas
+export const RevenueProductBreakdownSchema = z.object({
+    name: z.string(),
+    totalRevenue: z.number(),
+    totalSoldUnits: z.number(),
+});
+export type RevenueProductBreakdown = z.infer<typeof RevenueProductBreakdownSchema>;
+
 export const RevenueSummarySchema = z.object({
     totalRevenue: z.number(),
     avgRevenuePerUnit: z.number(),
-    ltv: z.number(),
-    cac: z.number(),
+    totalSoldUnits: z.number(),
+    productBreakdown: z.array(RevenueProductBreakdownSchema),
+    ltv: z.number(), // Placeholder for future implementation
+    cac: z.number(), // Placeholder for future implementation
 });
 export type RevenueSummary = z.infer<typeof RevenueSummarySchema>;
 

@@ -1,5 +1,5 @@
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 // In a real scenario, this would come from a more complex revenue calculation engine.
@@ -56,24 +56,19 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 
 const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
     const { preOrder, forecastMonths } = inputs.parameters;
-    
-    // If preOrder is true, timeline is M0 to M(N-1).
-    // If preOrder is false, timeline is M1 to MN.
     const timelineDuration = preOrder ? forecastMonths : forecastMonths + 1;
     const salesStartMonth = preOrder ? 0 : 1;
     const salesMonths = forecastMonths;
 
-    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
-    if (preOrder) {
-        // Manually ensure timeline starts with month 0 if preOrder is on
-        timeline[0] = { month: 0 };
-        for (let i = 1; i < forecastMonths; i++) {
-            timeline[i] = { month: i };
+    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
+
+    if (!preOrder) {
+        // Shift months to be 1-based if not pre-order
+        for(let i=0; i < timeline.length; i++) {
+            timeline[i].month = i + 1;
         }
-    } else {
-         for (let i = 0; i < forecastMonths + 1; i++) {
-            timeline[i] = { month: i };
-        }
+        // Remove month 0
+        timeline.shift();
     }
 
 
@@ -84,13 +79,9 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
         
         switch (schedule) {
             case 'Paid Up-Front':
-                 if (timeline.some(t => t.month === 0)) {
-                    const month0 = timeline.find(t => t.month === 0)!;
-                    month0[cost.name] = (month0[cost.name] || 0) + cost.amount;
-                } else if (timeline.some(t => t.month === 1)) {
-                    // Fallback to month 1 if no month 0 (which shouldn't happen with our logic)
-                    const month1 = timeline.find(t => t.month === 1)!;
-                    month1[cost.name] = (month1[cost.name] || 0) + cost.amount;
+                const firstMonth = timeline.find(t => t.month === (preOrder ? 0 : 1));
+                if (firstMonth) {
+                    firstMonth[cost.name] = (firstMonth[cost.name] || 0) + cost.amount;
                 }
                 break;
             
@@ -157,8 +148,67 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             }
         });
 
-        const { preOrder } = inputs.parameters;
+        const { preOrder, forecastMonths } = inputs.parameters;
+        const salesStartMonth = preOrder ? 0 : 1;
         
+        // --- REVENUE CALCULATIONS ---
+        const timelineDuration = preOrder ? forecastMonths : forecastMonths + 1;
+        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
+        if (!preOrder) {
+            monthlyRevenueTimeline.shift();
+            for(let i = 0; i < monthlyRevenueTimeline.length; i++) {
+                monthlyRevenueTimeline[i].month = i + 1;
+            }
+        }
+
+        const productBreakdown = inputs.products.map(product => {
+            const soldUnits = (product.plannedUnits || 0) * ((product.sellThrough || 0) / 100);
+            const totalRevenue = soldUnits * (product.sellPrice || 0);
+            const salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
+
+            for (let i = 0; i < forecastMonths; i++) {
+                const currentMonth = salesStartMonth + i;
+                const timelineMonth = monthlyRevenueTimeline.find(t => t.month === currentMonth);
+                if (timelineMonth) {
+                    const monthlyProductRevenue = totalRevenue * salesWeights[i];
+                    timelineMonth[product.productName] = (timelineMonth[product.productName] || 0) + monthlyProductRevenue;
+                }
+            }
+
+            return {
+                name: product.productName,
+                totalRevenue: totalRevenue,
+                totalSoldUnits: soldUnits,
+            };
+        });
+        
+        const totalSoldUnits = productBreakdown.reduce((sum, p) => sum + p.totalSoldUnits, 0);
+        const totalRevenue = productBreakdown.reduce((sum, p) => sum + p.totalRevenue, 0);
+        const avgRevenuePerUnit = totalSoldUnits > 0 ? totalRevenue / totalSoldUnits : 0;
+
+        const revenueSummary = {
+            totalRevenue,
+            avgRevenuePerUnit,
+            totalSoldUnits,
+            productBreakdown,
+            ltv: 0, // Placeholder
+            cac: 0, // Placeholder
+        };
+        
+        const allRevenueKeys = new Set<string>(['month']);
+        monthlyRevenueTimeline.forEach(monthData => {
+            Object.keys(monthData).forEach(key => allRevenueKeys.add(key));
+        });
+
+        const monthlyRevenue = monthlyRevenueTimeline.map(monthData => {
+            const completeMonth: Record<string, any> = {};
+            allRevenueKeys.forEach(key => {
+                completeMonth[key] = monthData[key] || 0;
+            });
+            return MonthlyRevenueSchema.parse(completeMonth);
+        }).filter(Boolean);
+
+
         // --- COST CALCULATIONS ---
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -234,18 +284,18 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         }).filter(Boolean) as MonthlyCost[];
 
 
-        // --- REVENUE, PROFIT, CASH FLOW (PLACEHOLDERS) ---
+        // --- PROFIT, CASH FLOW (PLACEHOLDERS) ---
         // This section will be built out in future steps.
 
         return { 
             costSummary,
             monthlyCosts,
+            revenueSummary,
+            monthlyRevenue,
             // Placeholders for future data
-            revenueSummary: { totalRevenue: 0, avgRevenuePerUnit: 0, ltv: 0, cac: 0 },
             profitSummary: { grossProfit: 0, operatingProfit: 0, netProfit: 0 },
-            cashFlowSummary: { endingCashBalance: 0, runway: 0 },
-            monthlyRevenue: [],
             monthlyProfit: [],
+            cashFlowSummary: { endingCashBalance: 0, runway: 0 },
             monthlyCashFlow: [],
         };
 
