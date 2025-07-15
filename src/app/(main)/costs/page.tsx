@@ -32,7 +32,7 @@ const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts:
             <TableBody>
                 {monthlyCosts.map((month, i) => (
                     <TableRow key={i}>
-                        <TableCell className="font-medium">{preOrder ? i : i + 1}</TableCell>
+                        <TableCell className="font-medium">{preOrder ? month.month : month.month + 1}</TableCell>
                         <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
                         <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
                         <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
@@ -66,7 +66,7 @@ export default function CostsPage() {
         );
     }
     
-    if (!costSummary) {
+    if (!costSummary || !monthlyCosts) {
         return <CostsPageSkeleton />;
     }
     
