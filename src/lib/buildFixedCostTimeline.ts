@@ -9,10 +9,9 @@ export function buildFixedCostTimeline(
 ): number[] {
   const tl: number[] = Array(forecastMonths).fill(0);
   
-  // The first *sales* month. If preOrder is on, this is index 1. Otherwise, it's index 0.
-  // In pre-order mode, some costs might start from month 0, and recurring from month 1.
   const firstSalesMonthIndex = preOrder ? 1 : 0;
-  
+  const salesCurveMonths = forecastMonths - firstSalesMonthIndex;
+
   const add = (m: number, val: number) => { 
     if (m >= 0 && m < forecastMonths) {
       tl[m] += val;
@@ -20,27 +19,38 @@ export function buildFixedCostTimeline(
   };
 
   fixedCosts.forEach(fc => {
-    const A = +fc.amount;
+    const totalAmount = +fc.amount;
 
-    if (fc.paymentSchedule === 'According to Sales') {
-        // Sales weights are now calculated for the entire timeline, including a potential month 0.
-        // So we can just apply them directly.
-        salesWeights.forEach((w, i) => add(i, A * w));
-        return; 
-    }
-    
+    if (totalAmount === 0) return;
+
     switch (fc.paymentSchedule || 'Up-Front') {
+      case 'According to Sales':
+        salesWeights.forEach((weight, monthIndex) => {
+          add(monthIndex, totalAmount * weight);
+        });
+        break;
+
       case 'Monthly':
-        // Monthly costs start in the first *sales* month.
-        for (let m = firstSalesMonthIndex; m < forecastMonths; m++) add(m, A);
+        if (salesCurveMonths > 0) {
+          const monthlyAmount = totalAmount / salesCurveMonths;
+          for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
+            add(m, monthlyAmount);
+          }
+        }
         break;
+
       case 'Quarterly':
-        // Quarterly costs start in the first *sales* month.
-        for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) add(m, A);
+        if (salesCurveMonths > 0) {
+          const numQuarters = Math.ceil(salesCurveMonths / 3);
+          const quarterlyAmount = totalAmount / numQuarters;
+          for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
+            add(m, quarterlyAmount);
+          }
+        }
         break;
+        
       case 'Up-Front':
-        // If pre-order is on, Up-Front costs are in month 0. Otherwise, first sales month.
-        add(preOrder ? 0 : firstSalesMonthIndex, A);
+        add(preOrder ? 0 : firstSalesMonthIndex, totalAmount);
         break;
     }
   });
@@ -52,9 +62,8 @@ export function getAggregatedSalesWeights(products: Product[], forecastMonths: n
     const aggregatedWeights = Array(forecastMonths).fill(0);
     let totalRevenue = 0;
     
-    // The number of months that have sales. If pre-order, the first month (0) is for pre-sales.
-    // So the "sales curve" is distributed over `forecastMonths` if pre-order, or `forecastMonths` if not.
     const salesCurveMonths = preOrder ? forecastMonths : forecastMonths;
+    const salesStartIndex = preOrder ? 1 : 0;
 
     if (!products || products.length === 0) return aggregatedWeights;
 
@@ -90,26 +99,32 @@ export function getAggregatedSalesWeights(products: Product[], forecastMonths: n
       }
       return weights;
   }
-
-    const productRevenues = products.map(p => {
-        const weights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
+    
+    const productSalesWeights = products.map(p => {
+        const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
         const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
         totalRevenue += productRevenue;
-        return weights.map(w => w * productRevenue);
+        return { weights: singleProductWeights, revenue: productRevenue };
     });
 
-    if (totalRevenue === 0 && forecastMonths > 0) {
-        return Array(forecastMonths).fill(1 / forecastMonths);
+    if (totalRevenue === 0) {
+        if (forecastMonths > 0) {
+            const evenWeight = 1 / forecastMonths;
+            return Array(forecastMonths).fill(evenWeight);
+        }
+        return aggregatedWeights;
     }
     
-    if (totalRevenue > 0) {
-      for (let i = 0; i < forecastMonths; i++) {
-          let monthlyTotalRevenue = 0;
-          productRevenues.forEach(revenues => {
-              monthlyTotalRevenue += (revenues[i] || 0); // ensure we don't add undefined
-          });
-          aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
-      }
+    // Distribute weights into the main timeline array
+    for (let i = 0; i < forecastMonths; i++) {
+      let monthlyTotalRevenue = 0;
+      productSalesWeights.forEach(({ weights, revenue }) => {
+        const weightIndex = i - salesStartIndex;
+        if (weightIndex >= 0 && weightIndex < weights.length) {
+          monthlyTotalRevenue += weights[weightIndex] * revenue;
+        }
+      });
+      aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
     }
     
     return aggregatedWeights;
