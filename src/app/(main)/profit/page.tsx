@@ -6,7 +6,8 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 
 export default function ProfitPage() {
-  // In the future, a `useProfit` hook would provide this data.
+  // In the future, this page will be converted to a Server Component
+  // that fetches data on the server, similar to the Costs page.
   const profitData = null;
 
   if (!profitData) {

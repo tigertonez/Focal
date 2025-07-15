@@ -6,7 +6,8 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { CashFlowPageSkeleton } from '@/components/app/cash-flow/CashFlowPageSkeleton';
 
 export default function CashFlowPage() {
-  // In the future, a `useCashFlow` hook would provide this data.
+    // In the future, this page will be converted to a Server Component
+    // that fetches data on the server, similar to the Costs page.
   const cashFlowData = null;
 
   if (!cashFlowData) {

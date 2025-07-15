@@ -1,24 +1,21 @@
 
-'use client';
-
 import React from 'react';
-import { useForecast } from '@/context/ForecastContext';
-import { useFinancials } from '@/hooks/useFinancials';
-import { KpiCard } from '@/components/app/KpiCard';
+import { getFinancials } from '@/lib/get-financials-server';
 import { SectionHeader } from '@/components/app/SectionHeader';
-import { CostRow } from '@/components/app/costs/CostRow';
-import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/lib/utils';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
+import { KpiCard } from '@/components/app/KpiCard';
+import { formatCurrency } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
-import { PageDataProvider } from '@/components/app/PageDataProvider';
-import type { EngineOutput } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
+import { CostRow } from '@/components/app/costs/CostRow';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
+import type { EngineOutput, EngineInput } from '@/lib/types';
 
 
-function CostsPageContent({ data }: { data: EngineOutput }) {
-    const { inputs } = useForecast();
+function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
     const preOrder = inputs.parameters.preOrder;
@@ -110,14 +107,28 @@ function CostsPageContent({ data }: { data: EngineOutput }) {
     );
 }
 
+export default async function CostsPage() {
+    const { data, inputs, error } = await getFinancials();
 
-export default function CostsPage() {
-    return (
-        <PageDataProvider
-            useDataHook={useFinancials}
-            loadingComponent={<CostsPageSkeleton />}
-        >
-            {(data) => <CostsPageContent data={data} />}
-        </PageDataProvider>
-    );
+    if (error) {
+        return (
+            <div className="p-4 md:p-8">
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertDescription>
+                        {error} Please correct the issues on the Inputs page and try again.
+                    </AlertDescription>
+                </Alert>
+            </div>
+        );
+    }
+
+    if (!data || !inputs) {
+        // This can happen if the user hasn't generated a report yet.
+        // We show the skeleton, which invites them to the input page.
+        return <CostsPageSkeleton />;
+    }
+
+    return <CostsPageContent data={data} inputs={inputs} />;
 }

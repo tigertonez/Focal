@@ -2,10 +2,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { useForecast } from '@/context/ForecastContext';
+import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info, Bot } from 'lucide-react';
+import { PlusCircle, Info, Bot, Loader2 } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
@@ -48,6 +48,8 @@ export default function InputsPage() {
     runProactiveAnalysis,
     setIsCopilotOpen,
   } = useForecast();
+
+  const { getReport, isLoading } = useFinancials();
 
   const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
@@ -175,11 +177,10 @@ export default function InputsPage() {
             Save Draft
           </Button>
           
-          <Link href="/revenue" passHref>
-             <Button size="lg" className="w-48">
+           <Button size="lg" className="w-48" onClick={getReport} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Get Report
             </Button>
-          </Link>
           
           <TooltipProvider>
             <Tooltip>

@@ -5,21 +5,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { EngineInputSchema, type EngineOutput } from '@/lib/types';
 import { debounce } from 'lodash-es';
+import { useRouter } from 'next/navigation';
+import { useToast } from './use-toast';
 
 export const useFinancials = () => {
     const { inputs } = useForecast();
+    const router = useRouter();
+    const { toast } = useToast();
     const [state, setState] = useState<{
-        data: EngineOutput | null;
         error: string | null;
         isLoading: boolean;
     }>({
-        data: null,
         error: null,
-        isLoading: true,
+        isLoading: false,
     });
 
-    const fetchFinancials = useCallback(debounce(async (validatedInputs) => {
-        setState(prev => ({ ...prev, isLoading: true, error: null }));
+    const runCalculation = useCallback(debounce(async (validatedInputs) => {
+        setState({ isLoading: true, error: null });
         try {
             const response = await fetch('/api/ask', {
                 method: 'POST',
@@ -34,32 +36,44 @@ export const useFinancials = () => {
                 const errorData = await response.json();
                 throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
             }
+            
+            // On success, redirect to the costs page to show the results
+            // The data is available on the server via cookies, so no need to pass it here
+            router.push('/costs');
+            router.refresh(); // Important to trigger a refresh to fetch new server data
 
-            const result = await response.json();
-            setState({ data: result, error: null, isLoading: false });
         } catch (e: any) {
-            // Keep previous data on error to prevent the UI from blanking out on minor input validation issues
-            setState(prev => ({ ...prev, error: e.message || 'An unknown error occurred.', isLoading: false }));
+            setState({ error: e.message || 'An unknown error occurred.', isLoading: false });
+            toast({
+                variant: 'destructive',
+                title: 'Calculation Error',
+                description: e.message || 'An unknown error occurred.',
+            });
+        } finally {
+             // In most cases a redirect will happen, but if not, stop loading.
+             setState(prev => ({ ...prev, isLoading: false }));
         }
-    }, 500), []); // Debounce API calls by 500ms
+    }, 500), [router, toast]);
 
-    useEffect(() => {
+    const getReport = () => {
         const validationResult = EngineInputSchema.safeParse(inputs);
         if (validationResult.success) {
-            fetchFinancials(validationResult.data);
+            runCalculation(validationResult.data);
         } else {
             const firstError = validationResult.error.errors[0]?.message || 'Invalid input.';
-            // Don't clear data if there's a validation error, just show the error.
-            setState(prev => ({ ...prev, error: firstError, isLoading: false }));
+            setState({ error: firstError, isLoading: false });
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Input',
+                description: firstError,
+            });
         }
-
-        return () => {
-            fetchFinancials.cancel();
-        };
-    }, [inputs, fetchFinancials]);
-
+    };
+    
+    // This hook now exposes the `getReport` function and the loading/error state
+    // It no longer holds the `data` itself, as that's handled by server components.
     return {
-      data: state.data,
+      getReport,
       error: state.error,
       isLoading: state.isLoading
     };
