@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -29,6 +29,36 @@ interface CostTimelineChartProps {
   fixedCostDefs: FixedCostItem[];
 }
 
+// Custom shape for the bar to handle rounding only the top-most bar in a stack
+const CustomBar = (props: any) => {
+  const { x, y, width, height, fill, background } = props;
+  const dataKey = props.dataKey;
+  const payload = props.payload;
+  
+  // Calculate total for the current stack
+  let total = 0;
+  Object.keys(payload).forEach(key => {
+    if (typeof payload[key] === 'number' && key !== 'month' && key !== 'total' && key !== 'name') {
+      total += payload[key];
+    }
+  });
+
+  // Calculate the value up to the current bar
+  let cumulative = 0;
+  const keys = Object.keys(payload).filter(k => typeof payload[k] === 'number' && k !== 'month' && k !== 'total' && k !== 'name');
+  for (const key of keys) {
+    cumulative += payload[key];
+    if (key === dataKey) break;
+  }
+  
+  // Check if this is the top-most bar with a non-zero value
+  const isTop = cumulative === total;
+  const radius = isTop ? [4, 4, 0, 0] : [0, 0, 0, 0];
+  
+  return <Rectangle x={x} y={y} width={width} height={height} fill={fill} radius={radius} />;
+};
+
+
 export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelineChartProps) {
   const { chartData, chartConfig, costKeys } = React.useMemo(() => {
     const monthlyData = data.map(month => ({
@@ -46,7 +76,6 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
     });
 
     const sortedCostKeys = Array.from(allCostKeys).sort((a, b) => {
-        // Ensure deposits and final payments are first
         if (a === 'deposits') return -1;
         if (b === 'deposits') return 1;
         if (a === 'finalPayments') return -1;
@@ -65,7 +94,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
 
       const fixedCostDef = fixedCostMap.get(key);
       if (fixedCostDef) {
-        label = `${fixedCostDef.name} (${fixedCostDef.paymentSchedule})`;
+        label = `${fixedCostDef.name}`;
       }
       
       config[key] = {
@@ -94,7 +123,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
           top: 10,
           right: 10,
           left: 10,
-          bottom: 20,
+          bottom: 10,
         }}
       >
         <CartesianGrid vertical={false} />
@@ -135,7 +164,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
                 dataKey={key} 
                 stackId="a" 
                 fill={`var(--color-${key})`} 
-                radius={[4, 4, 0, 0]} 
+                shape={<CustomBar />}
             />
         ))}
       </BarChart>
