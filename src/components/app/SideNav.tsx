@@ -13,7 +13,6 @@ import {
   Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
 
 
@@ -87,17 +86,10 @@ const MobileNav = () => (
 
 
 export function SideNav() {
-  const isMobile = useIsMobile();
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    // Render the desktop version on the server to avoid hydration mismatch
-    return <DesktopNav />;
-  }
-  
-  return isMobile ? <MobileNav /> : <DesktopNav />;
+  return (
+    <>
+      <MobileNav />
+      <DesktopNav />
+    </>
+  );
 }
