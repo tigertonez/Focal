@@ -11,7 +11,9 @@ function buildFixedCostTimeline(
   ): { timeline: { [key: string]: number }[], totalFixedInTimeline: number } {
     const timeline: { [key: string]: number }[] = Array.from({ length: forecastMonths }, () => ({}));
     
+    // Determine the first month sales can occur
     const firstSalesMonthIndex = preOrder ? 1 : 0;
+    // Determine the total number of months where sales happen
     const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
 
     const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
@@ -45,17 +47,18 @@ function buildFixedCostTimeline(
       return weights;
     }
 
+    // Calculate a single, aggregated sales curve based on all products' revenue contributions
     const aggregatedSalesWeights = Array(forecastMonths).fill(0);
     if (products?.length > 0 && salesCurveMonths > 0) {
-      let totalRevenue = 0;
+      let totalProjectedRevenue = 0;
       const productSalesData = products.map(p => {
         const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
         const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
-        totalRevenue += productRevenue;
+        totalProjectedRevenue += productRevenue;
         return { weights: singleProductWeights, revenue: productRevenue };
       });
 
-      if (totalRevenue > 0) {
+      if (totalProjectedRevenue > 0) {
         for (let i = 0; i < salesCurveMonths; i++) {
           const timelineIndex = i + firstSalesMonthIndex;
           let monthlyTotalRevenue = 0;
@@ -64,9 +67,7 @@ function buildFixedCostTimeline(
               monthlyTotalRevenue += weights[i] * revenue;
             }
           });
-          if (totalRevenue > 0) {
-            aggregatedSalesWeights[timelineIndex] = monthlyTotalRevenue / totalRevenue;
-          }
+          aggregatedSalesWeights[timelineIndex] = monthlyTotalRevenue / totalProjectedRevenue;
         }
       }
     }
@@ -147,6 +148,7 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
         });
 
         const { preOrder, forecastMonths: baseForecastMonths } = inputs.parameters;
+        // The total number of months on the timeline chart
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
         const { timeline: fixedCostTimelineData, totalFixedInTimeline } = buildFixedCostTimeline(
@@ -208,16 +210,19 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             ...fixedCostTimelineData[i],
         }));
         
+        // Deposits are paid in Month 0 if pre-order, otherwise in the first sales month (which is also index 0)
         const depositMonth = preOrder ? 0 : 0; 
         if (depositMonth < monthlyCosts.length) {
             monthlyCosts[depositMonth].deposits += totalDepositsPaid;
         }
 
+        // Final payments are made in Month 1 if pre-order, otherwise in the second sales month (index 1)
         const finalPaymentMonth = preOrder ? 1 : 1; 
         if (finalPaymentMonth < monthlyCosts.length) {
             monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
         }
         
+        // Sum up all costs for each month to get a monthly total
         monthlyCosts.forEach(month => {
             month.total = Object.entries(month)
                 .filter(([key]) => key !== 'month' && key !== 'name')

@@ -29,30 +29,25 @@ interface CostTimelineChartProps {
   fixedCostDefs: FixedCostItem[];
 }
 
-// Custom shape for the bar to handle rounding only the top-most bar in a stack
 const CustomBar = (props: any) => {
-  const { x, y, width, height, fill, background } = props;
+  const { x, y, width, height, fill } = props;
   const dataKey = props.dataKey;
   const payload = props.payload;
   
-  // Calculate total for the current stack
-  let total = 0;
-  Object.keys(payload).forEach(key => {
-    if (typeof payload[key] === 'number' && key !== 'month' && key !== 'total' && key !== 'name') {
-      total += payload[key];
-    }
+  const costKeys = Object.keys(payload).filter(k => typeof payload[k] === 'number' && k !== 'month' && k !== 'total' && k !== 'name');
+
+  let totalForStack = 0;
+  costKeys.forEach(key => {
+    totalForStack += payload[key] ?? 0;
   });
 
-  // Calculate the value up to the current bar
-  let cumulative = 0;
-  const keys = Object.keys(payload).filter(k => typeof payload[k] === 'number' && k !== 'month' && k !== 'total' && k !== 'name');
-  for (const key of keys) {
-    cumulative += payload[key];
+  let cumulativeValue = 0;
+  for (const key of costKeys) {
+    cumulativeValue += payload[key] ?? 0;
     if (key === dataKey) break;
   }
   
-  // Check if this is the top-most bar with a non-zero value
-  const isTop = cumulative === total;
+  const isTop = cumulativeValue === totalForStack && totalForStack > 0;
   const radius = isTop ? [4, 4, 0, 0] : [0, 0, 0, 0];
   
   return <Rectangle x={x} y={y} width={width} height={height} fill={fill} radius={radius} />;
@@ -69,7 +64,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
     const allCostKeys = new Set<string>();
     monthlyData.forEach(month => {
       Object.keys(month).forEach(key => {
-        if (key !== 'month' && key !== 'name' && key !== 'total' && month[key] > 0) {
+        if (key !== 'month' && key !== 'name' && key !== 'total' && typeof month[key] === 'number' && month[key] > 0) {
           allCostKeys.add(key);
         }
       });
@@ -87,7 +82,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
     const fixedCostMap = new Map(fixedCostDefs.map(fc => [fc.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(), fc]));
 
     sortedCostKeys.forEach((key, index) => {
-      let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      let label = key;
       
       if (key === 'deposits') label = 'Deposits';
       if (key === 'finalPayments') label = 'Final Payments';
@@ -143,6 +138,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
           tickFormatter={(value) => formatCurrency(Number(value), currency).slice(0, -3)}
         />
         <ChartTooltip
+          cursor={false}
           content={
             <ChartTooltipContent
               labelFormatter={(label) => `Month ${label.substring(1)}`}
