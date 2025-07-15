@@ -1,0 +1,24 @@
+
+{
+  "inputs": {
+    "productName": "Pro Widget",
+    "launchMonth": "2024-01-01",
+    "horizonMonths": 24,
+    "preOrderMonth0": true,
+    "initialSales": 1000,
+    "salesCurve": "steady",
+    "price": 49.99,
+    "cogsPercentage": 30,
+    "posChannelEnabled": true,
+    "posSalesPercentage": 15,
+    "fixedCosts": [
+      { "name": "Salaries", "amount": 15000 },
+      { "name": "Rent", "amount": 5000 },
+      { "name": "Marketing", "amount": 2000 }
+    ]
+  },
+  "settings": {
+    "planningBuffer": 15,
+    "taxRate": 20
+  }
+}
