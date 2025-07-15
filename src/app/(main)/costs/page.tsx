@@ -12,8 +12,9 @@ import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
-import { ChartWrapper } from '@/components/app/ChartWrapper';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 export default function CostsPage() {
     const { inputs } = useForecast();
@@ -46,7 +47,8 @@ export default function CostsPage() {
     }
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
-    const totalBaseFixedCosts = costSummary.fixedCosts.reduce((acc, cost) => acc + cost.amount, 0);
+    
+    const totalFixedCostsFromInputs = inputs.fixedCosts.reduce((acc, cost) => acc + cost.amount, 0);
 
 
     return (
@@ -85,56 +87,61 @@ export default function CostsPage() {
             <section className="grid md:grid-cols-2 gap-8 pt-4">
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                        {costSummary.fixedCosts.map(cost => (
-                           <CostRow 
-                               key={cost.name}
-                               label={cost.name}
-                               value={formatCurrency(cost.amount, currency)}
+                    <Card>
+                        <CardContent className="p-4 space-y-3">
+                            {inputs.fixedCosts.map(cost => (
+                               <CostRow 
+                                   key={cost.id}
+                                   label={cost.name}
+                                   value={formatCurrency(cost.amount, currency)}
+                               />
+                            ))}
+                            <Separator className="my-2" />
+                            <CostRow 
+                               label="Total"
+                               value={formatCurrency(totalFixedCostsFromInputs, currency)}
+                               className="font-bold pt-2"
                            />
-                        ))}
-                         {costSummary.planningBuffer > 0 && (
-                            <CostRow
-                                label="Planning Buffer"
-                                value={formatCurrency(costSummary.planningBuffer, currency)}
-                            />
-                        )}
-                        <div className="pt-2 border-t font-bold">
-                           <CostRow 
-                               label="Total Fixed (Base)"
-                               value={formatCurrency(totalBaseFixedCosts + costSummary.planningBuffer, currency)}
-                           />
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
                 
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
-                     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                        {costSummary.variableCosts.map(product => (
-                            <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
-                                <h3 className="font-semibold">{product.name}</h3>
-                                <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
-                                <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
-                                <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                                <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
-                                <CostRow label={`Final Payment (Month ${preOrder ? 1 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
-                            </div>
-                        ))}
-                         <div className="pt-2 border-t font-bold">
-                           <CostRow 
+                     <Card>
+                        <CardContent className="p-4 space-y-4">
+                            {costSummary.variableCosts.map(product => (
+                                <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
+                                    <h3 className="font-semibold">{product.name}</h3>
+                                    <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
+                                    <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
+                                    <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
+                                    <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
+                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
+                                </div>
+                            ))}
+                            <Separator className="my-2" />
+                            <CostRow 
                                label="Total Variable"
                                value={formatCurrency(costSummary.totalVariable, currency)}
+                               className="font-bold pt-2"
                            />
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </section>
             
             <section>
-                <ChartWrapper title="Monthly Cost Timeline">
-                    <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
-                </ChartWrapper>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Cost Timeline</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-48 w-full">
+                            <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
+                        </div>
+                    </CardContent>
+                </Card>
             </section>
         </div>
     );
