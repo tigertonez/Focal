@@ -1,6 +1,6 @@
 
 import { type EngineInput, type CostSummary, type MonthlyCost, type FixedCostItem } from '@/lib/types';
-import { buildFixedCostTimeline, getAggregatedSalesWeights } from '@/lib/buildFixedCostTimeline';
+import { buildFixedCostTimeline } from '@/lib/buildFixedCostTimeline';
 
 export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[] } {
     try {
@@ -23,12 +23,10 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
-        const salesWeights = getAggregatedSalesWeights(inputs.products, timelineMonths, preOrder);
-        
         const fixedCostTimeline = buildFixedCostTimeline(
             inputs.fixedCosts, 
-            timelineMonths, 
-            salesWeights,
+            inputs.products,
+            timelineMonths,
             preOrder
         );
         
@@ -83,20 +81,22 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             month: i,
             deposits: 0,
             finalPayments: 0,
-            fixed: fixedCostTimeline[i].total,
-            fixedBreakdown: fixedCostTimeline[i].breakdown,
-            total: fixedCostTimeline[i].total,
+            fixed: fixedCostTimeline[i]?.total || 0,
+            fixedBreakdown: fixedCostTimeline[i]?.breakdown || [],
+            total: fixedCostTimeline[i]?.total || 0,
         }));
-
+        
         const depositMonth = preOrder ? 0 : 1;
         const finalPaymentMonth = preOrder ? 1 : 2;
 
-        if (monthlyCosts[depositMonth]) {
+        // Ensure depositMonth is within bounds
+        if (depositMonth < monthlyCosts.length) {
             monthlyCosts[depositMonth].deposits += totalDepositsPaid;
             monthlyCosts[depositMonth].total += totalDepositsPaid;
         }
 
-        if (monthlyCosts[finalPaymentMonth]) {
+        // Ensure finalPaymentMonth is within bounds
+        if (finalPaymentMonth < monthlyCosts.length) {
             monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
             monthlyCosts[finalPaymentMonth].total += totalFinalPayments;
         }

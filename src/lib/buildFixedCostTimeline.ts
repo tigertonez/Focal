@@ -11,10 +11,74 @@ interface MonthlyFixedCost {
     breakdown: FixedCostBreakdown[];
 }
 
+const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
+    let weights: number[] = Array(months).fill(0);
+    if (months <= 0) return weights;
+
+    switch (model) {
+        case 'launch':
+            if (months >= 3) { weights[0] = 0.6; weights[1] = 0.3; weights[2] = 0.1; }
+            else if (months === 2) { weights[0] = 0.7; weights[1] = 0.3; }
+            else { weights[0] = 1; }
+            break;
+        case 'even':
+            weights.fill(1 / months);
+            break;
+        case 'seasonal':
+            const peak = months / 2;
+            let totalWeight = 0;
+            for (let i = 0; i < months; i++) {
+                const distance = Math.abs(i - peak);
+                weights[i] = Math.exp(-0.1 * distance * distance);
+                totalWeight += weights[i];
+            }
+            if (totalWeight > 0) { weights = weights.map(w => w / totalWeight); }
+            break;
+        case 'growth':
+            const totalSteps = (months * (months + 1)) / 2;
+            if (totalSteps > 0) { for (let i = 0; i < months; i++) { weights[i] = (i + 1) / totalSteps; } }
+            break;
+    }
+    return weights;
+}
+
+const getAggregatedSalesWeights = (products: Product[], forecastMonths: number, preOrder: boolean): number[] => {
+    const aggregatedWeights = Array(forecastMonths).fill(0);
+    let totalRevenue = 0;
+    
+    const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
+    if (!products || products.length === 0 || salesCurveMonths <= 0) return aggregatedWeights;
+    
+    const productSalesData = products.map(p => {
+        const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
+        const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
+        totalRevenue += productRevenue;
+        return { weights: singleProductWeights, revenue: productRevenue };
+    });
+
+    if (totalRevenue === 0) return aggregatedWeights;
+    
+    const salesStartIndex = preOrder ? 1 : 0;
+    for (let i = 0; i < salesCurveMonths; i++) {
+        const timelineIndex = i + salesStartIndex;
+        let monthlyTotalRevenue = 0;
+        productSalesData.forEach(({ weights, revenue }) => {
+            if (i < weights.length) {
+                monthlyTotalRevenue += weights[i] * revenue;
+            }
+        });
+        if (totalRevenue > 0) {
+            aggregatedWeights[timelineIndex] = monthlyTotalRevenue / totalRevenue;
+        }
+    }
+    
+    return aggregatedWeights;
+}
+
 export function buildFixedCostTimeline(
   fixedCosts: FixedCostItem[],
+  products: Product[],
   forecastMonths: number,
-  salesWeights: number[],
   preOrder: boolean,
 ): MonthlyFixedCost[] {
   const timeline: MonthlyFixedCost[] = Array.from({ length: forecastMonths }, () => ({
@@ -22,6 +86,7 @@ export function buildFixedCostTimeline(
     breakdown: [],
   }));
   
+  const salesWeights = getAggregatedSalesWeights(products, forecastMonths, preOrder);
   const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
   const firstSalesMonthIndex = preOrder ? 1 : 0;
 
@@ -62,9 +127,11 @@ export function buildFixedCostTimeline(
       case 'Quarterly':
         if (salesCurveMonths > 0) {
           const numQuarters = Math.ceil(salesCurveMonths / 3);
-          const quarterlyAmount = totalAmount / numQuarters;
-          for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
-            add(m, quarterlyAmount, fc.name);
+          if (numQuarters > 0) {
+            const quarterlyAmount = totalAmount / numQuarters;
+            for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
+              add(m, quarterlyAmount, fc.name);
+            }
           }
         }
         break;
@@ -83,75 +150,4 @@ export function buildFixedCostTimeline(
       amount: +item.amount.toFixed(2)
     })).sort((a, b) => b.amount - a.amount), // Sort by amount desc
   }));
-}
-
-export function getAggregatedSalesWeights(products: Product[], forecastMonths: number, preOrder: boolean): number[] {
-    const aggregatedWeights = Array(forecastMonths).fill(0);
-    let totalRevenue = 0;
-    
-    // The curve itself is only over the sales months, not pre-order month
-    const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
-
-    if (!products || products.length === 0 || salesCurveMonths <= 0) return aggregatedWeights;
-
-    const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
-      let weights: number[] = Array(months).fill(0);
-      switch (model) {
-          case 'launch':
-              if (months >= 3) { weights[0] = 0.6; weights[1] = 0.3; weights[2] = 0.1; }
-              else if (months === 2) { weights[0] = 0.7; weights[1] = 0.3; }
-              else if (months > 0) { weights[0] = 1; }
-              break;
-          case 'even':
-              if (months > 0) weights.fill(1 / months);
-              break;
-          case 'seasonal':
-              if (months > 0) {
-                  const peak = months / 2;
-                  let totalWeight = 0;
-                  for (let i = 0; i < months; i++) {
-                      const distance = Math.abs(i - peak);
-                      weights[i] = Math.exp(-0.1 * distance * distance);
-                      totalWeight += weights[i];
-                  }
-                  if (totalWeight > 0) { weights = weights.map(w => w / totalWeight); }
-              }
-              break;
-          case 'growth':
-               if (months > 0) {
-                  const totalSteps = (months * (months + 1)) / 2;
-                  if (totalSteps > 0) { for (let i = 0; i < months; i++) { weights[i] = (i + 1) / totalSteps; } }
-               }
-              break;
-      }
-      return weights;
-  }
-    
-    const productSalesData = products.map(p => {
-        const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
-        const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
-        totalRevenue += productRevenue;
-        return { weights: singleProductWeights, revenue: productRevenue };
-    });
-
-    if (totalRevenue === 0) {
-       return aggregatedWeights; // No revenue, no weights
-    }
-    
-    const salesStartIndex = preOrder ? 1 : 0;
-    // Distribute weights into the main timeline array, starting from the correct month
-    for (let i = salesStartIndex; i < forecastMonths; i++) {
-      const weightIndex = i - salesStartIndex;
-      let monthlyTotalRevenue = 0;
-      productSalesData.forEach(({ weights, revenue }) => {
-        if (weightIndex < weights.length) {
-          monthlyTotalRevenue += weights[weightIndex] * revenue;
-        }
-      });
-      if (totalRevenue > 0) {
-        aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
-      }
-    }
-    
-    return aggregatedWeights;
 }
