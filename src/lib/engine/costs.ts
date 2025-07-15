@@ -23,17 +23,13 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         
         // Add a month for pre-order period if active
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
-        const salesForecastMonths = baseForecastMonths; // Sales projections are always over the N months after launch
-
-        // Create a mutable copy of all fixed costs to work with
-        const allFixedCosts: FixedCostItem[] = [...inputs.fixedCosts];
         
-        // Sales weights are calculated for the period *after* launch
-        const salesWeights = getAggregatedSalesWeights(inputs.products, salesForecastMonths);
+        // Sales weights are now calculated over the *entire timeline* including pre-order month if active.
+        const salesWeights = getAggregatedSalesWeights(inputs.products, timelineMonths, preOrder);
         
         // Use ALL fixed costs to build the timeline for consistency.
         const fixedCostTimeline = buildFixedCostTimeline(
-            allFixedCosts, 
+            inputs.fixedCosts, 
             timelineMonths, 
             salesWeights,
             preOrder
@@ -96,18 +92,18 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             total: fixedCostTimeline[i] || 0,
         }));
 
-        const depositMonth = preOrder ? 0 : 0; // Deposit in M0 for pre-order, or M1 (index 0) otherwise.
-        const finalPaymentMonth = preOrder ? 1 : 1; // Final payment in M1 for pre-order, or M2 (index 1) otherwise.
+        const depositMonth = preOrder ? 0 : 0;
+        const finalPaymentMonth = preOrder ? 1 : 1;
 
         // Deposits are paid
-        if (timelineMonths > depositMonth) {
-            monthlyCosts[depositMonth].deposits = totalDepositsPaid;
+        if (monthlyCosts[depositMonth]) {
+            monthlyCosts[depositMonth].deposits += totalDepositsPaid;
             monthlyCosts[depositMonth].total += totalDepositsPaid;
         }
 
         // Final payments are made
-        if (timelineMonths > finalPaymentMonth) {
-            monthlyCosts[finalPaymentMonth].finalPayments = totalFinalPayments;
+        if (monthlyCosts[finalPaymentMonth]) {
+            monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
             monthlyCosts[finalPaymentMonth].total += totalFinalPayments;
         }
         
