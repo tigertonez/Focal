@@ -14,7 +14,7 @@ import { Terminal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
-const CostTimelineTable = ({ monthlyCosts, currency }: { monthlyCosts: any[], currency: string }) => (
+const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: any[], currency: string, preOrder: boolean }) => (
     <div className="overflow-x-auto rounded-lg border">
         <Table>
             <TableHeader>
@@ -29,7 +29,7 @@ const CostTimelineTable = ({ monthlyCosts, currency }: { monthlyCosts: any[], cu
             <TableBody>
                 {monthlyCosts.map((month, i) => (
                     <TableRow key={i}>
-                        <TableCell className="font-medium">{i + 1}</TableCell>
+                        <TableCell className="font-medium">{preOrder ? i : i + 1}</TableCell>
                         <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
                         <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
                         <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
@@ -102,7 +102,7 @@ export default function CostsPage() {
             
             <section className="space-y-4">
                 <h2 className="text-xl font-semibold">Cost Timeline</h2>
-                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} />
+                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
             </section>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -116,10 +116,16 @@ export default function CostsPage() {
                                value={formatCurrency(cost.amount, currency)}
                            />
                         ))}
+                         {costSummary.planningBuffer > 0 && (
+                            <CostRow
+                                label="Planning Buffer"
+                                value={formatCurrency(costSummary.planningBuffer, currency)}
+                            />
+                        )}
                         <div className="pt-2 border-t font-bold">
                            <CostRow 
                                label="Total Fixed (Base)"
-                               value={formatCurrency(totalBaseFixedCosts, currency)}
+                               value={formatCurrency(totalBaseFixedCosts + costSummary.planningBuffer, currency)}
                            />
                         </div>
                     </div>
@@ -150,4 +156,3 @@ export default function CostsPage() {
         </div>
     );
 }
-

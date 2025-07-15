@@ -5,27 +5,46 @@ export function buildFixedCostTimeline(
   fixedCosts: FixedCostItem[],
   forecastMonths: number,
   salesWeights: number[],
+  preOrder: boolean,
 ): number[] {
   const tl: number[] = Array(forecastMonths).fill(0);
-  const add = (m: number, val: number) => { if (m >= 1 && m <= forecastMonths) tl[m - 1] += val; };
+  
+  // If preOrder is true, month 1 is index 1. If false, month 1 is index 0.
+  const month1Index = preOrder ? 1 : 0;
+  
+  const add = (m: number, val: number) => { 
+    if (m >= 0 && m < forecastMonths) {
+      tl[m] += val;
+    }
+  };
 
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
 
     if (fc.paymentSchedule === 'According to Sales') {
-        salesWeights.forEach((w, i) => add(i + 1, A * w));
+        // With preOrder, we assume a 10% marketing spend in month 0
+        if (preOrder) {
+            add(0, A * 0.1);
+            const remainingSalesWeights = salesWeights.slice(1);
+            const remainingTotalWeight = remainingSalesWeights.reduce((s, v) => s + v, 0);
+            if (remainingTotalWeight > 0) {
+              remainingSalesWeights.forEach((w, i) => add(i + 1, (A * 0.9) * (w / remainingTotalWeight)));
+            }
+        } else {
+           salesWeights.forEach((w, i) => add(i, A * w));
+        }
         return; 
     }
     
     switch (fc.paymentSchedule || 'Up-Front') {
       case 'Monthly':
-        for (let m = 1; m <= forecastMonths; m++) add(m, A);
+        for (let m = month1Index; m < forecastMonths; m++) add(m, A);
         break;
       case 'Quarterly':
-        for (let m = 1; m <= forecastMonths; m += 3) add(m, A);
+        for (let m = month1Index; m < forecastMonths; m += 3) add(m, A);
         break;
       case 'Up-Front':
-        add(1, A);
+        add(month1Index, A);
         break;
     }
   });
@@ -45,24 +64,28 @@ export function getAggregatedSalesWeights(products: any[], forecastMonths: numbe
           case 'launch':
               if (forecastMonths >= 3) { weights[0] = 0.6; weights[1] = 0.3; weights[2] = 0.1; }
               else if (forecastMonths === 2) { weights[0] = 0.7; weights[1] = 0.3; }
-              else { weights[0] = 1; }
+              else if (forecastMonths > 0) { weights[0] = 1; }
               break;
           case 'even':
-              weights.fill(1 / forecastMonths);
+              if (forecastMonths > 0) weights.fill(1 / forecastMonths);
               break;
           case 'seasonal':
-              const peak = forecastMonths / 2;
-              let totalWeight = 0;
-              for (let i = 0; i < forecastMonths; i++) {
-                  const distance = Math.abs(i - peak);
-                  weights[i] = Math.exp(-0.1 * distance * distance);
-                  totalWeight += weights[i];
+              if (forecastMonths > 0) {
+                  const peak = forecastMonths / 2;
+                  let totalWeight = 0;
+                  for (let i = 0; i < forecastMonths; i++) {
+                      const distance = Math.abs(i - peak);
+                      weights[i] = Math.exp(-0.1 * distance * distance);
+                      totalWeight += weights[i];
+                  }
+                  if (totalWeight > 0) { weights = weights.map(w => w / totalWeight); }
               }
-              if (totalWeight > 0) { weights = weights.map(w => w / totalWeight); }
               break;
           case 'growth':
-              const totalSteps = (forecastMonths * (forecastMonths + 1)) / 2;
-               if (totalSteps > 0) { for (let i = 0; i < forecastMonths; i++) { weights[i] = (i + 1) / totalSteps; } }
+               if (forecastMonths > 0) {
+                  const totalSteps = (forecastMonths * (forecastMonths + 1)) / 2;
+                  if (totalSteps > 0) { for (let i = 0; i < forecastMonths; i++) { weights[i] = (i + 1) / totalSteps; } }
+               }
               break;
       }
       return weights;
@@ -75,16 +98,18 @@ export function getAggregatedSalesWeights(products: any[], forecastMonths: numbe
         return weights.map(w => w * productRevenue);
     });
 
-    if (totalRevenue === 0) {
+    if (totalRevenue === 0 && forecastMonths > 0) {
         return Array(forecastMonths).fill(1 / forecastMonths);
     }
-
-    for (let i = 0; i < forecastMonths; i++) {
-        let monthlyTotalRevenue = 0;
-        productRevenues.forEach(revenues => {
-            monthlyTotalRevenue += revenues[i];
-        });
-        aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
+    
+    if (totalRevenue > 0) {
+      for (let i = 0; i < forecastMonths; i++) {
+          let monthlyTotalRevenue = 0;
+          productRevenues.forEach(revenues => {
+              monthlyTotalRevenue += revenues[i];
+          });
+          aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
+      }
     }
     
     return aggregatedWeights;

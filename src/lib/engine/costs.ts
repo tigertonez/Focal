@@ -1,5 +1,5 @@
 
-import { type EngineInput, type CostSummary, type MonthlyCost } from '@/lib/types';
+import { type EngineInput, type CostSummary, type MonthlyCost, type FixedCostItem } from '@/lib/types';
 import { buildFixedCostTimeline, getAggregatedSalesWeights } from '@/lib/buildFixedCostTimeline';
 
 export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[] } {
@@ -13,13 +13,37 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         if (inputs.products.some(p => p.unitCost === undefined || p.sellPrice === undefined)) {
              throw new Error('All products must have a Unit Cost and Sell Price.');
         }
-        const forecastMonths = inputs.parameters.forecastMonths;
 
-        const salesWeights = getAggregatedSalesWeights(inputs.products, forecastMonths);
+        const { preOrder, forecastMonths: baseForecastMonths } = inputs.parameters;
+        
+        // Add a month for pre-order period if active
+        const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
+        const salesForecastMonths = baseForecastMonths; // Sales projections are always over the N months after launch
+        const month1Index = preOrder ? 1 : 0; // Month 1 is index 1 if preOrder, else 0
+
+        const allFixedCosts: FixedCostItem[] = [...inputs.fixedCosts];
+        
+        const baseFixedCostsTotal = allFixedCosts.reduce((sum, fc) => sum + fc.amount, 0);
+        const planningBufferAmount = baseFixedCostsTotal * ((inputs.fixedCostsConfig.planningBuffer / 100) || 0);
+
+        // Add planning buffer as a monthly fixed cost if it's greater than 0
+        if (planningBufferAmount > 0) {
+            allFixedCosts.push({
+                id: 'planning_buffer',
+                name: 'Planning Buffer',
+                amount: planningBufferAmount,
+                paymentSchedule: 'Monthly',
+            });
+        }
+        
+        // Sales weights are calculated for the period *after* launch
+        const salesWeights = getAggregatedSalesWeights(inputs.products, salesForecastMonths);
+        
         const fixedCostTimeline = buildFixedCostTimeline(
-            inputs.fixedCosts, 
-            forecastMonths, 
-            salesWeights
+            allFixedCosts, 
+            timelineMonths, 
+            salesWeights,
+            preOrder
         );
         
         const totalFixedCostInTimeline = fixedCostTimeline.reduce((sum, cost) => sum + cost, 0);
@@ -63,25 +87,27 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             variableCosts: variableCostBreakdown,
             totalDepositsPaid,
             totalFinalPayments,
+            planningBuffer: planningBufferAmount,
         };
 
-        const months = forecastMonths;
-        const monthlyCosts: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
-            month: i + 1,
+        const monthlyCosts: MonthlyCost[] = Array.from({ length: timelineMonths }, (_, i) => ({
+            month: i,
             deposits: 0,
             finalPayments: 0,
             fixed: fixedCostTimeline[i] || 0,
             total: fixedCostTimeline[i] || 0,
         }));
 
-        if (months >= 1) {
-            monthlyCosts[0].deposits = totalDepositsPaid;
-            monthlyCosts[0].total += totalDepositsPaid;
+        // Deposits are paid in Month 1
+        if (timelineMonths > month1Index) {
+            monthlyCosts[month1Index].deposits = totalDepositsPaid;
+            monthlyCosts[month1Index].total += totalDepositsPaid;
         }
 
-        if (months >= 2) {
-            monthlyCosts[1].finalPayments = totalFinalPayments;
-            monthlyCosts[1].total += totalFinalPayments;
+        // Final payments are made in Month 2
+        if (timelineMonths > month1Index + 1) {
+            monthlyCosts[month1Index + 1].finalPayments = totalFinalPayments;
+            monthlyCosts[month1Index + 1].total += totalFinalPayments;
         }
         
         return { costSummary, monthlyCosts };
