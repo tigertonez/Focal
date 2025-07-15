@@ -10,77 +10,10 @@ import { CostRow } from '@/components/app/costs/CostRow';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ChevronDown } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Terminal } from 'lucide-react';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { ChartWrapper } from '@/components/app/ChartWrapper';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Button } from '@/components/ui/button';
-import type { MonthlyCost } from '@/lib/types';
-
-
-const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: MonthlyCost[], currency: string, preOrder: boolean }) => (
-    <div className="overflow-x-auto rounded-lg border">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[80px]">Month</TableHead>
-                    <TableHead>Deposits Paid</TableHead>
-                    <TableHead>Final Payments</TableHead>
-                    <TableHead>Fixed Costs</TableHead>
-                    <TableHead className="text-right">Total Monthly Cost</TableHead>
-                    <TableHead className="w-[100px] text-center">Details</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {monthlyCosts.map((month, i) => (
-                    <Collapsible asChild key={i}>
-                        <>
-                            <TableRow>
-                                <TableCell className="font-medium">{preOrder ? month.month : month.month + 1}</TableCell>
-                                <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
-                                <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
-                                <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
-                                <TableCell className="text-right font-semibold">{formatCurrency(month.total, currency)}</TableCell>
-                                <TableCell className="text-center">
-                                    <CollapsibleTrigger asChild>
-                                        <Button variant="ghost" size="sm" disabled={(month.fixedBreakdown || []).length === 0}>
-                                            <ChevronDown className="h-4 w-4" />
-                                            <span className="sr-only">Toggle details</span>
-                                        </Button>
-                                    </CollapsibleTrigger>
-                                </TableCell>
-                            </TableRow>
-                            <CollapsibleContent asChild>
-                                <tr className="bg-muted/50">
-                                    <TableCell colSpan={6} className="p-0">
-                                        <div className="p-4">
-                                            <h4 className="font-semibold mb-2 text-sm">Fixed Cost Breakdown for Month {preOrder ? month.month : month.month + 1}</h4>
-                                            <div className="space-y-1">
-                                                {(month.fixedBreakdown || []).length > 0 ? (
-                                                    (month.fixedBreakdown || []).map((item, idx) => (
-                                                        <CostRow key={idx} label={item.name} value={formatCurrency(item.amount, currency)} className="text-xs" />
-                                                    ))
-                                                ) : (
-                                                    <p className="text-xs text-muted-foreground">No specific fixed costs this month.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                </tr>
-                            </CollapsibleContent>
-                        </>
-                    </Collapsible>
-                ))}
-            </TableBody>
-        </Table>
-    </div>
-);
 
 export default function CostsPage() {
     const { inputs } = useForecast();
@@ -140,12 +73,7 @@ export default function CostsPage() {
                 </ChartWrapper>
             </section>
             
-            <section className="space-y-4 pt-4">
-                <h2 className="text-xl font-semibold">Cost Timeline</h2>
-                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
-            </section>
-
-            <section className="grid md:grid-cols-2 gap-8">
+            <section className="grid md:grid-cols-2 gap-8 pt-4">
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
                     <div className="bg-muted/50 p-4 rounded-lg space-y-2">
