@@ -27,7 +27,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
         updateFixedCost(index, name, value);
     };
 
-    const schedule = cost.paymentSchedule || 'Up-Front';
+    const schedule = cost.paymentSchedule || 'Paid Up-Front';
     const name = cost.name.toLowerCase();
     const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
@@ -70,10 +70,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                          <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                             <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Up-Front">Up-Front</SelectItem>
-                                <SelectItem value="Monthly">Monthly</SelectItem>
-                                <SelectItem value="Quarterly">Quarterly</SelectItem>
-                                {isDynamicCost && <SelectItem value="According to Sales">According to Sales</SelectItem>}
+                                <SelectItem value="Paid Up-Front">Paid Up-Front</SelectItem>
+                                <SelectItem value="Allocated Monthly">Allocated Monthly</SelectItem>
+                                <SelectItem value="Allocated Quarterly">Allocated Quarterly</SelectItem>
+                                <SelectItem value="Allocated According to Sales">Allocated According to Sales</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
