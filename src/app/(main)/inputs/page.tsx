@@ -4,7 +4,7 @@
 import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Info, Bot } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
@@ -21,6 +21,12 @@ import { ChevronRight } from "lucide-react"
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/app/SectionHeader';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
@@ -38,8 +44,7 @@ export default function InputsPage() {
     addProduct,
     addFixedCost,
     saveDraft,
-    calculateForecast,
-    loading,
+    runProactiveAnalysis,
   } = useForecast();
 
   const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,13 +163,19 @@ export default function InputsPage() {
           <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>
-          <Button
-            onClick={calculateForecast}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="mr-2 animate-spin" /> : null}
-            Calculate Forecast
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button onClick={runProactiveAnalysis}>
+                        <Bot className="mr-2" />
+                        Review with AI
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Get an AI-powered review of your inputs.</p>
+                </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </footer>
       </main>
     </div>

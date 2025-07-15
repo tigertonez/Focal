@@ -2,9 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeFinancialData } from '@/ai/flows/analyze-financial-data';
 import { financialCopilot } from '@/ai/flows/financial-copilot';
+import { calculateCosts } from '@/lib/engine/costs';
 import { z } from 'zod';
+import { EngineInputSchema } from '@/lib/types';
 
-// Define schemas for different API actions
+
 const AnalyzeDataSchema = z.object({
   action: z.literal('analyze'),
   financialData: z.any(),
@@ -17,8 +19,13 @@ const CopilotSchema = z.object({
   screenshotDataUri: z.string(),
 });
 
-// Union schema to validate against any of the actions
-const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema]);
+const CalculateCostsSchema = z.object({
+    action: z.literal('calculate-costs'),
+    inputs: EngineInputSchema,
+});
+
+
+const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema, CalculateCostsSchema]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,13 +55,20 @@ export async function POST(req: NextRequest) {
         });
         return NextResponse.json(result);
     }
+    
+    if (action === 'calculate-costs') {
+        const { inputs } = validation.data;
+        // Directly call the lean calculation engine
+        const result = calculateCosts(inputs);
+        return NextResponse.json(result);
+    }
 
-    // This part should not be reachable if the schema is correct
+
     return NextResponse.json({ error: 'Invalid action specified' }, { status: 400 });
 
   } catch (error) {
     console.error('Error in /api/ask:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to process your question.', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process your request.', details: errorMessage }, { status: 500 });
   }
 }

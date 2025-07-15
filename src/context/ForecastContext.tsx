@@ -5,14 +5,11 @@ import React, { createContext, useContext, useState, useMemo, type ReactNode, us
 import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
-import { calculateCosts } from '@/lib/engine/costs';
 import html2canvas from 'html2canvas';
 
 
 interface ForecastContextType {
   inputs: EngineInput;
-  results: EngineOutput | null;
-  error: string | null;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
@@ -21,8 +18,7 @@ interface ForecastContextType {
   addFixedCost: () => void;
   removeFixedCost: (id: string) => void;
   saveDraft: () => void;
-  calculateForecast: () => void;
-  loading: boolean;
+  runProactiveAnalysis: () => void;
   proactiveAnalysis: string | null;
   setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
 }
@@ -63,9 +59,6 @@ const DRAFT_STORAGE_KEY = 'forecastDraft';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
-  const [results, setResults] = useState<EngineOutput | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -166,6 +159,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   
   const runProactiveAnalysis = async () => {
     try {
+        setProactiveAnalysis(null);
         const canvas = await html2canvas(document.body, { logging: false, useCORS: true });
         const screenshotDataUri = canvas.toDataURL('image/png');
         const question = "Review the completed forecast for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
@@ -194,67 +188,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Proactive analysis failed", e); // Log error but don't bother user
     }
   }
-
-  const calculateForecast = () => {
-    setLoading(true);
-    setResults(null);
-    setError(null);
-    setProactiveAnalysis(null);
-
-    // Defer the heavy calculation to allow the UI to update first
-    setTimeout(() => {
-        const validationResult = EngineInputSchema.safeParse(inputs);
-        if (!validationResult.success) {
-          const errorMessage = validationResult.error.errors[0].message;
-          setError(errorMessage);
-          toast({
-            variant: 'destructive',
-            title: 'Validation Error',
-            description: errorMessage,
-          });
-          setLoading(false);
-          return;
-        }
-
-        try {
-            const validatedInputs = validationResult.data;
-            const costResults = calculateCosts(validatedInputs);
-            const newResults: EngineOutput = {
-              costSummary: costResults.costSummary,
-              monthlyCosts: costResults.monthlyCosts,
-            };
-
-            setResults(newResults);
-            setLoading(false);
-            toast({
-                title: "Calculation Complete",
-                description: "Forecast results are ready.",
-            });
-            // Run proactive analysis after results are set
-            runProactiveAnalysis();
-
-        } catch (e) {
-            let errorMessage = 'An unknown error occurred.';
-            if (e instanceof ZodError) {
-                errorMessage = e.errors.map(error => error.message).join(' ');
-            } else if (e instanceof Error) {
-                errorMessage = e.message;
-            }
-            setError(errorMessage);
-            toast({
-                variant: 'destructive',
-                title: 'Calculation Error',
-                description: errorMessage,
-            });
-            setLoading(false);
-        }
-    }, 50); // A small delay is enough to allow for a re-render
-  };
-
+  
   const value = useMemo(() => ({
     inputs,
-    results,
-    error,
     setInputs,
     updateProduct,
     addProduct,
@@ -263,11 +199,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     addFixedCost,
     removeFixedCost,
     saveDraft,
-    calculateForecast,
-    loading,
+    runProactiveAnalysis,
     proactiveAnalysis,
     setProactiveAnalysis,
-  }), [inputs, results, error, loading, proactiveAnalysis]);
+  }), [inputs, proactiveAnalysis]);
 
   return (
     <ForecastContext.Provider value={value}>

@@ -17,13 +17,17 @@ import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 
 export default function CostsPage() {
     const { inputs } = useForecast();
-    const { costSummary, monthlyCosts, error } = useCosts();
+    const { costSummary, monthlyCosts, error, isLoading } = useCosts();
 
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
     const preOrder = inputs.parameters.preOrder;
 
-    if (error) {
+    if (isLoading) {
+        return <CostsPageSkeleton />;
+    }
+
+    if (error && !costSummary) {
         return (
              <div className="p-4 md:p-8">
                 <Alert variant="destructive">
@@ -48,6 +52,17 @@ export default function CostsPage() {
     return (
         <div className="p-4 md:p-8 space-y-8">
             <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
+            
+             {error && (
+                 <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Input Warning</AlertTitle>
+                    <AlertDescription>
+                        {error} The chart below may not be up-to-date.
+                    </AlertDescription>
+                </Alert>
+             )}
+
 
             <section>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
