@@ -47,6 +47,7 @@ export default function CostsPage() {
 
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
+    const preOrder = inputs.parameters.preOrder;
 
     if (error) {
         return (
@@ -140,8 +141,8 @@ export default function CostsPage() {
                                 <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
                                 <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
                                 <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                                <CostRow label="Deposit Paid (Month 1)" value={formatCurrency(product.depositPaid, currency)} />
-                                <CostRow label="Final Payment (Month 2)" value={formatCurrency(product.remainingCost, currency)} />
+                                <CostRow label={`Deposit Paid (Month ${preOrder ? 1 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
+                                <CostRow label={`Final Payment (Month ${preOrder ? 2 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
                             </div>
                         ))}
                          <div className="pt-2 border-t font-bold">
