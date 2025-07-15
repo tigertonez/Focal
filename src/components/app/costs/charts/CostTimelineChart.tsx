@@ -15,15 +15,15 @@ import { formatCurrency } from "@/lib/utils"
 const chartConfig = {
   deposits: {
     label: "Deposits",
-    color: "hsl(var(--chart-1))",
+    color: "#2563eb", // Blue
   },
   finalPayments: {
     label: "Final Payments",
-    color: "hsl(var(--chart-2))",
+    color: "#0d9488", // Teal
   },
   fixed: {
     label: "Fixed Costs",
-    color: "hsl(var(--chart-3))",
+    color: "#64748b", // Slate
   },
 } satisfies ChartConfig
 

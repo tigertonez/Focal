@@ -19,12 +19,13 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+// A clear, distinguishable color palette for the pie chart
 const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "#2563eb", // Blue
+  "#0d9488", // Teal
+  "#9333ea", // Purple
+  "#f97316", // Orange
+  "#ec4899", // Pink
 ];
 
 interface VariableCostPieChartProps {
