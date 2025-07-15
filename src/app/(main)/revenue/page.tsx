@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { getFinancials } from '@/lib/get-financials-server';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -11,6 +12,7 @@ import { Terminal, Users, Target } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart'; // Re-using for revenue timeline
 import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
+import { getFinancials } from '@/lib/get-financials';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const currency = inputs.parameters.currency;
@@ -70,8 +72,24 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
     );
 }
 
-export default async function RevenuePage() {
-    const { data, inputs, error } = await getFinancials();
+export default function RevenuePage() {
+    const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
+        data: null,
+        inputs: null,
+        error: null,
+        isLoading: true,
+    });
+
+    useEffect(() => {
+        const result = getFinancials();
+        setFinancials({ ...result, isLoading: false });
+    }, []);
+
+    const { data, inputs, error, isLoading } = financials;
+
+    if (isLoading) {
+        return <RevenuePageSkeleton />;
+    }
 
     if (error) {
         return (
@@ -86,7 +104,7 @@ export default async function RevenuePage() {
             </div>
         );
     }
-
+    
     if (!data || !inputs) {
         return <RevenuePageSkeleton />;
     }

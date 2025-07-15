@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { getFinancials } from '@/lib/get-financials-server';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -13,7 +14,7 @@ import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
-
+import { getFinancials } from '@/lib/get-financials';
 
 function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
     const isManualMode = inputs.realtime.dataSource === 'Manual';
@@ -109,8 +110,24 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
     );
 }
 
-export default async function CostsPage() {
-    const { data, inputs, error } = await getFinancials();
+export default function CostsPage() {
+    const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
+        data: null,
+        inputs: null,
+        error: null,
+        isLoading: true,
+    });
+
+    useEffect(() => {
+        const result = getFinancials();
+        setFinancials({ ...result, isLoading: false });
+    }, []);
+
+    const { data, inputs, error, isLoading } = financials;
+
+    if (isLoading) {
+        return <CostsPageSkeleton />;
+    }
 
     if (error) {
         return (
@@ -127,8 +144,6 @@ export default async function CostsPage() {
     }
 
     if (!data || !inputs) {
-        // This can happen if the user hasn't generated a report yet.
-        // We show the skeleton, which invites them to the input page.
         return <CostsPageSkeleton />;
     }
 

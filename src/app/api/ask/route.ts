@@ -5,7 +5,6 @@ import { financialCopilot } from '@/ai/flows/financial-copilot';
 import { calculateFinancials } from '@/lib/engine/financial-engine';
 import { z } from 'zod';
 import { EngineInputSchema } from '@/lib/types';
-import { cookies } from 'next/headers';
 
 
 const AnalyzeDataSchema = z.object({
@@ -32,8 +31,6 @@ const CalculateFinancialsSchema = z.object({
 
 
 const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema, CalculateFinancialsSchema]);
-
-const COOKIE_NAME = 'forecast-inputs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,17 +63,9 @@ export async function POST(req: NextRequest) {
     
     if (action === 'calculate-financials') {
         const { inputs } = validation.data;
-        
-        // Save inputs to a cookie for server components to read
-        cookies().set(COOKIE_NAME, JSON.stringify(inputs), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-            sameSite: 'strict',
-        });
-
         const result = calculateFinancials(inputs);
-        return NextResponse.json(result);
+        // Return the full result payload to the client
+        return NextResponse.json({ data: result, inputs });
     }
 
 

@@ -1,12 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useForecast } from '@/context/ForecastContext';
-import { EngineInputSchema, type EngineOutput } from '@/lib/types';
+import { EngineInputSchema } from '@/lib/types';
 import { debounce } from 'lodash-es';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
+
+const DATA_STORAGE_KEY = 'financials-report';
 
 export const useFinancials = () => {
     const { inputs } = useForecast();
@@ -37,10 +39,14 @@ export const useFinancials = () => {
                 throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
             }
             
-            // On success, redirect to the costs page to show the results
-            // The data is available on the server via cookies, so no need to pass it here
+            const result = await response.json();
+            
+            // On success, save data to localStorage and redirect
+            if (typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(result));
+            }
+            
             router.push('/costs');
-            router.refresh(); // Important to trigger a refresh to fetch new server data
 
         } catch (e: any) {
             setState({ error: e.message || 'An unknown error occurred.', isLoading: false });
@@ -50,10 +56,9 @@ export const useFinancials = () => {
                 description: e.message || 'An unknown error occurred.',
             });
         } finally {
-             // In most cases a redirect will happen, but if not, stop loading.
-             setState(prev => ({ ...prev, isLoading: false }));
+             // Loading state is stopped inside the getReport function
         }
-    }, 500), [router, toast]);
+    }, 300), [router, toast]);
 
     const getReport = () => {
         const validationResult = EngineInputSchema.safeParse(inputs);
@@ -70,8 +75,6 @@ export const useFinancials = () => {
         }
     };
     
-    // This hook now exposes the `getReport` function and the loading/error state
-    // It no longer holds the `data` itself, as that's handled by server components.
     return {
       getReport,
       error: state.error,
