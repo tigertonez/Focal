@@ -41,7 +41,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
         <div className="flex items-start gap-4">
             <div className="flex-grow space-y-2">
-                <Input
+                 <Input
                     name="productName"
                     value={product.productName}
                     onChange={handleChange}
@@ -67,9 +67,9 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         <div>
-          <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sell Price</Label>
+          <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
           <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 49.99" />
         </div>
         {isManualMode && (
