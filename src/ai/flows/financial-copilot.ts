@@ -35,21 +35,20 @@ const prompt = ai.definePrompt({
   input: { schema: FinancialCopilotInputSchema },
   output: { schema: FinancialCopilotOutputSchema },
   model: googleAI.model('gemini-2.5-flash'),
-  prompt: `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, actionable advice.
+  prompt: `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, actionable advice based *only* on what you see in the screenshot.
 
-IMPORTANT: Your response must be concise and in plain text. Do NOT use any markdown. Use simple paragraphs.
+IMPORTANT:
+- Your response must be concise and in plain text. Do NOT use any markdown.
+- Do NOT speculate or infer information that isn't present in the screenshot.
+- If you don't see any issues or cannot answer the question from the image, say so directly. For example: "Based on the screenshot, I don't see any immediate issues."
 
 When the developer asks for help (e.g., "find issues", "review this"), analyze the screenshot for:
 
-1.  **Logical Gaps**: Does the data make sense from a developer's perspective? Is required data missing? Are there logical conflicts in the settings (e.g., pre-order mode is on, but costs are misaligned)?
+1.  **Logical Gaps**: Does the data make sense from a developer's perspective? Is required data missing? Are there logical conflicts?
+2.  **UI/UX Friction**: Is the interface confusing? Are labels unclear? Suggest simpler layouts or clearer descriptions.
+3.  **Clarity and Simplicity**: Is the information presented clearly?
 
-2.  **UI/UX Friction**: Is the interface confusing? Are labels unclear? Suggest simpler layouts, better component choices, or clearer descriptions that would improve the developer and end-user experience.
-
-3.  **Clarity and Simplicity**: Is the information presented clearly? Could a chart be simplified? Could a label be more direct?
-
-Always be constructive and provide direct, actionable feedback for the developer building the app.
-
-Analyze the provided screenshot and answer the user's question based on this expert persona.
+Always be constructive and provide direct, actionable feedback for the developer.
 
 User Question: {{{question}}}
 Screenshot: {{media url=screenshotDataUri}}`,
@@ -66,6 +65,12 @@ const financialCopilotFlow = ai.defineFlow(
     if (!output) {
         throw new Error("The AI model did not return a valid response. Please try rephrasing your question.");
     }
+    
+    const answer = output.answer.toLowerCase();
+    if (answer.includes("no issues") || answer.includes("looks good") || answer.includes("i don't see")) {
+      return { answer: "I've reviewed the screen and couldn't spot any immediate issues. Everything looks to be in order based on your inputs." };
+    }
+
     return output;
   }
 );
