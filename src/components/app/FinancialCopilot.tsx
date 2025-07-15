@@ -5,11 +5,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Bot, User, Loader2, Wand2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bot, User, Loader2, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
+import { cn } from '@/lib/utils';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -17,7 +18,7 @@ interface Message {
 }
 
 export function FinancialCopilot() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,8 +31,19 @@ export function FinancialCopilot() {
     if (proactiveAnalysis && messages.length === 0) {
         const botMessage: Message = { sender: 'bot', text: proactiveAnalysis };
         setMessages([botMessage]);
+        setIsExpanded(true); // Expand when there's a proactive message
+        setProactiveAnalysis(null); // Clear the badge state
     }
-  }, [proactiveAnalysis, messages.length]);
+  }, [proactiveAnalysis, messages.length, setProactiveAnalysis]);
+
+  useEffect(() => {
+    // Auto-scroll when new messages are added
+    if (isExpanded) {
+        setTimeout(() => {
+            scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+        }, 100);
+    }
+  }, [messages, isExpanded]);
 
   const handleSendMessage = async (question?: string) => {
     const currentInput = question || input;
@@ -75,90 +87,87 @@ export function FinancialCopilot() {
         setMessages(prev => [...prev, botMessage]);
     } finally {
       setIsLoading(false);
-      setTimeout(() => {
-        scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-      }, 100);
     }
   };
   
-  const handleSheetOpen = (open: boolean) => {
-    setIsOpen(open);
-    if(open && proactiveAnalysis) {
-        setProactiveAnalysis(null); // Clear the badge when opened
-    }
-  }
-
   return (
-    <Sheet open={isOpen} onOpenChange={handleSheetOpen}>
-      <SheetTrigger asChild>
-        <Button className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50" size="icon">
-          <Wand2 className="h-6 w-6" />
-          {proactiveAnalysis && (
-            <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
-          )}
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="bottom" className="h-3/4 flex flex-col">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle className="flex items-center gap-2">
-            <Bot />
-            Financial Copilot
-          </SheetTitle>
-        </SheetHeader>
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                <div className={`p-3 rounded-lg max-w-lg ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+    <Card className="fixed bottom-4 left-4 w-96 z-50 flex flex-col shadow-lg">
+        <CardHeader 
+            className="flex flex-row items-center justify-between p-3 border-b cursor-pointer" 
+            onClick={() => setIsExpanded(!isExpanded)}
+        >
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Wand2 />
+                Financial Copilot
+                {proactiveAnalysis && !isExpanded && (
+                    <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-destructive" />
+                )}
+            </CardTitle>
+            {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+        </CardHeader>
+        <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-96" : "max-h-0")}>
+            <CardContent className="p-0 h-80 flex flex-col">
+                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                  <div className="space-y-4">
+                    {messages.length === 0 && !isLoading && (
+                        <div className="text-center text-sm text-muted-foreground pt-10">
+                            <Bot className="mx-auto h-8 w-8 mb-2" />
+                            <p>Ask me anything about your forecast.</p>
+                        </div>
+                    )}
+                    {messages.map((msg, index) => (
+                      <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        {msg.sender === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                        <div className={`p-2.5 rounded-lg max-w-sm text-sm ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                          <p className="whitespace-pre-wrap">{msg.text}</p>
+                        </div>
+                         {msg.sender === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+                      </div>
+                    ))}
+                     {isLoading && (
+                      <div className="flex items-start gap-3">
+                        <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                        <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm text-muted-foreground">Thinking...</span>
+                        </div>
+                      </div>
+                    )}
+                     {error && (
+                        <Alert variant="destructive" className="mt-2">
+                            <AlertTitle className="text-sm">Error</AlertTitle>
+                            <AlertDescription className="text-xs">{error}</AlertDescription>
+                        </Alert>
+                     )}
+                  </div>
+                </ScrollArea>
+                <div className="p-3 border-t bg-background">
+                  <div className="relative">
+                    <Textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask a question..."
+                      className="pr-16 min-h-[40px] text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8"
+                      onClick={() => handleSendMessage()}
+                      disabled={isLoading}
+                    >
+                      Ask
+                    </Button>
+                  </div>
                 </div>
-                 {msg.sender === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0" />}
-              </div>
-            ))}
-             {isLoading && (
-              <div className="flex items-start gap-3">
-                <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-                <div className="p-3 rounded-lg bg-muted flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">Thinking...</span>
-                </div>
-              </div>
-            )}
-             {error && (
-                <Alert variant="destructive">
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-             )}
-          </div>
-        </ScrollArea>
-        <div className="p-4 border-t bg-background">
-          <div className="relative">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question about your forecast..."
-              className="pr-20"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2"
-              onClick={() => handleSendMessage()}
-              disabled={isLoading}
-            >
-              Ask
-            </Button>
-          </div>
+            </CardContent>
         </div>
-      </SheetContent>
-    </Sheet>
+    </Card>
   );
 }

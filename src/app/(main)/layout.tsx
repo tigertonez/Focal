@@ -13,7 +13,7 @@ export default function MainLayout({
     <ForecastProvider>
       <div className="relative flex min-h-screen bg-background">
         <SideNav />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pl-20">
           {children}
         </main>
         <FinancialCopilot />
