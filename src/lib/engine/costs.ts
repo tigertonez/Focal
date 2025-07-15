@@ -1,10 +1,9 @@
 
 import { type EngineInput, type CostSummary, type MonthlyCost } from '@/lib/types';
-
+import { buildFixedCostTimeline, getAggregatedSalesWeights } from '@/lib/buildFixedCostTimeline';
 
 export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[] } {
     try {
-        // --- Safety Guards ---
         if (!inputs || !inputs.parameters || !inputs.products) {
             throw new Error('Inputs not available.');
         }
@@ -15,13 +14,20 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
              throw new Error('All products must have a Unit Cost and Sell Price.');
         }
 
-        // --- Fixed Costs Calculation ---
         const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
         const planningBuffer = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
-        const totalFixed = baseFixedCosts + planningBuffer;
-        const monthlyFixed = totalFixed / inputs.parameters.forecastMonths;
         
-        // --- Variable Costs & Total Summary Calculation ---
+        // Add planning buffer as a fixed cost item for timeline calculation
+        const allFixedCostsForTimeline = [
+            ...inputs.fixedCosts,
+            { id: 'buffer', name: 'Planning Buffer', amount: planningBuffer, paymentSchedule: 'Monthly' as const }
+        ];
+
+        const salesWeights = getAggregatedSalesWeights(inputs.products, inputs.parameters.forecastMonths);
+        const fixedCostTimeline = buildFixedCostTimeline(allFixedCostsForTimeline, inputs.parameters.forecastMonths, salesWeights);
+        
+        const totalFixed = baseFixedCosts + planningBuffer;
+        
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
         let totalFinalPayments = 0;
@@ -64,23 +70,20 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             totalFinalPayments,
         };
 
-        // --- Realistic Monthly Timeline ---
         const months = inputs.parameters.forecastMonths;
         const monthlyCosts: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
             month: i + 1,
             deposits: 0,
             finalPayments: 0,
-            fixed: monthlyFixed,
-            total: monthlyFixed,
+            fixed: fixedCostTimeline[i] || 0,
+            total: fixedCostTimeline[i] || 0,
         }));
 
-        // Allocate deposits to Month 1
         if (months >= 1) {
             monthlyCosts[0].deposits = totalDepositsPaid;
             monthlyCosts[0].total += totalDepositsPaid;
         }
 
-        // Allocate final payments to Month 2 (assuming 1 month lead time)
         if (months >= 2) {
             monthlyCosts[1].finalPayments = totalFinalPayments;
             monthlyCosts[1].total += totalFinalPayments;
@@ -89,7 +92,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         return { costSummary, monthlyCosts };
 
     } catch (e: any) {
-        // Re-throw the error to be caught by the calling function in the context
         throw new Error(e.message || 'An unknown error occurred in cost calculation.');
     }
 }
