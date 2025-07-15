@@ -76,25 +76,9 @@ export const CostSummarySchema = z.object({
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
 
-const FixedCostBreakdownItemSchema = z.object({
-    name: z.string(),
-    amount: z.number(),
-});
-
-export const MonthlyCostSchema = z.object({
-    month: z.number(),
-    deposits: z.number(),
-    finalPayments: z.number(),
-    fixed: z.number(),
-    fixedBreakdown: z.array(FixedCostBreakdownItemSchema),
-    total: z.number(),
-});
-export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
-
 // This will eventually hold all calculation results
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,
-    monthlyCosts: z.array(MonthlyCostSchema),
     // revenueSummary, monthlyRevenue, etc. will go here later
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;

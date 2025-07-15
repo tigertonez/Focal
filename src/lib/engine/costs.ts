@@ -2,134 +2,6 @@
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product } from '@/lib/types';
 
 
-// Helper function to build the fixed cost timeline
-function buildFixedCostTimeline(
-    fixedCosts: FixedCostItem[],
-    products: Product[],
-    forecastMonths: number,
-    preOrder: boolean,
-  ): { timeline: { [key: string]: number }[], totalFixedInTimeline: number } {
-    const timeline: { [key: string]: number }[] = Array.from({ length: forecastMonths }, () => ({}));
-    
-    // Determine the first month sales can occur
-    const firstSalesMonthIndex = preOrder ? 1 : 0;
-    // Determine the total number of months where sales happen
-    const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
-
-    const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
-      let weights: number[] = Array(months).fill(0);
-      if (months <= 0) return weights;
-
-      switch (model) {
-        case 'launch':
-          if (months >= 3) { weights[0] = 0.6; weights[1] = 0.3; weights[2] = 0.1; }
-          else if (months === 2) { weights[0] = 0.7; weights[1] = 0.3; }
-          else { weights[0] = 1; }
-          break;
-        case 'even':
-          if (months > 0) weights.fill(1 / months);
-          break;
-        case 'seasonal':
-          const peak = months / 2;
-          let totalWeight = 0;
-          for (let i = 0; i < months; i++) {
-            const distance = Math.abs(i - peak);
-            weights[i] = Math.exp(-0.1 * distance * distance);
-            totalWeight += weights[i];
-          }
-          if (totalWeight > 0) { weights = weights.map(w => w / totalWeight); }
-          break;
-        case 'growth':
-          const totalSteps = (months * (months + 1)) / 2;
-          if (totalSteps > 0) { for (let i = 0; i < months; i++) { weights[i] = (i + 1) / totalSteps; } }
-          break;
-      }
-      return weights;
-    }
-
-    // Calculate a single, aggregated sales curve based on all products' revenue contributions
-    const aggregatedSalesWeights = Array(forecastMonths).fill(0);
-    if (products?.length > 0 && salesCurveMonths > 0) {
-      let totalProjectedRevenue = 0;
-      const productSalesData = products.map(p => {
-        const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
-        const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
-        totalProjectedRevenue += productRevenue;
-        return { weights: singleProductWeights, revenue: productRevenue };
-      });
-
-      if (totalProjectedRevenue > 0) {
-        for (let i = 0; i < salesCurveMonths; i++) {
-          const timelineIndex = i + firstSalesMonthIndex;
-          let monthlyTotalRevenue = 0;
-          productSalesData.forEach(({ weights, revenue }) => {
-            if (i < weights.length) {
-              monthlyTotalRevenue += weights[i] * revenue;
-            }
-          });
-          aggregatedSalesWeights[timelineIndex] = monthlyTotalRevenue / totalProjectedRevenue;
-        }
-      }
-    }
-
-    const sanitizeKey = (name: string) => name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-    const addCost = (monthIndex: number, value: number, name: string) => {
-      if (monthIndex >= 0 && monthIndex < forecastMonths) {
-        const key = sanitizeKey(name);
-        if (!timeline[monthIndex][key]) {
-            timeline[monthIndex][key] = 0;
-        }
-        timeline[monthIndex][key] += value;
-      }
-    };
-
-    fixedCosts.forEach(fc => {
-      const totalAmount = +fc.amount;
-      if (totalAmount === 0 || !fc.name) return;
-
-      switch (fc.paymentSchedule || 'Up-Front') {
-        case 'Up-Front':
-          addCost(0, totalAmount, fc.name);
-          break;
-        case 'Monthly':
-          if (salesCurveMonths > 0) {
-            const monthlyCost = totalAmount / salesCurveMonths;
-            for (let i = 0; i < salesCurveMonths; i++) {
-                addCost(i + firstSalesMonthIndex, monthlyCost, fc.name);
-            }
-          }
-          break;
-        case 'Quarterly':
-            if (salesCurveMonths > 0) {
-                const quarters = Math.ceil(salesCurveMonths / 3);
-                if (quarters > 0) {
-                    const quarterlyCost = totalAmount / quarters;
-                    for (let i = 0; i < salesCurveMonths; i += 3) {
-                      addCost(i + firstSalesMonthIndex, quarterlyCost, fc.name);
-                    }
-                }
-            }
-          break;
-        case 'According to Sales':
-          aggregatedSalesWeights.forEach((weight, monthIndex) => {
-            if (weight > 0) {
-              addCost(monthIndex, totalAmount * weight, fc.name);
-            }
-          });
-          break;
-      }
-    });
-
-    let totalFixedInTimeline = 0;
-    timeline.forEach(month => {
-        totalFixedInTimeline += Object.values(month).reduce((sum, val) => sum + val, 0);
-    });
-
-    return { timeline, totalFixedInTimeline };
-}
-
-
 export function calculateCosts(inputs: EngineInput): EngineOutput {
     try {
         if (!inputs || !inputs.parameters || !inputs.products) {
@@ -151,12 +23,10 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
         // The total number of months on the timeline chart
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
-        const { timeline: fixedCostTimelineData, totalFixedInTimeline } = buildFixedCostTimeline(
-            inputs.fixedCosts,
-            inputs.products,
-            timelineMonths,
-            preOrder
-        );
+        let totalFixedInTimeline = 0;
+        inputs.fixedCosts.forEach(fc => {
+            totalFixedInTimeline += fc.amount;
+        });
         
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -203,33 +73,7 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             planningBuffer: planningBufferAmount,
         };
 
-        const monthlyCosts = Array.from({ length: timelineMonths }, (_, i) => ({
-            month: i,
-            deposits: 0,
-            finalPayments: 0,
-            ...fixedCostTimelineData[i],
-        }));
-        
-        // Deposits are paid in Month 0 if pre-order, otherwise in the first sales month (which is also index 0)
-        const depositMonth = preOrder ? 0 : 0; 
-        if (depositMonth < monthlyCosts.length) {
-            monthlyCosts[depositMonth].deposits += totalDepositsPaid;
-        }
-
-        // Final payments are made in Month 1 if pre-order, otherwise in the second sales month (index 1)
-        const finalPaymentMonth = preOrder ? 1 : 1; 
-        if (finalPaymentMonth < monthlyCosts.length) {
-            monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
-        }
-        
-        // Sum up all costs for each month to get a monthly total
-        monthlyCosts.forEach(month => {
-            month.total = Object.entries(month)
-                .filter(([key]) => key !== 'month' && key !== 'name')
-                .reduce((sum, [, value]) => sum + (value as number), 0);
-        });
-
-        return { costSummary, monthlyCosts };
+        return { costSummary };
 
     } catch (e: any) {
         throw new Error(e.message || 'An unknown error occurred in cost calculation.');

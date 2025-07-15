@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useForecast } from '@/context/ForecastContext';
-import { EngineInputSchema, type CostSummary, type MonthlyCost, type EngineOutput } from '@/lib/types';
+import { EngineInputSchema, type CostSummary, type EngineOutput } from '@/lib/types';
 import { debounce } from 'lodash-es';
 
 
@@ -60,7 +60,6 @@ export const useCosts = () => {
 
     return {
         costSummary: data?.costSummary || null,
-        monthlyCosts: data?.monthlyCosts || [],
         error,
         isLoading,
     };
