@@ -17,7 +17,7 @@ export function ChartWrapper({ title, description, children, className }: ChartW
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <div className="h-96 w-full">{children}</div>
+        <div className="h-48 w-full">{children}</div>
       </CardContent>
     </Card>
   );
