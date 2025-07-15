@@ -26,11 +26,13 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         const salesForecastMonths = baseForecastMonths; // Sales projections are always over the N months after launch
         const month1Index = preOrder ? 1 : 0; // Month 1 is index 1 if preOrder, else 0
 
+        // Create a mutable copy of all fixed costs to work with
         const allFixedCosts: FixedCostItem[] = [...inputs.fixedCosts];
         
         // Sales weights are calculated for the period *after* launch
         const salesWeights = getAggregatedSalesWeights(inputs.products, salesForecastMonths);
         
+        // Use ALL fixed costs to build the timeline for consistency.
         const fixedCostTimeline = buildFixedCostTimeline(
             allFixedCosts, 
             timelineMonths, 
@@ -79,6 +81,7 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             totalVariable: totalVariableCost,
             totalOperating,
             avgCostPerUnit,
+            // Display fixed costs *without* the buffer in the summary card for clarity
             fixedCosts: inputs.fixedCosts.filter(fc => !fc.name.toLowerCase().includes('planning buffer')),
             variableCosts: variableCostBreakdown,
             totalDepositsPaid,

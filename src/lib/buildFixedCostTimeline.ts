@@ -9,7 +9,8 @@ export function buildFixedCostTimeline(
 ): number[] {
   const tl: number[] = Array(forecastMonths).fill(0);
   
-  const month1Index = preOrder ? 1 : 0;
+  // The first *sales* month. If preOrder is on, this is index 1. Otherwise, it's index 0.
+  const firstSalesMonthIndex = preOrder ? 1 : 0;
   
   const add = (m: number, val: number) => { 
     if (m >= 0 && m < forecastMonths) {
@@ -22,11 +23,13 @@ export function buildFixedCostTimeline(
 
     if (fc.paymentSchedule === 'According to Sales') {
         if (preOrder) {
-            // In pre-order, allocate 10% of the budget to month 0
+            // In pre-order, allocate 10% of the budget to month 0 (pre-launch activities)
             add(0, A * 0.1);
-            // Distribute the remaining 90% over the actual sales months
+            
+            // Distribute the remaining 90% over the actual sales months (timeline of length `forecastMonths - 1`)
             const remainingSalesWeights = salesWeights.slice(0, forecastMonths - 1);
             const remainingTotalWeight = remainingSalesWeights.reduce((s, v) => s + v, 0);
+
             if (remainingTotalWeight > 0) {
               remainingSalesWeights.forEach((w, i) => add(i + 1, (A * 0.9) * (w / remainingTotalWeight)));
             }
@@ -36,19 +39,18 @@ export function buildFixedCostTimeline(
         return; 
     }
     
-    // For non-sales related costs, the start month is 0 if preOrder, else 1
-    const scheduleStartMonth = preOrder ? 0 : 0;
-
     switch (fc.paymentSchedule || 'Up-Front') {
       case 'Monthly':
-        for (let m = month1Index; m < forecastMonths; m++) add(m, A);
+        // Monthly costs start in the first *sales* month.
+        for (let m = firstSalesMonthIndex; m < forecastMonths; m++) add(m, A);
         break;
       case 'Quarterly':
-        for (let m = month1Index; m < forecastMonths; m += 3) add(m, A);
+        // Quarterly costs start in the first *sales* month.
+        for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) add(m, A);
         break;
       case 'Up-Front':
-        // If pre-order is on, Up-Front costs are in month 0.
-        add(preOrder ? 0 : month1Index, A);
+        // If pre-order is on, Up-Front costs are in month 0. Otherwise, first sales month.
+        add(preOrder ? 0 : firstSalesMonthIndex, A);
         break;
     }
   });
