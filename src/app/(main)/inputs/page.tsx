@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, PlusCircle, Loader2 } from 'lucide-react';
-import type { Product } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import { Trash2, PlusCircle, Loader2, Info } from 'lucide-react';
+import type { Product, FixedCostItem } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="space-y-4">
@@ -27,10 +27,19 @@ const InputField: React.FC<{
   type?: string;
   placeholder?: string;
   required?: boolean;
-}> = ({ label, id, value, onChange, type = 'text', placeholder, required }) => (
+  tooltip?: string;
+}> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-    <Label htmlFor={id} className="font-medium text-sm">
+    <Label htmlFor={id} className="font-medium text-sm flex items-center gap-2">
       {label} {required && <span className="text-destructive">*</span>}
+      {tooltip && (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                <TooltipContent><p>{tooltip}</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+      )}
     </Label>
     <Input
       id={id}
@@ -42,6 +51,7 @@ const InputField: React.FC<{
     />
   </div>
 );
+
 
 const SelectField: React.FC<{
   label: string;
@@ -71,6 +81,7 @@ const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, i
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     const finalValue = type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
+    if (isNaN(finalValue as number) && type === 'number') return;
     updateProduct(index, name as keyof Product, finalValue);
   };
 
@@ -85,22 +96,22 @@ const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, i
        </button>
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <Label htmlFor={`productName-${index}`} className="text-sm font-medium">Product / SKU</Label>
-                <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-base" />
+                <Label htmlFor={`productName-${index}`} className="text-sm font-medium">Product / Service Name</Label>
+                <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., Premium T-Shirt" />
             </div>
              <div>
                 <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
-                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="mt-2 text-base" />
+                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 5000" />
             </div>
        </div>
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
-                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="mt-2 text-base" />
+                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 15.50" />
             </div>
             <div>
                 <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sell Price</Label>
-                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="mt-2 text-base" />
+                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 49.99" />
             </div>
        </div>
        <div>
@@ -118,24 +129,76 @@ const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, i
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium">Sell-Through %</Label>
-                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="mt-2 text-base" />
+                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 85" />
             </div>
             <div>
                 <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium">Deposit Paid %</Label>
-                <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="mt-2 text-base" />
+                <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 25" />
             </div>
        </div>
     </div>
   );
 };
 
+const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
+    const { updateFixedCost, removeFixedCost } = useForecast();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type } = e.target;
+        let finalValue: string | number = value;
+        if (type === 'number') {
+            finalValue = value === '' ? '' : parseFloat(value);
+            if (isNaN(finalValue)) return;
+        }
+        updateFixedCost(index, name as keyof FixedCostItem, finalValue);
+    };
+
+    return (
+        <div className="flex items-center gap-4">
+            <Input
+                name="name"
+                value={cost.name}
+                onChange={handleChange}
+                placeholder="Cost Name (e.g., Salaries)"
+                className="text-base"
+            />
+            <Input
+                name="amount"
+                type="number"
+                value={cost.amount}
+                onChange={handleChange}
+                placeholder="Amount"
+                className="w-48 text-base"
+            />
+            <Button variant="ghost" size="icon" onClick={() => removeFixedCost(cost.id)} className="text-muted-foreground hover:text-destructive">
+                <Trash2 size={18} />
+            </Button>
+        </div>
+    );
+};
+
 
 export default function InputsPage() {
-  const { inputs, setInputs, addProduct, saveDraft, calculateForecast, loading, isFormValid } = useForecast();
+  const { 
+      inputs, 
+      setInputs, 
+      addProduct,
+      addFixedCost,
+      saveDraft, 
+      calculateForecast, 
+      loading, 
+      isFormValid 
+    } = useForecast();
 
-  const handleInputChange = (section: 'fixedCosts' | 'parameters' | 'realtime') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParamChange = (section: 'parameters' | 'realtime') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
-    const finalValue = type === 'checkbox' ? checked : (type === 'number' ? (value === '' ? '' : parseFloat(value)) : value);
+    let finalValue: string | number | boolean = value;
+     if (type === 'checkbox') {
+        finalValue = checked;
+    } else if (type === 'number') {
+        finalValue = value === '' ? '' : parseFloat(value);
+        if (isNaN(finalValue as number)) return;
+    }
     setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: finalValue } }));
   };
 
@@ -152,28 +215,32 @@ export default function InputsPage() {
         </header>
 
         <div className="space-y-6">
-          <Section title="Products">
+          <Section title="Products & Services">
             <div className="space-y-4">
                 {inputs.products.map((p, i) => (
                     <ProductForm key={p.id} product={p} index={i} />
                 ))}
             </div>
             <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
-              <PlusCircle className="mr-2" size={16} /> Add Product
+              <PlusCircle className="mr-2" size={16} /> Add Product / Service
             </Button>
           </Section>
 
           <Section title="Fixed Costs">
-            <InputField label="Samples / Prototypes" id="samples" type="number" value={inputs.fixedCosts.samples} onChange={handleInputChange('fixedCosts')} />
-            <InputField label="Equipment" id="equipment" type="number" value={inputs.fixedCosts.equipment} onChange={handleInputChange('fixedCosts')} />
-            <InputField label="Setup & Compliance" id="setup" type="number" value={inputs.fixedCosts.setup} onChange={handleInputChange('fixedCosts')} />
-            <InputField label="Marketing Budget" id="marketing" type="number" value={inputs.fixedCosts.marketing} onChange={handleInputChange('fixedCosts')} />
+            <div className="space-y-3">
+                {inputs.fixedCosts.map((cost, i) => (
+                    <FixedCostForm key={cost.id} cost={cost} index={i} />
+                ))}
+            </div>
+             <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
+                <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
+            </Button>
           </Section>
 
           <Section title="General Parameters">
-             <InputField label="Forecast Months" id="forecastMonths" type="number" value={inputs.parameters.forecastMonths} onChange={handleInputChange('parameters')} />
-             <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleInputChange('parameters')} />
-             <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.parameters.planningBuffer} onChange={handleInputChange('parameters')} />
+             <InputField label="Forecast Months" id="forecastMonths" type="number" value={inputs.parameters.forecastMonths} onChange={handleParamChange('parameters')} tooltip="How many months into the future to forecast." />
+             <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleParamChange('parameters')} tooltip="Your estimated corporate tax rate." />
+             <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.parameters.planningBuffer} onChange={handleParamChange('parameters')} tooltip="A safety buffer added to total fixed costs." />
              <SelectField label="Currency" id="currency" value={inputs.parameters.currency} onValueChange={handleSelectChange('parameters')('currency')}>
                  <SelectItem value="EUR">EUR</SelectItem>
                  <SelectItem value="USD">USD</SelectItem>
@@ -192,8 +259,8 @@ export default function InputsPage() {
                     <SelectItem value="Shopify">Shopify</SelectItem>
                     <SelectItem value="CSV">CSV</SelectItem>
                 </SelectField>
-                <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleInputChange('realtime')} placeholder="Optional" />
-                <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleInputChange('realtime')} />
+                <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Optional" />
+                <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
            </Section>
         </div>
 

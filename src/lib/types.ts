@@ -1,9 +1,8 @@
-
 import { z } from 'zod';
 
 // --- Section A: Product ---
 export const ProductSchema = z.object({
-  id: z.string().default(''), // Default is empty, will be set via crypto.randomUUID() on client
+  id: z.string().default(''), 
   productName: z.string({ required_error: 'Product name is required.' }).default(''),
   plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(1).default(1000),
   unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0).default(10),
@@ -14,14 +13,14 @@ export const ProductSchema = z.object({
 });
 export type Product = z.infer<typeof ProductSchema>;
 
-// --- Section B: Fixed Costs ---
-export const FixedCostsSchema = z.object({
-  samples: z.number().min(0).default(0),
-  equipment: z.number().min(0).default(0),
-  setup: z.number().min(0).default(0),
-  marketing: z.number().min(0).default(0),
+// --- Section B: Fixed Costs (Now Dynamic) ---
+export const FixedCostItemSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, 'Cost name is required.'),
+    amount: z.number().min(0, 'Amount must be positive.'),
 });
-export type FixedCosts = z.infer<typeof FixedCostsSchema>;
+export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
+
 
 // --- Section C: General Parameters ---
 export const ParametersSchema = z.object({
@@ -47,7 +46,7 @@ export const EngineInputSchema = z.object({
   products: z.array(ProductSchema.extend({
       productName: z.string().min(1, 'Product name is required.'),
   })).min(1, { message: 'At least one product is required.' }),
-  fixedCosts: FixedCostsSchema,
+  fixedCosts: z.array(FixedCostItemSchema),
   parameters: ParametersSchema,
   realtime: RealtimeSettingsSchema,
 });

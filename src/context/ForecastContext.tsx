@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, ProductSchema } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, ProductSchema, type FixedCostItem, FixedCostItemSchema } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 
@@ -12,6 +12,9 @@ interface ForecastContextType {
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
   removeProduct: (id: string) => void;
+  updateFixedCost: (index: number, field: keyof FixedCostItem, value: any) => void;
+  addFixedCost: () => void;
+  removeFixedCost: (id: string) => void;
   saveDraft: () => void;
   calculateForecast: () => void;
   loading: boolean;
@@ -33,12 +36,11 @@ const initialInputs: EngineInput = {
       depositPct: 25,
     },
   ],
-  fixedCosts: {
-    samples: 1500,
-    equipment: 3000,
-    setup: 2000,
-    marketing: 5000,
-  },
+  fixedCosts: [
+      { id: 'fc_1', name: 'Salaries', amount: 15000 },
+      { id: 'fc_2', name: 'Rent', amount: 5000 },
+      { id: 'fc_3', name: 'Marketing', amount: 8000 },
+  ],
   parameters: {
     forecastMonths: 12,
     taxRate: 20,
@@ -90,8 +92,34 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const updateFixedCost = (index: number, field: keyof FixedCostItem, value: any) => {
+    setInputs(prev => {
+        const newCosts = [...prev.fixedCosts];
+        newCosts[index] = { ...newCosts[index], [field]: value };
+        return { ...prev, fixedCosts: newCosts };
+    });
+  };
+
+  const addFixedCost = () => {
+    const newCost: FixedCostItem = {
+      id: `fc_${crypto.randomUUID()}`,
+      name: '',
+      amount: 0,
+    };
+    setInputs(prev => ({
+      ...prev,
+      fixedCosts: [...prev.fixedCosts, newCost],
+    }));
+  };
+
+  const removeFixedCost = (id: string) => {
+    setInputs(prev => ({
+      ...prev,
+      fixedCosts: prev.fixedCosts.filter(c => c.id !== id),
+    }));
+  };
+
   const saveDraft = () => {
-    // In a real app, this would save to localStorage or an API
     console.log("Saving draft:", inputs);
     toast({
         title: "Draft saved",
@@ -106,7 +134,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         
         console.log("Validation successful, sending to engine:", validatedInputs);
 
-        // Simulate engine call
         setTimeout(() => {
             setLoading(false);
             toast({
@@ -134,6 +161,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     updateProduct,
     addProduct,
     removeProduct,
+    updateFixedCost,
+    addFixedCost,
+    removeFixedCost,
     saveDraft,
     calculateForecast,
     loading,
