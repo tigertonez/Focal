@@ -12,13 +12,11 @@ export function buildFixedCostTimeline(
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
 
-    // If 'According to Sales' is chosen, it's the only rule that applies.
     if (fc.paymentSchedule === 'According to Sales') {
         salesWeights.forEach((w, i) => add(i + 1, A * w));
-        return; // Move to the next fixed cost item
+        return; 
     }
-
-    // Otherwise, apply the selected payment schedule.
+    
     switch (fc.paymentSchedule || 'Up-Front') {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) add(m, A);
@@ -29,24 +27,6 @@ export function buildFixedCostTimeline(
       case 'Up-Front':
         add(1, A);
         break;
-      case 'Custom': {
-        const start = fc.startMonth ?? 1;
-        const end = fc.endMonth ?? start;
-        const span = end - start + 1;
-        
-        let rule = fc.splitRule ?? [];
-
-        // If no rule, create an even split
-        if (!rule.length || rule.reduce((s,v) => s+v, 0) === 0) {
-            rule = Array(span).fill(1);
-        }
-        
-        const totalRuleWeight = rule.reduce((s, v) => s + v, 0);
-        const normalizedRule = totalRuleWeight > 0 ? rule.map(w => w / totalRuleWeight) : [];
-
-        normalizedRule.forEach((w, i) => add(start + i, A * w));
-        break;
-      }
     }
   });
 

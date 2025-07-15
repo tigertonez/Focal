@@ -58,17 +58,9 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                 <SelectItem value="Monthly">Monthly</SelectItem>
                                 <SelectItem value="Quarterly">Quarterly</SelectItem>
                                 {isSpecialCost && <SelectItem value="According to Sales">According to Sales</SelectItem>}
-                                <SelectItem value="Custom">Custom</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-
-                    {schedule === 'Custom' && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input name="startMonth" type="number" value={cost.startMonth ?? ''} onChange={handleChange} placeholder="Start Month"/>
-                            <Input name="endMonth" type="number" value={cost.endMonth ?? ''} onChange={handleChange} placeholder="End Month" />
-                        </div>
-                    )}
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => removeFixedCost(cost.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0">
                     <Trash2 size={18} />
