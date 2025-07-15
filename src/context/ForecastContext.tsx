@@ -68,14 +68,21 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         if (savedDraft) {
             const parsedDraft = JSON.parse(savedDraft);
             // You might want to validate this with Zod before setting state
-            setInputs(parsedDraft);
-             toast({
-                title: "Draft loaded",
-                description: "Your previous session has been restored.",
-            });
+            const result = EngineInputSchema.safeParse(parsedDraft);
+            if (result.success) {
+                setInputs(result.data);
+                toast({
+                    title: "Draft loaded",
+                    description: "Your previous session has been restored.",
+                });
+            } else {
+                 console.warn("Could not parse saved draft, starting fresh.", result.error);
+                 localStorage.removeItem(DRAFT_STORAGE_KEY);
+            }
         }
     } catch (e) {
         console.error("Failed to load draft from local storage", e);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
   }, []);
 
@@ -141,6 +148,16 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const saveDraft = () => {
      try {
+        const result = EngineInputSchema.safeParse(inputs);
+        if (!result.success) {
+            toast({
+                variant: "destructive",
+                title: "Cannot save draft",
+                description: "Please fix the errors on the input sheet before saving.",
+            });
+            return;
+        }
+
         const dataToSave = JSON.stringify(inputs);
         localStorage.setItem(DRAFT_STORAGE_KEY, dataToSave);
         toast({
@@ -158,7 +175,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const runProactiveAnalysis = () => {
-    // This is now handled by the copilot component, which gets the analysis and opens the sheet
     const analysisQuestion = "Review the completed forecast on the screen for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
     setProactiveAnalysis(analysisQuestion);
   }
