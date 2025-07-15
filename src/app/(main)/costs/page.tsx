@@ -9,43 +9,21 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { VariableCostPieChart } from '@/components/app/costs/charts/VariableCostPieChart';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
+import { PageDataProvider } from '@/components/app/PageDataProvider';
+import type { EngineOutput } from '@/lib/types';
 
-export default function CostsPage() {
+
+function CostsPageContent({ data }: { data: EngineOutput }) {
     const { inputs } = useForecast();
-    const { costSummary, monthlyCosts, error, isLoading } = useCosts();
-
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
     const preOrder = inputs.parameters.preOrder;
 
-    if (isLoading) {
-        return <CostsPageSkeleton />;
-    }
-
-    if (error && !costSummary) {
-        return (
-             <div className="p-4 md:p-8">
-                <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Calculation Error</AlertTitle>
-                    <AlertDescription>
-                        {error} Please correct the issues on the Inputs page.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-    
-    if (!costSummary || !monthlyCosts) {
-        return <CostsPageSkeleton />;
-    }
+    const { costSummary, monthlyCosts } = data;
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
@@ -53,17 +31,6 @@ export default function CostsPage() {
         <div className="p-4 md:p-8 space-y-8">
             <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
             
-             {error && (
-                 <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Input Warning</AlertTitle>
-                    <AlertDescription>
-                        {error} The chart below may not be up-to-date.
-                    </AlertDescription>
-                </Alert>
-             )}
-
-
             <section>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <KpiCard label="Total Fixed Costs" value={formatCurrency(costSummary.totalFixed, currency)} />
@@ -126,7 +93,7 @@ export default function CostsPage() {
                                     <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
                                     <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
                                     <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : '1'})`} value={formatCurrency(product.depositPaid, currency)} />
-                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : '2'})`} value={formatCurrency(product.remainingCost, currency)} />
+                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : '1'})`} value={formatCurrency(product.remainingCost, currency)} />
                                 </div>
                             ))}
                             <Separator className="my-2" />
@@ -140,5 +107,27 @@ export default function CostsPage() {
                 </div>
             </section>
         </div>
+    );
+}
+
+// Wrapper hook to match the expected structure of PageDataProvider
+const useCostsData = () => {
+    const { costSummary, monthlyCosts, error, isLoading } = useCosts();
+    return {
+        data: costSummary && monthlyCosts ? { costSummary, monthlyCosts } : null,
+        error,
+        isLoading
+    };
+};
+
+
+export default function CostsPage() {
+    return (
+        <PageDataProvider
+            useDataHook={useCostsData}
+            loadingComponent={<CostsPageSkeleton />}
+        >
+            {(data) => <CostsPageContent data={data} />}
+        </PageDataProvider>
     );
 }

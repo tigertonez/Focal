@@ -3,19 +3,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useForecast } from '@/context/ForecastContext';
-import { EngineInputSchema, type CostSummary, type EngineOutput, type MonthlyCost } from '@/lib/types';
+import { EngineInputSchema, type EngineOutput } from '@/lib/types';
 import { debounce } from 'lodash-es';
-
 
 export const useCosts = () => {
     const { inputs } = useForecast();
-    const [data, setData] = useState<EngineOutput | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    // Consolidate state into a single object for easier management
+    const [state, setState] = useState<{
+        data: EngineOutput | null;
+        error: string | null;
+        isLoading: boolean;
+    }>({
+        data: null,
+        error: null,
+        isLoading: true,
+    });
 
     const fetchCosts = useCallback(debounce(async (validatedInputs) => {
-        setIsLoading(true);
-        setError(null);
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
         try {
             const response = await fetch('/api/ask', {
                 method: 'POST',
@@ -32,12 +37,9 @@ export const useCosts = () => {
             }
 
             const result = await response.json();
-            setData(result);
+            setState({ data: result, error: null, isLoading: false });
         } catch (e: any) {
-            setError(e.message || 'An unknown error occurred.');
-            setData(null);
-        } finally {
-            setIsLoading(false);
+            setState({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
         }
     }, 500), []); // Debounce API calls by 500ms
 
@@ -47,21 +49,19 @@ export const useCosts = () => {
             fetchCosts(validationResult.data);
         } else {
             const firstError = validationResult.error.errors[0]?.message || 'Invalid input.';
-            setError(firstError);
-            setData(null);
-            setIsLoading(false);
+            setState({ data: state.data, error: firstError, isLoading: false }); // Keep old data if available
         }
 
         // Cleanup function to cancel any pending debounced calls
         return () => {
             fetchCosts.cancel();
         };
-    }, [inputs, fetchCosts]);
+    }, [inputs, fetchCosts, state.data]);
 
+    // This hook now returns an object that can be spread into the PageDataProvider
     return {
-        costSummary: data?.costSummary || null,
-        monthlyCosts: data?.monthlyCosts || null,
-        error,
-        isLoading,
+      data: state.data,
+      error: state.error,
+      isLoading: state.isLoading
     };
 };
