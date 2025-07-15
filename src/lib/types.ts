@@ -4,7 +4,7 @@ import { z } from 'zod';
 // --- Section A: Product ---
 export const ProductSchema = z.object({
   id: z.string().default(''), // Default is empty, will be set via crypto.randomUUID() on client
-  productName: z.string().min(1, { message: 'Product name is required.' }).default(''),
+  productName: z.string({ required_error: 'Product name is required.' }).default(''),
   plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(1).default(1000),
   unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0).default(10),
   sellPrice: z.number({ required_error: 'Sell price is required.' }).min(0).default(25),
@@ -44,7 +44,9 @@ export type RealtimeSettings = z.infer<typeof RealtimeSettingsSchema>;
 
 // --- Main Input Schema for Validation ---
 export const EngineInputSchema = z.object({
-  products: z.array(ProductSchema).min(1, { message: 'At least one product is required.' }),
+  products: z.array(ProductSchema.extend({
+      productName: z.string().min(1, 'Product name is required.'),
+  })).min(1, { message: 'At least one product is required.' }),
   fixedCosts: FixedCostsSchema,
   parameters: ParametersSchema,
   realtime: RealtimeSettingsSchema,
