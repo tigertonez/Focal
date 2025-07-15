@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Trash2, PlusCircle, Loader2, Info } from 'lucide-react';
 import type { Product, FixedCostItem } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="space-y-4">
@@ -29,8 +30,10 @@ const InputField: React.FC<{
   required?: boolean;
   tooltip?: string;
 }> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => {
-    const [isMounted, setIsMounted] = React.useState(false);
-    React.useEffect(() => setIsMounted(true), []);
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
@@ -83,8 +86,11 @@ const SelectField: React.FC<{
 const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
-  const [isMounted, setIsMounted] = React.useState(false);
-  React.useEffect(() => setIsMounted(true), []);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -222,8 +228,13 @@ export default function InputsPage() {
       loading, 
       isFormValid 
     } = useForecast();
+  
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const handleParamChange = (section: 'parameters' | 'realtime') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParamChange = (section: 'parameters' | 'realtime' | 'fixedCosts') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
     let finalValue: string | number | boolean = value;
      if (type === 'checkbox') {
@@ -238,6 +249,23 @@ export default function InputsPage() {
   const handleSelectChange = (section: 'parameters' | 'realtime') => (id: string) => (value: string) => {
     setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: value } }));
   };
+  
+  if (!isMounted) {
+    return (
+       <div className="bg-white min-h-screen">
+         <main className="max-w-4xl mx-auto p-4 md:p-8">
+            <header className="mb-8">
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-4 w-1/3 mt-2" />
+            </header>
+            <div className="space-y-6">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+         </main>
+       </div>
+    )
+  }
 
   return (
     <div className="bg-white min-h-screen">
