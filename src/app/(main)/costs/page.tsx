@@ -49,7 +49,7 @@ const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts:
                                 <TableCell className="text-right font-semibold">{formatCurrency(month.total, currency)}</TableCell>
                                 <TableCell className="text-center">
                                     <CollapsibleTrigger asChild>
-                                        <Button variant="ghost" size="sm" disabled={month.fixedBreakdown.length === 0}>
+                                        <Button variant="ghost" size="sm" disabled={(month.fixedBreakdown || []).length === 0}>
                                             <ChevronDown className="h-4 w-4" />
                                             <span className="sr-only">Toggle details</span>
                                         </Button>
@@ -62,8 +62,8 @@ const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts:
                                         <div className="p-4">
                                             <h4 className="font-semibold mb-2 text-sm">Fixed Cost Breakdown for Month {preOrder ? month.month : month.month + 1}</h4>
                                             <div className="space-y-1">
-                                                {month.fixedBreakdown.length > 0 ? (
-                                                    month.fixedBreakdown.map((item, idx) => (
+                                                {(month.fixedBreakdown || []).length > 0 ? (
+                                                    (month.fixedBreakdown || []).map((item, idx) => (
                                                         <CostRow key={idx} label={item.name} value={formatCurrency(item.amount, currency)} className="text-xs" />
                                                     ))
                                                 ) : (
