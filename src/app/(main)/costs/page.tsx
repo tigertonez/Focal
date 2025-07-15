@@ -12,25 +12,23 @@ import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 
-const CostTimelineTable = ({ monthlyCosts, currency, isManualMode }: { monthlyCosts: any[], currency: string, isManualMode: boolean }) => (
+const CostTimelineTable = ({ monthlyCosts, currency }: { monthlyCosts: any[], currency: string }) => (
     <div className="overflow-x-auto">
         <div className="text-sm text-muted-foreground min-w-[600px]">
-            <div className="grid grid-cols-6 gap-4 font-semibold p-2 rounded-t-md">
+            <div className="grid grid-cols-5 gap-4 font-semibold p-2 rounded-t-md">
                 <span>Month</span>
-                {isManualMode && <span>Deposits</span>}
-                <span>Other Fixed</span>
-                <span>Production</span>
-                <span>Marketing</span>
-                <span>Total</span>
+                <span>Deposits Paid</span>
+                <span>Final Payments</span>
+                <span>Fixed Costs</span>
+                <span>Total Monthly Cost</span>
             </div>
             <div className="space-y-1">
                 {monthlyCosts.map((month, i) => (
-                    <div key={i} className="grid grid-cols-6 gap-4 p-2 bg-muted/50 rounded-md">
+                    <div key={i} className="grid grid-cols-5 gap-4 p-2 bg-muted/50 rounded-md">
                         <span>{i + 1}</span>
-                        {isManualMode && <span>{formatCurrency(month.deposits, currency)}</span>}
-                        <span>{formatCurrency(month.otherFixed, currency)}</span>
-                        <span>{formatCurrency(month.production, currency)}</span>
-                        <span>{formatCurrency(month.marketing, currency)}</span>
+                        <span>{formatCurrency(month.deposits, currency)}</span>
+                        <span>{formatCurrency(month.finalPayments, currency)}</span>
+                        <span>{formatCurrency(month.fixed, currency)}</span>
                         <span className="font-semibold">{formatCurrency(month.total, currency)}</span>
                     </div>
                 ))}
@@ -41,7 +39,7 @@ const CostTimelineTable = ({ monthlyCosts, currency, isManualMode }: { monthlyCo
 
 export default function CostsPage() {
     const { inputs } = useForecast();
-    const { costSummary, monthlyCosts, depositProgress, error } = useCosts();
+    const { costSummary, monthlyCosts, error } = useCosts();
 
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
@@ -71,6 +69,8 @@ export default function CostsPage() {
             </div>
         );
     }
+    
+    const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -86,7 +86,7 @@ export default function CostsPage() {
                  {isManualMode && (
                     <div className="mt-4 space-y-2">
                         <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Deposits Paid by Customers</span>
+                            <span>Total Deposits Paid by You</span>
                             <span>{depositProgress.toFixed(0)}%</span>
                         </div>
                         <Progress value={depositProgress} />
@@ -96,7 +96,7 @@ export default function CostsPage() {
             
             <section className="space-y-4">
                 <h2 className="text-xl font-semibold">Cost Timeline</h2>
-                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} isManualMode={isManualMode} />
+                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} />
             </section>
 
             <section className="space-y-2">
@@ -107,14 +107,14 @@ export default function CostsPage() {
                            key={cost.name}
                            label={cost.name}
                            value={formatCurrency(cost.amount, currency)}
-                           percentage={(cost.amount / costSummary.totalFixed * 100).toFixed(1)}
+                           percentage={(cost.amount / (costSummary.totalFixed - costSummary.planningBuffer) * 100).toFixed(1)}
                        />
                     ))}
                     <div className="pt-2 border-t">
                        <CostRow 
                            label="Planning Buffer"
                            value={formatCurrency(costSummary.planningBuffer, currency)}
-                           percentage={(costSummary.planningBuffer / costSummary.totalFixed * 100).toFixed(1)}
+                           percentage={(costSummary.planningBuffer / (costSummary.totalFixed - costSummary.planningBuffer) * 100).toFixed(1)}
                        />
                     </div>
                     <div className="pt-2 border-t font-bold">
@@ -127,22 +127,24 @@ export default function CostsPage() {
             </section>
             
             <section className="space-y-2">
-                <h2 className="text-xl font-semibold">Variable Cost Breakdown</h2>
+                <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
                  <div className="bg-muted/50 p-4 rounded-lg space-y-4">
                     {costSummary.variableCosts.map(product => (
-                        <div key={product.name} className="space-y-2">
+                        <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
                             <h3 className="font-semibold">{product.name}</h3>
                             <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
                             <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
                             <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                            {isManualMode && (
-                                <>
-                                    <CostRow label="Deposit Paid" value={formatCurrency(product.depositPaid, currency)} />
-                                    <CostRow label="Remaining Cost" value={formatCurrency(product.remainingCost, currency)} />
-                                </>
-                            )}
+                            <CostRow label="Deposit Paid (Month 1)" value={formatCurrency(product.depositPaid, currency)} />
+                            <CostRow label="Final Payment (Month 2)" value={formatCurrency(product.remainingCost, currency)} />
                         </div>
                     ))}
+                     <div className="pt-2 border-t font-bold">
+                       <CostRow 
+                           label="Total Variable"
+                           value={formatCurrency(costSummary.totalVariable, currency)}
+                       />
+                    </div>
                 </div>
             </section>
         </div>

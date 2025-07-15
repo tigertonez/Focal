@@ -5,14 +5,21 @@ import { useMemo } from 'react';
 import { useForecast } from '@/context/ForecastContext';
 
 export const useCosts = () => {
-    const { results } = useForecast();
+    const { results, error } = useForecast();
 
     return useMemo(() => {
+        if (error) {
+            return {
+                costSummary: null,
+                monthlyCosts: [],
+                error: error,
+            }
+        }
+        
         if (!results) {
             return {
                 costSummary: null,
                 monthlyCosts: [],
-                depositProgress: 0,
                 error: null
             };
         }
@@ -20,9 +27,8 @@ export const useCosts = () => {
         return {
             costSummary: results.costSummary,
             monthlyCosts: results.monthlyCosts,
-            depositProgress: results.depositProgress,
-            error: null // Or handle errors from results if they exist
+            error: null
         };
 
-    }, [results]);
+    }, [results, error]);
 };

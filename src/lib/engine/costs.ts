@@ -2,9 +2,9 @@
 import { type EngineInput, type CostSummary, type MonthlyCost } from '@/lib/types';
 
 
-export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[], depositProgress: number } {
+export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[] } {
     try {
-        // Safety Guards
+        // --- Safety Guards ---
         if (!inputs || !inputs.parameters || !inputs.products) {
             throw new Error('Inputs not available.');
         }
@@ -16,22 +16,18 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         }
 
         // --- Fixed Costs Calculation ---
-        const marketingCostItem = inputs.fixedCosts.find(c => c.name.toLowerCase() === 'marketing');
-        const marketingCost = marketingCostItem ? marketingCostItem.amount : 0;
+        const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
+        const planningBuffer = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
+        const totalFixed = baseFixedCosts + planningBuffer;
+        const monthlyFixed = totalFixed / inputs.parameters.forecastMonths;
         
-        const otherFixedCosts = inputs.fixedCosts.filter(c => c.name.toLowerCase() !== 'marketing');
-        const baseOtherFixedCosts = otherFixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
-        
-        const totalBaseFixedCosts = baseOtherFixedCosts + marketingCost;
-        const planningBuffer = totalBaseFixedCosts * (inputs.parameters.planningBuffer / 100);
-        const totalFixed = totalBaseFixedCosts + planningBuffer;
-        
-        // --- Variable Costs Calculation ---
+        // --- Variable Costs & Total Summary Calculation ---
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
+        let totalFinalPayments = 0;
         let totalVariableCost = 0;
 
-        const variableCosts = inputs.products.map(product => {
+        const variableCostBreakdown = inputs.products.map(product => {
             const plannedUnits = product.plannedUnits || 0;
             const unitCost = product.unitCost || 0;
             const totalProductionCost = plannedUnits * unitCost;
@@ -40,6 +36,7 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             
             totalPlannedUnits += plannedUnits;
             totalDepositsPaid += depositPaid;
+            totalFinalPayments += remainingCost;
             totalVariableCost += totalProductionCost;
 
             return {
@@ -52,7 +49,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             };
         });
 
-        // --- Summary ---
         const totalOperating = totalFixed + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
 
@@ -63,31 +59,34 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             avgCostPerUnit,
             fixedCosts: inputs.fixedCosts,
             planningBuffer,
-            variableCosts
+            variableCosts: variableCostBreakdown,
+            totalDepositsPaid,
+            totalFinalPayments,
         };
 
-        // --- Monthly Timeline ---
+        // --- Realistic Monthly Timeline ---
         const months = inputs.parameters.forecastMonths;
-        const monthlyMarketing = marketingCost / months;
-        // Apply buffer proportionally to non-marketing fixed costs
-        const bufferedOtherFixed = baseOtherFixedCosts + planningBuffer;
-        const monthlyOtherFixed = bufferedOtherFixed / months;
-        
-        const monthlyProduction = totalVariableCost / months;
-        const monthlyDeposits = totalDepositsPaid / months;
-
-        const timeline: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
-            deposits: monthlyDeposits,
-            otherFixed: monthlyOtherFixed,
-            production: monthlyProduction,
-            marketing: monthlyMarketing,
-            total: monthlyOtherFixed + monthlyProduction + monthlyMarketing,
+        const monthlyCosts: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
+            month: i + 1,
+            deposits: 0,
+            finalPayments: 0,
+            fixed: monthlyFixed,
+            total: monthlyFixed,
         }));
+
+        // Allocate deposits to Month 1
+        if (months >= 1) {
+            monthlyCosts[0].deposits = totalDepositsPaid;
+            monthlyCosts[0].total += totalDepositsPaid;
+        }
+
+        // Allocate final payments to Month 2 (assuming 1 month lead time)
+        if (months >= 2) {
+            monthlyCosts[1].finalPayments = totalFinalPayments;
+            monthlyCosts[1].total += totalFinalPayments;
+        }
         
-        // --- Deposit Progress ---
-        const depositProgress = totalVariableCost > 0 ? (totalDepositsPaid / totalVariableCost) * 100 : 0;
-        
-        return { costSummary, monthlyCosts: timeline, depositProgress };
+        return { costSummary, monthlyCosts };
 
     } catch (e: any) {
         // Re-throw the error to be caught by the calling function in the context

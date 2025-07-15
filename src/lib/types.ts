@@ -71,14 +71,16 @@ export const CostSummarySchema = z.object({
     fixedCosts: z.array(FixedCostItemSchema),
     planningBuffer: z.number(),
     variableCosts: z.array(VariableCostBreakdownSchema),
+    totalDepositsPaid: z.number(),
+    totalFinalPayments: z.number(),
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
 
 export const MonthlyCostSchema = z.object({
+    month: z.number(),
     deposits: z.number(),
-    otherFixed: z.number(),
-    production: z.number(),
-    marketing: z.number(),
+    finalPayments: z.number(),
+    fixed: z.number(),
     total: z.number(),
 });
 export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
@@ -87,7 +89,6 @@ export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,
     monthlyCosts: z.array(MonthlyCostSchema),
-    depositProgress: z.number(),
     // revenueSummary, monthlyRevenue, etc. will go here later
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;

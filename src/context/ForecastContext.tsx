@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, CostSummarySchema, MonthlyCostSchema } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 import { calculateCosts } from '@/lib/engine/costs';
@@ -10,6 +10,7 @@ import { calculateCosts } from '@/lib/engine/costs';
 interface ForecastContextType {
   inputs: EngineInput;
   results: EngineOutput | null;
+  error: string | null;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
@@ -45,7 +46,7 @@ const initialInputs: EngineInput = {
       sellPrice: 29.99,
       salesModel: 'even',
       sellThrough: 95,
-      depositPct: 0,
+      depositPct: 50,
     },
   ],
   fixedCosts: [
@@ -71,12 +72,18 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
   const [results, setResults] = useState<EngineOutput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isFormValid, setIsFormValid] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const result = EngineInputSchema.safeParse(inputs);
     setIsFormValid(result.success);
+    if (!result.success) {
+      setError(result.error.errors[0].message);
+    } else {
+      setError(null);
+    }
   }, [inputs]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
@@ -148,7 +155,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const calculateForecast = () => {
     setLoading(true);
-    setResults(null); // Clear previous results
+    setResults(null);
+    setError(null);
     try {
         const validatedInputs = EngineInputSchema.parse(inputs);
         
@@ -159,7 +167,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         const newResults: EngineOutput = {
           costSummary: costResults.costSummary,
           monthlyCosts: costResults.monthlyCosts,
-          depositProgress: costResults.depositProgress,
         };
 
         // Simulate network delay
@@ -170,23 +177,21 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
                 title: "Calculation Complete",
                 description: "Forecast results are ready.",
             });
-        }, 1000);
+        }, 500);
 
-    } catch (error) {
-        if (error instanceof ZodError) {
-            const firstError = error.errors[0];
-            toast({
-                variant: 'destructive',
-                title: 'Validation Error',
-                description: `${firstError.path.join('.')} - ${firstError.message}`,
-            });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Calculation Error',
-                description: error instanceof Error ? error.message : 'An unknown error occurred.',
-            });
+    } catch (e) {
+        let errorMessage = 'An unknown error occurred.';
+        if (e instanceof ZodError) {
+            errorMessage = e.errors[0].message;
+        } else if (e instanceof Error) {
+            errorMessage = e.message;
         }
+        setError(errorMessage);
+        toast({
+            variant: 'destructive',
+            title: 'Calculation Error',
+            description: errorMessage,
+        });
         setLoading(false);
     }
   };
@@ -194,6 +199,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     inputs,
     results,
+    error,
     setInputs,
     updateProduct,
     addProduct,
@@ -205,7 +211,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     calculateForecast,
     loading,
     isFormValid,
-  }), [inputs, results, loading, isFormValid]);
+  }), [inputs, results, error, loading, isFormValid]);
 
   return (
     <ForecastContext.Provider value={value}>
