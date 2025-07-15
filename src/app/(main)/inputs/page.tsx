@@ -28,29 +28,34 @@ const InputField: React.FC<{
   placeholder?: string;
   required?: boolean;
   tooltip?: string;
-}> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-    <Label htmlFor={id} className="font-medium text-sm flex items-center gap-2">
-      {label} {required && <span className="text-destructive">*</span>}
-      {tooltip && (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                <TooltipContent><p>{tooltip}</p></TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-      )}
-    </Label>
-    <Input
-      id={id}
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="md:col-span-2 text-base"
-    />
-  </div>
-);
+}> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => {
+    const [isMounted, setIsMounted] = React.useState(false);
+    React.useEffect(() => setIsMounted(true), []);
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+        <Label htmlFor={id} className="font-medium text-sm flex items-center gap-2">
+          {label} {required && <span className="text-destructive">*</span>}
+          {tooltip && isMounted && (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                    <TooltipContent><p>{tooltip}</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+          )}
+        </Label>
+        <Input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="md:col-span-2 text-base"
+        />
+      </div>
+  );
+};
 
 
 const SelectField: React.FC<{
@@ -78,6 +83,8 @@ const SelectField: React.FC<{
 const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => setIsMounted(true), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -129,12 +136,14 @@ const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, i
          <div>
               <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
                 Sales Model
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="whitespace-pre-line text-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                {isMounted && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                            <TooltipContent className="whitespace-pre-line text-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
               </Label>
               <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
                   <SelectTrigger id={`salesModel-${index}`} className="mt-2 text-base"><SelectValue /></SelectTrigger>
