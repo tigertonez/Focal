@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
     const { updateFixedCost, removeFixedCost } = useForecast();
@@ -28,12 +26,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
         updateFixedCost(index, name, value);
     };
 
-    const handleSwitchChange = (name: keyof FixedCostItem) => (checked: boolean) => {
-        updateFixedCost(index, name, checked);
-    };
-
-    const isMarketing = cost.name.toLowerCase().includes('marketing');
     const schedule = cost.paymentSchedule || 'Up-Front';
+    const name = cost.name.toLowerCase();
+    const isSpecialCost = name.includes('marketing') || name.includes('planning buffer');
+
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -61,6 +57,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                 <SelectItem value="Up-Front">Up-Front</SelectItem>
                                 <SelectItem value="Monthly">Monthly</SelectItem>
                                 <SelectItem value="Quarterly">Quarterly</SelectItem>
+                                {isSpecialCost && <SelectItem value="According to Sales">According to Sales</SelectItem>}
                                 <SelectItem value="Custom">Custom</SelectItem>
                             </SelectContent>
                         </Select>
@@ -77,18 +74,6 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     <Trash2 size={18} />
                 </Button>
             </div>
-             {isMarketing && (
-                <div className="flex items-center space-x-2 pt-2 border-t border-muted-foreground/20">
-                    <Switch
-                        id={`linkToSales-${cost.id}`}
-                        checked={cost.linkToSalesModel !== false}
-                        onCheckedChange={handleSwitchChange('linkToSalesModel')}
-                    />
-                    <Label htmlFor={`linkToSales-${cost.id}`} className="text-sm font-medium">
-                       Link to sales model
-                    </Label>
-                </div>
-            )}
         </div>
     );
 };

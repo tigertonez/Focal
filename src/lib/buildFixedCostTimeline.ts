@@ -11,17 +11,8 @@ export function buildFixedCostTimeline(
 
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
-
-    // If marketing is linked to the sales model, it has a special distribution rule.
-    // We handle it here and then 'continue' to the next item in the loop.
-    // Its 'paymentSchedule' is ignored in this case.
-    if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
-        salesWeights.forEach((w, i) => add(i + 1, A * w));
-        return; // This is the crucial change to prevent double processing.
-    }
-
-    // Handle all other costs based on their schedule
     const schedule = fc.paymentSchedule || 'Up-Front';
+
     switch (schedule) {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) add(m, A);
@@ -31,6 +22,9 @@ export function buildFixedCostTimeline(
         break;
       case 'Up-Front':
         add(1, A);
+        break;
+      case 'According to Sales':
+        salesWeights.forEach((w, i) => add(i + 1, A * w));
         break;
       case 'Custom': {
         const start = fc.startMonth ?? 1;

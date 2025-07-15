@@ -113,7 +113,6 @@ export default function CostsPage() {
                            key={cost.name}
                            label={cost.name}
                            value={formatCurrency(cost.amount, currency)}
-                           percentage={totalBaseFixedCosts > 0 ? (cost.amount / totalBaseFixedCosts * 100).toFixed(1) : "0.0"}
                        />
                     ))}
                     <div className="pt-2 border-t font-bold">
