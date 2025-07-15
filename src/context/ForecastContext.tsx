@@ -61,8 +61,9 @@ const initialInputs: EngineInput = {
     },
   ],
   fixedCosts: [
-      { id: 'fc_1', name: 'Marketing', amount: 2000, paymentSchedule: 'Allocated According to Sales' },
-      { id: 'fc_2', name: 'Planning Buffer', amount: 6000, paymentSchedule: 'Allocated Monthly' },
+      { id: 'fc_0', name: 'Salaries', amount: 15000, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost' },
+      { id: 'fc_1', name: 'Marketing', amount: 20000, paymentSchedule: 'Allocated According to Sales', costType: 'Total for Period' },
+      { id: 'fc_2', name: 'Planning Buffer', amount: 6000, paymentSchedule: 'Allocated Monthly', costType: 'Total for Period' },
   ],
   parameters: {
     forecastMonths: 12,
@@ -155,6 +156,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       name: '',
       amount: 0,
       paymentSchedule: 'Allocated Monthly',
+      costType: 'Monthly Cost',
     };
     setInputs(prev => ({
       ...prev,

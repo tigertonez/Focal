@@ -63,7 +63,22 @@ export async function POST(req: NextRequest) {
     
     if (action === 'calculate-financials') {
         const { inputs } = validation.data;
-        const result = calculateFinancials(inputs);
+
+        // Pre-process fixed costs before sending to the engine
+        const processedInputs = {
+            ...inputs,
+            fixedCosts: inputs.fixedCosts.map(cost => {
+                if (cost.costType === 'Monthly Cost') {
+                    return {
+                        ...cost,
+                        amount: cost.amount * inputs.parameters.forecastMonths,
+                    };
+                }
+                return cost;
+            }),
+        };
+
+        const result = calculateFinancials(processedInputs);
         // Return the full result payload to the client
         return NextResponse.json({ data: result, inputs });
     }

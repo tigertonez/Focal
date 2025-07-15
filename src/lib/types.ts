@@ -20,6 +20,7 @@ export const FixedCostItemSchema = z.object({
     name: z.string().min(1, 'Cost name is required.'),
     amount: z.number().min(0, 'Amount must be positive.'),
     paymentSchedule: z.enum(['Allocated Monthly', 'Allocated Quarterly', 'Paid Up-Front', 'Allocated According to Sales']),
+    costType: z.enum(['Total for Period', 'Monthly Cost']).default('Total for Period'),
 });
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
 

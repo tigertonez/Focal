@@ -28,6 +28,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     };
 
     const schedule = cost.paymentSchedule || 'Paid Up-Front';
+    const costType = cost.costType || 'Total for Period';
     const name = cost.name.toLowerCase();
     const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
@@ -59,14 +60,25 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         )}
                     </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <Input
-                            name="amount"
-                            type="number"
-                            value={cost.amount}
-                            onChange={handleChange}
-                            placeholder="Amount"
-                            className="text-sm"
-                        />
+                        <div className="relative">
+                            <Input
+                                name="amount"
+                                type="number"
+                                value={cost.amount}
+                                onChange={handleChange}
+                                placeholder="Amount"
+                                className="text-sm pr-24"
+                            />
+                             <Select onValueChange={handleSelectChange('costType')} value={costType}>
+                                <SelectTrigger className="absolute top-0 right-0 h-full w-auto text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Total for Period">Total</SelectItem>
+                                    <SelectItem value="Monthly Cost">/ month</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                          <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                             <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
                             <SelectContent>
