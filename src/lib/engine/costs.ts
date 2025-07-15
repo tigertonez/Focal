@@ -16,9 +16,15 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         }
 
         // --- Fixed Costs Calculation ---
-        const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
-        const planningBuffer = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
-        const totalFixed = baseFixedCosts + planningBuffer;
+        const marketingCostItem = inputs.fixedCosts.find(c => c.name.toLowerCase() === 'marketing');
+        const marketingCost = marketingCostItem ? marketingCostItem.amount : 0;
+        
+        const otherFixedCosts = inputs.fixedCosts.filter(c => c.name.toLowerCase() !== 'marketing');
+        const baseOtherFixedCosts = otherFixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
+        
+        const totalBaseFixedCosts = baseOtherFixedCosts + marketingCost;
+        const planningBuffer = totalBaseFixedCosts * (inputs.parameters.planningBuffer / 100);
+        const totalFixed = totalBaseFixedCosts + planningBuffer;
         
         // --- Variable Costs Calculation ---
         let totalPlannedUnits = 0;
@@ -60,16 +66,22 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             variableCosts
         };
 
-        // --- Monthly Timeline (Placeholder) ---
+        // --- Monthly Timeline ---
         const months = inputs.parameters.forecastMonths;
-        const monthlyFixed = totalFixed / months;
-        const monthlyVariable = totalVariableCost / months;
+        const monthlyMarketing = marketingCost / months;
+        // Apply buffer proportionally to non-marketing fixed costs
+        const bufferedOtherFixed = baseOtherFixedCosts + planningBuffer;
+        const monthlyOtherFixed = bufferedOtherFixed / months;
+        
+        const monthlyProduction = totalVariableCost / months;
+        const monthlyDeposits = totalDepositsPaid / months;
+
         const timeline: MonthlyCost[] = Array.from({ length: months }, (_, i) => ({
-            deposits: totalDepositsPaid / months,
-            otherFixed: monthlyFixed,
-            production: monthlyVariable,
-            marketing: 0, // Placeholder
-            total: monthlyFixed + monthlyVariable
+            deposits: monthlyDeposits,
+            otherFixed: monthlyOtherFixed,
+            production: monthlyProduction,
+            marketing: monthlyMarketing,
+            total: monthlyOtherFixed + monthlyProduction + monthlyMarketing,
         }));
         
         // --- Deposit Progress ---
