@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
 import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
@@ -21,7 +21,6 @@ interface ForecastContextType {
   saveDraft: () => void;
   calculateForecast: () => void;
   loading: boolean;
-  isFormValid: boolean;
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -73,18 +72,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [results, setResults] = useState<EngineOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFormValid, setIsFormValid] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const result = EngineInputSchema.safeParse(inputs);
-    setIsFormValid(result.success);
-    if (!result.success) {
-      setError(result.error.errors[0].message);
-    } else {
-      setError(null);
-    }
-  }, [inputs]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
@@ -157,16 +145,31 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setResults(null);
     setError(null);
-    try {
-        const validatedInputs = EngineInputSchema.parse(inputs);
-        
-        const costResults = calculateCosts(validatedInputs);
 
+    // Perform validation at the time of calculation
+    const validationResult = EngineInputSchema.safeParse(inputs);
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors[0].message;
+      setError(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: errorMessage,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Calculation logic
+    try {
+        const validatedInputs = validationResult.data;
+        const costResults = calculateCosts(validatedInputs);
         const newResults: EngineOutput = {
           costSummary: costResults.costSummary,
           monthlyCosts: costResults.monthlyCosts,
         };
 
+        // Simulate async operation
         setTimeout(() => {
             setResults(newResults);
             setLoading(false);
@@ -178,8 +181,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (e) {
         let errorMessage = 'An unknown error occurred.';
-        if (e instanceof ZodError) {
-            errorMessage = e.errors[0].message;
+        if (e instanceof ZodError) { // This case might be redundant now, but good for safety
+            errorMessage = e.errors.map(error => error.message).join(' ');
         } else if (e instanceof Error) {
             errorMessage = e.message;
         }
@@ -207,8 +210,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     saveDraft,
     calculateForecast,
     loading,
-    isFormValid,
-  }), [inputs, results, error, loading, isFormValid]);
+  }), [inputs, results, error, loading]);
 
   return (
     <ForecastContext.Provider value={value}>

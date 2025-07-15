@@ -11,9 +11,15 @@ export function buildFixedCostTimeline(
 
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
-    const schedule = fc.paymentSchedule || 'Up-Front';
 
-    switch (schedule) {
+    // If 'According to Sales' is chosen, it's the only rule that applies.
+    if (fc.paymentSchedule === 'According to Sales') {
+        salesWeights.forEach((w, i) => add(i + 1, A * w));
+        return; // Move to the next fixed cost item
+    }
+
+    // Otherwise, apply the selected payment schedule.
+    switch (fc.paymentSchedule || 'Up-Front') {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) add(m, A);
         break;
@@ -22,9 +28,6 @@ export function buildFixedCostTimeline(
         break;
       case 'Up-Front':
         add(1, A);
-        break;
-      case 'According to Sales':
-        salesWeights.forEach((w, i) => add(i + 1, A * w));
         break;
       case 'Custom': {
         const start = fc.startMonth ?? 1;

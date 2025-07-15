@@ -105,46 +105,49 @@ export default function CostsPage() {
                 <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} />
             </section>
 
-            <section className="space-y-2">
-                <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
-                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    {costSummary.fixedCosts.map(cost => (
-                       <CostRow 
-                           key={cost.name}
-                           label={cost.name}
-                           value={formatCurrency(cost.amount, currency)}
-                       />
-                    ))}
-                    <div className="pt-2 border-t font-bold">
-                       <CostRow 
-                           label="Total Fixed (Base)"
-                           value={formatCurrency(totalBaseFixedCosts, currency)}
-                       />
-                    </div>
-                </div>
-            </section>
-            
-            <section className="space-y-2">
-                <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
-                 <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-                    {costSummary.variableCosts.map(product => (
-                        <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
-                            <h3 className="font-semibold">{product.name}</h3>
-                            <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
-                            <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
-                            <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                            <CostRow label="Deposit Paid (Month 1)" value={formatCurrency(product.depositPaid, currency)} />
-                            <CostRow label="Final Payment (Month 2)" value={formatCurrency(product.remainingCost, currency)} />
+            <div className="grid md:grid-cols-2 gap-8">
+                <section className="space-y-2">
+                    <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
+                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                        {costSummary.fixedCosts.map(cost => (
+                           <CostRow 
+                               key={cost.name}
+                               label={cost.name}
+                               value={formatCurrency(cost.amount, currency)}
+                           />
+                        ))}
+                        <div className="pt-2 border-t font-bold">
+                           <CostRow 
+                               label="Total Fixed (Base)"
+                               value={formatCurrency(totalBaseFixedCosts, currency)}
+                           />
                         </div>
-                    ))}
-                     <div className="pt-2 border-t font-bold">
-                       <CostRow 
-                           label="Total Variable"
-                           value={formatCurrency(costSummary.totalVariable, currency)}
-                       />
                     </div>
-                </div>
-            </section>
+                </section>
+                
+                <section className="space-y-2">
+                    <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
+                     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                        {costSummary.variableCosts.map(product => (
+                            <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
+                                <h3 className="font-semibold">{product.name}</h3>
+                                <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
+                                <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
+                                <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
+                                <CostRow label="Deposit Paid (Month 1)" value={formatCurrency(product.depositPaid, currency)} />
+                                <CostRow label="Final Payment (Month 2)" value={formatCurrency(product.remainingCost, currency)} />
+                            </div>
+                        ))}
+                         <div className="pt-2 border-t font-bold">
+                           <CostRow 
+                               label="Total Variable"
+                               value={formatCurrency(costSummary.totalVariable, currency)}
+                           />
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     );
 }
+

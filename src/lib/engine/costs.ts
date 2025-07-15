@@ -22,7 +22,7 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             salesWeights
         );
         
-        const totalFixedInTimeline = fixedCostTimeline.reduce((sum, cost) => sum + cost, 0);
+        const totalFixedCostInTimeline = fixedCostTimeline.reduce((sum, cost) => sum + cost, 0);
         
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -51,11 +51,11 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             };
         });
 
-        const totalOperating = totalFixedInTimeline + totalVariableCost;
+        const totalOperating = totalFixedCostInTimeline + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
 
         const costSummary: CostSummary = {
-            totalFixed: totalFixedInTimeline,
+            totalFixed: totalFixedCostInTimeline,
             totalVariable: totalVariableCost,
             totalOperating,
             avgCostPerUnit,

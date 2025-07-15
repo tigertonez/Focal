@@ -13,10 +13,10 @@ export const useCosts = () => {
                 costSummary: null,
                 monthlyCosts: [],
                 error: error,
-            }
+            };
         }
         
-        if (!results) {
+        if (!results?.costSummary) {
             return {
                 costSummary: null,
                 monthlyCosts: [],

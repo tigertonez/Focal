@@ -26,11 +26,10 @@ const SelectField: React.FC<{
   value: string;
   onValueChange: (value: string) => void;
   children: React.ReactNode;
-  required?: boolean;
-}> = ({ label, id, value, onValueChange, children, required }) => (
+}> = ({ label, id, value, onValueChange, children }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
     <Label htmlFor={id} className="font-medium text-sm">
-      {label} {required && <span className="text-destructive">*</span>}
+      {label}
     </Label>
     <div className="md:col-span-2">
       <Select onValueChange={onValueChange} value={value}>
@@ -51,7 +50,6 @@ export default function InputsPage() {
     saveDraft,
     calculateForecast,
     loading,
-    isFormValid,
   } = useForecast();
 
   const handleParamChange = (section: 'parameters' | 'realtime' ) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +131,7 @@ export default function InputsPage() {
           </Button>
           <Button
             onClick={calculateForecast}
-            disabled={!isFormValid || loading}
+            disabled={loading}
             style={{ height: '44px', padding: '0 24px' }}
           >
             {loading ? <Loader2 className="mr-2 animate-spin" /> : null}
