@@ -30,7 +30,7 @@
     --fs-label: 12px;
     --fs-value: 24px;
     
-    /* Chart Colors (Subtle "Apple" Style) */
+    /* Chart Colors (More Distinguishable "Apple" Style) */
     --chart-1: 220 80% 65%; /* Muted Blue */
     --chart-2: 190 60% 55%; /* Muted Teal */
     --chart-3: 210 30% 50%; /* Slate Gray-Blue */
@@ -60,7 +60,7 @@
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 60%;
     
-    /* Chart Colors (Subtle "Apple" Style) */
+    /* Chart Colors (More Distinguishable "Apple" Style) */
     --chart-1: 220 70% 60%;
     --chart-2: 190 70% 50%;
     --chart-3: 210 35% 55%;

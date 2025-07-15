@@ -60,7 +60,7 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
     sortedCostKeys.forEach((key, index) => {
       let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
       
-      if (key === 'deposits') label = 'Deposits Paid';
+      if (key === 'deposits') label = 'Deposits';
       if (key === 'finalPayments') label = 'Final Payments';
 
       const fixedCostDef = fixedCostMap.get(key);
@@ -76,6 +76,14 @@ export function CostTimelineChart({ data, currency, fixedCostDefs }: CostTimelin
 
     return { chartData: monthlyData, chartConfig: config, costKeys: sortedCostKeys };
   }, [data, fixedCostDefs]);
+
+  if (chartData.length === 0 || costKeys.length === 0) {
+    return (
+        <div className="flex h-[250px] w-full items-center justify-center rounded-lg bg-muted/50 p-4 text-center text-muted-foreground">
+            <p>No cost data to display. Please add costs on the Inputs page.</p>
+        </div>
+    );
+  }
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
