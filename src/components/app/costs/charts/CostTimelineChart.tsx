@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
@@ -46,7 +45,7 @@ export function CostTimelineChart({ data, currency, preOrder }: CostTimelineChar
         <XAxis
           dataKey="name"
           tickLine={false}
-          tickMargin={10}
+          tickMargin={15}
           axisLine={false}
         />
         <YAxis
