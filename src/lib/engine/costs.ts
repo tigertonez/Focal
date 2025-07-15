@@ -11,13 +11,9 @@ function buildFixedCostTimeline(
   ): { timeline: { [key: string]: number }[], totalFixedInTimeline: number } {
     const timeline: { [key: string]: number }[] = Array.from({ length: forecastMonths }, () => ({}));
     
-    // Determine the first month where sales can occur. Month 0 is for pre-order activities.
     const firstSalesMonthIndex = preOrder ? 1 : 0;
-    // The number of months available for sales distribution.
     const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
 
-    // --- Sales Weight Calculation ---
-    // This helper determines the proportion of sales occurring in each month based on a model.
     const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
       let weights: number[] = Array(months).fill(0);
       if (months <= 0) return weights;
@@ -49,8 +45,6 @@ function buildFixedCostTimeline(
       return weights;
     }
 
-    // --- Aggregated Sales Weights ---
-    // This calculates a single, combined sales curve if there are multiple products with different models.
     const aggregatedSalesWeights = Array(forecastMonths).fill(0);
     if (products?.length > 0 && salesCurveMonths > 0) {
       let totalRevenue = 0;
@@ -77,7 +71,6 @@ function buildFixedCostTimeline(
       }
     }
 
-    // --- Cost Distribution Logic ---
     const sanitizeKey = (name: string) => name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     const addCost = (monthIndex: number, value: number, name: string) => {
@@ -99,13 +92,22 @@ function buildFixedCostTimeline(
           addCost(0, totalAmount, fc.name);
           break;
         case 'Monthly':
-          for (let i = 0; i < salesCurveMonths; i++) {
-            addCost(i + firstSalesMonthIndex, totalAmount, fc.name);
+          if (salesCurveMonths > 0) {
+            const monthlyCost = totalAmount / salesCurveMonths;
+            for (let i = 0; i < salesCurveMonths; i++) {
+                addCost(i + firstSalesMonthIndex, monthlyCost, fc.name);
+            }
           }
           break;
         case 'Quarterly':
-            for (let i = 0; i < salesCurveMonths; i += 3) {
-              addCost(i + firstSalesMonthIndex, totalAmount, fc.name);
+            if (salesCurveMonths > 0) {
+                const quarters = Math.ceil(salesCurveMonths / 3);
+                if (quarters > 0) {
+                    const quarterlyCost = totalAmount / quarters;
+                    for (let i = 0; i < salesCurveMonths; i += 3) {
+                      addCost(i + firstSalesMonthIndex, quarterlyCost, fc.name);
+                    }
+                }
             }
           break;
         case 'According to Sales':
