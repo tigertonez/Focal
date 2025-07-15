@@ -104,9 +104,7 @@ export default function CostsPage() {
             
             <section className="space-y-4">
                 <h2 className="text-xl font-semibold">Cost Timeline</h2>
-                <div className="overflow-x-auto">
-                    <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
-                </div>
+                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
             </section>
 
             <section className="grid md:grid-cols-2 gap-8">
