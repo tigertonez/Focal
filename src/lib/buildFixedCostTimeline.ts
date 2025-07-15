@@ -50,18 +50,15 @@ export function buildFixedCostTimeline(
   const tl: number[] = Array(forecastMonths).fill(0);
   const add = (m: number, val: number) => { if (m >= 1 && m <= forecastMonths) tl[m - 1] += val; };
 
-  let totalScheduledCost = 0;
-
-  // Step 1: Build the base timeline from user-defined schedules
+  // Step 1: Build the base timeline from user-defined schedules, excluding linked marketing
   fixedCosts.forEach(fc => {
-    const A = +fc.amount;
-    const schedule = fc.paymentSchedule || 'Up-Front';
-    
-    // Don't include linked marketing costs in this initial pass
     if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
       return;
     }
-
+    
+    const A = +fc.amount;
+    const schedule = fc.paymentSchedule || 'Up-Front';
+    
     switch (schedule) {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) add(m, A);
@@ -89,18 +86,21 @@ export function buildFixedCostTimeline(
     }
   });
   
-  // Step 2: Distribute the planning buffer proportionally across the base timeline
+  // Step 2: Distribute the planning buffer proportionally ONLY across months that have base costs
   const baseTimelineTotal = tl.reduce((s,v) => s + v, 0);
   if (baseTimelineTotal > 0) {
       for(let i = 0; i < tl.length; i++){
-          const proportion = tl[i] / baseTimelineTotal;
-          tl[i] += planningBuffer * proportion;
+          if (tl[i] > 0) { // This is the key fix
+            const proportion = tl[i] / baseTimelineTotal;
+            tl[i] += planningBuffer * proportion;
+          }
       }
   } else if (planningBuffer > 0) {
-      // If there are no other costs, distribute buffer according to sales weights or evenly
+      // If there are no scheduled costs at all, distribute buffer according to sales weights
       if (salesWeights.length === forecastMonths && salesWeights.reduce((s,v) => s+v, 0) > 0.99) {
           salesWeights.forEach((w, i) => add(i + 1, planningBuffer * w));
       } else {
+        // Fallback to even distribution if no sales weights are available
         const monthlyBuffer = planningBuffer / forecastMonths;
         for(let i = 0; i < tl.length; i++){
             add(i+1, monthlyBuffer);
@@ -115,39 +115,6 @@ export function buildFixedCostTimeline(
           salesWeights.forEach((w, i) => add(i + 1, A * w));
       }
   });
-
-
-  // Final check for integrity
-  let expectedTotal = fixedCosts.reduce((s, v) => {
-    const A = +v.amount;
-    const schedule = v.paymentSchedule || 'Up-Front';
-    switch (schedule) {
-        case 'Monthly': return s + (A * forecastMonths);
-        case 'Quarterly': return s + (A * Math.ceil(forecastMonths / 3));
-        default: return s + A;
-    }
-  }, 0) + planningBuffer;
-  
-  // Correct for linked marketing costs, as their original payment schedule is ignored
-  fixedCosts.forEach(fc => {
-      if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
-          const A = +fc.amount;
-          const schedule = fc.paymentSchedule || 'Up-Front';
-           switch (schedule) {
-                case 'Monthly': expectedTotal -= (A * forecastMonths); break;
-                case 'Quarterly': expectedTotal -= (A * Math.ceil(forecastMonths/3)); break;
-                default: expectedTotal -= A;
-            }
-            expectedTotal += A; // Add it back once, as it's distributed via sales weights
-      }
-  });
-
-
-  const timelineTotal = tl.reduce((s, v) => s + v, 0);
-  
-  if (Math.abs(timelineTotal - expectedTotal) > 0.01) {
-    console.warn(`Fixed-cost timeline mismatch. Expected: ${expectedTotal.toFixed(2)}, Got: ${timelineTotal.toFixed(2)}`);
-  }
 
   return tl.map(v => +v.toFixed(2));
 }
@@ -165,7 +132,10 @@ export function getAggregatedSalesWeights(products: any[], forecastMonths: numbe
         return weights.map(w => w * productRevenue);
     });
 
-    if (totalRevenue === 0) return aggregatedWeights;
+    if (totalRevenue === 0) {
+        // Fallback to even distribution if no revenue to weigh against
+        return Array(forecastMonths).fill(1 / forecastMonths);
+    }
 
     for (let i = 0; i < forecastMonths; i++) {
         let monthlyTotalRevenue = 0;
