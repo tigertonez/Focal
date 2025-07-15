@@ -11,7 +11,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 262 84% 65%; /* Deep Purple */
+    --primary: 217 91% 60%; /* Professional Blue */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 262 84% 65%; /* Deep Purple Ring */
+    --ring: 217 91% 60%; /* Professional Blue Ring */
     --radius: 0.4rem; /* Slightly sharper radius */
 
     /* Custom Font Sizes */
@@ -46,7 +46,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 262 84% 65%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -58,7 +58,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 262 84% 65%;
+    --ring: 217 91% 60%;
     
     /* Chart Colors (Professional & Distinguishable) */
     --chart-1: 220 80% 60%;  /* Main Blue */
