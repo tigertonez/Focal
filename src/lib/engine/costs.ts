@@ -23,19 +23,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
 
         const allFixedCosts: FixedCostItem[] = [...inputs.fixedCosts];
         
-        const baseFixedCostsTotal = allFixedCosts.reduce((sum, fc) => sum + fc.amount, 0);
-        const planningBufferAmount = baseFixedCostsTotal * ((inputs.fixedCostsConfig.planningBuffer / 100) || 0);
-
-        // Add planning buffer as a monthly fixed cost if it's greater than 0
-        if (planningBufferAmount > 0) {
-            allFixedCosts.push({
-                id: 'planning_buffer',
-                name: 'Planning Buffer',
-                amount: planningBufferAmount,
-                paymentSchedule: 'Monthly',
-            });
-        }
-        
         // Sales weights are calculated for the period *after* launch
         const salesWeights = getAggregatedSalesWeights(inputs.products, salesForecastMonths);
         
@@ -77,6 +64,10 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
 
         const totalOperating = totalFixedCostInTimeline + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
+
+        // Find the planning buffer amount from the list of fixed costs to display in summary
+        const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
+        const planningBufferAmount = planningBufferCost ? planningBufferCost.amount : 0;
 
         const costSummary: CostSummary = {
             totalFixed: totalFixedCostInTimeline,
