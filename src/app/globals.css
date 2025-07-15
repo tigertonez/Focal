@@ -11,7 +11,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 221 83% 53%; /* Crisp Blue */
+    --primary: 220 80% 55%; /* Softer, slightly desaturated Blue */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -23,8 +23,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 221 83% 53%; /* Blue Ring */
-    --radius: 0.5rem; /* Softer radius */
+    --ring: 220 80% 55%; /* Blue Ring */
+    --radius: 0.4rem; /* Slightly sharper radius */
 
     /* Custom Font Sizes */
     --fs-label: 12px;

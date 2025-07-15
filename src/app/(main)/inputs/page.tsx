@@ -12,6 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SelectField } from '@/components/app/inputs/SelectField';
 import { SelectItem } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { ChevronRight } from "lucide-react"
+import { cn } from '@/lib/utils';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -48,6 +55,8 @@ export default function InputsPage() {
   const handleSelectChange = (section: 'parameters' | 'realtime') => (id: string) => (value: string) => {
     setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: value } }));
   };
+  
+  const isManualMode = inputs.realtime.dataSource === 'Manual';
 
   return (
     <div className="bg-white min-h-screen">
@@ -102,26 +111,37 @@ export default function InputsPage() {
               </div>
             </div>
           </Section>
-
-          <Section title="Realtime Settings">
-            <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
-              <SelectItem value="Manual">Manual</SelectItem>
-              <SelectItem value="Shopify">Shopify</SelectItem>
-              <SelectItem value="CSV">CSV</SelectItem>
-            </SelectField>
-            <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Optional" />
-            <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
-          </Section>
+          
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer">
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
+                    <h2 className="text-xl font-semibold">Realtime Settings</h2>
+                </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4 pl-6">
+                <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
+                  <SelectItem value="Manual">Manual</SelectItem>
+                  <SelectItem value="Shopify">Shopify</SelectItem>
+                  <SelectItem value="CSV">CSV</SelectItem>
+                </SelectField>
+                {!isManualMode && (
+                    <>
+                        <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Optional" />
+                        <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
+                    </>
+                )}
+             </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <footer className="flex justify-end items-center gap-4 mt-8 pt-6">
-          <Button variant="outline" onClick={saveDraft} style={{ height: '44px', padding: '0 24px' }}>
+          <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>
           <Button
             onClick={calculateForecast}
             disabled={loading}
-            style={{ height: '44px', padding: '0 24px' }}
           >
             {loading ? <Loader2 className="mr-2 animate-spin" /> : null}
             Calculate Forecast

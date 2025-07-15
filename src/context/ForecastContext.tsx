@@ -49,7 +49,7 @@ const initialInputs: EngineInput = {
   parameters: {
     forecastMonths: 12,
     taxRate: 20,
-    currency: 'USD',
+    currency: 'EUR',
     preOrder: true,
   },
   realtime: {
