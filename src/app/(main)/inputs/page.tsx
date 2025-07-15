@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Info, Bot } from 'lucide-react';
@@ -168,16 +169,23 @@ export default function InputsPage() {
           </Collapsible>
         </div>
 
-        <footer className="flex justify-center items-center gap-4 mt-8 pt-6">
+        <footer className="flex justify-between items-center gap-4 mt-8 pt-6 border-t">
           <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>
+          
+          <Link href="/revenue" passHref>
+             <Button size="lg" className="w-48">
+                Get Report
+            </Button>
+          </Link>
+          
           <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button onClick={runProactiveAnalysis}>
+                    <Button onClick={runProactiveAnalysis} variant="accent">
                         <Bot className="mr-2" />
-                        Review with AI
+                        Let AI review
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
