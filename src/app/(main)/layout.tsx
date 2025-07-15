@@ -9,7 +9,7 @@ export default function MainLayout({
 }) {
   return (
     <ForecastProvider>
-      <div className="relative flex min-h-screen bg-muted/30">
+      <div className="relative flex min-h-screen bg-background">
         <SideNav />
         <main className="flex-1 overflow-auto">
           {children}

@@ -1,91 +1,71 @@
 
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
 import { type EngineInput, EngineInputSchema, type Product, ProductSchema } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { ZodError } from 'zod';
 
 interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
-  updateInput: (path: string, value: any) => void;
+  updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
   removeProduct: (id: string) => void;
-  saveAndCalculate: () => void;
+  saveDraft: () => void;
+  calculateForecast: () => void;
   loading: boolean;
+  isFormValid: boolean;
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
 
-// Helper for nested state updates
-import { set } from 'lodash-es';
-
-const defaultInputs: EngineInput = {
-  products: [
-    {
-      id: 'prod_abc123',
-      name: 'The Original Widget',
-      sku: 'WID-001',
-      unitCost: 15.50,
-      sellPrice: 49.99,
-      strategy: 'launch',
-      sellThrough: 85,
-      depositPaid: 25,
-      moqUnits: 500,
-    },
-    {
-      id: 'prod_def456',
-      name: 'Widget Pro',
-      sku: 'WID-PRO-001',
-      unitCost: 25.00,
-      sellPrice: 99.99,
-      strategy: 'lifter',
-      sellThrough: 70,
-      depositPaid: 30,
-      moqUnits: 200,
-    }
-  ],
+const initialInputs: EngineInput = {
+  products: [],
   fixedCosts: {
-    samplesOrPrototypes: 1500,
-    equipment: 5000,
-    setupAndCompliance: 2500,
-    marketingBudget: 10000,
+    samples: 0,
+    equipment: 0,
+    setup: 0,
+    marketing: 0,
   },
   parameters: {
-    forecastMonths: 24,
+    forecastMonths: 12,
     taxRate: 20,
-    planningBufferPct: 15,
+    planningBuffer: 15,
     currency: 'USD',
-    preOrderMode: false,
+    preOrder: false,
   },
   realtime: {
-    dataSource: 'manual',
-    apiKeyEncrypted: '',
-    syncIntervalMin: 60,
+    dataSource: 'Manual',
+    apiKey: '',
     timezone: 'UTC',
-    llmAssistToggle: true,
   },
-  readyForCalc: false,
 };
 
-
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
-  const [inputs, setInputs] = useState<EngineInput>(EngineInputSchema.parse(defaultInputs));
+  const [inputs, setInputs] = useState<EngineInput>(initialInputs);
   const [loading, setLoading] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
+  const { toast } = useToast();
 
-  const updateInput = (path: string, value: any) => {
-    setInputs(prevInputs => {
-      const newInputs = { ...prevInputs };
-      set(newInputs, path, value);
-      // Optional: Live validation can be added here
-      return newInputs;
+  useEffect(() => {
+    const result = EngineInputSchema.safeParse(inputs);
+    setIsFormValid(result.success);
+  }, [inputs]);
+
+  const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
+    setInputs(prev => {
+        const newProducts = [...prev.products];
+        newProducts[productIndex] = { ...newProducts[productIndex], [field]: value };
+        return { ...prev, products: newProducts };
     });
   };
 
   const addProduct = () => {
-    // Generate unique ID on the client-side only
-    const newProduct = ProductSchema.parse({
-      id: `prod_${crypto.randomUUID()}`
-    });
+    const newProduct = { 
+        ...ProductSchema.parse({}), // uses defaults from schema
+        id: `prod_${crypto.randomUUID()}` 
+    };
     setInputs(prev => ({
         ...prev,
         products: [...prev.products, newProduct]
@@ -99,28 +79,56 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const saveAndCalculate = () => {
-    console.log("Saving inputs and setting readyForCalc to true...");
-    setLoading(true);
-    const finalInputs = { ...inputs, readyForCalc: true };
-    setInputs(finalInputs);
+  const saveDraft = () => {
+    // In a real app, this would save to localStorage or an API
+    console.log("Saving draft:", inputs);
+    toast({
+        title: "Draft saved",
+        description: "Your inputs have been saved locally.",
+    });
+  };
 
-    // In a real scenario, this would trigger the engine call.
-    // For now, we just log and stop the loading state.
-    console.log("Data to be sent to engine:", finalInputs);
-    
-    setTimeout(() => setLoading(false), 1000); // Simulate network latency
+  const calculateForecast = () => {
+    setLoading(true);
+    try {
+        // Zod validation is checked via isFormValid state, but we can re-validate
+        const validatedInputs = EngineInputSchema.parse(inputs);
+        
+        console.log("Validation successful, sending to engine:", validatedInputs);
+
+        // Simulate engine call
+        setTimeout(() => {
+            setLoading(false);
+            toast({
+                title: "Calculation Complete",
+                description: "Forecast results are ready.",
+            });
+        }, 1500);
+
+    } catch (error) {
+        if (error instanceof ZodError) {
+            const firstError = error.errors[0];
+            toast({
+                variant: 'destructive',
+                title: 'Validation Error',
+                description: `${firstError.path.join('.')} - ${firstError.message}`,
+            });
+        }
+        setLoading(false);
+    }
   };
 
   const value = useMemo(() => ({
     inputs,
     setInputs,
-    updateInput,
+    updateProduct,
     addProduct,
     removeProduct,
-    saveAndCalculate,
+    saveDraft,
+    calculateForecast,
     loading,
-  }), [inputs, loading]);
+    isFormValid,
+  }), [inputs, loading, isFormValid]);
 
   return (
     <ForecastContext.Provider value={value}>

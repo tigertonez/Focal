@@ -1,144 +1,216 @@
 
 'use client';
 
+import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ProductCard } from '@/components/app/ProductCard';
+import { Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import type { Product } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
-const SectionCard: React.FC<{ title: string; description?: string; children: React.ReactNode }> = ({ title, description, children }) => (
-  <Card className="shadow-sm ring-1 ring-gray-200/50 border-none">
-    <CardHeader>
-      <CardTitle className="font-headline text-lg">{title}</CardTitle>
-      {description && <CardDescription>{description}</CardDescription>}
-    </CardHeader>
-    <CardContent>{children}</CardContent>
-  </Card>
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <section className="space-y-4">
+    <h2 className="text-xl font-semibold font-headline">{title}</h2>
+    <div className="space-y-4">{children}</div>
+  </section>
 );
 
-const InputField: React.FC<{ label: string; path: string; type?: string; placeholder?: string; children?: React.ReactNode }> = ({ label, path, type = 'text', placeholder, children }) => {
-  const { inputs, updateInput } = useForecast();
-  
-  // Lodash get could be used here for safer deep access
-  const value = path.split(/[.\[\]]/).filter(Boolean).reduce((o, k) => o?.[k], inputs) ?? '';
+const InputField: React.FC<{
+  label: string;
+  id: string;
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+}> = ({ label, id, value, onChange, type = 'text', placeholder, required }) => (
+  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+    <Label htmlFor={id} className="font-medium text-sm">
+      {label} {required && <span className="text-destructive">*</span>}
+    </Label>
+    <Input
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="md:col-span-2 text-base"
+    />
+  </div>
+);
+
+const SelectField: React.FC<{
+  label: string;
+  id: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  children: React.ReactNode;
+  required?: boolean;
+}> = ({ label, id, value, onValueChange, children, required }) => (
+     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+        <Label htmlFor={id} className="font-medium text-sm">
+            {label} {required && <span className="text-destructive">*</span>}
+        </Label>
+        <div className="md:col-span-2">
+            <Select onValueChange={onValueChange} value={value}>
+                <SelectTrigger id={id}><SelectValue /></SelectTrigger>
+                <SelectContent>{children}</SelectContent>
+            </Select>
+        </div>
+    </div>
+);
+
+
+const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
+  const { updateProduct, removeProduct } = useForecast();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    const finalValue = type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
+    updateProduct(index, name as keyof Product, finalValue);
+  };
+
+  const handleSelectChange = (name: keyof Product) => (value: string) => {
+    updateProduct(index, name, value);
+  };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={path} className="text-xs font-medium">{label}</Label>
-      {children ? children : (
-        <Input
-          id={path}
-          type={type}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => updateInput(path, type === 'number' ? e.target.valueAsNumber || 0 : e.target.value)}
-          className="text-base"
-        />
-      )}
+    <div className="bg-muted/50 p-4 rounded-lg space-y-4 relative">
+       <button onClick={() => removeProduct(product.id)} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive">
+          <Trash2 size={18} />
+       </button>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor={`productName-${index}`} className="text-sm font-medium">Product / SKU</Label>
+                <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+             <div>
+                <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
+                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+       </div>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
+                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+            <div>
+                <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sell Price</Label>
+                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+       </div>
+       <div>
+            <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium">Sales Model</Label>
+            <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
+                <SelectTrigger id={`salesModel-${index}`} className="mt-2 text-base"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="launch">Launch</SelectItem>
+                    <SelectItem value="even">Even</SelectItem>
+                    <SelectItem value="seasonal">Seasonal</SelectItem>
+                    <SelectItem value="growth">Growth</SelectItem>
+                </SelectContent>
+            </Select>
+       </div>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium">Sell-Through %</Label>
+                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+            <div>
+                <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium">Deposit Paid %</Label>
+                <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="mt-2 text-base" />
+            </div>
+       </div>
     </div>
   );
 };
 
+
 export default function InputsPage() {
-  const { inputs, updateInput, addProduct, saveAndCalculate, loading } = useForecast();
+  const { inputs, setInputs, addProduct, saveDraft, calculateForecast, loading, isFormValid } = useForecast();
+
+  const handleInputChange = (section: 'fixedCosts' | 'parameters' | 'realtime') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value, type, checked } = e.target;
+    const finalValue = type === 'checkbox' ? checked : (type === 'number' ? (value === '' ? '' : parseFloat(value)) : value);
+    setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: finalValue } }));
+  };
+
+  const handleSelectChange = (section: 'parameters' | 'realtime') => (id: string) => (value: string) => {
+    setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: value } }));
+  };
 
   return (
-    <div className="relative h-screen flex flex-col">
-       <header className="flex-shrink-0 flex items-center justify-between p-4 bg-white border-b">
-        <div>
-            <h1 className="text-xl font-bold font-headline">Input Sheet</h1>
-            <p className="text-sm text-muted-foreground">Define your forecast assumptions</p>
+    <div className="bg-white min-h-screen">
+      <main className="max-w-4xl mx-auto p-4 md:p-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold font-headline">Input Sheet</h1>
+          <p className="text-muted-foreground mt-1">Define your forecast assumptions</p>
+        </header>
+
+        <div className="space-y-6">
+          <Section title="Products">
+            <div className="space-y-4">
+                {inputs.products.map((p, i) => (
+                    <ProductForm key={p.id} product={p} index={i} />
+                ))}
+            </div>
+            <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
+              <PlusCircle className="mr-2" size={16} /> Add Product
+            </Button>
+          </Section>
+
+          <Section title="Fixed Costs">
+            <InputField label="Samples / Prototypes" id="samples" type="number" value={inputs.fixedCosts.samples} onChange={handleInputChange('fixedCosts')} />
+            <InputField label="Equipment" id="equipment" type="number" value={inputs.fixedCosts.equipment} onChange={handleInputChange('fixedCosts')} />
+            <InputField label="Setup & Compliance" id="setup" type="number" value={inputs.fixedCosts.setup} onChange={handleInputChange('fixedCosts')} />
+            <InputField label="Marketing Budget" id="marketing" type="number" value={inputs.fixedCosts.marketing} onChange={handleInputChange('fixedCosts')} />
+          </Section>
+
+          <Section title="General Parameters">
+             <InputField label="Forecast Months" id="forecastMonths" type="number" value={inputs.parameters.forecastMonths} onChange={handleInputChange('parameters')} />
+             <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleInputChange('parameters')} />
+             <InputField label="Planning Buffer %" id="planningBuffer" type="number" value={inputs.parameters.planningBuffer} onChange={handleInputChange('parameters')} />
+             <SelectField label="Currency" id="currency" value={inputs.parameters.currency} onValueChange={handleSelectChange('parameters')('currency')}>
+                 <SelectItem value="EUR">EUR</SelectItem>
+                 <SelectItem value="USD">USD</SelectItem>
+             </SelectField>
+             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
+                <div className="md:col-span-2 flex items-center">
+                    <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
+                </div>
+            </div>
+          </Section>
+
+           <Section title="Realtime Settings">
+                <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
+                    <SelectItem value="Manual">Manual</SelectItem>
+                    <SelectItem value="Shopify">Shopify</SelectItem>
+                    <SelectItem value="CSV">CSV</SelectItem>
+                </SelectField>
+                <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleInputChange('realtime')} placeholder="Optional" />
+                <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleInputChange('realtime')} />
+           </Section>
         </div>
-        <Button onClick={saveAndCalculate} disabled={loading} className="font-bold">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save & Calculate
-        </Button>
-       </header>
 
-      <ScrollArea className="flex-grow">
-        <div className="p-4 md:p-8 space-y-8">
-            <SectionCard title="Products" description="Add all products for this forecast.">
-                <div className="space-y-4">
-                    {inputs.products.map((p, i) => (
-                        <ProductCard key={p.id} product={p} index={i} />
-                    ))}
-                    <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
-                        <PlusCircle className="mr-2" size={16} /> Add Product
-                    </Button>
-                </div>
-            </SectionCard>
-
-            <SectionCard title="Fixed Costs">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <InputField label="Samples / Prototypes" path="fixedCosts.samplesOrPrototypes" type="number" />
-                    <InputField label="Equipment" path="fixedCosts.equipment" type="number" />
-                    <InputField label="Setup & Compliance" path="fixedCosts.setupAndCompliance" type="number" />
-                    <InputField label="Marketing Budget" path="fixedCosts.marketingBudget" type="number" />
-                </div>
-            </SectionCard>
-
-            <SectionCard title="Parameters">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <InputField label="Forecast (Months)" path="parameters.forecastMonths" type="number" />
-                    <InputField label="Tax Rate (%)" path="parameters.taxRate" type="number" />
-                    <InputField label="Planning Buffer (%)" path="parameters.planningBufferPct" type="number" />
-                    <div className="space-y-2">
-                        <Label htmlFor="parameters.currency" className="text-xs font-medium">Currency</Label>
-                        <Select
-                            value={inputs.parameters.currency}
-                            onValueChange={(value) => updateInput('parameters.currency', value)}
-                        >
-                            <SelectTrigger id="parameters.currency"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex items-end pb-2">
-                        <div className="flex items-center space-x-2">
-                            <Switch id="parameters.preOrderMode" checked={inputs.parameters.preOrderMode} onCheckedChange={(val) => updateInput('parameters.preOrderMode', val)} />
-                            <Label htmlFor="parameters.preOrderMode" className="text-xs font-medium">Pre-Order Mode</Label>
-                        </div>
-                    </div>
-                </div>
-            </SectionCard>
-
-             <SectionCard title="Realtime Settings">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="realtime.dataSource" className="text-xs font-medium">Data Source</Label>
-                        <Select
-                            value={inputs.realtime.dataSource}
-                            onValueChange={(value) => updateInput('realtime.dataSource', value)}
-                        >
-                            <SelectTrigger id="realtime.dataSource"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="manual">Manual</SelectItem>
-                                <SelectItem value="google_sheets">Google Sheets</SelectItem>
-                                <SelectItem value="shopify">Shopify</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <InputField label="API Key" path="realtime.apiKeyEncrypted" type="password" placeholder="••••••••••••••••" />
-                    <InputField label="Timezone" path="realtime.timezone" />
-                     <div className="flex items-end pb-2">
-                        <div className="flex items-center space-x-2">
-                            <Switch id="realtime.llmAssistToggle" checked={inputs.realtime.llmAssistToggle} onCheckedChange={(val) => updateInput('realtime.llmAssistToggle', val)} />
-                            <Label htmlFor="realtime.llmAssistToggle" className="text-xs font-medium">LLM Assist</Label>
-                        </div>
-                    </div>
-                </div>
-            </SectionCard>
-        </div>
-      </ScrollArea>
+        <footer className="flex justify-end items-center gap-4 mt-8 pt-6">
+            <Button variant="outline" onClick={saveDraft} style={{height: '44px', padding: '0 24px'}}>
+                Save Draft
+            </Button>
+            <Button 
+                onClick={calculateForecast} 
+                disabled={!isFormValid || loading}
+                style={{height: '44px', padding: '0 24px'}}
+            >
+                {loading ? <Loader2 className="mr-2 animate-spin" /> : null}
+                Calculate Forecast
+            </Button>
+        </footer>
+      </main>
     </div>
   );
 }
