@@ -82,12 +82,6 @@ export default function CostsPage() {
                 )}
             </section>
             
-            <section>
-                <ChartWrapper title="Monthly Cost Timeline">
-                    <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
-                </ChartWrapper>
-            </section>
-            
             <section className="grid md:grid-cols-2 gap-8 pt-4">
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
@@ -135,6 +129,12 @@ export default function CostsPage() {
                         </div>
                     </div>
                 </div>
+            </section>
+            
+            <section>
+                <ChartWrapper title="Monthly Cost Timeline">
+                    <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
+                </ChartWrapper>
             </section>
         </div>
     );
