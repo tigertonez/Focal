@@ -1,32 +1,52 @@
 
 import { type FixedCostItem, type Product } from './types';
 
+interface FixedCostBreakdown {
+    name: string;
+    amount: number;
+}
+
+interface MonthlyFixedCost {
+    total: number;
+    breakdown: FixedCostBreakdown[];
+}
+
 export function buildFixedCostTimeline(
   fixedCosts: FixedCostItem[],
   forecastMonths: number,
   salesWeights: number[],
   preOrder: boolean,
-): number[] {
-  const tl: number[] = Array(forecastMonths).fill(0);
+): MonthlyFixedCost[] {
+  const timeline: MonthlyFixedCost[] = Array.from({ length: forecastMonths }, () => ({
+    total: 0,
+    breakdown: [],
+  }));
   
+  const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
   const firstSalesMonthIndex = preOrder ? 1 : 0;
-  const salesCurveMonths = forecastMonths - firstSalesMonthIndex;
 
-  const add = (m: number, val: number) => { 
+  const add = (m: number, val: number, name: string) => { 
     if (m >= 0 && m < forecastMonths) {
-      tl[m] += val;
+      timeline[m].total += val;
+      const existing = timeline[m].breakdown.find(b => b.name === name);
+      if (existing) {
+        existing.amount += val;
+      } else {
+        timeline[m].breakdown.push({ name, amount: val });
+      }
     }
   };
 
   fixedCosts.forEach(fc => {
     const totalAmount = +fc.amount;
-
     if (totalAmount === 0) return;
 
     switch (fc.paymentSchedule || 'Up-Front') {
       case 'According to Sales':
         salesWeights.forEach((weight, monthIndex) => {
-          add(monthIndex, totalAmount * weight);
+          if (weight > 0) {
+            add(monthIndex, totalAmount * weight, fc.name);
+          }
         });
         break;
 
@@ -34,7 +54,7 @@ export function buildFixedCostTimeline(
         if (salesCurveMonths > 0) {
           const monthlyAmount = totalAmount / salesCurveMonths;
           for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
-            add(m, monthlyAmount);
+            add(m, monthlyAmount, fc.name);
           }
         }
         break;
@@ -44,28 +64,35 @@ export function buildFixedCostTimeline(
           const numQuarters = Math.ceil(salesCurveMonths / 3);
           const quarterlyAmount = totalAmount / numQuarters;
           for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
-            add(m, quarterlyAmount);
+            add(m, quarterlyAmount, fc.name);
           }
         }
         break;
         
       case 'Up-Front':
-        add(preOrder ? 0 : firstSalesMonthIndex, totalAmount);
+        add(preOrder ? 0 : 0, totalAmount, fc.name);
         break;
     }
   });
 
-  return tl.map(v => +v.toFixed(2));
+  // Round all values at the end
+  return timeline.map(month => ({
+    total: +month.total.toFixed(2),
+    breakdown: month.breakdown.map(item => ({
+      name: item.name,
+      amount: +item.amount.toFixed(2)
+    })).sort((a, b) => b.amount - a.amount), // Sort by amount desc
+  }));
 }
 
 export function getAggregatedSalesWeights(products: Product[], forecastMonths: number, preOrder: boolean): number[] {
     const aggregatedWeights = Array(forecastMonths).fill(0);
     let totalRevenue = 0;
     
-    const salesCurveMonths = preOrder ? forecastMonths : forecastMonths;
-    const salesStartIndex = preOrder ? 1 : 0;
+    // The curve itself is only over the sales months, not pre-order month
+    const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
 
-    if (!products || products.length === 0) return aggregatedWeights;
+    if (!products || products.length === 0 || salesCurveMonths <= 0) return aggregatedWeights;
 
     const getSalesWeights = (months: number, model: 'launch' | 'even' | 'seasonal' | 'growth'): number[] => {
       let weights: number[] = Array(months).fill(0);
@@ -100,7 +127,7 @@ export function getAggregatedSalesWeights(products: Product[], forecastMonths: n
       return weights;
   }
     
-    const productSalesWeights = products.map(p => {
+    const productSalesData = products.map(p => {
         const singleProductWeights = getSalesWeights(salesCurveMonths, p.salesModel || 'launch');
         const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
         totalRevenue += productRevenue;
@@ -108,23 +135,22 @@ export function getAggregatedSalesWeights(products: Product[], forecastMonths: n
     });
 
     if (totalRevenue === 0) {
-        if (forecastMonths > 0) {
-            const evenWeight = 1 / forecastMonths;
-            return Array(forecastMonths).fill(evenWeight);
-        }
-        return aggregatedWeights;
+       return aggregatedWeights; // No revenue, no weights
     }
     
-    // Distribute weights into the main timeline array
-    for (let i = 0; i < forecastMonths; i++) {
+    const salesStartIndex = preOrder ? 1 : 0;
+    // Distribute weights into the main timeline array, starting from the correct month
+    for (let i = salesStartIndex; i < forecastMonths; i++) {
+      const weightIndex = i - salesStartIndex;
       let monthlyTotalRevenue = 0;
-      productSalesWeights.forEach(({ weights, revenue }) => {
-        const weightIndex = i - salesStartIndex;
-        if (weightIndex >= 0 && weightIndex < weights.length) {
+      productSalesData.forEach(({ weights, revenue }) => {
+        if (weightIndex < weights.length) {
           monthlyTotalRevenue += weights[weightIndex] * revenue;
         }
       });
-      aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
+      if (totalRevenue > 0) {
+        aggregatedWeights[i] = monthlyTotalRevenue / totalRevenue;
+      }
     }
     
     return aggregatedWeights;

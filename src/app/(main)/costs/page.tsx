@@ -10,14 +10,21 @@ import { CostRow } from '@/components/app/costs/CostRow';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { ChartWrapper } from '@/components/app/ChartWrapper';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { Button } from '@/components/ui/button';
+import type { MonthlyCost } from '@/lib/types';
 
 
-const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: any[], currency: string, preOrder: boolean }) => (
+const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: MonthlyCost[], currency: string, preOrder: boolean }) => (
     <div className="overflow-x-auto rounded-lg border">
         <Table>
             <TableHeader>
@@ -27,17 +34,48 @@ const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts:
                     <TableHead>Final Payments</TableHead>
                     <TableHead>Fixed Costs</TableHead>
                     <TableHead className="text-right">Total Monthly Cost</TableHead>
+                    <TableHead className="w-[100px] text-center">Details</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {monthlyCosts.map((month, i) => (
-                    <TableRow key={i}>
-                        <TableCell className="font-medium">{preOrder ? month.month : month.month + 1}</TableCell>
-                        <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
-                        <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
-                        <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatCurrency(month.total, currency)}</TableCell>
-                    </TableRow>
+                    <Collapsible asChild key={i}>
+                        <>
+                            <TableRow>
+                                <TableCell className="font-medium">{preOrder ? month.month : month.month + 1}</TableCell>
+                                <TableCell>{formatCurrency(month.deposits, currency)}</TableCell>
+                                <TableCell>{formatCurrency(month.finalPayments, currency)}</TableCell>
+                                <TableCell>{formatCurrency(month.fixed, currency)}</TableCell>
+                                <TableCell className="text-right font-semibold">{formatCurrency(month.total, currency)}</TableCell>
+                                <TableCell className="text-center">
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="ghost" size="sm" disabled={month.fixedBreakdown.length === 0}>
+                                            <ChevronDown className="h-4 w-4" />
+                                            <span className="sr-only">Toggle details</span>
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </TableCell>
+                            </TableRow>
+                            <CollapsibleContent asChild>
+                                <tr className="bg-muted/50">
+                                    <TableCell colSpan={6} className="p-0">
+                                        <div className="p-4">
+                                            <h4 className="font-semibold mb-2 text-sm">Fixed Cost Breakdown for Month {preOrder ? month.month : month.month + 1}</h4>
+                                            <div className="space-y-1">
+                                                {month.fixedBreakdown.length > 0 ? (
+                                                    month.fixedBreakdown.map((item, idx) => (
+                                                        <CostRow key={idx} label={item.name} value={formatCurrency(item.amount, currency)} className="text-xs" />
+                                                    ))
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground">No specific fixed costs this month.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                </tr>
+                            </CollapsibleContent>
+                        </>
+                    </Collapsible>
                 ))}
             </TableBody>
         </Table>
@@ -142,8 +180,8 @@ export default function CostsPage() {
                                 <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
                                 <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
                                 <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                                <CostRow label={`Deposit Paid (Month ${preOrder ? 1 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
-                                <CostRow label={`Final Payment (Month ${preOrder ? 2 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
+                                <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
+                                <CostRow label={`Final Payment (Month ${preOrder ? 1 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
                             </div>
                         ))}
                          <div className="pt-2 border-t font-bold">

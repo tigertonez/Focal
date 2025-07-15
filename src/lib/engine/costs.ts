@@ -21,13 +21,10 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
 
         const { preOrder, forecastMonths: baseForecastMonths } = inputs.parameters;
         
-        // Add a month for pre-order period if active
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
-        // Sales weights are now calculated over the *entire timeline* including pre-order month if active.
         const salesWeights = getAggregatedSalesWeights(inputs.products, timelineMonths, preOrder);
         
-        // Use ALL fixed costs to build the timeline for consistency.
         const fixedCostTimeline = buildFixedCostTimeline(
             inputs.fixedCosts, 
             timelineMonths, 
@@ -35,7 +32,7 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             preOrder
         );
         
-        const totalFixedCostInTimeline = fixedCostTimeline.reduce((sum, cost) => sum + cost, 0);
+        const totalFixedCostInTimeline = fixedCostTimeline.reduce((sum, month) => sum + month.total, 0);
         
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -67,7 +64,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         const totalOperating = totalFixedCostInTimeline + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
 
-        // Find the planning buffer amount from the list of fixed costs to display in summary
         const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
         const planningBufferAmount = planningBufferCost ? planningBufferCost.amount : 0;
 
@@ -76,7 +72,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             totalVariable: totalVariableCost,
             totalOperating,
             avgCostPerUnit,
-            // Display fixed costs *without* the buffer in the summary card for clarity
             fixedCosts: inputs.fixedCosts.filter(fc => !fc.name.toLowerCase().includes('planning buffer')),
             variableCosts: variableCostBreakdown,
             totalDepositsPaid,
@@ -88,20 +83,19 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             month: i,
             deposits: 0,
             finalPayments: 0,
-            fixed: fixedCostTimeline[i] || 0,
-            total: fixedCostTimeline[i] || 0,
+            fixed: fixedCostTimeline[i].total,
+            fixedBreakdown: fixedCostTimeline[i].breakdown,
+            total: fixedCostTimeline[i].total,
         }));
 
-        const depositMonth = preOrder ? 0 : 0;
-        const finalPaymentMonth = preOrder ? 1 : 1;
+        const depositMonth = preOrder ? 0 : 1;
+        const finalPaymentMonth = preOrder ? 1 : 2;
 
-        // Deposits are paid
         if (monthlyCosts[depositMonth]) {
             monthlyCosts[depositMonth].deposits += totalDepositsPaid;
             monthlyCosts[depositMonth].total += totalDepositsPaid;
         }
 
-        // Final payments are made
         if (monthlyCosts[finalPaymentMonth]) {
             monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
             monthlyCosts[finalPaymentMonth].total += totalFinalPayments;

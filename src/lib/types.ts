@@ -7,7 +7,7 @@ export const ProductSchema = z.object({
   productName: z.string({ required_error: 'Product name is required.' }).min(1, 'Product name is required.'),
   plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(0),
   unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0),
-  sellPrice: z.number({ required_error: 'Sell price is required.' }).min(0),
+  sellPrice: z.number({ required_error: 'Sales price is required.' }).min(0),
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }),
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100),
   depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
@@ -72,14 +72,21 @@ export const CostSummarySchema = z.object({
     variableCosts: z.array(VariableCostBreakdownSchema),
     totalDepositsPaid: z.number(),
     totalFinalPayments: z.number(),
+    planningBuffer: z.number().optional(),
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
+
+const FixedCostBreakdownItemSchema = z.object({
+    name: z.string(),
+    amount: z.number(),
+});
 
 export const MonthlyCostSchema = z.object({
     month: z.number(),
     deposits: z.number(),
     finalPayments: z.number(),
     fixed: z.number(),
+    fixedBreakdown: z.array(FixedCostBreakdownItemSchema),
     total: z.number(),
 });
 export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
