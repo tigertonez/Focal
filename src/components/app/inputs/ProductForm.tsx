@@ -32,6 +32,10 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     Seasonal: Bell-curve distribution, peaking mid-period.
     Growth: Linearly increasing sales month over month.
   `;
+  
+  const sellThroughTooltip = "The percentage of your total planned units that you expect to actually sell over the forecast period.";
+  const depositPaidTooltip = "The percentage of the total production cost that you pay to your supplier upfront as a deposit.";
+
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4 relative">
@@ -87,12 +91,28 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isManualMode && (
           <div>
-            <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium">Sell-Through %</Label>
+            <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
+              Sell-Through %
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                        <TooltipContent><p>{sellThroughTooltip}</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </Label>
             <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 85" />
           </div>
         )}
         <div>
-          <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium">Deposit Paid %</Label>
+          <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
+            Deposit Paid %
+             <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                    <TooltipContent><p>{depositPaidTooltip}</p></TooltipContent>
+                </Tooltip>
+             </TooltipProvider>
+          </Label>
           <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="mt-2 text-base" placeholder="e.g., 25" />
         </div>
       </div>
