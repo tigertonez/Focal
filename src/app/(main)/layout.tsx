@@ -1,6 +1,8 @@
 
 import { SideNav } from '@/components/app/SideNav';
 import { ForecastProvider } from '@/context/ForecastContext';
+import { FinancialCopilot } from '@/components/app/FinancialCopilot';
+
 
 export default function MainLayout({
   children,
@@ -14,6 +16,7 @@ export default function MainLayout({
         <main className="flex-1 overflow-auto">
           {children}
         </main>
+        <FinancialCopilot />
       </div>
     </ForecastProvider>
   );
