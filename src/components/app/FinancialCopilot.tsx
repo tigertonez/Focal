@@ -105,8 +105,8 @@ export function FinancialCopilot() {
             </CardTitle>
             {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
         </CardHeader>
-        <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-96" : "max-h-0")}>
-            <CardContent className="p-0 h-80 flex flex-col">
+        <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-80" : "max-h-0")}>
+            <CardContent className="p-0 h-72 flex flex-col">
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   <div className="space-y-4">
                     {messages.length === 0 && !isLoading && (
