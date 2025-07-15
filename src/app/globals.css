@@ -30,13 +30,13 @@
     --fs-label: 12px;
     --fs-value: 24px;
     
-    /* Chart Colors (More Distinguishable "Apple" Style) */
-    --chart-1: 220 80% 65%; /* Muted Blue */
-    --chart-2: 190 60% 55%; /* Muted Teal */
-    --chart-3: 210 30% 50%; /* Slate Gray-Blue */
-    --chart-4: 170 30% 60%; /* Desaturated Green */
-    --chart-5: 220 25% 70%; /* Light Steel Blue */
-    --chart-6: 240 10% 65%; /* Cool Gray */
+    /* Chart Colors (Vibrant & Distinguishable) */
+    --chart-1: 220 80% 65%; /* Vivid Blue */
+    --chart-2: 170 70% 45%; /* Teal Green */
+    --chart-3: 340 85% 60%; /* Bright Pink */
+    --chart-4: 25 95% 55%;  /* Bold Orange */
+    --chart-5: 260 85% 65%; /* Rich Purple */
+    --chart-6: 190 70% 50%; /* Cyan */
   }
  
   .dark {
@@ -60,13 +60,13 @@
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 60%;
     
-    /* Chart Colors (More Distinguishable "Apple" Style) */
-    --chart-1: 220 70% 60%;
-    --chart-2: 190 70% 50%;
-    --chart-3: 210 35% 55%;
-    --chart-4: 170 40% 60%;
-    --chart-5: 220 30% 70%;
-    --chart-6: 240 15% 65%;
+    /* Chart Colors (Vibrant & Distinguishable) */
+    --chart-1: 220 80% 65%; /* Vivid Blue */
+    --chart-2: 170 70% 45%; /* Teal Green */
+    --chart-3: 340 85% 60%; /* Bright Pink */
+    --chart-4: 25 95% 55%;  /* Bold Orange */
+    --chart-5: 260 85% 65%; /* Rich Purple */
+    --chart-6: 190 70% 50%; /* Cyan */
   }
 }
 
