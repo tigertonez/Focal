@@ -11,7 +11,6 @@ import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -129,19 +128,6 @@ export default function CostsPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </section>
-            
-            <section>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Monthly Cost Timeline</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-48 w-full">
-                            <CostTimelineChart data={monthlyCosts} currency={currency} preOrder={preOrder} />
-                        </div>
-                    </CardContent>
-                </Card>
             </section>
         </div>
     );
