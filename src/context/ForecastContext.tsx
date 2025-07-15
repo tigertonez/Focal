@@ -43,7 +43,7 @@ const initialInputs: EngineInput = {
     },
   ],
   fixedCosts: [
-      { id: 'fc_1', name: 'Salaries', amount: 15000, paymentSchedule: 'Monthly' },
+      { id: 'fc_1', name: 'Marketing', amount: 1000, paymentSchedule: 'Monthly' },
       { id: 'fc_2', name: 'Planning Buffer', amount: 2000, paymentSchedule: 'Up-Front' },
   ],
   parameters: {
