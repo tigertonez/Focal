@@ -21,19 +21,30 @@ interface ForecastContextType {
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
 
 const initialInputs: EngineInput = {
-  products: [],
+  products: [
+    {
+      id: 'prod_initial_1',
+      productName: 'Pro Widget',
+      plannedUnits: 5000,
+      unitCost: 15,
+      sellPrice: 49.99,
+      salesModel: 'launch',
+      sellThrough: 85,
+      depositPct: 25,
+    },
+  ],
   fixedCosts: {
-    samples: 0,
-    equipment: 0,
-    setup: 0,
-    marketing: 0,
+    samples: 1500,
+    equipment: 3000,
+    setup: 2000,
+    marketing: 5000,
   },
   parameters: {
     forecastMonths: 12,
     taxRate: 20,
     planningBuffer: 15,
     currency: 'USD',
-    preOrder: false,
+    preOrder: true,
   },
   realtime: {
     dataSource: 'Manual',
@@ -91,7 +102,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const calculateForecast = () => {
     setLoading(true);
     try {
-        // Zod validation is checked via isFormValid state, but we can re-validate
         const validatedInputs = EngineInputSchema.parse(inputs);
         
         console.log("Validation successful, sending to engine:", validatedInputs);
