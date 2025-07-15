@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/collapsible"
 import { ChevronRight } from "lucide-react"
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
@@ -100,8 +101,7 @@ export default function InputsPage() {
                     type="number" 
                     value={inputs.parameters.forecastMonths} 
                     onChange={handleParamChange('parameters')} 
-                    tooltip="How many months into the future to forecast." 
-                    badge={inputs.parameters.preOrder ? `+ Month 0` : undefined}
+                    tooltip="How many months into the future to forecast."
                     layout="vertical"
                 />
                 <InputField 
@@ -125,8 +125,9 @@ export default function InputsPage() {
                 </SelectField>
                 <div className="space-y-2">
                     <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
-                    <div className="flex items-center pt-2">
+                    <div className="flex items-center pt-2 gap-2">
                         <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
+                        {inputs.parameters.preOrder && <Badge variant="secondary">+ Month 0</Badge>}
                     </div>
                 </div>
             </div>
