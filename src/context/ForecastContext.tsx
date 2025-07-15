@@ -19,8 +19,57 @@ const ForecastContext = createContext<ForecastContextType | undefined>(undefined
 // Helper for nested state updates
 import { set } from 'lodash-es';
 
+const defaultInputs: EngineInput = {
+  products: [
+    {
+      id: 'prod_abc123',
+      name: 'The Original Widget',
+      sku: 'WID-001',
+      unitCost: 15.50,
+      sellPrice: 49.99,
+      strategy: 'launch',
+      sellThrough: 85,
+      depositPaid: 25,
+      moqUnits: 500,
+    },
+    {
+      id: 'prod_def456',
+      name: 'Widget Pro',
+      sku: 'WID-PRO-001',
+      unitCost: 25.00,
+      sellPrice: 99.99,
+      strategy: 'lifter',
+      sellThrough: 70,
+      depositPaid: 30,
+      moqUnits: 200,
+    }
+  ],
+  fixedCosts: {
+    samplesOrPrototypes: 1500,
+    equipment: 5000,
+    setupAndCompliance: 2500,
+    marketingBudget: 10000,
+  },
+  parameters: {
+    forecastMonths: 24,
+    taxRate: 20,
+    planningBufferPct: 15,
+    currency: 'USD',
+    preOrderMode: false,
+  },
+  realtime: {
+    dataSource: 'manual',
+    apiKeyEncrypted: '',
+    syncIntervalMin: 60,
+    timezone: 'UTC',
+    llmAssistToggle: true,
+  },
+  readyForCalc: false,
+};
+
+
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
-  const [inputs, setInputs] = useState<EngineInput>(EngineInputSchema.parse({}));
+  const [inputs, setInputs] = useState<EngineInput>(EngineInputSchema.parse(defaultInputs));
   const [loading, setLoading] = useState(false);
 
   const updateInput = (path: string, value: any) => {
