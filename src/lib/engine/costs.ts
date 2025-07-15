@@ -24,7 +24,6 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         // Add a month for pre-order period if active
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         const salesForecastMonths = baseForecastMonths; // Sales projections are always over the N months after launch
-        const month1Index = preOrder ? 1 : 0; // Month 1 is index 1 if preOrder, else 0
 
         // Create a mutable copy of all fixed costs to work with
         const allFixedCosts: FixedCostItem[] = [...inputs.fixedCosts];
@@ -97,16 +96,19 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             total: fixedCostTimeline[i] || 0,
         }));
 
-        // Deposits are paid in Month 1 (index depends on preOrder)
-        if (timelineMonths > month1Index) {
-            monthlyCosts[month1Index].deposits = totalDepositsPaid;
-            monthlyCosts[month1Index].total += totalDepositsPaid;
+        const depositMonth = preOrder ? 0 : 0; // Deposit in M0 for pre-order, or M1 (index 0) otherwise.
+        const finalPaymentMonth = preOrder ? 1 : 1; // Final payment in M1 for pre-order, or M2 (index 1) otherwise.
+
+        // Deposits are paid
+        if (timelineMonths > depositMonth) {
+            monthlyCosts[depositMonth].deposits = totalDepositsPaid;
+            monthlyCosts[depositMonth].total += totalDepositsPaid;
         }
 
-        // Final payments are made in Month 2 (index depends on preOrder)
-        if (timelineMonths > month1Index + 1) {
-            monthlyCosts[month1Index + 1].finalPayments = totalFinalPayments;
-            monthlyCosts[month1Index + 1].total += totalFinalPayments;
+        // Final payments are made
+        if (timelineMonths > finalPaymentMonth) {
+            monthlyCosts[finalPaymentMonth].finalPayments = totalFinalPayments;
+            monthlyCosts[finalPaymentMonth].total += totalFinalPayments;
         }
         
         return { costSummary, monthlyCosts };
