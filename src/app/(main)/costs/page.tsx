@@ -14,10 +14,12 @@ import { Terminal } from 'lucide-react';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { VariableCostPieChart } from '@/components/app/costs/charts/VariableCostPieChart';
+import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 
 export default function CostsPage() {
     const { inputs } = useForecast();
-    const { costSummary, error, isLoading } = useCosts();
+    const { costSummary, monthlyCosts, error, isLoading } = useCosts();
 
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
@@ -41,29 +43,12 @@ export default function CostsPage() {
         );
     }
     
-    if (!costSummary) {
+    if (!costSummary || !monthlyCosts) {
         return <CostsPageSkeleton />;
     }
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
-    const totalFixedCostsFromInputs = inputs.fixedCosts.reduce((acc, cost) => {
-        if (cost.paymentSchedule === 'Up-Front') {
-            return acc + cost.amount;
-        }
-        if (cost.paymentSchedule === 'Monthly' || cost.paymentSchedule === 'According to Sales') {
-            const months = inputs.parameters.preOrder ? inputs.parameters.forecastMonths : inputs.parameters.forecastMonths;
-            return acc + (cost.amount * months);
-        }
-         if (cost.paymentSchedule === 'Quarterly') {
-            const months = inputs.parameters.preOrder ? inputs.parameters.forecastMonths : inputs.parameters.forecastMonths;
-            const quarters = Math.ceil(months / 3);
-            return acc + (cost.amount * quarters);
-        }
-        return acc + cost.amount;
-    }, 0);
-
-
     return (
         <div className="p-4 md:p-8 space-y-8">
             <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
@@ -97,12 +82,23 @@ export default function CostsPage() {
                 )}
             </section>
             
-            <section className="grid md:grid-cols-2 gap-8 pt-4">
-                <div className="space-y-2">
+            <section>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Cost Timeline</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full pl-0">
+                       <CostTimelineChart data={monthlyCosts} currency={currency} />
+                    </CardContent>
+                </Card>
+            </section>
+
+             <section className="grid md:grid-cols-2 gap-8 pt-4">
+                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
                     <Card>
                         <CardContent className="p-4 space-y-3">
-                            {inputs.fixedCosts.map(cost => (
+                            {costSummary.fixedCosts.map(cost => (
                                <CostRow 
                                    key={cost.id}
                                    label={`${cost.name} (${cost.paymentSchedule})`}
@@ -118,7 +114,7 @@ export default function CostsPage() {
                         </CardContent>
                     </Card>
                 </div>
-                
+
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
                      <Card>

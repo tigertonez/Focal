@@ -19,7 +19,7 @@ export const FixedCostItemSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'Cost name is required.'),
     amount: z.number().min(0, 'Amount must be positive.'),
-    paymentSchedule: z.enum(['Monthly', 'Quarterly', 'Up-Front', 'According to Sales']).optional(),
+    paymentSchedule: z.enum(['Monthly', 'Quarterly', 'Up-Front', 'According to Sales']),
 });
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
 
@@ -76,9 +76,15 @@ export const CostSummarySchema = z.object({
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
 
+export const MonthlyCostSchema = z.object({
+  month: z.number(),
+}).catchall(z.number());
+export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
+
+
 // This will eventually hold all calculation results
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,
-    // revenueSummary, monthlyRevenue, etc. will go here later
+    monthlyCosts: z.array(MonthlyCostSchema),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;
