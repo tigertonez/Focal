@@ -62,8 +62,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // When switching away from manual, we might need to adjust validation logic
-    // For now, we just re-validate whenever inputs change.
     const result = EngineInputSchema.safeParse(inputs);
     setIsFormValid(result.success);
   }, [inputs]);
@@ -77,9 +75,15 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addProduct = () => {
-    const newProduct = { 
-        ...ProductSchema.parse({}), // uses defaults from schema
-        id: `prod_${crypto.randomUUID()}` 
+    const newProduct: Product = {
+        id: `prod_${crypto.randomUUID()}`,
+        productName: '',
+        plannedUnits: 1000,
+        unitCost: 10,
+        sellPrice: 25,
+        salesModel: 'launch',
+        sellThrough: 80,
+        depositPct: 0
     };
     setInputs(prev => ({
         ...prev,
