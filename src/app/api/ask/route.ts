@@ -13,9 +13,14 @@ const AnalyzeDataSchema = z.object({
   question: z.string(),
 });
 
+const CopilotMessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.array(z.object({ text: z.string() })),
+});
+
 const CopilotSchema = z.object({
   action: z.literal('copilot'),
-  question: z.string(),
+  history: z.array(CopilotMessageSchema),
   screenshotDataUri: z.string(),
 });
 
@@ -48,9 +53,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'copilot') {
-        const { question, screenshotDataUri } = validation.data;
+        const { history, screenshotDataUri } = validation.data;
         const result = await financialCopilot({
-          question: question,
+          history: history,
           screenshotDataUri: screenshotDataUri,
         });
         return NextResponse.json(result);

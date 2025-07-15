@@ -12,12 +12,18 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/googleai';
+import { Message, Part } from 'genkit/content';
+
+const MessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.array(z.object({ text: z.string() })),
+});
 
 const FinancialCopilotInputSchema = z.object({
   screenshotDataUri: z.string().describe(
     "A screenshot of the application's current view, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
-  question: z.string().describe('The user\'s question about the financial data or application state shown in the screenshot.'),
+  history: z.array(MessageSchema).optional().describe('The conversation history.'),
 });
 export type FinancialCopilotInput = z.infer<typeof FinancialCopilotInputSchema>;
 
@@ -30,17 +36,20 @@ export async function financialCopilot(input: FinancialCopilotInput): Promise<Fi
   return financialCopilotFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'financialCopilotPrompt',
-  input: { schema: FinancialCopilotInputSchema },
-  output: { schema: FinancialCopilotOutputSchema },
-  model: googleAI.model('gemini-2.5-flash'),
-  prompt: `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, actionable advice based *only* on what you see in the screenshot.
+const financialCopilotFlow = ai.defineFlow(
+  {
+    name: 'financialCopilotFlow',
+    inputSchema: FinancialCopilotInputSchema,
+    outputSchema: FinancialCopilotOutputSchema,
+  },
+  async ({ screenshotDataUri, history }) => {
+    const systemPrompt = `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, scannable, and actionable advice based *only* on what you see in the screenshot and the conversation history.
 
 IMPORTANT:
-- Your response must be concise and in plain text. Do NOT use any markdown.
-- Do NOT speculate or infer information that isn't present in the screenshot.
+- Your response must be concise. Use plain text, bullet points, or numbered lists. Do NOT use markdown.
+- Do NOT speculate or infer information that isn't present in the screenshot. Base your answer strictly on the visual evidence.
 - If you don't see any issues or cannot answer the question from the image, say so directly. For example: "Based on the screenshot, I don't see any immediate issues."
+- Remember the previous conversation to provide context-aware suggestions.
 
 When the developer asks for help (e.g., "find issues", "review this"), analyze the screenshot for:
 
@@ -48,20 +57,35 @@ When the developer asks for help (e.g., "find issues", "review this"), analyze t
 2.  **UI/UX Friction**: Is the interface confusing? Are labels unclear? Suggest simpler layouts or clearer descriptions.
 3.  **Clarity and Simplicity**: Is the information presented clearly?
 
-Always be constructive and provide direct, actionable feedback for the developer.
+Always be constructive and provide direct, actionable feedback for the developer.`;
 
-User Question: {{{question}}}
-Screenshot: {{media url=screenshotDataUri}}`,
-});
+    // Map Zod history to Genkit's Message[] type
+    const genkitHistory: Message[] = history?.map(h => ({
+        role: h.role,
+        content: h.content.map(c => ({ text: c.text }))
+    })) || [];
+    
+    // The last message in the history is the current user question.
+    const lastUserMessage = genkitHistory.pop();
+    if (!lastUserMessage || !lastUserMessage.content[0].text) {
+        throw new Error("Invalid user message in history.");
+    }
 
-const financialCopilotFlow = ai.defineFlow(
-  {
-    name: 'financialCopilotFlow',
-    inputSchema: FinancialCopilotInputSchema,
-    outputSchema: FinancialCopilotOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
+    const prompt: Part[] = [
+        ...lastUserMessage.content,
+        { media: { url: screenshotDataUri } },
+    ];
+    
+    const { output } = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash'),
+        system: systemPrompt,
+        history: genkitHistory,
+        prompt: prompt,
+        output: {
+            schema: FinancialCopilotOutputSchema,
+        },
+    });
+
     if (!output) {
         throw new Error("The AI model did not return a valid response. Please try rephrasing your question.");
     }

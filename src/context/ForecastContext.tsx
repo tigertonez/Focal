@@ -157,36 +157,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const runProactiveAnalysis = async () => {
-    try {
-        setProactiveAnalysis(null);
-        const canvas = await html2canvas(document.body, { logging: false, useCORS: true });
-        const screenshotDataUri = canvas.toDataURL('image/png');
-        const question = "Review the completed forecast for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
-        
-        const response = await fetch('/api/ask', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'copilot',
-              question,
-              screenshotDataUri,
-            }),
-        });
-
-        if (!response.ok) return; // Fail silently
-
-        const result = await response.json();
-        // Only show analysis if it's meaningful
-        if (result.answer && !result.answer.toLowerCase().includes("no issues")) {
-           setProactiveAnalysis(result.answer);
-        } else {
-           setProactiveAnalysis(null);
-        }
-
-    } catch (e) {
-        console.error("Proactive analysis failed", e); // Log error but don't bother user
-    }
+  const runProactiveAnalysis = () => {
+    // This is now handled by the copilot component, which gets the analysis and opens the sheet
+    const analysisQuestion = "Review the completed forecast on the screen for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
+    setProactiveAnalysis(analysisQuestion);
   }
   
   const value = useMemo(() => ({
