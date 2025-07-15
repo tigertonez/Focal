@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const ProductSchema = z.object({
   id: z.string(), 
   productName: z.string({ required_error: 'Product name is required.' }).min(1, 'Product name is required.'),
-  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(1),
+  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(0),
   unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0),
   sellPrice: z.number({ required_error: 'Sell price is required.' }).min(0),
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }),
@@ -14,7 +14,7 @@ export const ProductSchema = z.object({
 });
 export type Product = z.infer<typeof ProductSchema>;
 
-// --- Section B: Fixed Costs (Now Dynamic) ---
+// --- Section B: Fixed Costs ---
 export const FixedCostItemSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'Cost name is required.'),
@@ -50,3 +50,44 @@ export const EngineInputSchema = z.object({
   realtime: RealtimeSettingsSchema,
 });
 export type EngineInput = z.infer<typeof EngineInputSchema>;
+
+
+// --- Engine Output Schemas ---
+
+export const VariableCostBreakdownSchema = z.object({
+    name: z.string(),
+    plannedUnits: z.number(),
+    unitCost: z.number(),
+    totalProductionCost: z.number(),
+    depositPaid: z.number(),
+    remainingCost: z.number(),
+});
+
+export const CostSummarySchema = z.object({
+    totalFixed: z.number(),
+    totalVariable: z.number(),
+    totalOperating: z.number(),
+    avgCostPerUnit: z.number(),
+    fixedCosts: z.array(FixedCostItemSchema),
+    planningBuffer: z.number(),
+    variableCosts: z.array(VariableCostBreakdownSchema),
+});
+export type CostSummary = z.infer<typeof CostSummarySchema>;
+
+export const MonthlyCostSchema = z.object({
+    deposits: z.number(),
+    otherFixed: z.number(),
+    production: z.number(),
+    marketing: z.number(),
+    total: z.number(),
+});
+export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
+
+// This will eventually hold all calculation results
+export const EngineOutputSchema = z.object({
+    costSummary: CostSummarySchema,
+    monthlyCosts: z.array(MonthlyCostSchema),
+    depositProgress: z.number(),
+    // revenueSummary, monthlyRevenue, etc. will go here later
+});
+export type EngineOutput = z.infer<typeof EngineOutputSchema>;

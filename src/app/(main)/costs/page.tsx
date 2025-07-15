@@ -63,7 +63,11 @@ export default function CostsPage() {
     if (!costSummary) {
         return (
             <div className="p-4 md:p-8">
-                <p>Loading cost analysis...</p>
+                <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
+                <div className="text-center text-muted-foreground mt-8">
+                    <p>No cost data to display.</p>
+                    <p className="text-sm">Please go to the Inputs page and click "Calculate Forecast".</p>
+                </div>
             </div>
         );
     }

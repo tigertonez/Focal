@@ -2,12 +2,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, ProductSchema, type FixedCostItem } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, CostSummarySchema, MonthlyCostSchema } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
+import { calculateCosts } from '@/lib/engine/costs';
 
 interface ForecastContextType {
   inputs: EngineInput;
+  results: EngineOutput | null;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
@@ -35,6 +37,16 @@ const initialInputs: EngineInput = {
       sellThrough: 85,
       depositPct: 25,
     },
+     {
+      id: 'prod_initial_2',
+      productName: 'Basic Widget',
+      plannedUnits: 10000,
+      unitCost: 8,
+      sellPrice: 29.99,
+      salesModel: 'even',
+      sellThrough: 95,
+      depositPct: 0,
+    },
   ],
   fixedCosts: [
       { id: 'fc_1', name: 'Salaries', amount: 15000 },
@@ -57,6 +69,7 @@ const initialInputs: EngineInput = {
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
+  const [results, setResults] = useState<EngineOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const { toast } = useToast();
@@ -135,18 +148,29 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const calculateForecast = () => {
     setLoading(true);
+    setResults(null); // Clear previous results
     try {
         const validatedInputs = EngineInputSchema.parse(inputs);
         
-        console.log("Validation successful, sending to engine:", validatedInputs);
+        // This is where the full engine would run.
+        // For now, we are just calculating costs.
+        const costResults = calculateCosts(validatedInputs);
 
+        const newResults: EngineOutput = {
+          costSummary: costResults.costSummary,
+          monthlyCosts: costResults.monthlyCosts,
+          depositProgress: costResults.depositProgress,
+        };
+
+        // Simulate network delay
         setTimeout(() => {
+            setResults(newResults);
             setLoading(false);
             toast({
                 title: "Calculation Complete",
                 description: "Forecast results are ready.",
             });
-        }, 1500);
+        }, 1000);
 
     } catch (error) {
         if (error instanceof ZodError) {
@@ -156,6 +180,12 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
                 title: 'Validation Error',
                 description: `${firstError.path.join('.')} - ${firstError.message}`,
             });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Calculation Error',
+                description: error instanceof Error ? error.message : 'An unknown error occurred.',
+            });
         }
         setLoading(false);
     }
@@ -163,6 +193,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(() => ({
     inputs,
+    results,
     setInputs,
     updateProduct,
     addProduct,
@@ -174,7 +205,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     calculateForecast,
     loading,
     isFormValid,
-  }), [inputs, loading, isFormValid]);
+  }), [inputs, results, loading, isFormValid]);
 
   return (
     <ForecastContext.Provider value={value}>
