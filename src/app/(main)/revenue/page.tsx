@@ -45,8 +45,8 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
             </section>
 
             <footer className="flex justify-end mt-8 pt-6 border-t">
-              <Button onClick={() => router.push('/profit')}>
-                Continue to Profit <ArrowRight className="ml-2" />
+              <Button onClick={() => router.push('/costs')}>
+                Continue to Costs <ArrowRight className="ml-2" />
               </Button>
             </footer>
         </div>

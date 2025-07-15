@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { CashFlowPageSkeleton } from '@/components/app/cash-flow/CashFlowPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 function CashFlowPageContent() {
   const router = useRouter();
@@ -18,8 +18,8 @@ function CashFlowPageContent() {
         <p>Cash flow analysis will be displayed here.</p>
       </div>
        <footer className="flex justify-end mt-8 pt-6 border-t">
-        <Button variant="outline" onClick={() => router.push('/inputs')}>
-          <ArrowLeft className="mr-2" /> Back to Inputs
+        <Button onClick={() => router.push('/summary')}>
+          Continue to Summary <ArrowRight className="mr-2" />
         </Button>
       </footer>
     </div>
