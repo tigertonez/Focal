@@ -85,7 +85,7 @@ const ProductCard: React.FC<{ product: Product; index: number }> = ({ product, i
 
 
 export default function InputsPage() {
-  const { inputs, addProduct, saveAndCalculate, loading } = useForecast();
+  const { inputs, updateInput, addProduct, saveAndCalculate, loading } = useForecast();
 
   return (
     <div className="relative h-screen flex flex-col">
