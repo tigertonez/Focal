@@ -52,26 +52,25 @@ export function buildFixedCostTimeline(
 
   let totalScheduledCost = 0;
 
+  // Step 1: Build the base timeline from user-defined schedules
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
     const schedule = fc.paymentSchedule || 'Up-Front';
+    
+    // Don't include linked marketing costs in this initial pass
+    if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
+      return;
+    }
 
     switch (schedule) {
       case 'Monthly':
-        for (let m = 1; m <= forecastMonths; m++) {
-          add(m, A);
-        }
-        totalScheduledCost += A * forecastMonths;
+        for (let m = 1; m <= forecastMonths; m++) add(m, A);
         break;
       case 'Quarterly':
-        for (let m = 1; m <= forecastMonths; m += 3) {
-          add(m, A);
-        }
-        totalScheduledCost += A * Math.ceil(forecastMonths / 3);
+        for (let m = 1; m <= forecastMonths; m += 3) add(m, A);
         break;
       case 'Up-Front':
         add(1, A);
-        totalScheduledCost += A;
         break;
       case 'Custom': {
         const start = fc.startMonth ?? 1;
@@ -85,48 +84,66 @@ export function buildFixedCostTimeline(
         const normalizedRule = totalRuleWeight > 0 ? rule.map(w => w / totalRuleWeight) : [];
 
         normalizedRule.forEach((w, i) => add(start + i, A * w));
-        totalScheduledCost += A;
         break;
       }
     }
-    
-    if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
-      const marketingTotal = A * (schedule === 'Monthly' ? forecastMonths : 1);
-      salesWeights.forEach((w, i) => {
-          const proportionalAmount = marketingTotal * w;
-          add(i + 1, proportionalAmount);
-      });
-      switch (schedule) {
-          case 'Monthly':
-            for (let m = 1; m <= forecastMonths; m++) add(m, -A);
-            break;
-          case 'Quarterly':
-             for (let m = 1; m <= forecastMonths; m += 3) add(m, -A);
-             break;
-          case 'Up-Front':
-            add(1, -A);
-            break;
-      }
-    }
   });
-
+  
+  // Step 2: Distribute the planning buffer proportionally across the base timeline
   const baseTimelineTotal = tl.reduce((s,v) => s + v, 0);
-
   if (baseTimelineTotal > 0) {
       for(let i = 0; i < tl.length; i++){
           const proportion = tl[i] / baseTimelineTotal;
           tl[i] += planningBuffer * proportion;
       }
-  } else {
-      // If there are no other fixed costs, distribute buffer evenly
-      const monthlyBuffer = planningBuffer / forecastMonths;
-      for(let i = 0; i < tl.length; i++){
-          tl[i] += monthlyBuffer;
+  } else if (planningBuffer > 0) {
+      // If there are no other costs, distribute buffer according to sales weights or evenly
+      if (salesWeights.length === forecastMonths && salesWeights.reduce((s,v) => s+v, 0) > 0.99) {
+          salesWeights.forEach((w, i) => add(i + 1, planningBuffer * w));
+      } else {
+        const monthlyBuffer = planningBuffer / forecastMonths;
+        for(let i = 0; i < tl.length; i++){
+            add(i+1, monthlyBuffer);
+        }
       }
   }
 
+  // Step 3: Layer the linked marketing costs on top
+  fixedCosts.forEach(fc => {
+      if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
+          const A = +fc.amount;
+          salesWeights.forEach((w, i) => add(i + 1, A * w));
+      }
+  });
+
+
+  // Final check for integrity
+  let expectedTotal = fixedCosts.reduce((s, v) => {
+    const A = +v.amount;
+    const schedule = v.paymentSchedule || 'Up-Front';
+    switch (schedule) {
+        case 'Monthly': return s + (A * forecastMonths);
+        case 'Quarterly': return s + (A * Math.ceil(forecastMonths / 3));
+        default: return s + A;
+    }
+  }, 0) + planningBuffer;
+  
+  // Correct for linked marketing costs, as their original payment schedule is ignored
+  fixedCosts.forEach(fc => {
+      if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
+          const A = +fc.amount;
+          const schedule = fc.paymentSchedule || 'Up-Front';
+           switch (schedule) {
+                case 'Monthly': expectedTotal -= (A * forecastMonths); break;
+                case 'Quarterly': expectedTotal -= (A * Math.ceil(forecastMonths/3)); break;
+                default: expectedTotal -= A;
+            }
+            expectedTotal += A; // Add it back once, as it's distributed via sales weights
+      }
+  });
+
+
   const timelineTotal = tl.reduce((s, v) => s + v, 0);
-  const expectedTotal = totalScheduledCost + planningBuffer;
   
   if (Math.abs(timelineTotal - expectedTotal) > 0.01) {
     console.warn(`Fixed-cost timeline mismatch. Expected: ${expectedTotal.toFixed(2)}, Got: ${timelineTotal.toFixed(2)}`);
@@ -139,9 +156,11 @@ export function getAggregatedSalesWeights(products: any[], forecastMonths: numbe
     const aggregatedWeights = Array(forecastMonths).fill(0);
     let totalRevenue = 0;
     
+    if (!products || products.length === 0) return aggregatedWeights;
+
     const productRevenues = products.map(p => {
-        const weights = getSalesWeights(forecastMonths, p.salesModel);
-        const productRevenue = p.plannedUnits * p.sellPrice * (p.sellThrough / 100);
+        const weights = getSalesWeights(forecastMonths, p.salesModel || 'launch');
+        const productRevenue = (p.plannedUnits || 0) * (p.sellPrice || 0) * ((p.sellThrough || 0) / 100);
         totalRevenue += productRevenue;
         return weights.map(w => w * productRevenue);
     });
