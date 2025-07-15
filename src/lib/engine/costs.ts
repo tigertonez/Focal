@@ -1,4 +1,5 @@
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product } from '@/lib/types';
 
 
@@ -97,17 +98,17 @@ function buildFixedCostTimeline(
           break;
 
         case 'Monthly':
-            const monthlyAmount = totalAmount;
-            for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
-              add(m, monthlyAmount, fc.name);
-            }
+          const monthlyAmount = totalAmount;
+          for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
+            add(m, monthlyAmount, fc.name);
+          }
           break;
 
         case 'Quarterly':
-            const quarterlyAmount = totalAmount;
-            for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
-              add(m, quarterlyAmount, fc.name);
-            }
+          const quarterlyAmount = totalAmount;
+          for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
+            add(m, quarterlyAmount, fc.name);
+          }
           break;
 
         case 'Up-Front':
