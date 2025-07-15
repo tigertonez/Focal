@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { VariableCostPieChart } from '@/components/app/costs/charts/VariableCostPieChart';
 import { ChartWrapper } from '@/components/app/ChartWrapper';
+import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 
 
 const CostTimelineTable = ({ monthlyCosts, currency, preOrder }: { monthlyCosts: any[], currency: string, preOrder: boolean }) => (
@@ -67,15 +68,7 @@ export default function CostsPage() {
     }
     
     if (!costSummary) {
-        return (
-            <div className="p-4 md:p-8">
-                <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
-                <div className="text-center text-muted-foreground mt-8">
-                    <p>No cost data to display.</p>
-                    <p className="text-sm">Please go to the Inputs page and click "Calculate Forecast".</p>
-                </div>
-            </div>
-        );
+        return <CostsPageSkeleton />;
     }
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
@@ -115,11 +108,13 @@ export default function CostsPage() {
             
             <section className="space-y-4">
                 <h2 className="text-xl font-semibold">Cost Timeline</h2>
-                <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
+                <div className="overflow-x-auto">
+                    <CostTimelineTable monthlyCosts={monthlyCosts} currency={currency} preOrder={inputs.parameters.preOrder} />
+                </div>
             </section>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                <section className="space-y-2">
+            <section className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
                     <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                         {costSummary.fixedCosts.map(cost => (
@@ -142,9 +137,9 @@ export default function CostsPage() {
                            />
                         </div>
                     </div>
-                </section>
+                </div>
                 
-                <section className="space-y-2">
+                <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
                      <div className="bg-muted/50 p-4 rounded-lg space-y-4">
                         {costSummary.variableCosts.map(product => (
@@ -164,8 +159,8 @@ export default function CostsPage() {
                            />
                         </div>
                     </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </div>
     );
 }
