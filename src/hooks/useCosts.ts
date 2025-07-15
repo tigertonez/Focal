@@ -37,6 +37,9 @@ export const useCosts = () => {
     const { costSummary, monthlyCosts, depositProgress, error } = useMemo(() => {
         try {
             // Safety Guards
+            if (!inputs || !inputs.parameters || !inputs.products) {
+                return { costSummary: null, monthlyCosts: [], depositProgress: 0, error: 'Inputs not available.' };
+            }
             if (inputs.parameters.forecastMonths > 36 || inputs.parameters.forecastMonths < 1) {
                 throw new Error('Forecast Months must be between 1 and 36.');
             }
