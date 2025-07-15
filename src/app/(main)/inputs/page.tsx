@@ -20,6 +20,7 @@ import {
 import { ChevronRight } from "lucide-react"
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { SectionHeader } from '@/components/app/SectionHeader';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
@@ -62,10 +63,7 @@ export default function InputsPage() {
   return (
     <div className="bg-white min-h-screen">
       <main className="p-4 md:p-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold font-headline">Input Sheet</h1>
-          <p className="text-muted-foreground mt-1">Define your forecast assumptions</p>
-        </header>
+        <SectionHeader title="Input Sheet" description="Define your forecast assumptions" />
 
         <div className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8 items-start">
@@ -126,7 +124,7 @@ export default function InputsPage() {
                 <div className="space-y-2">
                     <Label htmlFor="preOrder" className="font-medium text-sm">Pre-Order Mode</Label>
                     <div className="flex items-center pt-2 gap-2">
-                        <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
+                        <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, pre-order: checked } }))} />
                         {inputs.parameters.preOrder && <Badge variant="secondary">+ Month 0</Badge>}
                     </div>
                 </div>
