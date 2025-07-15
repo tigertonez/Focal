@@ -77,7 +77,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </TooltipProvider>
           </Label>
           <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
-            <SelectTrigger id={`salesModel-${index}`} className="mt-2 text-base"><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`salesModel-${index}`} className="mt-2 md:text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="launch">Launch</SelectItem>
               <SelectItem value="even">Even</SelectItem>
