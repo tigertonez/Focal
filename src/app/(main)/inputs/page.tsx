@@ -169,7 +169,7 @@ export default function InputsPage() {
           </Collapsible>
         </div>
 
-        <footer className="flex justify-between items-center gap-4 mt-8 pt-6 border-t">
+        <footer className="flex justify-between items-center mt-8 pt-6 border-t">
           <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>
