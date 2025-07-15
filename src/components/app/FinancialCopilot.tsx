@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, User, Loader2, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bot, User, Loader2, ChevronDown, ChevronUp, ArrowUp } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
@@ -31,13 +31,12 @@ export function FinancialCopilot() {
     if (proactiveAnalysis && messages.length === 0) {
         const botMessage: Message = { sender: 'bot', text: proactiveAnalysis };
         setMessages([botMessage]);
-        setIsExpanded(true); // Expand when there's a proactive message
-        setProactiveAnalysis(null); // Clear the badge state
+        setIsExpanded(true);
+        setProactiveAnalysis(null);
     }
   }, [proactiveAnalysis, messages.length, setProactiveAnalysis]);
 
   useEffect(() => {
-    // Auto-scroll when new messages are added
     if (isExpanded) {
         setTimeout(() => {
             scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
@@ -91,27 +90,26 @@ export function FinancialCopilot() {
   };
   
   return (
-    <Card className="fixed bottom-4 left-4 w-96 z-50 flex flex-col shadow-lg">
+    <Card className="fixed bottom-4 left-4 w-96 z-50 flex flex-col shadow-lg rounded-xl">
         <CardHeader 
-            className="flex flex-row items-center justify-between p-3 border-b cursor-pointer" 
+            className="flex flex-row items-center justify-between p-2 border-b cursor-pointer" 
             onClick={() => setIsExpanded(!isExpanded)}
         >
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Wand2 />
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Bot size={16} />
                 Financial Copilot
                 {proactiveAnalysis && !isExpanded && (
                     <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-destructive" />
                 )}
             </CardTitle>
-            {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </CardHeader>
         <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-40" : "max-h-0")}>
             <CardContent className="p-0 h-36 flex flex-col">
-                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                <ScrollArea className="flex-1 p-3" ref={scrollAreaRef}>
                   <div className="space-y-4">
                     {messages.length === 0 && !isLoading && (
                         <div className="text-center text-sm text-muted-foreground pt-4">
-                            <Bot className="mx-auto h-6 w-6 mb-2" />
                             <p>Ask me anything.</p>
                         </div>
                     )}
@@ -121,7 +119,6 @@ export function FinancialCopilot() {
                         <div className={`p-2.5 rounded-lg max-w-sm text-sm ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                           <p className="whitespace-pre-wrap">{msg.text}</p>
                         </div>
-                         {msg.sender === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
                       </div>
                     ))}
                      {isLoading && (
@@ -141,13 +138,13 @@ export function FinancialCopilot() {
                      )}
                   </div>
                 </ScrollArea>
-                <div className="p-3 border-t bg-background">
+                <div className="p-2 border-t bg-background">
                   <div className="relative">
                     <Textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Ask a question..."
-                      className="pr-16 min-h-[40px] text-sm"
+                      className="pr-12 min-h-[40px] text-sm"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -157,12 +154,12 @@ export function FinancialCopilot() {
                     />
                     <Button
                       type="submit"
-                      size="sm"
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
                       onClick={() => handleSendMessage()}
-                      disabled={isLoading}
+                      disabled={isLoading || !input.trim()}
                     >
-                      Ask
+                      <ArrowUp className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
