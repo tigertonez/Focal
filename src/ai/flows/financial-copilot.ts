@@ -10,7 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const FinancialCopilotInputSchema = z.object({
   screenshotDataUri: z.string().describe(
@@ -69,6 +69,9 @@ const financialCopilotFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    if (!output) {
+        throw new Error("The AI model did not return a valid response. Please try rephrasing your question.");
+    }
+    return output;
   }
 );
