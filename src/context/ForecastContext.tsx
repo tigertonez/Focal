@@ -39,8 +39,8 @@ const initialInputs: EngineInput = {
     },
   ],
   fixedCosts: [
-      { id: 'fc_1', name: 'Marketing', amount: 2000, paymentSchedule: 'Up-Front' },
-      { id: 'fc_2', name: 'Planning Buffer', amount: 2000, paymentSchedule: 'Up-Front' },
+      { id: 'fc_1', name: 'Marketing', amount: 2000, paymentSchedule: 'According to Sales' },
+      { id: 'fc_2', name: 'Planning Buffer', amount: 500, paymentSchedule: 'Monthly' },
   ],
   parameters: {
     forecastMonths: 12,
