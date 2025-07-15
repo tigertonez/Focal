@@ -12,11 +12,14 @@ import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineCha
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
+    const router = useRouter();
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
     const preOrder = inputs.parameters.preOrder;
@@ -106,6 +109,12 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                     </Card>
                 </div>
             </section>
+
+            <footer className="flex justify-end mt-8 pt-6 border-t">
+              <Button onClick={() => router.push('/revenue')}>
+                Continue to Revenue <ArrowRight className="ml-2" />
+              </Button>
+            </footer>
         </div>
     );
 }

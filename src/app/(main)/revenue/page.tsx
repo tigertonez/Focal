@@ -8,13 +8,16 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Target } from 'lucide-react';
+import { Terminal, Users, Target, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart'; // Re-using for revenue timeline
 import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
 import { getFinancials } from '@/lib/get-financials';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
+    const router = useRouter();
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue } = data;
 
@@ -68,6 +71,12 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     </CardContent>
                 </Card>
             </section>
+
+            <footer className="flex justify-end mt-8 pt-6 border-t">
+              <Button onClick={() => router.push('/profit')}>
+                Continue to Profit <ArrowRight className="ml-2" />
+              </Button>
+            </footer>
         </div>
     );
 }
