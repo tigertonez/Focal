@@ -30,8 +30,7 @@ export function FinancialCopilot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const { proactiveAnalysis, setProactiveAnalysis } = useForecast();
+  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen } = useForecast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -40,13 +39,13 @@ export function FinancialCopilot() {
         // Clear previous messages when a new proactive analysis comes in
         setMessages([]); 
         handleSendMessage(proactiveAnalysis, true);
-        setIsOpen(true);
+        setIsCopilotOpen(true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, setProactiveAnalysis]);
+  }, [proactiveAnalysis, setProactiveAnalysis, setIsCopilotOpen]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isCopilotOpen) {
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
@@ -54,7 +53,7 @@ export function FinancialCopilot() {
             }
         }, 100);
     }
-  }, [messages, isOpen]);
+  }, [messages, isCopilotOpen]);
 
   const handleSendMessage = async (question?: string, isProactive: boolean = false) => {
     const currentInput = question || input;
@@ -115,15 +114,7 @@ export function FinancialCopilot() {
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-            <Button className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50">
-                <Bot size={24} />
-                 {proactiveAnalysis && !isOpen && (
-                    <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
-                )}
-            </Button>
-        </SheetTrigger>
+    <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
         <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0">
              <SheetHeader className="p-4 border-b">
                 <SheetTitle className="flex items-center gap-2">

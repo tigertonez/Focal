@@ -21,6 +21,8 @@ interface ForecastContextType {
   runProactiveAnalysis: () => void;
   proactiveAnalysis: string | null;
   setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
+  isCopilotOpen: boolean;
+  setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -60,6 +62,7 @@ const DRAFT_STORAGE_KEY = 'forecastDraft';
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -192,7 +195,9 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     runProactiveAnalysis,
     proactiveAnalysis,
     setProactiveAnalysis,
-  }), [inputs, proactiveAnalysis]);
+    isCopilotOpen,
+    setIsCopilotOpen,
+  }), [inputs, proactiveAnalysis, isCopilotOpen]);
 
   return (
     <ForecastContext.Provider value={value}>
