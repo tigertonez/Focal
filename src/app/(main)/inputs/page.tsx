@@ -60,13 +60,13 @@ export default function InputsPage() {
 
   return (
     <div className="bg-white min-h-screen">
-      <main className="max-w-4xl mx-auto p-4 md:p-8">
+      <main className="p-4 md:p-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold font-headline">Input Sheet</h1>
           <p className="text-muted-foreground mt-1">Define your forecast assumptions</p>
         </header>
 
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-4xl">
           <Section title="Products & Services">
             <div className="space-y-4">
               {inputs.products.map((p, i) => (
@@ -135,7 +135,7 @@ export default function InputsPage() {
           </Collapsible>
         </div>
 
-        <footer className="flex justify-end items-center gap-4 mt-8 pt-6">
+        <footer className="flex justify-end items-center gap-4 mt-8 pt-6 max-w-4xl">
           <Button variant="outline" onClick={saveDraft}>
             Save Draft
           </Button>
