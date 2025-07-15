@@ -44,34 +44,34 @@ function getSalesWeights(forecastMonths: number, model: 'launch' | 'even' | 'sea
 export function buildFixedCostTimeline(
   fixedCosts: FixedCostItem[],
   forecastMonths: number,
-  salesWeights: number[]
+  salesWeights: number[],
+  planningBuffer: number,
 ): number[] {
   const tl: number[] = Array(forecastMonths).fill(0);
   const add = (m: number, val: number) => { if (m >= 1 && m <= forecastMonths) tl[m - 1] += val; };
 
-  let totalExpectedTimelineSum = 0;
+  let totalScheduledCost = 0;
 
   fixedCosts.forEach(fc => {
     const A = +fc.amount;
     const schedule = fc.paymentSchedule || 'Up-Front';
 
-    // Base cost application based on schedule
     switch (schedule) {
       case 'Monthly':
         for (let m = 1; m <= forecastMonths; m++) {
           add(m, A);
         }
-        totalExpectedTimelineSum += A * forecastMonths;
+        totalScheduledCost += A * forecastMonths;
         break;
       case 'Quarterly':
         for (let m = 1; m <= forecastMonths; m += 3) {
           add(m, A);
         }
-        totalExpectedTimelineSum += A * Math.ceil(forecastMonths / 3);
+        totalScheduledCost += A * Math.ceil(forecastMonths / 3);
         break;
       case 'Up-Front':
         add(1, A);
-        totalExpectedTimelineSum += A;
+        totalScheduledCost += A;
         break;
       case 'Custom': {
         const start = fc.startMonth ?? 1;
@@ -85,38 +85,51 @@ export function buildFixedCostTimeline(
         const normalizedRule = totalRuleWeight > 0 ? rule.map(w => w / totalRuleWeight) : [];
 
         normalizedRule.forEach((w, i) => add(start + i, A * w));
-        totalExpectedTimelineSum += A;
+        totalScheduledCost += A;
         break;
       }
     }
     
-    // Marketing link is an additional layer, not a replacement
     if (fc.name.toLowerCase().includes('marketing') && fc.linkToSalesModel !== false) {
       const marketingTotal = A * (schedule === 'Monthly' ? forecastMonths : 1);
       salesWeights.forEach((w, i) => {
           const proportionalAmount = marketingTotal * w;
           add(i + 1, proportionalAmount);
       });
-      // We remove the original amounts to avoid double counting
       switch (schedule) {
           case 'Monthly':
             for (let m = 1; m <= forecastMonths; m++) add(m, -A);
             break;
+          case 'Quarterly':
+             for (let m = 1; m <= forecastMonths; m += 3) add(m, -A);
+             break;
           case 'Up-Front':
             add(1, -A);
             break;
-          // Note: Add other cases if marketing can have other schedules
       }
-      totalExpectedTimelineSum += marketingTotal; // Add marketing total
-      totalExpectedTimelineSum -= marketingTotal; // And remove what was subtracted
     }
   });
 
-  const timelineTotal = tl.reduce((s, v) => s + v, 0);
+  const baseTimelineTotal = tl.reduce((s,v) => s + v, 0);
 
-  // Use a tolerance for floating point comparisons
-  if (Math.abs(timelineTotal - totalExpectedTimelineSum) > 0.01) {
-    console.warn(`Fixed-cost timeline mismatch. Expected: ${totalExpectedTimelineSum.toFixed(2)}, Got: ${timelineTotal.toFixed(2)}`);
+  if (baseTimelineTotal > 0) {
+      for(let i = 0; i < tl.length; i++){
+          const proportion = tl[i] / baseTimelineTotal;
+          tl[i] += planningBuffer * proportion;
+      }
+  } else {
+      // If there are no other fixed costs, distribute buffer evenly
+      const monthlyBuffer = planningBuffer / forecastMonths;
+      for(let i = 0; i < tl.length; i++){
+          tl[i] += monthlyBuffer;
+      }
+  }
+
+  const timelineTotal = tl.reduce((s, v) => s + v, 0);
+  const expectedTotal = totalScheduledCost + planningBuffer;
+  
+  if (Math.abs(timelineTotal - expectedTotal) > 0.01) {
+    console.warn(`Fixed-cost timeline mismatch. Expected: ${expectedTotal.toFixed(2)}, Got: ${timelineTotal.toFixed(2)}`);
   }
 
   return tl.map(v => +v.toFixed(2));

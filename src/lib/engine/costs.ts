@@ -17,14 +17,13 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
         const planningBuffer = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
         
-        // Add planning buffer as a fixed cost item for timeline calculation
-        const allFixedCostsForTimeline = [
-            ...inputs.fixedCosts,
-            { id: 'buffer', name: 'Planning Buffer', amount: planningBuffer, paymentSchedule: 'Monthly' as const }
-        ];
-
         const salesWeights = getAggregatedSalesWeights(inputs.products, inputs.parameters.forecastMonths);
-        const fixedCostTimeline = buildFixedCostTimeline(allFixedCostsForTimeline, inputs.parameters.forecastMonths, salesWeights);
+        const fixedCostTimeline = buildFixedCostTimeline(
+            inputs.fixedCosts, 
+            inputs.parameters.forecastMonths, 
+            salesWeights,
+            planningBuffer
+        );
         
         const totalFixed = baseFixedCosts + planningBuffer;
         
