@@ -69,7 +69,7 @@ export default function CostsPage() {
                     <KpiCard label="Total Fixed Costs" value={formatCurrency(costSummary.totalFixed, currency)} />
                     <KpiCard label="Total Variable Costs" value={formatCurrency(costSummary.totalVariable, currency)} />
                     <KpiCard label="Total Operating Costs" value={formatCurrency(costSummary.totalOperating, currency)} />
-                    <KpiCard label="Avg. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} />
+                    <KpiCard label="Avg. var. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} />
                 </div>
                  {isManualMode && (
                     <div className="mt-4 space-y-2">
