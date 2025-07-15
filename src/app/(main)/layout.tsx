@@ -16,8 +16,8 @@ export default function MainLayout({
         <main className="flex-1 overflow-auto">
           {children}
         </main>
-        <FinancialCopilot />
       </div>
+      <FinancialCopilot />
     </ForecastProvider>
   );
 }
