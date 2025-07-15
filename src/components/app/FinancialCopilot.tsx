@@ -105,14 +105,14 @@ export function FinancialCopilot() {
             </CardTitle>
             {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
         </CardHeader>
-        <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-80" : "max-h-0")}>
-            <CardContent className="p-0 h-72 flex flex-col">
+        <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "max-h-40" : "max-h-0")}>
+            <CardContent className="p-0 h-36 flex flex-col">
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   <div className="space-y-4">
                     {messages.length === 0 && !isLoading && (
-                        <div className="text-center text-sm text-muted-foreground pt-10">
-                            <Bot className="mx-auto h-8 w-8 mb-2" />
-                            <p>Ask me anything about your forecast.</p>
+                        <div className="text-center text-sm text-muted-foreground pt-4">
+                            <Bot className="mx-auto h-6 w-6 mb-2" />
+                            <p>Ask me anything.</p>
                         </div>
                     )}
                     {messages.map((msg, index) => (
