@@ -48,7 +48,21 @@ export default function CostsPage() {
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
-    const totalFixedCostsFromInputs = inputs.fixedCosts.reduce((acc, cost) => acc + cost.amount, 0);
+    const totalFixedCostsFromInputs = inputs.fixedCosts.reduce((acc, cost) => {
+        if (cost.paymentSchedule === 'Up-Front') {
+            return acc + cost.amount;
+        }
+        if (cost.paymentSchedule === 'Monthly' || cost.paymentSchedule === 'According to Sales') {
+            const months = inputs.parameters.preOrder ? inputs.parameters.forecastMonths : inputs.parameters.forecastMonths;
+            return acc + (cost.amount * months);
+        }
+         if (cost.paymentSchedule === 'Quarterly') {
+            const months = inputs.parameters.preOrder ? inputs.parameters.forecastMonths : inputs.parameters.forecastMonths;
+            const quarters = Math.ceil(months / 3);
+            return acc + (cost.amount * quarters);
+        }
+        return acc + cost.amount;
+    }, 0);
 
 
     return (
@@ -103,14 +117,14 @@ export default function CostsPage() {
                             {inputs.fixedCosts.map(cost => (
                                <CostRow 
                                    key={cost.id}
-                                   label={cost.name}
+                                   label={`${cost.name} (${cost.paymentSchedule})`}
                                    value={formatCurrency(cost.amount, currency)}
                                />
                             ))}
                             <Separator className="my-2" />
                             <CostRow 
-                               label="Total"
-                               value={formatCurrency(totalFixedCostsFromInputs, currency)}
+                               label="Total Forecasted Fixed"
+                               value={formatCurrency(costSummary.totalFixed, currency)}
                                className="font-bold pt-2"
                            />
                         </CardContent>
@@ -127,8 +141,8 @@ export default function CostsPage() {
                                     <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
                                     <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
                                     <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                                    <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : 1})`} value={formatCurrency(product.depositPaid, currency)} />
-                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : 2})`} value={formatCurrency(product.remainingCost, currency)} />
+                                    <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : '1'})`} value={formatCurrency(product.depositPaid, currency)} />
+                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : '2'})`} value={formatCurrency(product.remainingCost, currency)} />
                                 </div>
                             ))}
                             <Separator className="my-2" />

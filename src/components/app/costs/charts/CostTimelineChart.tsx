@@ -13,31 +13,52 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
 
-const chartConfig = {
-  fixed: {
-    label: "Fixed Costs",
-    color: "hsl(var(--chart-1))",
-  },
-  deposits: {
-    label: "Deposits Paid",
-    color: "hsl(var(--chart-2))",
-  },
-  finalPayments: {
-    label: "Final Payments",
-    color: "hsl(var(--chart-3))",
-  },
-} satisfies ChartConfig
+const HSL_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--chart-6))",
+];
 
 interface CostTimelineChartProps {
-  data: any[]
-  currency: string
+  data: any[];
+  currency: string;
 }
 
 export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
-  const chartData = data.map(month => ({
-    ...month,
-    name: `M${month.month}`,
-  }));
+  const { chartData, chartConfig, costKeys } = React.useMemo(() => {
+    const monthlyData = data.map(month => ({
+      ...month,
+      name: `M${month.month}`,
+    }));
+
+    const allCostKeys = new Set<string>(['deposits', 'finalPayments']);
+    monthlyData.forEach(month => {
+      Object.keys(month).forEach(key => {
+        if (key !== 'month' && key !== 'name' && key !== 'total' && month[key] > 0) {
+          allCostKeys.add(key);
+        }
+      });
+    });
+
+    const sortedCostKeys = Array.from(allCostKeys);
+    
+    const config: ChartConfig = {};
+    sortedCostKeys.forEach((key, index) => {
+      let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      if (key === 'deposits') label = 'Deposits Paid';
+      if (key === 'finalPayments') label = 'Final Payments';
+      
+      config[key] = {
+        label,
+        color: HSL_COLORS[index % HSL_COLORS.length],
+      };
+    });
+
+    return { chartData: monthlyData, chartConfig: config, costKeys: sortedCostKeys };
+  }, [data]);
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
@@ -83,9 +104,15 @@ export function CostTimelineChart({ data, currency }: CostTimelineChartProps) {
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="fixed" stackId="a" fill="var(--color-fixed)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="deposits" stackId="a" fill="var(--color-deposits)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="finalPayments" stackId="a" fill="var(--color-finalPayments)" radius={[4, 4, 0, 0]} />
+        {costKeys.map((key) => (
+            <Bar 
+                key={key} 
+                dataKey={key} 
+                stackId="a" 
+                fill={`var(--color-${key})`} 
+                radius={[4, 4, 0, 0]} 
+            />
+        ))}
       </BarChart>
     </ChartContainer>
   )

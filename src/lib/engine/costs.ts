@@ -8,11 +8,8 @@ function buildFixedCostTimeline(
     products: Product[],
     forecastMonths: number,
     preOrder: boolean,
-  ): any[] { // Using any[] for simplicity as this is an internal function
-    const timeline = Array.from({ length: forecastMonths }, () => ({
-      total: 0,
-      breakdown: [],
-    }));
+  ): any[] { 
+    const timeline: { [key: string]: number }[] = Array.from({ length: forecastMonths }, () => ({}));
   
     const salesCurveMonths = preOrder ? forecastMonths - 1 : forecastMonths;
     const firstSalesMonthIndex = preOrder ? 1 : 0;
@@ -74,21 +71,22 @@ function buildFixedCostTimeline(
       }
     }
   
+    // Helper to sanitize cost names into valid object keys
+    const sanitizeKey = (name: string) => name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
     const add = (m: number, val: number, name: string) => {
       if (m >= 0 && m < forecastMonths) {
-        timeline[m].total += val;
-        const existing = timeline[m].breakdown.find((b: any) => b.name === name);
-        if (existing) {
-          existing.amount += val;
-        } else {
-          timeline[m].breakdown.push({ name, amount: val });
+        const key = sanitizeKey(name);
+        if (!timeline[m][key]) {
+            timeline[m][key] = 0;
         }
+        timeline[m][key] += val;
       }
     };
   
     fixedCosts.forEach(fc => {
       const totalAmount = +fc.amount;
-      if (totalAmount === 0) return;
+      if (totalAmount === 0 || !fc.name) return;
   
       switch (fc.paymentSchedule || 'Up-Front') {
         case 'According to Sales':
@@ -101,7 +99,7 @@ function buildFixedCostTimeline(
   
         case 'Monthly':
           if (salesCurveMonths > 0) {
-            const monthlyAmount = totalAmount / salesCurveMonths;
+            const monthlyAmount = totalAmount; // The amount is already monthly
             for (let m = firstSalesMonthIndex; m < forecastMonths; m++) {
               add(m, monthlyAmount, fc.name);
             }
@@ -110,13 +108,10 @@ function buildFixedCostTimeline(
   
         case 'Quarterly':
           if (salesCurveMonths > 0) {
-            const numQuarters = Math.ceil(salesCurveMonths / 3);
-            if (numQuarters > 0) {
-              const quarterlyAmount = totalAmount / numQuarters;
+              const quarterlyAmount = totalAmount; // The amount is per quarter
               for (let m = firstSalesMonthIndex; m < forecastMonths; m += 3) {
                 add(m, quarterlyAmount, fc.name);
               }
-            }
           }
           break;
           
@@ -125,14 +120,14 @@ function buildFixedCostTimeline(
           break;
       }
     });
-  
-    return timeline.map(month => ({
-      total: +month.total.toFixed(2),
-      breakdown: month.breakdown.map((item: any) => ({
-        name: item.name,
-        amount: +item.amount.toFixed(2)
-      })).sort((a: any, b: any) => b.amount - a.amount),
-    }));
+    
+    // Calculate total fixed costs for timeline summary (separate from chart data)
+    let totalFixedInTimeline = 0;
+    timeline.forEach(month => {
+        totalFixedInTimeline += Object.values(month).reduce((sum, val) => sum + val, 0);
+    });
+
+    return { timeline, totalFixedInTimeline };
 }
 
 
@@ -156,14 +151,14 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
         const { preOrder, forecastMonths: baseForecastMonths } = inputs.parameters;
         const timelineMonths = preOrder ? baseForecastMonths + 1 : baseForecastMonths;
         
-        const fixedCostTimeline = buildFixedCostTimeline(
+        const { timeline: fixedCostTimelineData, totalFixedInTimeline } = buildFixedCostTimeline(
             inputs.fixedCosts, 
             inputs.products,
             timelineMonths,
             preOrder
         );
         
-        const totalFixedCostInTimeline = fixedCostTimeline.reduce((sum, month) => sum + month.total, 0);
+        const totalFixedCostInTimeline = totalFixedInTimeline;
         
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -214,29 +209,29 @@ export function calculateCosts(inputs: EngineInput): EngineOutput {
             month: i,
             deposits: 0,
             finalPayments: 0,
-            fixed: fixedCostTimeline[i]?.total || 0,
-            fixedBreakdown: fixedCostTimeline[i]?.breakdown || [],
-            total: fixedCostTimeline[i]?.total || 0,
+            ...fixedCostTimelineData[i],
         }));
         
-        // Deposits paid in Month 0 if pre-order, else Month 1 (index 0 of a non-preorder timeline)
         const depositMonth = preOrder ? 0 : 0; 
         if (depositMonth < monthlyCosts.length) {
             monthlyCosts[depositMonth].deposits += totalDepositsPaid;
-            monthlyCosts[depositMonth].total += totalDepositsPaid;
         }
 
-        // Final payments in Month 1 if pre-order, else Month 2 (index 1 of a non-preorder timeline)
         const finalPaymentMonth = preOrder ? 1 : 1; 
         if (finalPaymentMonth < monthlyCosts.length) {
             monthlyCosts[finalPaymentMonth].finalPayments += totalFinalPayments;
-            monthlyCosts[finalPaymentMonth].total += totalFinalPayments;
         }
         
+        // Add total to each month for tooltip/summary purposes if needed, but not for stacking
+        monthlyCosts.forEach(month => {
+            month.total = Object.entries(month)
+                .filter(([key]) => key !== 'month' && key !== 'name')
+                .reduce((sum, [, value]) => sum + (value as number), 0);
+        });
+
         return { costSummary, monthlyCosts };
 
     } catch (e: any) {
-        // In a real app, you might want a more structured error response
         throw new Error(e.message || 'An unknown error occurred in cost calculation.');
     }
 }

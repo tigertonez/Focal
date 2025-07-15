@@ -29,6 +29,14 @@
     /* Custom Font Sizes */
     --fs-label: 12px;
     --fs-value: 24px;
+    
+    /* Chart Colors */
+    --chart-1: 220 80% 55%;
+    --chart-2: 170 70% 45%;
+    --chart-3: 350 85% 60%;
+    --chart-4: 40 90% 55%;
+    --chart-5: 280 75% 50%;
+    --chart-6: 200 80% 50%;
   }
  
   .dark {
@@ -51,6 +59,14 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 60%;
+    
+    /* Chart Colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 170 80% 40%;
+    --chart-3: 350 90% 65%;
+    --chart-4: 40 95% 60%;
+    --chart-5: 280 80% 55%;
+    --chart-6: 200 85% 55%;
   }
 }
 
