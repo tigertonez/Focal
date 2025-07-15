@@ -1,6 +1,5 @@
 
 import { SideNav } from '@/components/app/SideNav';
-import { BottomNav } from '@/components/app/BottomNav';
 import { ForecastProvider } from '@/context/ForecastContext';
 
 export default function MainLayout({
@@ -10,12 +9,11 @@ export default function MainLayout({
 }) {
   return (
     <ForecastProvider>
-      <div className="relative flex min-h-screen">
+      <div className="relative flex min-h-screen bg-muted/30">
         <SideNav />
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
-            {children}
+        <main className="flex-1">
+          {children}
         </main>
-        <BottomNav />
       </div>
     </ForecastProvider>
   );

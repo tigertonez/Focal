@@ -1,49 +1,74 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
-import { calculateForecast } from '@/lib/engine';
-import { type EngineInput, type EngineSettings, type EngineOutput } from '@/lib/types';
-import sampleData from '@/../tests/sample-data.json'; // Use test data for initial scaffold
+import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import { type EngineInput, EngineInputSchema, type Product } from '@/lib/types';
 
 interface ForecastContextType {
-  inputs: EngineInput | null;
-  settings: EngineSettings | null;
-  output: EngineOutput | null;
+  inputs: EngineInput;
+  setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
+  updateInput: (path: string, value: any) => void;
+  addProduct: () => void;
+  removeProduct: (id: string) => void;
+  saveAndCalculate: () => void;
   loading: boolean;
-  runForecast: (inputs: EngineInput, settings: EngineSettings) => void;
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
 
-export const ForecastProvider = ({ children }: { children: ReactNode }) => {
-  const [inputs, setInputs] = useState<EngineInput | null>(null);
-  const [settings, setSettings] = useState<EngineSettings | null>(null);
-  const [output, setOutput] = useState<EngineOutput | null>(null);
-  const [loading, setLoading] = useState(true);
+// Helper for nested state updates
+import { set } from 'lodash-es';
 
-  const runForecast = (currentInputs: EngineInput, currentSettings: EngineSettings) => {
-    setLoading(true);
-    setInputs(currentInputs);
-    setSettings(currentSettings);
-    const forecastOutput = calculateForecast(currentInputs, currentSettings);
-    setOutput(forecastOutput);
-    setLoading(false);
+export const ForecastProvider = ({ children }: { children: ReactNode }) => {
+  const [inputs, setInputs] = useState<EngineInput>(EngineInputSchema.parse({}));
+  const [loading, setLoading] = useState(false);
+
+  const updateInput = (path: string, value: any) => {
+    setInputs(prevInputs => {
+      const newInputs = { ...prevInputs };
+      set(newInputs, path, value);
+      // Optional: Live validation can be added here
+      return newInputs;
+    });
   };
-  
-  // Initial run with sample data for scaffolding purposes
-  useEffect(() => {
-    runForecast(sampleData.inputs as EngineInput, sampleData.settings as EngineSettings);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+  const addProduct = () => {
+    const newProduct = { ...EngineInputSchema.shape.products.element.parse({}) };
+    setInputs(prev => ({
+        ...prev,
+        products: [...prev.products, newProduct]
+    }));
+  };
+
+  const removeProduct = (id: string) => {
+    setInputs(prev => ({
+        ...prev,
+        products: prev.products.filter(p => p.id !== id)
+    }));
+  };
+
+  const saveAndCalculate = () => {
+    console.log("Saving inputs and setting readyForCalc to true...");
+    setLoading(true);
+    const finalInputs = { ...inputs, readyForCalc: true };
+    setInputs(finalInputs);
+
+    // In a real scenario, this would trigger the engine call.
+    // For now, we just log and stop the loading state.
+    console.log("Data to be sent to engine:", finalInputs);
+    
+    setTimeout(() => setLoading(false), 1000); // Simulate network latency
+  };
 
   const value = useMemo(() => ({
     inputs,
-    settings,
-    output,
+    setInputs,
+    updateInput,
+    addProduct,
+    removeProduct,
+    saveAndCalculate,
     loading,
-    runForecast,
-  }), [inputs, settings, output, loading]);
+  }), [inputs, loading]);
 
   return (
     <ForecastContext.Provider value={value}>

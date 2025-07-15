@@ -22,8 +22,8 @@ export default {
         body: ['var(--font-body)', 'Inter', 'sans-serif'],
       },
       fontSize: {
-        label: '12px',
-        value: '24px',
+        label: 'var(--fs-label)',
+        value: 'var(--fs-value)',
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -59,19 +59,15 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
       },
       fontWeight: {
         semibold: '600',

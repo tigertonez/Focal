@@ -13,12 +13,12 @@ const fontBody = Inter({
 const fontHeadline = Inter({
   subsets: ['latin'],
   variable: '--font-headline',
-  weight: ['700'],
+  weight: ['600', '700'],
 });
 
 export const metadata = {
-  title: 'Market Mosaic - Forecasting SaaS',
-  description: 'Forecasting for product-based businesses',
+  title: 'Forecasting SaaS Platform',
+  description: 'Lean Hybrid Setup - Input Sheet',
 };
 
 export default function RootLayout({
