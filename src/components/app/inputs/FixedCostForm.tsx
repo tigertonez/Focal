@@ -44,7 +44,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             value={cost.name}
                             onChange={handleChange}
                             placeholder="Cost Name (e.g., Salaries)"
-                            className="text-base"
+                            className="text-sm"
                         />
                          {isPlanningBuffer && (
                             <TooltipProvider>
@@ -64,10 +64,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             value={cost.amount}
                             onChange={handleChange}
                             placeholder="Amount"
-                            className="text-base"
+                            className="text-sm"
                         />
                          <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
-                            <SelectTrigger><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
+                            <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Up-Front">Up-Front</SelectItem>
                                 <SelectItem value="Monthly">Monthly</SelectItem>

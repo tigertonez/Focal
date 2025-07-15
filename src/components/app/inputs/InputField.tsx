@@ -43,7 +43,7 @@ export const InputField: React.FC<{
             value={value}
             onChange={onChange}
             placeholder={placeholder}
-            className="text-base flex-grow"
+            className="text-sm flex-grow"
           />
           {badge && <Badge variant="secondary">{badge}</Badge>}
         </div>
@@ -71,7 +71,7 @@ export const InputField: React.FC<{
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="text-base flex-grow"
+          className="text-sm flex-grow"
         />
         {badge && <Badge variant="secondary">{badge}</Badge>}
       </div>
