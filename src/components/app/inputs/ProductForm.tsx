@@ -38,15 +38,21 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
 
 
   return (
-    <div className="bg-muted/50 p-4 rounded-lg space-y-4 relative">
-      <button onClick={() => removeProduct(product.id)} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive">
-        <Trash2 size={18} />
-      </button>
-      
-      <div>
-        <Label htmlFor={`productName-${index}`} className="text-sm font-medium">Product / Service Name</Label>
-        <Input id={`productName-${index}`} name="productName" value={product.productName} onChange={handleChange} className="mt-2 text-sm px-2" placeholder="e.g., Premium T-Shirt" />
-      </div>
+    <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+        <div className="flex items-start gap-4">
+            <div className="flex-grow space-y-2">
+                <Input
+                    name="productName"
+                    value={product.productName}
+                    onChange={handleChange}
+                    placeholder="Product / Service Name"
+                    className="text-sm px-2"
+                />
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => removeProduct(product.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0 mt-1">
+                <Trash2 size={18} />
+            </Button>
+        </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isManualMode && (
