@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
-import { useCosts } from '@/hooks/useCosts';
+import { useFinancials } from '@/hooks/useFinancials';
 import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostRow } from '@/components/app/costs/CostRow';
@@ -110,21 +110,11 @@ function CostsPageContent({ data }: { data: EngineOutput }) {
     );
 }
 
-// Wrapper hook to match the expected structure of PageDataProvider
-const useCostsData = () => {
-    const { costSummary, monthlyCosts, error, isLoading } = useCosts();
-    return {
-        data: costSummary && monthlyCosts ? { costSummary, monthlyCosts } : null,
-        error,
-        isLoading
-    };
-};
-
 
 export default function CostsPage() {
     return (
         <PageDataProvider
-            useDataHook={useCostsData}
+            useDataHook={useFinancials}
             loadingComponent={<CostsPageSkeleton />}
         >
             {(data) => <CostsPageContent data={data} />}

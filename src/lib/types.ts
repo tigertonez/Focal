@@ -54,6 +54,7 @@ export type EngineInput = z.infer<typeof EngineInputSchema>;
 
 // --- Engine Output Schemas ---
 
+// Cost-related schemas
 export const VariableCostBreakdownSchema = z.object({
     name: z.string(),
     plannedUnits: z.number(),
@@ -81,10 +82,55 @@ export const MonthlyCostSchema = z.object({
 }).catchall(z.number());
 export type MonthlyCost = z.infer<typeof MonthlyCostSchema>;
 
+// Revenue-related schemas (placeholders)
+export const RevenueSummarySchema = z.object({
+    totalRevenue: z.number(),
+    avgRevenuePerUnit: z.number(),
+    ltv: z.number(),
+    cac: z.number(),
+});
+export type RevenueSummary = z.infer<typeof RevenueSummarySchema>;
 
-// This will eventually hold all calculation results
+export const MonthlyRevenueSchema = z.object({
+  month: z.number(),
+}).catchall(z.number());
+export type MonthlyRevenue = z.infer<typeof MonthlyRevenueSchema>;
+
+// Profit-related schemas (placeholders)
+export const ProfitSummarySchema = z.object({
+    grossProfit: z.number(),
+    operatingProfit: z.number(),
+    netProfit: z.number(),
+});
+export type ProfitSummary = z.infer<typeof ProfitSummarySchema>;
+
+export const MonthlyProfitSchema = z.object({
+  month: z.number(),
+}).catchall(z.number());
+export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
+
+// Cash-Flow-related schemas (placeholders)
+export const CashFlowSummarySchema = z.object({
+    endingCashBalance: z.number(),
+    runway: z.number(),
+});
+export type CashFlowSummary = z.infer<typeof CashFlowSummarySchema>;
+
+export const MonthlyCashFlowSchema = z.object({
+  month: z.number(),
+}).catchall(z.number());
+export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
+
+
+// This is the single source of truth for all calculated financial data
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,
     monthlyCosts: z.array(MonthlyCostSchema),
+    revenueSummary: RevenueSummarySchema,
+    monthlyRevenue: z.array(MonthlyRevenueSchema),
+    profitSummary: ProfitSummarySchema,
+    monthlyProfit: z.array(MonthlyProfitSchema),
+    cashFlowSummary: CashFlowSummarySchema,
+    monthlyCashFlow: z.array(MonthlyCashFlowSchema),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeFinancialData } from '@/ai/flows/analyze-financial-data';
 import { financialCopilot } from '@/ai/flows/financial-copilot';
-import { calculateCosts } from '@/lib/engine/costs';
+import { calculateFinancials } from '@/lib/engine/financial-engine';
 import { z } from 'zod';
 import { EngineInputSchema } from '@/lib/types';
 
@@ -24,13 +24,13 @@ const CopilotSchema = z.object({
   screenshotDataUri: z.string(),
 });
 
-const CalculateCostsSchema = z.object({
-    action: z.literal('calculate-costs'),
+const CalculateFinancialsSchema = z.object({
+    action: z.literal('calculate-financials'),
     inputs: EngineInputSchema,
 });
 
 
-const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema, CalculateCostsSchema]);
+const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema, CalculateFinancialsSchema]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(result);
     }
     
-    if (action === 'calculate-costs') {
+    if (action === 'calculate-financials') {
         const { inputs } = validation.data;
         // Directly call the lean calculation engine
-        const result = calculateCosts(inputs);
+        const result = calculateFinancials(inputs);
         return NextResponse.json(result);
     }
 

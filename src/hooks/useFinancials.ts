@@ -1,18 +1,13 @@
 
 'use client';
 
-// This file is being kept temporarily to avoid breaking changes, 
-// but is no longer in use. It will be removed in a future step.
-// The new, unified hook is `useFinancials`.
-
 import { useState, useEffect, useCallback } from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { EngineInputSchema, type EngineOutput } from '@/lib/types';
 import { debounce } from 'lodash-es';
 
-export const useCosts = () => {
+export const useFinancials = () => {
     const { inputs } = useForecast();
-    // Consolidate state into a single object for easier management
     const [state, setState] = useState<{
         data: EngineOutput | null;
         error: string | null;
@@ -23,46 +18,46 @@ export const useCosts = () => {
         isLoading: true,
     });
 
-    const fetchCosts = useCallback(debounce(async (validatedInputs) => {
+    const fetchFinancials = useCallback(debounce(async (validatedInputs) => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
         try {
             const response = await fetch('/api/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'calculate-costs', // This action name is now deprecated
+                    action: 'calculate-financials',
                     inputs: validatedInputs,
                 }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.details || errorData.error || 'Failed to calculate costs.');
+                throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
             }
 
             const result = await response.json();
             setState({ data: result, error: null, isLoading: false });
         } catch (e: any) {
-            setState({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
+            // Keep previous data on error to prevent the UI from blanking out on minor input validation issues
+            setState(prev => ({ ...prev, error: e.message || 'An unknown error occurred.', isLoading: false }));
         }
     }, 500), []); // Debounce API calls by 500ms
 
     useEffect(() => {
         const validationResult = EngineInputSchema.safeParse(inputs);
         if (validationResult.success) {
-            fetchCosts(validationResult.data);
+            fetchFinancials(validationResult.data);
         } else {
             const firstError = validationResult.error.errors[0]?.message || 'Invalid input.';
-            setState({ data: state.data, error: firstError, isLoading: false }); // Keep old data if available
+            // Don't clear data if there's a validation error, just show the error.
+            setState(prev => ({ ...prev, error: firstError, isLoading: false }));
         }
 
-        // Cleanup function to cancel any pending debounced calls
         return () => {
-            fetchCosts.cancel();
+            fetchFinancials.cancel();
         };
-    }, [inputs, fetchCosts, state.data]);
+    }, [inputs, fetchFinancials]);
 
-    // This hook now returns an object that can be spread into the PageDataProvider
     return {
       data: state.data,
       error: state.error,
