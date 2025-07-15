@@ -11,7 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart'; // Re-using for revenue timeline
-import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -34,40 +33,13 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                 </div>
             </section>
             
-            <section className="grid md:grid-cols-2 gap-8">
+            <section>
                 <Card>
                     <CardHeader>
                         <CardTitle>Monthly Revenue Timeline</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyRevenue} currency={currency} />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Revenue by Product</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full flex justify-center items-center">
-                       <RevenuePieChart data={revenueSummary.productBreakdown} currency={currency} />
-                    </CardContent>
-                </Card>
-            </section>
-
-             <section className="space-y-2 pt-4">
-                <h2 className="text-xl font-semibold">Revenue Breakdown by Product</h2>
-                <Card>
-                    <CardContent className="p-4 space-y-4">
-                        {revenueSummary.productBreakdown.map(product => (
-                            <div key={product.name} className="flex justify-between items-center text-sm border-b pb-2 last:border-b-0 last:pb-0">
-                                <div className="space-y-1">
-                                    <h3 className="font-semibold">{product.name}</h3>
-                                    <p className="text-muted-foreground">{product.totalSoldUnits.toLocaleString()} units sold</p>
-                                </div>
-                                <div className="font-bold text-lg">
-                                    {formatCurrency(product.totalRevenue, currency)}
-                                </div>
-                            </div>
-                        ))}
                     </CardContent>
                 </Card>
             </section>
