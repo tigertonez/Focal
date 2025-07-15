@@ -56,8 +56,9 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 
 const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
     const { preOrder, forecastMonths } = inputs.parameters;
-    const salesStartMonth = preOrder ? 1 : 1; // Sales always start in month 1
+    const salesStartMonth = preOrder ? 0 : 1;
     const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths + 1; // M0 to M12 or M1 to M12
+    const salesMonths = preOrder ? forecastMonths + 1 : forecastMonths;
     
     const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i }));
 
@@ -72,9 +73,9 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
             
             case 'Allocated Monthly':
-                if (forecastMonths > 0) {
-                    const monthlyAmount = cost.amount / forecastMonths;
-                    for (let i = 0; i < forecastMonths; i++) {
+                if (salesMonths > 0) {
+                    const monthlyAmount = cost.amount / salesMonths;
+                    for (let i = 0; i < salesMonths; i++) {
                         const timelineIndex = salesStartMonth + i;
                         if (timeline[timelineIndex]) {
                            timeline[timelineIndex][cost.name] = (timeline[timelineIndex][cost.name] || 0) + monthlyAmount;
@@ -84,7 +85,7 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
 
             case 'Allocated Quarterly':
-                const quarters = Math.ceil(forecastMonths / 3);
+                const quarters = Math.ceil(salesMonths / 3);
                 if (quarters > 0) {
                     const quarterlyAmount = cost.amount / quarters;
                     for (let q = 0; q < quarters; q++) {
