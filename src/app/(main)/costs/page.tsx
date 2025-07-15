@@ -14,6 +14,7 @@ import { Terminal } from 'lucide-react';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 
 export default function CostsPage() {
     const { inputs } = useForecast();
@@ -83,6 +84,17 @@ export default function CostsPage() {
                 )}
             </section>
             
+            <section>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Cost Timeline</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <CostTimelineChart data={monthlyCosts} currency={currency} />
+                    </CardContent>
+                </Card>
+            </section>
+
             <section className="grid md:grid-cols-2 gap-8 pt-4">
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
