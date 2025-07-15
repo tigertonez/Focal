@@ -4,13 +4,14 @@
 import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
+import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="space-y-4">
@@ -40,6 +41,7 @@ const SelectField: React.FC<{
   </div>
 );
 
+
 export default function InputsPage() {
   const {
     inputs,
@@ -67,7 +69,7 @@ export default function InputsPage() {
   const handleSelectChange = (section: 'parameters' | 'realtime') => (id: string) => (value: string) => {
     setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: value } }));
   };
-  
+
   return (
     <div className="bg-white min-h-screen">
       <main className="max-w-4xl mx-auto p-4 md:p-8">

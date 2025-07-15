@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -17,16 +17,12 @@ export const InputField: React.FC<{
   required?: boolean;
   tooltip?: string;
 }> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => {
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
       <Label htmlFor={id} className="font-medium text-sm flex items-center gap-2">
         {label} {required && <span className="text-destructive">*</span>}
-        {tooltip && isMounted && (
+        {tooltip && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>

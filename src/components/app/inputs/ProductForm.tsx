@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -69,14 +65,12 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         <div>
           <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
             Sales Model
-            {isMounted && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                  <TooltipContent className="whitespace-pre-line text-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                <TooltipContent className="whitespace-pre-line text-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Label>
           <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
             <SelectTrigger id={`salesModel-${index}`} className="mt-2 text-base"><SelectValue /></SelectTrigger>
