@@ -5,9 +5,10 @@ import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Info } from 'lucide-react';
 import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
     const { updateFixedCost, removeFixedCost } = useForecast();
@@ -28,20 +29,34 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
 
     const schedule = cost.paymentSchedule || 'Up-Front';
     const name = cost.name.toLowerCase();
-    const isSpecialCost = name.includes('marketing') || name.includes('planning buffer');
+    const isSpecialCost = name.includes('marketing');
+    const isPlanningBuffer = name.includes('planning buffer');
+    const planningBufferTooltip = "A contingency fund for unexpected costs. Typically 10-15% of total fixed costs.";
 
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
              <div className="flex items-start gap-4">
                 <div className="flex-grow space-y-2">
-                    <Input
-                        name="name"
-                        value={cost.name}
-                        onChange={handleChange}
-                        placeholder="Cost Name (e.g., Salaries)"
-                        className="text-base"
-                    />
+                    <div className="flex items-center gap-2">
+                         <Input
+                            name="name"
+                            value={cost.name}
+                            onChange={handleChange}
+                            placeholder="Cost Name (e.g., Salaries)"
+                            className="text-base"
+                        />
+                         {isPlanningBuffer && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>{planningBufferTooltip}</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                    </div>
                      <div className="grid grid-cols-2 gap-4">
                         <Input
                             name="amount"

@@ -81,7 +81,15 @@ export default function InputsPage() {
           </Section>
 
           <Section title="General Parameters">
-            <InputField label="Forecast Months" id="forecastMonths" type="number" value={inputs.parameters.forecastMonths} onChange={handleParamChange('parameters')} tooltip="How many months into the future to forecast." />
+             <InputField 
+                label="Forecast Months" 
+                id="forecastMonths" 
+                type="number" 
+                value={inputs.parameters.forecastMonths} 
+                onChange={handleParamChange('parameters')} 
+                tooltip="How many months into the future to forecast." 
+                badge={inputs.parameters.preOrder ? `+ Month 0` : undefined}
+            />
             <InputField label="Tax Rate %" id="taxRate" type="number" value={inputs.parameters.taxRate} onChange={handleParamChange('parameters')} tooltip="Your estimated corporate tax rate." />
             <SelectField label="Currency" id="currency" value={inputs.parameters.currency} onValueChange={handleSelectChange('parameters')('currency')}>
               <SelectItem value="EUR">EUR</SelectItem>

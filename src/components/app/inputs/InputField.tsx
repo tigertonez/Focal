@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export const InputField: React.FC<{
   label: string;
@@ -16,7 +17,8 @@ export const InputField: React.FC<{
   placeholder?: string;
   required?: boolean;
   tooltip?: string;
-}> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip }) => {
+  badge?: string;
+}> = ({ label, id, value, onChange, type = 'text', placeholder, required, tooltip, badge }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
@@ -31,14 +33,17 @@ export const InputField: React.FC<{
           </TooltipProvider>
         )}
       </Label>
-      <Input
-        id={id}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="md:col-span-2 text-base"
-      />
+      <div className="md:col-span-2 flex items-center gap-2">
+        <Input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="text-base flex-grow"
+        />
+        {badge && <Badge variant="secondary">{badge}</Badge>}
+      </div>
     </div>
   );
 };

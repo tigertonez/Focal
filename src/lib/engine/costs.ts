@@ -10,9 +10,14 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         if (inputs.parameters.forecastMonths > 36 || inputs.parameters.forecastMonths < 1) {
             throw new Error('Forecast Months must be between 1 and 36.');
         }
-        if (inputs.products.some(p => p.unitCost === undefined || p.sellPrice === undefined)) {
-             throw new Error('All products must have a Unit Cost and Sell Price.');
-        }
+        inputs.products.forEach(p => {
+             if (p.unitCost === undefined || p.sellPrice === undefined) {
+                 throw new Error(`Product "${p.productName}" must have a Unit Cost and Sell Price.`);
+            }
+            if (p.unitCost > p.sellPrice) {
+                throw new Error(`Product "${p.productName}" has a Unit Cost higher than its Sell Price, which will result in a loss.`);
+            }
+        });
 
         const { preOrder, forecastMonths: baseForecastMonths } = inputs.parameters;
         
@@ -89,13 +94,13 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             total: fixedCostTimeline[i] || 0,
         }));
 
-        // Deposits are paid in Month 1
+        // Deposits are paid in Month 1 (index depends on preOrder)
         if (timelineMonths > month1Index) {
             monthlyCosts[month1Index].deposits = totalDepositsPaid;
             monthlyCosts[month1Index].total += totalDepositsPaid;
         }
 
-        // Final payments are made in Month 2
+        // Final payments are made in Month 2 (index depends on preOrder)
         if (timelineMonths > month1Index + 1) {
             monthlyCosts[month1Index + 1].finalPayments = totalFinalPayments;
             monthlyCosts[month1Index + 1].total += totalFinalPayments;
