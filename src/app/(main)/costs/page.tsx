@@ -71,6 +71,8 @@ export default function CostsPage() {
     }
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
+    const baseFixedCosts = costSummary.totalFixed - costSummary.planningBuffer;
+
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -102,19 +104,19 @@ export default function CostsPage() {
             <section className="space-y-2">
                 <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    {costSummary.fixedCosts.map(cost => (
+                    {costSummary.fixedCosts.filter(c => c.name !== 'Planning Buffer').map(cost => (
                        <CostRow 
                            key={cost.name}
                            label={cost.name}
                            value={formatCurrency(cost.amount, currency)}
-                           percentage={(cost.amount / (costSummary.totalFixed - costSummary.planningBuffer) * 100).toFixed(1)}
+                           percentage={baseFixedCosts > 0 ? (cost.amount / baseFixedCosts * 100).toFixed(1) : "0.0"}
                        />
                     ))}
                     <div className="pt-2 border-t">
                        <CostRow 
                            label="Planning Buffer"
                            value={formatCurrency(costSummary.planningBuffer, currency)}
-                           percentage={(costSummary.planningBuffer / (costSummary.totalFixed - costSummary.planningBuffer) * 100).toFixed(1)}
+                           percentage={baseFixedCosts > 0 ? (costSummary.planningBuffer / baseFixedCosts * 100).toFixed(1) : "0.0"}
                        />
                     </div>
                     <div className="pt-2 border-t font-bold">

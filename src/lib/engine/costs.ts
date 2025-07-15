@@ -1,5 +1,5 @@
 
-import { type EngineInput, type CostSummary, type MonthlyCost } from '@/lib/types';
+import { type EngineInput, type CostSummary, type MonthlyCost, type FixedCostItem } from '@/lib/types';
 import { buildFixedCostTimeline, getAggregatedSalesWeights } from '@/lib/buildFixedCostTimeline';
 
 export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary, monthlyCosts: MonthlyCost[] } {
@@ -15,17 +15,26 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
         }
 
         const baseFixedCosts = inputs.fixedCosts.reduce((acc, cost) => acc + (cost.amount || 0), 0);
-        const planningBuffer = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
+        const planningBufferAmount = baseFixedCosts * (inputs.parameters.planningBuffer / 100);
+
+        const costsWithBuffer: FixedCostItem[] = [
+            ...inputs.fixedCosts,
+            {
+                id: 'planning-buffer',
+                name: 'Planning Buffer',
+                amount: planningBufferAmount / inputs.parameters.forecastMonths, // Treat as a monthly cost
+                paymentSchedule: 'Monthly',
+            }
+        ];
         
         const salesWeights = getAggregatedSalesWeights(inputs.products, inputs.parameters.forecastMonths);
         const fixedCostTimeline = buildFixedCostTimeline(
-            inputs.fixedCosts, 
+            costsWithBuffer, 
             inputs.parameters.forecastMonths, 
-            salesWeights,
-            planningBuffer
+            salesWeights
         );
         
-        const totalFixed = baseFixedCosts + planningBuffer;
+        const totalFixedWithBuffer = fixedCostTimeline.reduce((sum, cost) => sum + cost, 0);
         
         let totalPlannedUnits = 0;
         let totalDepositsPaid = 0;
@@ -54,16 +63,16 @@ export function calculateCosts(inputs: EngineInput): { costSummary: CostSummary,
             };
         });
 
-        const totalOperating = totalFixed + totalVariableCost;
+        const totalOperating = totalFixedWithBuffer + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
 
         const costSummary: CostSummary = {
-            totalFixed,
+            totalFixed: totalFixedWithBuffer,
             totalVariable: totalVariableCost,
             totalOperating,
             avgCostPerUnit,
             fixedCosts: inputs.fixedCosts,
-            planningBuffer,
+            planningBuffer: planningBufferAmount,
             variableCosts: variableCostBreakdown,
             totalDepositsPaid,
             totalFinalPayments,
