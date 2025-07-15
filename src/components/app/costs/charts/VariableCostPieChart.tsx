@@ -12,6 +12,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
+import { CostRow } from "../CostRow"
 
 const chartConfig = {
   totalProductionCost: {
@@ -37,6 +38,30 @@ export function VariableCostPieChart({ data, currency }: VariableCostPieChartPro
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.totalProductionCost, 0), [data]);
     const activeData = data.filter(d => d.totalProductionCost > 0);
 
+    // If there is only one product or no products, show a summary view instead of a chart
+    if (activeData.length <= 1) {
+        const singleProduct = activeData.length === 1 ? activeData[0] : null;
+        return (
+            <div className="h-full flex flex-col justify-center items-center text-center">
+                <div className="text-3xl font-bold font-headline">
+                    {formatCurrency(total, currency)}
+                </div>
+                <div className="text-muted-foreground mb-4">
+                    Total Variable Cost
+                </div>
+
+                {singleProduct && (
+                    <div className="w-full max-w-xs text-left space-y-2 mt-4 text-sm">
+                        <h3 className="font-semibold text-center mb-2">{singleProduct.name}</h3>
+                        <CostRow label="Planned Units" value={singleProduct.plannedUnits.toLocaleString()} />
+                        <CostRow label="Unit Cost" value={formatCurrency(singleProduct.unitCost, currency)} />
+                        <CostRow label="Total Production Cost" value={formatCurrency(singleProduct.totalProductionCost, currency)} />
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     return (
         <ChartContainer
             config={chartConfig}
@@ -44,8 +69,8 @@ export function VariableCostPieChart({ data, currency }: VariableCostPieChartPro
         >
         <PieChart>
             <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent hideLabel />}
+                cursor={false}
+                content={<ChartTooltipContent hideLabel />}
             />
             <Pie
                 data={activeData}
