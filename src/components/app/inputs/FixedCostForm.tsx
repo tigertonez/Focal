@@ -29,8 +29,9 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
 
     const schedule = cost.paymentSchedule || 'Up-Front';
     const name = cost.name.toLowerCase();
-    const isSpecialCost = name.includes('marketing');
+    const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
+    const isDynamicCost = isMarketingCost || isPlanningBuffer;
     const planningBufferTooltip = "A contingency fund for unexpected costs. Typically 10-15% of total fixed costs.";
 
 
@@ -72,7 +73,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                 <SelectItem value="Up-Front">Up-Front</SelectItem>
                                 <SelectItem value="Monthly">Monthly</SelectItem>
                                 <SelectItem value="Quarterly">Quarterly</SelectItem>
-                                {isSpecialCost && <SelectItem value="According to Sales">According to Sales</SelectItem>}
+                                {isDynamicCost && <SelectItem value="According to Sales">According to Sales</SelectItem>}
                             </SelectContent>
                         </Select>
                     </div>
