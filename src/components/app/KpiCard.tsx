@@ -13,13 +13,13 @@ export function KpiCard({ label, value, icon, className }: KpiCardProps) {
   return (
     <Card className={cn("flex-1", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-label font-semibold text-muted-foreground">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           {label}
         </CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold font-headline text-value">
+        <div className="text-2xl font-bold font-headline">
           {value}
         </div>
       </CardContent>

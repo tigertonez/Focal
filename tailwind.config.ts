@@ -18,8 +18,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        headline: ['"Space Grotesk"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        headline: ['var(--font-headline)', 'Inter', 'sans-serif'],
+        body: ['var(--font-body)', 'Inter', 'sans-serif'],
       },
       fontSize: {
         label: '12px',
@@ -68,6 +68,7 @@ export default {
         },
       },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

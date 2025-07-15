@@ -19,7 +19,7 @@ export function TopNav() {
   const pathname = usePathname();
 
   return (
-    <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
+    <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"

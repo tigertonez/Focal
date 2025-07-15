@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
@@ -10,13 +10,13 @@ const fontBody = Inter({
   variable: '--font-body',
 });
 
-const fontHeadline = Space_Grotesk({
+const fontHeadline = Inter({
   subsets: ['latin'],
   variable: '--font-headline',
   weight: ['700'],
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Market Mosaic - Forecasting SaaS',
   description: 'Forecasting for product-based businesses',
 };
