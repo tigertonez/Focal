@@ -87,6 +87,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Product</TableHead>
+                                    <TableHead className="text-right">Units Sold</TableHead>
                                     <TableHead className="text-right">Total Revenue</TableHead>
                                     <TableHead className="text-right">Share</TableHead>
                                 </TableRow>
@@ -99,6 +100,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                     return (
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                             <TableCell className="text-right">{share.toFixed(1)}%</TableCell>
                                         </TableRow>
