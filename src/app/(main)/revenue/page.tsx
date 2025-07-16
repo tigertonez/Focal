@@ -56,7 +56,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                 {formatCurrency(revenueSummary.totalRevenue, currency)} of {formatCurrency(potentialRevenue, currency)}
                             </span>
                         </div>
-                        <Progress value={revenueProgress} />
+                        <Progress value={revenueProgress} className="h-2" />
                     </div>
                 )}
             </section>
