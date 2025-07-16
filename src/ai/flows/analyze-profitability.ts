@@ -32,12 +32,12 @@ Analyze the following financial forecast:
 - Cost Summary: {{{json costSummary}}}
 - Profit Summary: {{{json profitSummary}}}
 
-Provide the following analysis in concise, scannable bullet points.
+Provide the following analysis. For any sections that are lists, provide them as a JSON array of strings.
 
 - **Key Facts**: List the top 3 most critical numbers a shop owner must know from this forecast.
-- **What's Working**: Identify the biggest strengths and positive drivers in this plan.
-- **Opportunities for Growth**: Pinpoint the 1-2 biggest weaknesses or areas that are holding back profit.
-- **Top Priorities**: Give 2-3 highly specific, actionable recommendations to improve profitability based directly on the numbers provided.
+- **What's Working**: In a bulleted list, identify the biggest strengths and positive drivers in this plan.
+- **Opportunities for Growth**: In a bulleted list, pinpoint the 1-2 biggest weaknesses or areas that are holding back profit.
+- **Top Priorities**: In a bulleted list, give 2-3 highly specific, actionable recommendations to improve profitability based directly on the numbers provided.
 `,
 });
 

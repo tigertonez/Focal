@@ -65,26 +65,14 @@ const ProfitInsightsLoader: React.FC = () => (
   </Card>
 );
 
-const renderContent = (content: string | string[]) => {
-    if (Array.isArray(content)) {
-        return (
-            <ul className="list-disc list-outside space-y-1 pl-4">
-                {content.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-        )
-    }
-    // Handle cases where the AI might return a single string with bullets
-    if (typeof content === 'string' && content.includes('\n-')) {
-        return (
-             <ul className="list-disc list-outside space-y-1 pl-4">
-                {content.split('\n').map((item, index) => {
-                    const cleanItem = item.replace(/^- /, '');
-                    return cleanItem ? <li key={index}>{cleanItem}</li> : null;
-                })}
-            </ul>
-        )
-    }
-    return <p>{content}</p>
+const renderContent = (content: string[]) => {
+    if (!content || content.length === 0) return null;
+    
+    return (
+        <ul className="list-disc list-outside space-y-1 pl-4">
+            {content.map((item, index) => <li key={index}>{item}</li>)}
+        </ul>
+    )
 }
 
 
