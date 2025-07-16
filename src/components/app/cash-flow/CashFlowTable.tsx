@@ -47,7 +47,7 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
                             <TableHead className="text-right">Cash Out</TableHead>
                             <TableHead className="text-right">Net Flow</TableHead>
                             <TableHead className="text-right">End Balance</TableHead>
-                            <TableHead className="text-center w-[140px]">Status</TableHead>
+                            <TableHead className="text-center w-[150px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
