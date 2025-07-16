@@ -1,4 +1,7 @@
 
+'use server';
+
+import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import type { EngineInput, EngineOutput } from '@/lib/types';
 
@@ -11,6 +14,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
     padding: 30,
+    fontFamily: 'Helvetica',
   },
   section: {
     margin: 10,
