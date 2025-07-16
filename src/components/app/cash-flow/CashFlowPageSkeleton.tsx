@@ -1,7 +1,7 @@
 
 import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Wallet, TrendingDown, CalendarClock, Banknote } from 'lucide-react';
 
@@ -48,9 +48,9 @@ export function CashFlowPageSkeleton() {
         <Card>
             <CardHeader>
               <CardTitle>Cash-Flow Health</CardTitle>
-              <CardDescription>
+              <div className="text-sm text-muted-foreground pt-1.5">
                 <Skeleton className="h-4 w-48" />
-              </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-8">
