@@ -175,7 +175,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'Paid Up-Front';
         
-        // Handle "Paid Up-Front" separately as a special case. It always happens in Month 0 if available.
+        // Handle "Paid Up-Front" separately. It always happens in Month 0 if available.
         if (schedule === 'Paid Up-Front') {
             if (requiresMonthZero) {
                 const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
@@ -188,27 +188,19 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
         }
 
         // --- Decision Tree for Start Month ---
-        // Determine the starting month for all other allocation schedules.
         let allocationStartMonth = 1; // Default to Month 1
-        if (requiresMonthZero) {
-             // If month 0 exists, respect the user's choice.
-            if (cost.startMonth === 'Month 0') {
-                allocationStartMonth = 0;
-            } else if (cost.startMonth === 'Up-front') {
-                 // Treat "Up-front" selection as Month 0 for allocation purposes
-                allocationStartMonth = 0;
-            } else {
-                // Default to Month 1 if not specified otherwise
-                allocationStartMonth = 1;
-            }
+        if (requiresMonthZero && (cost.startMonth === 'Month 0' || cost.startMonth === 'Up-front')) {
+            allocationStartMonth = 0;
         }
         
         const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= allocationStartMonth);
-        const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * allocationTimeline.length : cost.amount;
+        const totalCostAmount = cost.costType === 'Monthly Cost' 
+            ? cost.amount * allocationTimeline.length // Total is monthly amount * number of active months
+            : cost.amount; // Total is the user-specified amount for the period
         
         switch (schedule) {
             case 'Allocated Monthly':
-                const monthlyAmount = (cost.costType === 'Monthly Cost' || allocationTimeline.length === 0) ? cost.amount : totalCostAmount / allocationTimeline.length;
+                const monthlyAmount = allocationTimeline.length > 0 ? totalCostAmount / allocationTimeline.length : 0;
                 allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + monthlyAmount; });
                 break;
 
@@ -267,16 +259,15 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline) => {
     const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === 1);
     if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + totalFinalPayments;
     
-    // Calculate total fixed cost based on what's actually allocated in the timeline.
-    const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => {
-        const startMonth = (timeline.requiresMonthZero && (cost.startMonth === 'Month 0' || cost.startMonth === 'Up-front')) ? 0 : 1;
-        const allocationLength = timeline.timelineMonths.filter(m => m >= startMonth).length;
-        
-        if (cost.paymentSchedule === 'Paid Up-Front') {
-            return sum + (cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount);
-        }
-        
-        return sum + (cost.costType === 'Monthly Cost' ? cost.amount * allocationLength : cost.amount)
+    // Calculate total fixed cost by summing up what was actually allocated in the timeline.
+    const totalFixedCostInPeriod = monthlyFixedCostTimeline.reduce((total, month) => {
+        return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
+            // Exclude non-cost keys and variable costs which are tracked separately
+            if (key === 'month' || key === 'Deposits' || key === 'Final Payments') {
+                return monthTotal;
+            }
+            return monthTotal + value;
+        }, 0);
     }, 0);
 
 
