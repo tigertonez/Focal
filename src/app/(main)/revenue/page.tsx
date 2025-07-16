@@ -15,15 +15,7 @@ import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
-
-const chartColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--chart-6))",
-];
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
@@ -90,29 +82,30 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     <CardHeader>
                         <CardTitle>Revenue by Product</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-4">
-                        {revenueSummary.productBreakdown.map((product, index) => {
-                             const share = revenueSummary.totalRevenue > 0
-                                ? (product.totalRevenue / revenueSummary.totalRevenue) * 100
-                                : 0;
-                            return (
-                                <div key={product.name} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                         <div 
-                                            className="h-3 w-3 rounded-full" 
-                                            style={{ backgroundColor: chartColors[index % chartColors.length] }} 
-                                        />
-                                        <span className="font-medium">{product.name}</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="font-semibold">{formatCurrency(product.totalRevenue, currency)}</div>
-                                        <div className="text-sm text-muted-foreground">
-                                            Revenue Share: {share.toFixed(1)}%
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead className="text-right">Total Revenue</TableHead>
+                                    <TableHead className="text-right">Share</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {revenueSummary.productBreakdown.map((product) => {
+                                    const share = revenueSummary.totalRevenue > 0
+                                        ? (product.totalRevenue / revenueSummary.totalRevenue) * 100
+                                        : 0;
+                                    return (
+                                        <TableRow key={product.name}>
+                                            <TableCell className="font-medium">{product.name}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                            <TableCell className="text-right">{share.toFixed(1)}%</TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
             </section>
