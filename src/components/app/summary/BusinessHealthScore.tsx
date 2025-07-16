@@ -27,7 +27,7 @@ const SubScoreItem: React.FC<{ subScore: SubScore, icon: React.ReactNode }> = ({
                         {subScore.score}/100
                     </span>
                 </div>
-                <Progress value={subScore.score} indicatorClassName="bg-primary" />
+                <Progress value={subScore.score} style={{ backgroundColor: scoreColor }} indicatorClassName="bg-primary" />
             </div>
         </div>
     );
@@ -35,7 +35,6 @@ const SubScoreItem: React.FC<{ subScore: SubScore, icon: React.ReactNode }> = ({
 
 
 export function BusinessHealthScore({ healthData }: { healthData?: BusinessHealth }) {
-    // Gracefully handle missing data
     if (!healthData) {
         return null;
     }
