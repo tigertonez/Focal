@@ -77,10 +77,10 @@ const DesktopNav = () => {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
-                                variant="ghost"
+                                variant="accent"
                                 size="icon"
                                 onClick={() => setIsCopilotOpen(true)}
-                                className="flex items-center justify-center p-3 rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                                className="h-12 w-12 rounded-full"
                             >
                                 <Bot className="h-6 w-6" />
                                 <span className="sr-only">Ask AI</span>
@@ -124,9 +124,9 @@ const MobileNav = () => {
                         ))}
                          <div className="pt-4 mt-auto border-t">
                             <Button
-                                variant="ghost"
+                                variant="accent"
                                 onClick={() => setIsCopilotOpen(true)}
-                                className="w-full justify-start mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-primary hover:text-primary"
+                                className="w-full justify-start mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-accent-foreground hover:text-accent-foreground/90"
                             >
                                 <Bot className="h-5 w-5" />
                                 Ask AI
