@@ -78,7 +78,7 @@ const SummaryPage = ({ data }: { data: EngineOutput }) => (
     <View style={styles.section}>
       <Text style={styles.heading}>Financial Summary</Text>
       <Text>TODO: Render KPISection, HealthPanel, and CashBridge</Text>
-    </View>
+    </Vew>
   </Page>
 );
 
