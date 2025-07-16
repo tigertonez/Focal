@@ -146,6 +146,40 @@ export const MonthlyCashFlowSchema = z.object({
 export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
 
+// --- AI-related Schemas ---
+
+export const AnalyzeProfitabilityInputSchema = z.object({
+  revenueSummary: RevenueSummarySchema,
+  costSummary: CostSummarySchema,
+  profitSummary: ProfitSummarySchema,
+  currency: z.string(),
+});
+export type AnalyzeProfitabilityInput = z.infer<
+  typeof AnalyzeProfitabilityInputSchema
+>;
+
+export const AnalyzeProfitabilityOutputSchema = z.object({
+  keyFacts: z
+    .array(z.string())
+    .describe('A list of the top 3 most important facts from the data.'),
+  strengths: z
+    .string()
+    .describe('A brief paragraph on the key strengths found in the data.'),
+  weaknesses: z
+    .string()
+    .describe('A brief paragraph on the key weaknesses or risks found.'),
+  recommendations: z
+    .string()
+    .describe(
+      'A brief paragraph with actionable strategic recommendations to improve profitability.'
+    ),
+});
+export type AnalyzeProfitabilityOutput = z.infer<
+  typeof AnalyzeProfitabilityOutputSchema
+>;
+
+
+// --- Main Engine Output Schema ---
 // This is the single source of truth for all calculated financial data
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,

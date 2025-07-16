@@ -3,47 +3,15 @@
  * @fileOverview A Genkit flow to analyze profitability data and generate insights.
  *
  * - analyzeProfitability - A function that takes financial summaries and returns strategic insights.
- * - AnalyzeProfitabilityInput - The input type for the analyzeProfitability function.
- * - AnalyzeProfitabilityOutput - The return type for the analyzeProfitability function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import {
-  RevenueSummarySchema,
-  CostSummarySchema,
-  ProfitSummarySchema,
+  AnalyzeProfitabilityInputSchema,
+  type AnalyzeProfitabilityInput,
+  AnalyzeProfitabilityOutputSchema,
+  type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
-
-export const AnalyzeProfitabilityInputSchema = z.object({
-  revenueSummary: RevenueSummarySchema,
-  costSummary: CostSummarySchema,
-  profitSummary: ProfitSummarySchema,
-  currency: z.string(),
-});
-export type AnalyzeProfitabilityInput = z.infer<
-  typeof AnalyzeProfitabilityInputSchema
->;
-
-export const AnalyzeProfitabilityOutputSchema = z.object({
-  keyFacts: z
-    .array(z.string())
-    .describe('A list of the top 3 most important facts from the data.'),
-  strengths: z
-    .string()
-    .describe('A brief paragraph on the key strengths found in the data.'),
-  weaknesses: z
-    .string()
-    .describe('A brief paragraph on the key weaknesses or risks found.'),
-  recommendations: z
-    .string()
-    .describe(
-      'A brief paragraph with actionable strategic recommendations to improve profitability.'
-    ),
-});
-export type AnalyzeProfitabilityOutput = z.infer<
-  typeof AnalyzeProfitabilityOutputSchema
->;
 
 export async function analyzeProfitability(
   input: AnalyzeProfitabilityInput
