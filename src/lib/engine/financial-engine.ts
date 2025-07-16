@@ -58,11 +58,10 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 
 const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
     const { preOrder, forecastMonths } = inputs.parameters;
-    const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
-    const salesStartMonth = preOrder ? 1 : 1; // Sales always start in month 1 of the sales period
-    const salesMonths = forecastMonths;
+    const timelineDuration = forecastMonths;
+    const startMonth = preOrder ? 0 : 1;
 
-    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
+    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
 
     const salesWeights = getAggregatedSalesWeights(inputs);
 
@@ -71,17 +70,17 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
         
         switch (schedule) {
             case 'Paid Up-Front':
-                const firstMonth = timeline.find(t => t.month === (preOrder ? 0 : 1));
+                const firstMonth = timeline.find(t => t.month === startMonth);
                 if (firstMonth) {
                     firstMonth[cost.name] = (firstMonth[cost.name] || 0) + cost.amount;
                 }
                 break;
             
             case 'Allocated Monthly':
-                if (salesMonths > 0) {
-                    const monthlyAmount = cost.amount / salesMonths;
-                    for (let i = 0; i < salesMonths; i++) {
-                        const currentMonth = (preOrder ? 1 : 1) + i; // Sales period starts in M1
+                if (forecastMonths > 0) {
+                    const monthlyAmount = cost.amount / forecastMonths;
+                    for (let i = 0; i < forecastMonths; i++) {
+                        const currentMonth = startMonth + i;
                         const timelineMonth = timeline.find(t => t.month === currentMonth);
                         if (timelineMonth) {
                            timelineMonth[cost.name] = (timelineMonth[cost.name] || 0) + monthlyAmount;
@@ -91,12 +90,12 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
                 break;
 
             case 'Allocated Quarterly':
-                const quarters = Math.ceil(salesMonths / 3);
+                const quarters = Math.ceil(forecastMonths / 3);
                 if (quarters > 0) {
                     const quarterlyAmount = cost.amount / quarters;
                     for (let q = 0; q < quarters; q++) {
                         const startMonthInSales = q * 3;
-                        const currentMonth = (preOrder ? 1 : 1) + startMonthInSales; // Sales period starts in M1
+                        const currentMonth = startMonth + startMonthInSales;
                         const timelineMonth = timeline.find(t => t.month === currentMonth);
                         if (timelineMonth) {
                            timelineMonth[cost.name] = (timelineMonth[cost.name] || 0) + quarterlyAmount;
@@ -107,7 +106,7 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
 
             case 'Allocated According to Sales':
                  for (let i = 0; i < forecastMonths; i++) {
-                    const currentMonth = (preOrder ? 1 : 1) + i; // Sales period starts in M1
+                    const currentMonth = startMonth + i;
                     const timelineMonth = timeline.find(t => t.month === currentMonth);
                     if (timelineMonth && salesWeights[i]) {
                         const distributedAmount = cost.amount * salesWeights[i];
@@ -142,11 +141,12 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
         const { preOrder, forecastMonths, taxRate } = inputs.parameters;
         const isManualMode = inputs.realtime.dataSource === 'Manual';
+        const startMonth = preOrder ? 0 : 1;
         
         // --- REVENUE & UNITS CALCULATIONS ---
-        const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
-        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
-        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
+        const timelineDuration = forecastMonths;
+        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
+        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
         
         const productBreakdown = inputs.products.map(product => {
             let soldUnits = 0;
@@ -169,16 +169,15 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             }
 
             for (let i = 0; i < forecastMonths; i++) {
-                const salesMonthOffset = preOrder ? 0 : 1;
-                const timelineMonthForSales = i + salesMonthOffset;
+                const currentMonth = startMonth + i;
                 
-                const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === timelineMonthForSales);
+                const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === currentMonth);
                  if (revenueTimelineMonth) {
                     const monthlyProductRevenue = totalRevenue * salesWeights[i];
                     revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + monthlyProductRevenue;
                 }
 
-                const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === timelineMonthForSales);
+                const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === currentMonth);
                 if (unitsTimelineMonth) {
                     const monthlyProductUnits = soldUnits * salesWeights[i];
                     unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
@@ -266,12 +265,14 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         }
         
         const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => {
+            // The cost 'amount' for monthly costs is already per month, so multiply by forecast duration
             if (cost.costType === 'Monthly Cost') {
                 return sum + (cost.amount * forecastMonths);
             }
+            // For 'Total for Period' costs, the amount is the total, so just add it.
             return sum + cost.amount;
         }, 0);
-
+        
         const totalOperating = totalFixedCostInPeriod + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
         
@@ -306,7 +307,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         let cumulativeOperatingProfit = 0;
 
         for (let i = 0; i < timelineDuration; i++) {
-            const month = preOrder ? i : i + 1;
+            const month = startMonth + i;
             
             const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
             const currentCostsData = monthlyCosts.find(c => c.month === month) || { month };
@@ -378,5 +379,3 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
