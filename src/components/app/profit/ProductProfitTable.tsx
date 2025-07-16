@@ -48,6 +48,9 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
         const operatingProfit = grossProfit - allocatedFixedCosts;
         const netProfit = operatingProfit - allocatedTaxes;
         
+        const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
+        const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;
+
         return {
             ...product,
             color: getColorForProduct(index),
@@ -56,7 +59,9 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
             grossProfit,
             grossMargin,
             operatingProfit,
+            operatingMargin,
             netProfit,
+            netMargin,
         };
     });
 
@@ -67,8 +72,10 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
                     <TableHead>Product</TableHead>
                     <TableHead className="text-right">Gross Profit</TableHead>
                     <TableHead className="text-right">Gross Margin</TableHead>
-                    <TableHead className="text-right">Operating Profit</TableHead>
+                    <TableHead className="text-right">Op. Profit</TableHead>
+                    <TableHead className="text-right">Op. Margin</TableHead>
                     <TableHead className="text-right">Net Profit</TableHead>
+                    <TableHead className="text-right">Net Margin</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -81,7 +88,9 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
                         <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
                         <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
+                        <TableCell className="text-right">{p.operatingMargin.toFixed(1)}%</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
+                        <TableCell className="text-right">{p.netMargin.toFixed(1)}%</TableCell>
                     </TableRow>
                 ))}
             </TableBody>
