@@ -27,14 +27,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, name, value);
   };
 
-  const salesModelTooltip = `Defines how sales are distributed over the forecast period:
-- Launch: 60/30/10 split over the first 3 months.
-- Even: Distributed equally across all months.
-- Seasonal: Bell-curve distribution, peaking mid-period.
-- Growth: Linearly increasing sales month over month.`;
+  const salesModelTooltip = `How sales are distributed over the forecast period:
+- Launch: Strong initial sales that taper off (60/30/10 split).
+- Even: Sales are spread out evenly each month.
+- Seasonal: Sales peak in the middle of the period.
+- Growth: Sales increase steadily month over month.`;
   
-  const sellThroughTooltip = "The percentage of your planned units you expect to actually sell over the forecast period.";
-  const depositPaidTooltip = "The percentage of the total production cost (Unit Cost * Planned Units) that you pay to your supplier upfront.";
+  const sellThroughTooltip = "The percentage of your total product stock that you expect to sell. A higher rate means more revenue.";
+  const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier upfront as a deposit.";
 
 
   return (

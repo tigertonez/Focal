@@ -94,13 +94,13 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
             <TableHeader>
                 <TableRow>
                     <TableHead>Product</TableHead>
-                     <ExplanatoryHeader title="Sell-Through" className="text-right" tooltip="The percentage of planned units you forecast to sell. This is a key driver of revenue and profitability." />
-                    <ExplanatoryHeader title="Gross Profit" className="text-right" tooltip="Revenue minus the direct costs of producing goods sold (COGS). It shows how profitably you sell your product before overhead." />
-                    <ExplanatoryHeader title="Gross Margin" className="text-right" tooltip="Gross Profit as a percentage of Revenue. A higher percentage means more profit per sale." />
-                    <ExplanatoryHeader title="Op. Profit" className="text-right" tooltip="Gross Profit minus a share of your fixed operating costs (like salaries and rent). Shows profitability from core business operations." />
-                    <ExplanatoryHeader title="Op. Margin" className="text-right" tooltip="Operating Profit as a percentage of Revenue. Shows how efficiently your core business generates profit." />
-                    <ExplanatoryHeader title="Net Profit" className="text-right" tooltip="Operating Profit minus a share of your taxes. This is the final 'bottom-line' profit for the product." />
-                    <ExplanatoryHeader title="Net Margin" className="text-right" tooltip="Net Profit as a percentage of Revenue. The ultimate measure of profitability after all costs and taxes." />
+                     <ExplanatoryHeader title="Sell-Through" className="text-right" tooltip="The percentage of your total stock you expect to sell. A higher rate is a key driver of profitability." />
+                    <ExplanatoryHeader title="Gross Profit" className="text-right" tooltip="Sales revenue minus the direct cost to produce the goods (COGS). Shows if your product is profitable before overhead costs." />
+                    <ExplanatoryHeader title="Gross Margin" className="text-right" tooltip="Gross Profit as a percentage of revenue. A high margin means more profit from each dollar of sales." />
+                    <ExplanatoryHeader title="Op. Profit" className="text-right" tooltip="Gross Profit minus a share of fixed operational costs (like salaries). Shows if the product is profitable after day-to-day business expenses." />
+                    <ExplanatoryHeader title="Op. Margin" className="text-right" tooltip="Operating Profit as a percentage of revenue. A measure of how efficiently your core business generates profit." />
+                    <ExplanatoryHeader title="Net Profit" className="text-right" tooltip="The final 'bottom-line' profit for the product after all expenses, including a share of taxes, have been deducted." />
+                    <ExplanatoryHeader title="Net Margin" className="text-right" tooltip="Net Profit as a percentage of revenue. The ultimate measure of a product's profitability." />
                 </TableRow>
             </TableHeader>
             <TableBody>

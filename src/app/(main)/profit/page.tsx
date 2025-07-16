@@ -59,7 +59,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   });
   
   const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
-  const netMarginTooltip = "The average of the net profit margins of each individual product. Calculated as: (Sum of each product's Net Margin %) / (Number of products).";
+  const netMarginTooltip = "An average of the net profit margins of all your products. This KPI gives a general sense of product-level profitability.";
 
 
   return (

@@ -34,7 +34,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
     const isDynamicCost = isMarketingCost || isPlanningBuffer;
-    const planningBufferTooltip = "A contingency fund for unexpected costs. Typically 10-15% of total fixed costs.";
+    const planningBufferTooltip = "A contingency fund for unexpected costs, typically set at 10-15% of your total fixed costs to provide a safety net.";
 
 
     return (
