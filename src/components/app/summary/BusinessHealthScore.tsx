@@ -35,6 +35,10 @@ const SubScoreItem: React.FC<{ subScore: SubScore, icon: React.ReactNode }> = ({
 );
 
 export function BusinessHealthScore({ healthData }: { healthData: BusinessHealth }) {
+    if (!healthData) {
+        return null;
+    }
+
     const { score, subScores } = healthData;
 
     const subScoreIcons: Record<string, React.ReactNode> = {
