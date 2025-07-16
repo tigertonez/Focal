@@ -14,8 +14,8 @@ import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineCha
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
@@ -75,8 +75,30 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     <CardHeader>
                         <CardTitle>Revenue by Product</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[350px] w-full flex items-center justify-center">
-                        <RevenuePieChart data={revenueSummary.productBreakdown} currency={currency} />
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead className="text-right">Total Revenue</TableHead>
+                                    <TableHead className="text-right">Share</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {revenueSummary.productBreakdown.map((product) => (
+                                    <TableRow key={product.name}>
+                                        <TableCell className="font-medium">{product.name}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                        <TableCell className="text-right">
+                                            {revenueSummary.totalRevenue > 0 
+                                                ? `${((product.totalRevenue / revenueSummary.totalRevenue) * 100).toFixed(1)}%`
+                                                : 'N/A'
+                                            }
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
             </section>
