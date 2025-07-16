@@ -109,7 +109,7 @@ export function FinancialCopilot() {
   }
   
   return (
-    <Card className="fixed bottom-4 left-[88px] w-full max-w-3xl h-[25vh] max-h-[240px] z-50 flex flex-col shadow-2xl rounded-xl border-t-4 border-primary animate-in slide-in-from-bottom-5">
+    <Card className="fixed bottom-4 left-4 w-full max-w-3xl h-[25vh] max-h-[240px] z-50 flex flex-col shadow-2xl rounded-xl border-t-4 border-primary animate-in slide-in-from-bottom-5">
       <CardHeader className="flex flex-row items-center justify-between p-3 border-b bg-background rounded-t-xl">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Bot size={18} /> Financial Copilot
