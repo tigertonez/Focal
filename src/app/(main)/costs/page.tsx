@@ -17,6 +17,7 @@ import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
     const router = useRouter();
@@ -87,26 +88,39 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                 </Card>
             </section>
 
-             <section className="grid md:grid-cols-1 gap-8 pt-4">
-                 <div className="space-y-2">
-                    <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
-                    <Card>
-                        <CardContent className="p-4 space-y-3">
-                            {costSummary.fixedCosts.map(cost => (
-                               <CostRow 
-                                   key={cost.id}
-                                   label={`${cost.name} (${cost.paymentSchedule})`}
-                                   value={formatCurrency(cost.amount, currency)}
+             <section className="grid md:grid-cols-2 gap-8 pt-4">
+                 <div className="space-y-8">
+                    <div className="space-y-2">
+                        <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
+                        <Card>
+                            <CardContent className="p-4 space-y-3">
+                                {costSummary.fixedCosts.map(cost => (
+                                   <CostRow 
+                                       key={cost.id}
+                                       label={`${cost.name} (${cost.paymentSchedule})`}
+                                       value={formatCurrency(cost.amount, currency)}
+                                   />
+                                ))}
+                                <Separator className="my-2" />
+                                <CostRow 
+                                   label="Total Forecasted Fixed"
+                                   value={formatCurrency(costSummary.totalFixed, currency)}
+                                   className="font-bold pt-2"
                                />
-                            ))}
-                            <Separator className="my-2" />
-                            <CostRow 
-                               label="Total Forecasted Fixed"
-                               value={formatCurrency(costSummary.totalFixed, currency)}
-                               className="font-bold pt-2"
-                           />
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="space-y-2">
+                         <h2 className="text-xl font-semibold">Future Cost Component</h2>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Placeholder</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-24 w-full" />
+                            </CardContent>
+                         </Card>
+                    </div>
                 </div>
 
                 <div className="space-y-2">
