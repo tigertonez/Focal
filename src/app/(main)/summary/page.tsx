@@ -49,8 +49,8 @@ const HealthPanel = () => {
 
 /**
  * CashBridge - Renders the Profit-to-Cash bridge visual.
- * Expected Data (Part B): `totalOperatingProfit` (from profitSummary),
- * `cogsOfUnsoldGoods` (from costSummary), `totalNetProfit` vs `totalOperatingProfit` for taxes,
+ * Expected Data (Part B): `operatingProfit`, `cogsOfUnsoldGoods` (from costSummary),
+ * `totalNetProfit` vs `totalOperatingProfit` for taxes,
  * `endingCashBalance` (from cashFlowSummary)
  */
 const CashBridge = () => {
@@ -118,7 +118,7 @@ export default function SummaryPage() {
                     <AlertTitle>Calculation Error</AlertTitle>
                     <AlertDescription>
                         {error} Please correct the issues on the Inputs page and try again.
-                    </Description>
+                    </AlertDescription>
                 </Alert>
             </div>
         );
