@@ -30,6 +30,7 @@ const colorMap: Record<string, string> = {
     "Final Payments": "hsl(var(--chart-5))", // Violet
     "Legal": "hsl(var(--chart-3))", // Pink
     "Software": "hsl(var(--chart-6))", // Cyan
+    "Admin & Tools": "hsl(var(--chart-3))",
     "Buffer": "hsl(var(--muted-foreground))", // Gray for buffer
 };
 
@@ -81,6 +82,10 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
   const valueFormatter = (value: number) => {
     if (formatAs === 'number') {
       return formatNumber(value);
+    }
+    const currencySymbol = (currency === 'EUR' ? '€' : '$');
+    if (Math.abs(value) >= 1000) {
+      return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
     }
     return formatCurrency(Number(value), currency || 'USD').replace(/\.00$/, '');
   };
