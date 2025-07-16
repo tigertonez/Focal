@@ -59,7 +59,8 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   });
   
   const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
-  const netMarginTooltip = "An average of the net profit margins of all your products. This KPI gives a general sense of product-level profitability.";
+  const netMarginTooltip = "This is an average of the net profit margins of all your products. It's useful for a general sense of product-level profitability, but isn't weighted by revenue.";
+  const netMarginTitle = "Average Net Margin";
 
 
   return (
@@ -72,24 +73,28 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
             label="Total Gross Profit" 
             value={formatCurrency(profitSummary.totalGrossProfit, currency)} 
             icon={<TrendingUp />} 
+            helpTitle="Total Gross Profit"
             help="Total Revenue minus the direct Cost of Goods Sold (COGS). It measures how efficiently you produce and sell your products before other expenses."
           />
           <KpiCard 
             label="Total Operating Profit" 
             value={formatCurrency(profitSummary.totalOperatingProfit, currency)} 
             icon={<Briefcase />}
+            helpTitle="Total Operating Profit"
             help="Gross Profit minus all fixed operating costs (like salaries and rent). This shows the profit from core business operations."
           />
           <KpiCard 
             label="Total Net Profit" 
             value={formatCurrency(profitSummary.totalNetProfit, currency)} 
             icon={<Landmark />}
+            helpTitle="Total Net Profit"
             help="The final 'bottom-line' profit after all expenses, including taxes, have been deducted from revenue. This is your company's actual profit."
           />
           <KpiCard 
             label="Avg. Net Margin" 
             value={`${averageNetMargin.toFixed(1)}%`} 
             icon={<Target />} 
+            helpTitle={netMarginTitle}
             help={netMarginTooltip} 
           />
         </div>

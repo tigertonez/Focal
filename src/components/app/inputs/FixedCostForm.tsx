@@ -34,7 +34,8 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
     const isDynamicCost = isMarketingCost || isPlanningBuffer;
-    const planningBufferTooltip = "A contingency fund for unexpected costs, typically set at 10-15% of your total fixed costs to provide a safety net.";
+    const planningBufferTooltip = "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast.";
+    const planningBufferTitle = "What is a Planning Buffer?";
 
 
     return (
@@ -55,7 +56,12 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                     <TooltipTrigger asChild>
                                         <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
                                     </TooltipTrigger>
-                                    <TooltipContent><p>{planningBufferTooltip}</p></TooltipContent>
+                                    <TooltipContent className="max-w-xs p-3">
+                                      <div className="space-y-1 text-left">
+                                          <p className="font-semibold">{planningBufferTitle}</p>
+                                          <p className="text-muted-foreground text-xs">{planningBufferTooltip}</p>
+                                      </div>
+                                    </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         )}

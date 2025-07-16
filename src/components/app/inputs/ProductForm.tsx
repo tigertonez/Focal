@@ -27,14 +27,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, name, value);
   };
 
-  const salesModelTooltip = `How sales are distributed over the forecast period:
-- Launch: Strong initial sales that taper off (60/30/10 split).
-- Even: Sales are spread out evenly each month.
-- Seasonal: Sales peak in the middle of the period.
-- Growth: Sales increase steadily month over month.`;
+  const salesModelTooltip = `How sales are distributed over time. 'Launch' is front-loaded, 'Even' is stable, 'Seasonal' peaks mid-period, and 'Growth' increases steadily.`;
+  const salesModelTitle = "What is a Sales Model?";
   
-  const sellThroughTooltip = "The percentage of your total product stock that you expect to sell. A higher rate means more revenue.";
-  const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier upfront as a deposit.";
+  const sellThroughTooltip = "The percentage of your total planned units that you expect to sell. A crucial driver for your revenue forecast.";
+  const sellThroughTitle = "What is Sell-Through %?";
+  
+  const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery.";
+  const depositPaidTitle = "What is a Deposit?";
 
 
   return (
@@ -84,11 +84,16 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         {isManualMode && (
             <div className="space-y-2">
             <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
-                Sales Model
+                {salesModelTitle}
                 <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                    <TooltipContent className="whitespace-pre-line text-xs max-w-xs"><p>{salesModelTooltip.trim()}</p></TooltipContent>
+                    <TooltipContent className="max-w-xs p-3">
+                        <div className="space-y-1 text-left">
+                            <p className="font-semibold">{salesModelTitle}</p>
+                            <p className="text-muted-foreground text-xs">{salesModelTooltip}</p>
+                        </div>
+                    </TooltipContent>
                 </Tooltip>
                 </TooltipProvider>
             </Label>
@@ -109,11 +114,16 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         {isManualMode && (
           <div className="space-y-2">
             <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
-              Sell-Through %
+              {sellThroughTitle}
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent><p>{sellThroughTooltip}</p></TooltipContent>
+                        <TooltipContent className="max-w-xs p-3">
+                            <div className="space-y-1 text-left">
+                                <p className="font-semibold">{sellThroughTitle}</p>
+                                <p className="text-muted-foreground text-xs">{sellThroughTooltip}</p>
+                            </div>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </Label>
@@ -125,11 +135,16 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         )}
         <div className="space-y-2">
           <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
-            Deposit Paid %
+            {depositPaidTitle}
              <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                    <TooltipContent><p>{depositPaidTooltip}</p></TooltipContent>
+                     <TooltipContent className="max-w-xs p-3">
+                        <div className="space-y-1 text-left">
+                            <p className="font-semibold">{depositPaidTitle}</p>
+                            <p className="text-muted-foreground text-xs">{depositPaidTooltip}</p>
+                        </div>
+                    </TooltipContent>
                 </Tooltip>
              </TooltipProvider>
           </Label>

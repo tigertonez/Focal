@@ -9,10 +9,11 @@ interface KpiCardProps {
   value: string | number;
   icon?: React.ReactNode;
   help?: string;
+  helpTitle?: string;
   className?: string;
 }
 
-export function KpiCard({ label, value, icon, help, className }: KpiCardProps) {
+export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiCardProps) {
   return (
     <Card className={cn("flex-1", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -24,8 +25,11 @@ export function KpiCard({ label, value, icon, help, className }: KpiCardProps) {
                     <TooltipTrigger asChild>
                         <HelpCircle className="h-3.5 w-3.5 cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{help}</p>
+                    <TooltipContent className="max-w-xs p-3">
+                        <div className="space-y-1 text-left">
+                          <p className="font-semibold">{helpTitle || label}</p>
+                          <p className="text-muted-foreground text-xs">{help}</p>
+                        </div>
                     </TooltipContent>
                 </Tooltip>
              </TooltipProvider>

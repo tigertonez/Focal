@@ -38,24 +38,28 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                         label="Total Fixed Costs" 
                         value={formatCurrency(costSummary.totalFixed, currency)} 
                         icon={<Building />}
+                        helpTitle="Total Fixed Costs"
                         help="Recurring, predictable expenses that don't change with sales volume (e.g., salaries, rent). This is your company's baseline cost."
                     />
                     <KpiCard 
                         label="Total Variable Costs" 
                         value={formatCurrency(costSummary.totalVariable, currency)} 
                         icon={<Package />}
+                        helpTitle="Total Variable Costs"
                         help="Costs that are directly tied to the number of units you produce (e.g., unit cost, manufacturing deposits). This scales with production."
                     />
                     <KpiCard 
                         label="Total Operating Costs" 
                         value={formatCurrency(costSummary.totalOperating, currency)} 
                         icon={<Activity />}
+                        helpTitle="Total Operating Costs"
                         help="The total of all expenses required to run the business (Fixed Costs + Variable Costs)."
                     />
                     <KpiCard 
                         label="Avg. var. Cost per Unit" 
                         value={formatCurrency(costSummary.avgCostPerUnit, currency)} 
                         icon={<Calculator />}
+                        helpTitle="Avg. Variable Cost per Unit"
                         help="The average variable cost to produce one unit across all your products (Total Variable Costs / Total Planned Units)."
                     />
                 </div>

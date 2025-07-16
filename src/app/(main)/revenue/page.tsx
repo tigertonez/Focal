@@ -40,25 +40,29 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                         label="Total Revenue" 
                         value={formatCurrency(revenueSummary.totalRevenue, currency)} 
                         icon={<TrendingUp />}
+                        helpTitle="Total Revenue"
                         help="The total income generated from sales before any costs are deducted. It's the top-line figure of your forecast."
                     />
                     <KpiCard 
                         label="Total Units Sold" 
                         value={formatNumber(revenueSummary.totalSoldUnits)} 
                         icon={<Users />}
+                        helpTitle="Total Units Sold"
                         help="The sum of all units sold across all your products for the entire forecast period."
                     />
                     <KpiCard 
                         label="Avg. Revenue per Unit" 
                         value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} 
                         icon={<DollarSign />}
+                        helpTitle="Average Revenue per Unit"
                         help="The average revenue generated per single unit sold (Total Revenue / Total Units Sold). Useful for understanding pricing effectiveness."
                     />
                     <KpiCard 
                         label="Avg. Sell-Through" 
                         value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} 
                         icon={<Target />}
-                        help="The average percentage of your planned stock that is actually sold. This is a key driver of your total revenue."
+                        helpTitle="Average Sell-Through Rate"
+                        help="The average percentage of your planned stock that is actually sold across all products. This is a key driver of your total revenue."
                     />
                 </div>
                  {potentialRevenue > 0 && (

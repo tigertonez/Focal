@@ -69,6 +69,7 @@ export default function InputsPage() {
   
   const isManualMode = inputs.realtime.dataSource === 'Manual';
   const preOrderTooltip = "Enables a 'Month 0' for pre-launch costs (e.g., deposits) and revenue before the main forecast begins in Month 1.";
+  const preOrderTitle = "Pre-Order Mode";
 
   return (
     <div className="bg-white min-h-screen">
@@ -133,11 +134,16 @@ export default function InputsPage() {
                 </SelectField>
                 <div className="space-y-2">
                     <Label htmlFor="preOrder" className="font-medium text-sm flex items-center gap-2">
-                        Pre-Order Mode
+                        {preOrderTitle}
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                                <TooltipContent><p>{preOrderTooltip}</p></TooltipContent>
+                                <TooltipContent className="max-w-xs p-3">
+                                  <div className="space-y-1 text-left">
+                                      <p className="font-semibold">{preOrderTitle}</p>
+                                      <p className="text-muted-foreground text-xs">{preOrderTooltip}</p>
+                                  </div>
+                                </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </Label>
