@@ -79,12 +79,11 @@ export function SummaryKpiCards({ data, inputs }: { data: EngineOutput, inputs: 
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {kpis.map((kpi, index) => {
-                const isPriority = index < 4;
                 const isAlwaysVisible = index < 2; // First 2 cards visible on all sizes
                 const isTabletVisible = index < 4; // First 4 cards visible on md
                 const isDesktopVisible = index < 8; // All 8 visible on lg+
                 
-                let visibilityClasses = '';
+                let visibilityClasses = 'flex'; // Default to flex display
                 if (isAlwaysVisible) {
                     // Always visible
                 } else if (isTabletVisible) {
@@ -110,5 +109,3 @@ export function SummaryKpiCards({ data, inputs }: { data: EngineOutput, inputs: 
         </div>
     );
 }
-
-    

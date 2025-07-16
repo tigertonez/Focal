@@ -45,5 +45,3 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
     </Card>
   );
 }
-
-    
