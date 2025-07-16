@@ -130,7 +130,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="h-[300px] w-full">
-                                <InvestmentPieChart data={investmentData} />
+                                <InvestmentPieChart data={investmentData} currency={currency} />
                             </CardContent>
                          </Card>
                     </div>
@@ -197,7 +197,7 @@ export default function CostsPage() {
                     <AlertTitle>Calculation Error</AlertTitle>
                     <AlertDescription>
                         {error} Please correct the issues on the Inputs page and try again.
-                    </AlertDescription>
+                    </AlerTDescription>
                 </Alert>
             </div>
         );
