@@ -101,10 +101,9 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
             </div>
             
             <div className={cn(
-                "grid grid-cols-2 md:grid-cols-3 gap-4 items-end",
-                 hasMonthZero ? "md:grid-cols-3" : "md:grid-cols-2"
+                "grid grid-cols-2 md:grid-cols-4 gap-4 items-end"
             )}>
-                <div className="space-y-1 md:col-span-1">
+                <div className={cn("space-y-1", hasMonthZero ? "md:col-span-2" : "col-span-1")}>
                     <Label className="text-xs">Amount</Label>
                     <div className="relative">
                         <Input
@@ -127,7 +126,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         </Select>
                     </div>
                 </div>
-                 <div className="space-y-1 md:col-span-1">
+                 <div className="space-y-1 col-span-1">
                     <Label className="text-xs">Payment Schedule</Label>
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                         <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
@@ -140,7 +139,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     </Select>
                  </div>
                  {hasMonthZero && (
-                    <div className="space-y-1 md:col-span-1">
+                    <div className="space-y-1 col-span-1">
                         <Label className="text-xs">Start In</Label>
                         <Select 
                             onValueChange={handleSelectChange('startMonth')} 
