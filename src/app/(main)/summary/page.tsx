@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
-import type { EngineOutput, EngineInput, BusinessHealth } from '@/lib/types';
+import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,9 @@ import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleto
 
 /**
  * KPISection - Renders the 6 main KPI cards.
- * Expected Data: `data.revenueSummary`, `data.profitSummary`, `data.cashFlowSummary`
+ * Expected Data (Part B): `totalRevenue`, `totalOperating` (from costSummary),
+ * `totalGrossProfit` (from profitSummary), `endingCashBalance` (from cashFlowSummary),
+ * `breakEvenMonth` (from profitSummary), `peakFundingNeed` (from cashFlowSummary)
  */
 const KPISection = () => {
   return (
@@ -34,7 +36,8 @@ const KPISection = () => {
 
 /**
  * HealthPanel - Renders the Business Health Score.
- * Expected Data: `data.businessHealth`
+ * Expected Data (Part B): `healthScore` (0-100), `insights[]` (array of strings),
+ * `alerts[]` (array of strings)
  */
 const HealthPanel = () => {
   return (
@@ -46,7 +49,9 @@ const HealthPanel = () => {
 
 /**
  * CashBridge - Renders the Profit-to-Cash bridge visual.
- * Expected Data: `data.profitSummary`, `data.costSummary`, `data.cashFlowSummary`
+ * Expected Data (Part B): `totalOperatingProfit` (from profitSummary),
+ * `cogsOfUnsoldGoods` (from costSummary), `totalNetProfit` vs `totalOperatingProfit` for taxes,
+ * `endingCashBalance` (from cashFlowSummary)
  */
 const CashBridge = () => {
   return (
@@ -113,14 +118,24 @@ export default function SummaryPage() {
                     <AlertTitle>Calculation Error</AlertTitle>
                     <AlertDescription>
                         {error} Please correct the issues on the Inputs page and try again.
-                    </AlertDescription>
+                    </Description>
                 </Alert>
             </div>
         );
     }
 
     if (!data || !inputs) {
-        return <SummaryPageSkeleton />;
+        return (
+            <div className="p-4 md:p-8 text-center">
+                 <Alert>
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>No Data Found</AlertTitle>
+                    <AlertDescription>
+                        Please run a report from the Inputs page to see the summary.
+                    </AlertDescription>
+                </Alert>
+            </div>
+        );
     }
 
     return <SummaryPageContent data={data} inputs={inputs} />;
