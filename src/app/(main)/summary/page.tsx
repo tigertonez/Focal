@@ -98,7 +98,7 @@ const HealthBar = ({ label, value, tooltip }: { label: string, value: number, to
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className="space-y-1">
+                    <div className="space-y-1 w-full">
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-muted-foreground">{label}</span>
                             <span className="font-semibold">{value.toFixed(0)} / 100</span>
@@ -123,7 +123,6 @@ const HealthPanel = ({
   financialSummaries: { revenue: RevenueSummary, cost: CostSummary, profit: ProfitSummary },
   onRecalculate: () => void 
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -192,22 +191,10 @@ const HealthPanel = ({
                         <p className="text-sm text-muted-foreground">Overall Score</p>
                     </div>
 
-                    <div className="md:col-span-2 space-y-4">
-                        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                                {kpis.slice(0, 2).map(kpi => <HealthBar key={kpi.label} {...kpi} />)}
-                            </div>
-                            <CollapsibleContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 mt-4 animate-in fade-in-0 zoom-in-95">
-                                {kpis.slice(2).map(kpi => <HealthBar key={kpi.label} {...kpi} />)}
-                            </CollapsibleContent>
-
-                            <CollapsibleTrigger asChild>
-                                <Button variant="ghost" className="w-full mt-4 text-sm">
-                                    <ChevronDown className={cn("mr-2 h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                                    {isOpen ? 'Hide' : 'Show'} Score Breakdown
-                                </Button>
-                            </CollapsibleTrigger>
-                        </Collapsible>
+                    <div className="md:col-span-2 space-y-4 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                            {kpis.map(kpi => <HealthBar key={kpi.label} {...kpi} />)}
+                        </div>
                     </div>
                 </div>
                 
