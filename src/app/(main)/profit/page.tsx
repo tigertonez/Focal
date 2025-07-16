@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, 'useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -17,28 +17,26 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
+import { OperatingProfitPieChart } from '@/components/app/profit/charts/OperatingProfitPieChart';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
   const { profitSummary, revenueSummary, costSummary } = data;
   const currency = inputs.parameters.currency;
 
-  // Potential is calculated at 100% sell-through for all products.
   const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits || 0) * (p.sellPrice || 0), 0);
   const potentialGrossProfit = potentialRevenue - costSummary.totalVariable;
 
-  // Achieved gross profit is what the engine calculated based on the user's sell-through rate.
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  // Calculate average net margin across products as requested
   const totalRevenue = revenueSummary.totalRevenue;
   const totalFixedCosts = costSummary.totalFixed;
   const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
   let totalMarginSum = 0;
   let productsWithRevenue = 0;
 
-  inputs.products.forEach(product => {
+  const productProfitData = inputs.products.map((product) => {
       const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
       const productRevenue = revenueData?.totalRevenue || 0;
       
@@ -55,13 +53,15 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           
           totalMarginSum += netMargin;
           productsWithRevenue++;
+
+          return { ...product, operatingProfit, netProfit, netMargin };
       }
+      return { ...product, operatingProfit: 0, netProfit: 0, netMargin: 0 };
   });
-  
+
   const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
   const netMarginTooltip = "This is an average of the net profit margins of all your products. It's useful for a general sense of product-level profitability, but isn't weighted by revenue.";
   const netMarginTitle = "Average Net Margin";
-
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -73,21 +73,21 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
             label="Total Gross Profit" 
             value={formatCurrency(profitSummary.totalGrossProfit, currency)} 
             icon={<TrendingUp />} 
-            helpTitle="Total Gross Profit"
+            helpTitle="What is Gross Profit?"
             help="Total Revenue minus the direct Cost of Goods Sold (COGS). It measures how efficiently you produce and sell your products before other expenses."
           />
           <KpiCard 
             label="Total Operating Profit" 
             value={formatCurrency(profitSummary.totalOperatingProfit, currency)} 
             icon={<Briefcase />}
-            helpTitle="Total Operating Profit"
+            helpTitle="What is Operating Profit?"
             help="Gross Profit minus all fixed operating costs (like salaries and rent). This shows the profit from core business operations."
           />
           <KpiCard 
             label="Total Net Profit" 
             value={formatCurrency(profitSummary.totalNetProfit, currency)} 
             icon={<Landmark />}
-            helpTitle="Total Net Profit"
+            helpTitle="What is Net Profit?"
             help="The final 'bottom-line' profit after all expenses, including taxes, have been deducted from revenue. This is your company's actual profit."
           />
           <KpiCard 
@@ -131,6 +131,20 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
               <ProductProfitTable data={data} inputs={inputs} />
             </CardContent>
           </Card>
+        </section>
+
+        <section className="grid md:grid-cols-2 gap-8 pt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Operating Profit by Product</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <OperatingProfitPieChart productData={productProfitData} currency={currency} />
+                </CardContent>
+            </Card>
+            <div className="bg-muted/50 rounded-xl border border-dashed flex items-center justify-center">
+                 <p className="text-muted-foreground">Second chart coming soon...</p>
+            </div>
         </section>
 
       <footer className="flex justify-end mt-8 pt-6 border-t">
