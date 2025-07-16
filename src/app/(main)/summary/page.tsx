@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, 'useEffect', useState, useCallback } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
@@ -19,6 +19,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { cn } from '@/lib/utils';
 import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
 import { Separator } from '@/components/ui/separator';
+import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
 
 
 // =================================================================
@@ -26,7 +27,7 @@ import { Separator } from '@/components/ui/separator';
 // =================================================================
 
 const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }) => {
-  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
+  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } from data;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -344,10 +345,11 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
 
       <CashBridge data={data} currency={inputs.parameters.currency} />
 
-      <footer className="flex justify-start mt-8 pt-6 border-t">
+      <footer className="flex justify-between items-center mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
+         <DownloadReportButton inputs={inputs} />
       </footer>
     </div>
   );
