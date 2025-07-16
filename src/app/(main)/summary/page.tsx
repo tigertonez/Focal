@@ -17,15 +17,17 @@ import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleto
 // =================================================================
 // STRATEGY BLUEPRINT: BUSINESS HEALTH SCORE
 // =================================================================
-// Phase 0: DO NOT IMPLEMENT. This is the strategic plan for alignment.
+// PHASE 0: STRATEGY & ALIGNMENT - DO NOT CODE.
 //
-// 1. Vision (Zielbild)
+// 1. VISION (ZIELBILD)
 //    - Create a single, powerful "Business Health Score" (0-100 scale).
 //    - The score is automatically calculated from all previously generated KPIs.
 //    - It should provide an immediate, at-a-glance understanding of the business model's viability.
 //    - The score will drive concrete, actionable recommendations.
+//    - NOTE: All numeric inputs will come solely from the existing financial engine outputs.
+//      There will be no hard-coded values or mock data used in the calculation.
 //
-// 2. Calculation Logic
+// 2. CALCULATION LOGIC
 //    - KPI Pool: Exclusively use values already calculated by the financial engine:
 //      - Contribution Margin %
 //      - Operating Profit € & Margin %
@@ -38,12 +40,12 @@ import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleto
 //      - Efficiency (e.g., Contribution Margin vs. Marketing ROI): 20%
 //      - Demand/Sell-Through: 15%
 //    - Scoring Method:
-//      - Each KPI is normalized to a 0-100 scale.
-//      - Benchmarks (e.g., thresholds for 'good', 'average', 'poor') define the scale for each KPI.
+//      - Each KPI is normalized to a 0-100 scale based on predefined benchmarks.
+//      - Benchmarks (e.g., thresholds for 'good', 'average', 'poor') will define the scale for each KPI.
 //      - Final Score = Σ (normalized KPI score × weight).
 //      - Benchmarks and weights will be stored in a JSON configuration for easy fine-tuning.
 //
-// 3. UI Concept
+// 3. UI CONCEPT (WIREFRAME NOTES)
 //    - At the top of the Summary page, display a prominent gauge or large badge (e.g., "Health Score: 78/100").
 //    - Below the score, show a "traffic light" bar with sub-scores for the four main categories (Profit, Cash, Efficiency, Demand), colored according to their performance.
 //    - Action Panel:
@@ -52,15 +54,16 @@ import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleto
 //    - Scenario Switcher (Optional future feature):
 //      - A small toggle (e.g., Base Case / +20% Sales / -10% Margin) that recalculates the Health Score on the fly.
 //
-// 4. Recommendation Generator (High-Level)
+// 4. RECOMMENDATION GENERATOR (HIGH-LEVEL OUTLINE)
 //    - The engine will compare live KPIs against the defined benchmarks.
 //    - For each underperforming KPI, it will generate a concise recommendation and tactic (e.g., "Raise price by X%", "Reallocate marketing spend", "Reduce specific cost").
-//    - Recommendations will be returned as a simple array of strings to be rendered in the UI.
+//    - Recommendations will be returned as a simple array of strings to be rendered in the UI, with no additional charts.
 //
-// 5. Implementation Plan
-//    - Phase 1: Build the core calculation logic for the score within the financial engine.
-//    - Phase 2: Develop the UI components on the Summary page (Gauge, Traffic Light Bar, Action Panel).
-
+// 5. TODO: IMPLEMENTATION ROADMAP
+//    1. Implement score calculator in financial-engine.ts (Phase 1).
+//    2. Build UI components that consume the new score (Phase 2).
+//    3. Hook auto-recommendations into the Action-Panel (Phase 3).
+//
 function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
 
@@ -133,15 +136,4 @@ export default function SummaryPage() {
           <AlertTitle>Data Error</AlertTitle>
           <AlertDescription>
             {error} Please generate a new report from the Inputs page.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!data || !inputs) {
-    return <SummaryPageSkeleton />;
-  }
-
-  return <SummaryPageContent data={data} inputs={inputs} />;
-}
+          </Aler
