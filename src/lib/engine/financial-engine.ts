@@ -1,5 +1,6 @@
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -36,23 +37,23 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
 };
 
 // Aggregate sales weights from all products
-const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
+const getAggregatedSalesWeights = (inputs: EngineInput, timelineMonths: number[]): number[] => {
     const { forecastMonths } = inputs.parameters;
     const isManualMode = inputs.realtime.dataSource === 'Manual';
-    const aggregatedWeights = Array(forecastMonths).fill(0);
+    const salesTimeline = timelineMonths.filter(m => m >= 1); // Sales models apply from M1 onwards for costs
+    const aggregatedWeights = Array(salesTimeline.length).fill(0);
     let totalValue = 0;
 
     inputs.products.forEach(p => {
-        // In manual mode, weight by potential revenue. In RT mode, this logic would change.
         const productValue = isManualMode ? (p.plannedUnits || 0) * (p.sellPrice || 0) : (p.sellPrice || 0);
-        const productWeights = getSalesWeights(forecastMonths, p.salesModel || 'launch');
+        const productWeights = getSalesWeights(salesTimeline.length, p.salesModel || 'launch');
         productWeights.forEach((weight, i) => {
             aggregatedWeights[i] += weight * productValue;
         });
         totalValue += productValue;
     });
 
-    if (totalValue === 0) return Array(forecastMonths).fill(1 / forecastMonths);
+    if (totalValue === 0) return Array(salesTimeline.length).fill(1 / salesTimeline.length);
 
     return aggregatedWeights.map(w => w / totalValue);
 };
@@ -62,19 +63,14 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
     const timeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     const hasMonthZero = timelineMonths.includes(0);
 
-    const salesWeights = getAggregatedSalesWeights(inputs);
+    const salesWeights = getAggregatedSalesWeights(inputs, timelineMonths);
 
     inputs.fixedCosts.forEach(cost => {
-        const schedule = cost.paymentSchedule || 'Paid Up-Front';
+        let schedule = cost.paymentSchedule || 'Paid Up-Front';
         let startMonthChoice = cost.startMonth || 'Month 1';
 
-        // Override: if 'Paid Up-Front', it must start 'Up-front'
+        // Override: if 'Paid Up-Front', it must be handled as a one-time payment
         if (schedule === 'Paid Up-Front') {
-            startMonthChoice = 'Up-front';
-        }
-
-        // Handle "Paid Up-Front" separately as it's a one-time payment in Month 0
-        if (startMonthChoice === 'Up-front' && hasMonthZero) {
             const upFrontMonth = timeline.find(t => t.month === 0);
             if (upFrontMonth) {
                 const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
@@ -87,8 +83,8 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
         let allocationStartMonth = (startMonthChoice === 'Month 0' && hasMonthZero) ? 0 : 1;
         
         const allocationTimeline = timeline.filter(t => t.month >= allocationStartMonth);
-        const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
-        const totalAllocationMonths = forecastMonths - (allocationStartMonth === 0 ? -1 : 0);
+        const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * allocationTimeline.length : cost.amount;
+        const totalAllocationMonths = allocationTimeline.length;
 
         switch (schedule) {
             case 'Allocated Monthly':
@@ -114,9 +110,8 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
                 break;
 
             case 'Allocated According to Sales':
-                // This allocation still only applies to M1-M12 sales weights
-                const salesTimeline = timeline.filter(t => t.month >= 1);
-                salesTimeline.forEach((month, i) => {
+                const salesCostTimeline = timeline.filter(t => t.month >= 1);
+                salesCostTimeline.forEach((month, i) => {
                     if (salesWeights[i] !== undefined) {
                         const distributedAmount = totalCostAmount * salesWeights[i];
                         month[cost.name] = (month[cost.name] || 0) + distributedAmount;
@@ -154,9 +149,12 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     const useMonthZero = preOrder || hasDeposits;
     
     const timelineMonths = useMonthZero
-        ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) // M0, M1, ..., M12
-        : Array.from({ length: forecastMonths }, (_, i) => i + 1); // M1, M2, ..., M12
+      ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) // M0, M1, ..., M12
+      : Array.from({ length: forecastMonths }, (_, i) => i + 1); // M1, M2, ..., M12
 
+    const revenueTimeline = useMonthZero
+        ? Array.from({ length: forecastMonths }, (_, i) => i) // M0 to M11
+        : Array.from({ length: forecastMonths }, (_, i) => i + 1); // M1 to M12
     
     // --- REVENUE & UNITS CALCULATIONS ---
     const monthlyRevenueTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
@@ -173,10 +171,10 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             soldUnits = (product.plannedUnits || 0) * ((product.sellThrough || 0) / 100);
             totalRevenue = soldUnits * (product.sellPrice || 0);
             
-            const salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
-            const salesTimeline = timelineMonths.filter(m => m >= 1); // Sales models apply from M1 onwards
+            // Sales models are applied to the full revenue timeline (M0-11 or M1-12)
+            const salesWeights = getSalesWeights(revenueTimeline.length, product.salesModel || 'launch');
 
-            salesTimeline.forEach((month, i) => {
+            revenueTimeline.forEach((month, i) => {
                  let monthlyProductUnits = soldUnits * salesWeights[i];
                  
                  const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === month);
@@ -189,25 +187,6 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
                      unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
                  }
             });
-
-            if (preOrder) {
-                // If pre-order, Month 0 exists. Its revenue is 10% of what would have been Month 1's revenue.
-                const month1RevenueValue = (soldUnits * salesWeights[0]) * (product.sellPrice || 0);
-                const preOrderRevenue = month1RevenueValue * 0.10;
-                
-                const month0RevenueData = monthlyRevenueTimeline.find(m => m.month === 0);
-                if (month0RevenueData) month0RevenueData[product.productName] = (month0RevenueData[product.productName] || 0) + preOrderRevenue;
-
-                const month0UnitsData = monthlyUnitsTimeline.find(m => m.month === 0);
-                if (month0UnitsData) month0UnitsData[product.productName] = (month0UnitsData[product.productName] || 0) + (preOrderRevenue / (product.sellPrice || 1));
-                
-                // Subtract that same amount from Month 1's revenue
-                const month1RevenueData = monthlyRevenueTimeline.find(m => m.month === 1);
-                if (month1RevenueData) month1RevenueData[product.productName] -= preOrderRevenue;
-
-                const month1UnitsData = monthlyUnitsTimeline.find(m => m.month === 1);
-                if (month1UnitsData) month1UnitsData[product.productName] -= (preOrderRevenue / (product.sellPrice || 1));
-            }
         }
         
         return {
@@ -326,7 +305,6 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let profitBreakEvenMonth: number | null = null;
     
     for (const month of timelineMonths) {
-        // No profit/loss in Month 0 as there's no revenue component there unless it's a pre-order
         const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
         const totalMonthlyRevenue = Object.values(currentRevenueData).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
 
@@ -345,7 +323,6 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
                 return sum + (unitsSold * unitCost);
             }, 0);
         
-        // Month 0 only has costs, no revenue, so profit is negative fixed cost.
         const grossProfit = totalMonthlyRevenue - monthlyCOGS;
         const operatingProfit = grossProfit - totalMonthlyFixedCosts;
         const netProfit = operatingProfit > 0 ? operatingProfit * (1 - (taxRate / 100)) : operatingProfit;
