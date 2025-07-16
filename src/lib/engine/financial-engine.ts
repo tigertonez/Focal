@@ -1,5 +1,5 @@
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 // In a real scenario, this would come from a more complex revenue calculation engine.
@@ -151,13 +151,17 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         const { preOrder, forecastMonths } = inputs.parameters;
         const salesStartMonth = preOrder ? 0 : 1;
         
-        // --- REVENUE CALCULATIONS ---
+        // --- REVENUE & UNITS CALCULATIONS ---
         const timelineDuration = preOrder ? forecastMonths : forecastMonths + 1;
         const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
+        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
+        
         if (!preOrder) {
             monthlyRevenueTimeline.shift();
+            monthlyUnitsTimeline.shift();
             for(let i = 0; i < monthlyRevenueTimeline.length; i++) {
                 monthlyRevenueTimeline[i].month = i + 1;
+                monthlyUnitsTimeline[i].month = i + 1;
             }
         }
 
@@ -168,10 +172,17 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
             for (let i = 0; i < forecastMonths; i++) {
                 const currentMonth = salesStartMonth + i;
-                const timelineMonth = monthlyRevenueTimeline.find(t => t.month === currentMonth);
-                if (timelineMonth) {
+                
+                const revenueTimelineMonth = monthlyRevenueTimeline.find(t => t.month === currentMonth);
+                if (revenueTimelineMonth) {
                     const monthlyProductRevenue = totalRevenue * salesWeights[i];
-                    timelineMonth[product.productName] = (timelineMonth[product.productName] || 0) + monthlyProductRevenue;
+                    revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + monthlyProductRevenue;
+                }
+
+                const unitsTimelineMonth = monthlyUnitsTimeline.find(t => t.month === currentMonth);
+                if (unitsTimelineMonth) {
+                    const monthlyProductUnits = soldUnits * salesWeights[i];
+                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
                 }
             }
 
@@ -191,21 +202,24 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             avgRevenuePerUnit,
             totalSoldUnits,
             productBreakdown,
-            ltv: 0, // Placeholder
-            cac: 0, // Placeholder
+            ltv: 0,
+            cac: 0,
         };
         
         const allRevenueKeys = new Set<string>(['month']);
-        monthlyRevenueTimeline.forEach(monthData => {
-            Object.keys(monthData).forEach(key => allRevenueKeys.add(key));
-        });
-
+        monthlyRevenueTimeline.forEach(monthData => Object.keys(monthData).forEach(key => allRevenueKeys.add(key)));
         const monthlyRevenue = monthlyRevenueTimeline.map(monthData => {
             const completeMonth: Record<string, any> = {};
-            allRevenueKeys.forEach(key => {
-                completeMonth[key] = monthData[key] || 0;
-            });
+            allRevenueKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
             return MonthlyRevenueSchema.parse(completeMonth);
+        }).filter(Boolean);
+
+        const allUnitKeys = new Set<string>(['month']);
+        monthlyUnitsTimeline.forEach(monthData => Object.keys(monthData).forEach(key => allUnitKeys.add(key)));
+        const monthlyUnitsSold = monthlyUnitsTimeline.map(monthData => {
+            const completeMonth: Record<string, any> = {};
+            allUnitKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
+            return MonthlyUnitsSoldSchema.parse(completeMonth);
         }).filter(Boolean);
 
 
@@ -292,6 +306,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             monthlyCosts,
             revenueSummary,
             monthlyRevenue,
+            monthlyUnitsSold,
             // Placeholders for future data
             profitSummary: { grossProfit: 0, operatingProfit: 0, netProfit: 0 },
             monthlyProfit: [],

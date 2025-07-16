@@ -5,12 +5,12 @@ import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
-import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart'; // Re-using for revenue timeline
+import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -20,16 +20,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
     const currency = inputs.parameters.currency;
-    const { revenueSummary, monthlyRevenue } = data;
+    const { revenueSummary, monthlyRevenue, monthlyUnitsSold } = data;
 
-    // Create a mapping from product ID/name to a chart-friendly key.
     const productChartConfig: Record<string, { label: string }> = {};
-    inputs.products.forEach((p, i) => {
-        // The key in monthlyRevenue data is the raw product name.
+    inputs.products.forEach((p) => {
         productChartConfig[p.productName] = { label: p.productName };
     });
     
-    // Calculate revenue potential for progress bar
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits * p.sellPrice), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
 
@@ -44,7 +41,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                         value={formatCurrency(revenueSummary.totalRevenue, currency)} 
                         help="Trend vs. previous period will be shown here when historical data is available."
                     />
-                    <KpiCard label="Total Units Sold" value={revenueSummary.totalSoldUnits.toLocaleString()} icon={<Users />} />
+                    <KpiCard label="Total Units Sold" value={formatNumber(revenueSummary.totalSoldUnits)} icon={<Users />} />
                     <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} />
                     <KpiCard label="Avg. Sell-Through" value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} icon={<Target />} />
                 </div>
@@ -61,7 +58,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                 )}
             </section>
             
-            <section className="space-y-8">
+            <section className="grid md:grid-cols-2 gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Monthly Revenue Timeline</CardTitle>
@@ -70,8 +67,18 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
                     </CardContent>
                 </Card>
-                
-                <Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Units Sold</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full pl-0">
+                       <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                    </CardContent>
+                </Card>
+            </section>
+            
+            <section>
+                 <Card>
                     <CardHeader>
                         <CardTitle>Revenue by Product</CardTitle>
                     </CardHeader>

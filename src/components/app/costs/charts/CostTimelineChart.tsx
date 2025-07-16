@@ -11,7 +11,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatNumber } from "@/lib/utils"
 
 const chartColors = [
   "hsl(var(--chart-1))",
@@ -22,7 +22,14 @@ const chartColors = [
   "hsl(var(--chart-6))",
 ];
 
-export function CostTimelineChart({ data, currency, configOverrides }: { data: any[], currency: string, configOverrides?: Record<string, { label: string }> }) {
+interface CostTimelineChartProps {
+  data: any[];
+  currency?: string;
+  configOverrides?: Record<string, { label: string }>;
+  formatAs?: 'currency' | 'number';
+}
+
+export function CostTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: CostTimelineChartProps) {
   const [chartConfig, setChartConfig] = React.useState<ChartConfig>({});
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
 
@@ -33,7 +40,7 @@ export function CostTimelineChart({ data, currency, configOverrides }: { data: a
       allKeys.forEach((key, index) => {
         const override = configOverrides ? configOverrides[key] : null;
         newConfig[key] = {
-          label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Use override or prettify
+          label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
           color: chartColors[index % chartColors.length],
         };
       });
@@ -46,8 +53,21 @@ export function CostTimelineChart({ data, currency, configOverrides }: { data: a
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
   }
   
-  // The last key in this array will be the top-most bar in the stack.
   const reversedCostKeys = [...costKeys].reverse();
+
+  const valueFormatter = (value: number) => {
+    if (formatAs === 'number') {
+      return formatNumber(value);
+    }
+    return formatCurrency(Number(value), currency || 'USD').replace(/\.00$/, '');
+  };
+  
+  const tooltipFormatter = (value: number) => {
+    if (formatAs === 'number') {
+        return formatNumber(value);
+    }
+    return formatCurrency(Number(value), currency || 'USD');
+  };
 
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
@@ -69,7 +89,7 @@ export function CostTimelineChart({ data, currency, configOverrides }: { data: a
           tickLine={false}
           axisLine={false}
           tickMargin={10}
-          tickFormatter={(value) => formatCurrency(Number(value), currency).replace(/\.00$/, '')}
+          tickFormatter={(value) => valueFormatter(Number(value))}
         />
         <ChartTooltip
           cursor={false}
@@ -82,7 +102,7 @@ export function CostTimelineChart({ data, currency, configOverrides }: { data: a
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
                     <div className="flex flex-1 justify-between">
                         <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Number(value), currency)}</span>
+                        <span className="ml-4 font-bold">{tooltipFormatter(Number(value))}</span>
                     </div>
                 </div>
               )
@@ -101,7 +121,6 @@ export function CostTimelineChart({ data, currency, configOverrides }: { data: a
               dataKey={key}
               fill={chartConfig[key]?.color}
               stackId="a"
-              // Apply radius only to the top-most bar in the stack
               radius={index === reversedCostKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />
         ))}

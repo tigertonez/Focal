@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -11,5 +12,12 @@ export function formatCurrency(value: number, currency: string = 'USD') {
         currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
+    }).format(value);
+}
+
+export function formatNumber(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(value);
 }
