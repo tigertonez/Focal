@@ -93,7 +93,7 @@ export function OperatingProfitPieChart({ productData, currency }: OperatingProf
                     className="text-xs" 
                     formatter={(value, entry) => {
                         const item = entry.payload as any;
-                        const percentage = totalOperatingProfit > 0 ? ((item.value / totalOperatingProfit) * 100).toFixed(0) : 0;
+                        const percentage = totalOperatingProfit > 0 ? ((item.payload.value / totalOperatingProfit) * 100).toFixed(0) : 0;
                         return (
                              <div className="flex w-full justify-between gap-4">
                                 <span>{item.payload.name}</span>
@@ -107,6 +107,7 @@ export function OperatingProfitPieChart({ productData, currency }: OperatingProf
                 payload={chartData.map(item => ({
                     value: item.name,
                     color: item.fill,
+                    type: 'square',
                     payload: item,
                 }))}
             />
