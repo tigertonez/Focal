@@ -57,64 +57,56 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
     return aggregatedWeights.map(w => w / totalValue);
 };
 
-const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
-    const { preOrder, forecastMonths } = inputs.parameters;
-    const timelineDuration = forecastMonths + (preOrder ? 1 : 0);
-    const startMonth = preOrder ? 0 : 1;
-
-    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i + startMonth }));
+const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): Record<string, number>[] => {
+    const { forecastMonths } = inputs.parameters;
+    const timeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
     const salesWeights = getAggregatedSalesWeights(inputs);
 
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'Paid Up-Front';
+        const costAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
         
         switch (schedule) {
             case 'Paid Up-Front':
-                const firstMonthIndex = preOrder ? 0 : 1;
-                const firstMonth = timeline.find(t => t.month === firstMonthIndex);
+                const firstMonth = timeline.find(t => t.month === timelineMonths[0]);
                 if (firstMonth) {
-                    firstMonth[cost.name] = (firstMonth[cost.name] || 0) + cost.amount;
+                    firstMonth[cost.name] = (firstMonth[cost.name] || 0) + costAmount;
                 }
                 break;
             
             case 'Allocated Monthly':
                 if (forecastMonths > 0) {
                     const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / forecastMonths;
-                    for (let i = 0; i < forecastMonths; i++) {
-                        const currentMonth = 1 + i; // Fixed costs are allocated from month 1
-                        const timelineMonth = timeline.find(t => t.month === currentMonth);
-                        if (timelineMonth) {
-                           timelineMonth[cost.name] = (timelineMonth[cost.name] || 0) + monthlyAmount;
-                        }
-                    }
+                    const salesTimeline = timeline.filter(t => t.month >= 1); // Costs allocated from month 1
+                    salesTimeline.forEach(month => {
+                        month[cost.name] = (month[cost.name] || 0) + monthlyAmount;
+                    });
                 }
                 break;
 
             case 'Allocated Quarterly':
                 const quarters = Math.ceil(forecastMonths / 3);
                 if (quarters > 0) {
-                    const quarterlyAmount = cost.amount / quarters;
+                    const quarterlyAmount = costAmount / quarters;
+                    const salesTimeline = timeline.filter(t => t.month >= 1);
                     for (let q = 0; q < quarters; q++) {
-                        const startMonthInSales = q * 3;
-                        const currentMonth = 1 + startMonthInSales; // From month 1
-                        const timelineMonth = timeline.find(t => t.month === currentMonth);
-                        if (timelineMonth) {
-                           timelineMonth[cost.name] = (timelineMonth[cost.name] || 0) + quarterlyAmount;
+                        const monthIndex = q * 3;
+                        if (monthIndex < salesTimeline.length) {
+                           salesTimeline[monthIndex][cost.name] = (salesTimeline[monthIndex][cost.name] || 0) + quarterlyAmount;
                         }
                     }
                 }
                 break;
 
             case 'Allocated According to Sales':
-                 for (let i = 0; i < forecastMonths; i++) {
-                    const currentMonth = 1 + i; // From month 1
-                    const timelineMonth = timeline.find(t => t.month === currentMonth);
-                    if (timelineMonth && salesWeights[i]) {
-                        const distributedAmount = cost.amount * salesWeights[i];
-                        timelineMonth[cost.name] = (timelineMonth[cost.name] || 0) + distributedAmount;
+                const salesTimeline = timeline.filter(t => t.month >= 1);
+                 salesTimeline.forEach((month, i) => {
+                    if (salesWeights[i] !== undefined) {
+                        const distributedAmount = costAmount * salesWeights[i];
+                        month[cost.name] = (month[cost.name] || 0) + distributedAmount;
                     }
-                }
+                });
                 break;
         }
     });
@@ -142,12 +134,12 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     const { preOrder, forecastMonths, taxRate } = inputs.parameters;
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     
-    // --- REVENUE & UNITS CALCULATIONS ---
-    const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
-    const startMonth = preOrder ? 0 : 1;
+    // --- TIMELINE SETUP ---
+    const timelineMonths = Array.from({ length: forecastMonths }, (_, i) => i + (preOrder ? 0 : 1));
     
-    const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i + startMonth }));
-    const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i + startMonth }));
+    // --- REVENUE & UNITS CALCULATIONS ---
+    const monthlyRevenueTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
+    const monthlyUnitsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     
     const productBreakdown = inputs.products.map(product => {
         let soldUnits = 0;
@@ -161,40 +153,39 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             totalRevenue = soldUnits * (product.sellPrice || 0);
             
             const salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
+            const salesTimeline = timelineMonths.filter(m => m >= 1); // Sales models apply from M1 onwards
 
-            for (let i = 0; i < forecastMonths; i++) {
-                const currentMonth = 1 + i;
-                let monthlyProductUnits = soldUnits * salesWeights[i];
-                
-                const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === currentMonth);
-                if (revenueTimelineMonth) {
-                    revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + (monthlyProductUnits * (product.sellPrice || 0));
-                }
-
-                const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === currentMonth);
-                if (unitsTimelineMonth) {
-                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
-                }
-            }
+            salesTimeline.forEach((month, i) => {
+                 let monthlyProductUnits = soldUnits * salesWeights[i];
+                 
+                 const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === month);
+                 if (revenueTimelineMonth) {
+                     revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + (monthlyProductUnits * (product.sellPrice || 0));
+                 }
+ 
+                 const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === month);
+                 if (unitsTimelineMonth) {
+                     unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
+                 }
+            });
 
             if (preOrder) {
-                // Pre-order logic: Take 10% of Month 1's units and move them to Month 0
-                const month1Units = soldUnits * salesWeights[0];
-                const preOrderUnits = month1Units * 0.10; 
+                // If pre-order, Month 0 exists. Its revenue is 10% of what would have been Month 1's revenue.
+                const month1RevenueValue = (soldUnits * salesWeights[0]) * (product.sellPrice || 0);
+                const preOrderRevenue = month1RevenueValue * 0.10;
                 
-                // Add to month 0
-                const preOrderMonthData = monthlyRevenueTimeline.find(m => m.month === 0);
-                if (preOrderMonthData) preOrderMonthData[product.productName] = (preOrderMonthData[product.productName] || 0) + (preOrderUnits * (product.sellPrice || 0));
+                const month0RevenueData = monthlyRevenueTimeline.find(m => m.month === 0);
+                if (month0RevenueData) month0RevenueData[product.productName] = (month0RevenueData[product.productName] || 0) + preOrderRevenue;
 
-                const preOrderUnitsData = monthlyUnitsTimeline.find(m => m.month === 0);
-                if (preOrderUnitsData) preOrderUnitsData[product.productName] = (preOrderUnitsData[product.productName] || 0) + preOrderUnits;
+                const month0UnitsData = monthlyUnitsTimeline.find(m => m.month === 0);
+                if (month0UnitsData) month0UnitsData[product.productName] = (month0UnitsData[product.productName] || 0) + (preOrderRevenue / (product.sellPrice || 1));
                 
-                // Subtract from month 1
+                // Subtract that same amount from Month 1's revenue
                 const month1RevenueData = monthlyRevenueTimeline.find(m => m.month === 1);
-                if (month1RevenueData) month1RevenueData[product.productName] -= (preOrderUnits * (product.sellPrice || 0));
-                
+                if (month1RevenueData) month1RevenueData[product.productName] -= preOrderRevenue;
+
                 const month1UnitsData = monthlyUnitsTimeline.find(m => m.month === 1);
-                if (month1UnitsData) month1UnitsData[product.productName] -= preOrderUnits;
+                if (month1UnitsData) month1UnitsData[product.productName] -= (preOrderRevenue / (product.sellPrice || 1));
             }
         }
         
@@ -218,16 +209,14 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
         cac: 0,
     };
     
-    const allRevenueKeys = new Set<string>(['month']);
-    monthlyRevenueTimeline.forEach(monthData => Object.keys(monthData).forEach(key => allRevenueKeys.add(key)));
+    const allRevenueKeys = new Set<string>(['month', ...inputs.products.map(p => p.productName)]);
     const monthlyRevenue = monthlyRevenueTimeline.map(monthData => {
         const completeMonth: Record<string, any> = {};
         allRevenueKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
         return MonthlyRevenueSchema.parse(completeMonth);
     }).filter(Boolean);
 
-    const allUnitKeys = new Set<string>(['month']);
-    monthlyUnitsTimeline.forEach(monthData => Object.keys(monthData).forEach(key => allUnitKeys.add(key)));
+    const allUnitKeys = new Set<string>(['month', ...inputs.products.map(p => p.productName)]);
     const monthlyUnitsSold = monthlyUnitsTimeline.map(monthData => {
         const completeMonth: Record<string, any> = {};
         allUnitKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
@@ -263,7 +252,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
         };
     });
     
-    const monthlyCostTimeline = buildFixedCostTimeline(inputs);
+    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timelineMonths);
     
     const depositPaymentMonth = preOrder ? 0 : 1;
     const finalPaymentMonth = 1;
@@ -299,11 +288,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
         totalFinalPayments,
     };
     
-    const allCostKeys = new Set<string>(['month']);
-    monthlyCostTimeline.forEach(monthData => {
-        Object.keys(monthData).forEach(key => allCostKeys.add(key));
-    });
-
+    const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name)]);
     const monthlyCosts = monthlyCostTimeline.map(monthData => {
         const completeMonth: Record<string, any> = {};
         allCostKeys.forEach(key => {
@@ -318,9 +303,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let cumulativeOperatingProfit = 0;
     let profitBreakEvenMonth: number | null = null;
     
-    for (let i = 0; i < timelineDuration; i++) {
-        const month = i + startMonth;
-        
+    for (const month of timelineMonths) {
         const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
         const totalMonthlyRevenue = Object.values(currentRevenueData).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
 
@@ -379,9 +362,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let peakFundingNeed = 0;
     let cashBreakEvenMonth: number | null = null;
     
-    for (let i = 0; i < timelineDuration; i++) {
-        const month = i + startMonth;
-        
+    for (const month of timelineMonths) {
         const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
         const cashOutCosts = Object.values(monthlyCosts.find(c => c.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
         const cashOutTax = (monthlyProfit.find(p => p.month === month)?.netProfit || 0) < (monthlyProfit.find(p => p.month === month)?.operatingProfit || 0) 

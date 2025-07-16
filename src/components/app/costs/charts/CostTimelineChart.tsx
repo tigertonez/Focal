@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -68,11 +69,19 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
     return formatCurrency(Number(value), currency || 'USD');
   };
 
+  const chartData = data.map(monthData => {
+      const newMonthData = {...monthData};
+      if (typeof newMonthData.month === 'number') {
+          newMonthData.month = `M${newMonthData.month}`;
+      }
+      return newMonthData;
+  });
+
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
       <BarChart 
         accessibilityLayer 
-        data={data}
+        data={chartData}
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
         stackOffset="sign"
       >
@@ -82,7 +91,6 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
           tickLine={false}
           tickMargin={10}
           axisLine={false}
-          tickFormatter={(value) => `M${value}`}
         />
         <YAxis
           tickLine={false}
@@ -93,7 +101,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent 
-            labelFormatter={(label) => `Month ${label}`}
+            labelFormatter={(label) => `Month ${label.replace('M','')}`}
             formatter={(value, name, props) => {
                const itemConfig = chartConfig[props.dataKey as string];
                return (

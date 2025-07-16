@@ -1,4 +1,5 @@
 
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { chartColorVars, semanticColorMap, productColorVars } from "./engine/chart-colors"
@@ -25,29 +26,39 @@ export function formatNumber(value: number) {
 }
 
 // --- Centralized Product Color Assignment ---
-
 const assignedColors: Record<string, string> = {};
-let nextProductColorIndex = 0;
-let nextFixedCostColorIndex = 0;
+
+// A simple hashing function to get a deterministic index from a string.
+const simpleHash = (str: string): number => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+};
+
 
 /**
  * Assigns a consistent color to a product or fixed cost item.
- * Prioritizes user-defined color, then semantic mapping, then falls back to a rotating default palette.
+ * This function is now deterministic and stateless.
  * @param item The product or fixed cost item object.
  * @returns A CSS color string (hex or HSL).
  */
 export function getProductColor(item: Product | FixedCostItem): string {
     const isProduct = 'productName' in item;
     const name = isProduct ? item.productName : item.name;
+    const id = item.id;
 
     // 1. Priority: Use user-defined color if it exists
     if (item.color) {
         return item.color;
     }
     
-    // 2. Check cache to maintain consistency across renders
-    if (assignedColors[name]) {
-        return assignedColors[name];
+    // 2. Check cache to maintain consistency within a single render pass
+    if (assignedColors[id]) {
+        return assignedColors[id];
     }
     
     // 3. For Fixed Costs, check for semantic matches
@@ -56,22 +67,21 @@ export function getProductColor(item: Product | FixedCostItem): string {
         for (const key in semanticColorMap) {
             if (lowerName.includes(key.toLowerCase())) {
                 const color = semanticColorMap[key];
-                assignedColors[name] = color;
+                assignedColors[id] = color;
                 return color;
             }
         }
     }
 
-    // 4. Fallback: Assign next available color from the appropriate default palette
+    // 4. Fallback: Assign a deterministic color from the appropriate default palette based on ID hash
+    const hash = simpleHash(id);
     let color: string;
     if (isProduct) {
-        color = productColorVars[nextProductColorIndex % productColorVars.length];
-        nextProductColorIndex++;
+        color = productColorVars[hash % productColorVars.length];
     } else {
-        color = chartColorVars[nextFixedCostColorIndex % chartColorVars.length];
-        nextFixedCostColorIndex++;
+        color = chartColorVars[hash % chartColorVars.length];
     }
     
-    assignedColors[name] = color;
+    assignedColors[id] = color;
     return color;
 }
