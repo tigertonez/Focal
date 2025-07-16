@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { CashFlowChart } from '@/components/app/cash-flow/charts/CashFlowChart';
 import { CashFlowTable } from '@/components/app/cash-flow/CashFlowTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 
 
 function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
@@ -86,6 +87,9 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
         </Card>
         <div className="overflow-y-auto">
           <CashFlowTable data={data} currency={currency} />
+        </div>
+        <div className="pt-4">
+          <CashFlowInsights />
         </div>
       </section>
 
