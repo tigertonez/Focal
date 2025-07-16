@@ -60,53 +60,67 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): Record<string, number>[] => {
     const { forecastMonths } = inputs.parameters;
     const timeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
+    const hasMonthZero = timelineMonths.includes(0);
 
     const salesWeights = getAggregatedSalesWeights(inputs);
 
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'Paid Up-Front';
-        const costAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
+        const startMonthChoice = cost.startMonth || 'Month 1';
         
-        // Month 1 is always the start for these allocations, regardless of M0's existence
-        const firstRegularMonth = 1;
+        // Handle "Paid Up-Front" separately as it's a one-time payment
+        if (schedule === 'Paid Up-Front') {
+            const upFrontMonth = hasMonthZero ? 0 : 1;
+            const monthData = timeline.find(t => t.month === upFrontMonth);
+            if (monthData) {
+                const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
+                monthData[cost.name] = (monthData[cost.name] || 0) + totalCost;
+            }
+            return; // Skip remaining logic for this cost
+        }
+
+        // Determine the actual starting month for allocations
+        let allocationStartMonth = 1; // Default start
+        if (hasMonthZero) {
+            if (startMonthChoice === 'Month 0') allocationStartMonth = 0;
+            else if (startMonthChoice === 'Up-front') { // Treat 'Up-front' for allocated costs as M0 start
+                allocationStartMonth = 0; 
+            }
+        }
+        
+        const allocationTimeline = timeline.filter(t => t.month >= allocationStartMonth);
+        const allocationMonths = allocationTimeline.length;
+        const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
 
         switch (schedule) {
-            case 'Paid Up-Front':
-                const firstMonth = timeline.find(t => t.month === firstRegularMonth);
-                if (firstMonth) {
-                    firstMonth[cost.name] = (firstMonth[cost.name] || 0) + costAmount;
-                }
-                break;
-            
             case 'Allocated Monthly':
-                if (forecastMonths > 0) {
-                    const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / forecastMonths;
-                    const salesTimeline = timeline.filter(t => t.month >= 1);
-                    salesTimeline.forEach(month => {
+                if (allocationMonths > 0) {
+                    const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : totalCostAmount / forecastMonths;
+                    allocationTimeline.forEach(month => {
                         month[cost.name] = (month[cost.name] || 0) + monthlyAmount;
                     });
                 }
                 break;
 
             case 'Allocated Quarterly':
-                const quarters = Math.ceil(forecastMonths / 3);
+                const quarters = Math.ceil(allocationMonths / 3);
                 if (quarters > 0) {
-                    const quarterlyAmount = costAmount / quarters;
-                    const salesTimeline = timeline.filter(t => t.month >= 1);
+                    const quarterlyAmount = totalCostAmount / quarters;
                     for (let q = 0; q < quarters; q++) {
                         const monthIndex = q * 3;
-                        if (monthIndex < salesTimeline.length) {
-                           salesTimeline[monthIndex][cost.name] = (salesTimeline[monthIndex][cost.name] || 0) + quarterlyAmount;
+                        if (monthIndex < allocationTimeline.length) {
+                           allocationTimeline[monthIndex][cost.name] = (allocationTimeline[monthIndex][cost.name] || 0) + quarterlyAmount;
                         }
                     }
                 }
                 break;
 
             case 'Allocated According to Sales':
+                // This allocation still only applies to M1-M12 sales weights
                 const salesTimeline = timeline.filter(t => t.month >= 1);
-                 salesTimeline.forEach((month, i) => {
+                salesTimeline.forEach((month, i) => {
                     if (salesWeights[i] !== undefined) {
-                        const distributedAmount = costAmount * salesWeights[i];
+                        const distributedAmount = totalCostAmount * salesWeights[i];
                         month[cost.name] = (month[cost.name] || 0) + distributedAmount;
                     }
                 });
@@ -263,8 +277,8 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     
     const monthlyCostTimeline = buildFixedCostTimeline(inputs, timelineMonths);
     
-    // Deposit payment is ALWAYS in Month 0 if it exists
-    if (useMonthZero) {
+    // Deposit payment is ALWAYS in Month 0 if it exists and there are deposits
+    if (useMonthZero && totalDepositsPaid > 0) {
         const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
         if (depositMonth) {
             depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;

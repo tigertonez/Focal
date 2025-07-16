@@ -10,6 +10,7 @@ import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProductColor } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
     const { updateFixedCost, removeFixedCost, inputs } = useForecast();
@@ -36,12 +37,15 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
 
     const schedule = cost.paymentSchedule || 'Paid Up-Front';
     const costType = cost.costType || 'Total for Period';
+    const startMonth = cost.startMonth || 'Month 1';
+    
     const name = cost.name.toLowerCase();
     const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
     const isDynamicCost = isMarketingCost || isPlanningBuffer;
     const planningBufferTooltip = "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast.";
     const planningBufferTitle = "What is a Planning Buffer?";
+    const hasMonthZero = inputs.parameters.preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
 
     const assignedColor = getProductColor(cost);
 
@@ -73,37 +77,6 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             </TooltipProvider>
                         )}
                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="relative">
-                            <Input
-                                name="amount"
-                                type="number"
-                                value={cost.amount}
-                                onChange={handleChange}
-                                placeholder="Amount"
-                                className="text-sm pr-28" // Padded right for currency + dropdown
-                            />
-                            <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
-                             <Select onValueChange={handleSelectChange('costType')} value={costType}>
-                                <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Total for Period">Total</SelectItem>
-                                    <SelectItem value="Monthly Cost">/ month</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
-                            <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Paid Up-Front">Paid Up-Front</SelectItem>
-                                <SelectItem value="Allocated Monthly">Allocated Monthly</SelectItem>
-                                <SelectItem value="Allocated Quarterly">Allocated Quarterly</SelectItem>
-                                <SelectItem value="Allocated According to Sales">Allocated According to Sales</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1">
                     <div 
@@ -123,6 +96,55 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         <Trash2 size={18} />
                     </Button>
                 </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                <div className="space-y-1">
+                    <Label className="text-xs">Amount</Label>
+                    <div className="relative">
+                        <Input
+                            name="amount"
+                            type="number"
+                            value={cost.amount}
+                            onChange={handleChange}
+                            placeholder="Amount"
+                            className="text-sm pr-28" // Padded right for currency + dropdown
+                        />
+                        <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+                         <Select onValueChange={handleSelectChange('costType')} value={costType}>
+                            <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Total for Period">Total</SelectItem>
+                                <SelectItem value="Monthly Cost">/ month</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                 <div className="space-y-1">
+                    <Label className="text-xs">Payment Schedule</Label>
+                    <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
+                        <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Paid Up-Front">Paid Up-Front</SelectItem>
+                            <SelectItem value="Allocated Monthly">Allocated Monthly</SelectItem>
+                            <SelectItem value="Allocated Quarterly">Allocated Quarterly</SelectItem>
+                            <SelectItem value="Allocated According to Sales">Allocated According to Sales</SelectItem>
+                        </SelectContent>
+                    </Select>
+                 </div>
+                 <div className="space-y-1">
+                    <Label className="text-xs">Start In</Label>
+                    <Select onValueChange={handleSelectChange('startMonth')} value={startMonth} disabled={schedule === 'Paid Up-Front'}>
+                        <SelectTrigger className="text-sm"><SelectValue placeholder="Start Month" /></SelectTrigger>
+                        <SelectContent>
+                            {hasMonthZero && <SelectItem value="Up-front">Up-front (in M0)</SelectItem>}
+                            {hasMonthZero && <SelectItem value="Month 0">Month 0 Onward</SelectItem>}
+                            <SelectItem value="Month 1">Month 1 Onward</SelectItem>
+                        </SelectContent>
+                    </Select>
+                 </div>
             </div>
         </div>
     );
