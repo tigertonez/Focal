@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
-    const { updateFixedCost, removeFixedCost } = useForecast();
+    const { updateFixedCost, removeFixedCost, inputs } = useForecast();
+    const currency = inputs.parameters.currency;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -61,16 +62,17 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     </div>
                      <div className="grid grid-cols-2 gap-4">
                         <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
                             <Input
                                 name="amount"
                                 type="number"
                                 value={cost.amount}
                                 onChange={handleChange}
                                 placeholder="Amount"
-                                className="text-sm pr-24"
+                                className="text-sm pl-8 pr-24"
                             />
                              <Select onValueChange={handleSelectChange('costType')} value={costType}>
-                                <SelectTrigger className="absolute top-0 right-0 h-full w-auto text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
+                                <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

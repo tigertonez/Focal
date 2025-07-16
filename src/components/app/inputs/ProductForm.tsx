@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
+  const currency = inputs.parameters.currency;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -55,24 +56,33 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isManualMode && (
-          <div>
+          <div className="space-y-2">
             <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
-            <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 5000" />
+            <div className="relative">
+                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+            </div>
           </div>
         )}
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
-          <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 15.50" />
+           <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
+                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pl-8" placeholder="e.g., 15.50" />
+            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
-          <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 49.99" />
+          <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
+                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pl-8" placeholder="e.g., 49.99" />
+          </div>
         </div>
         {isManualMode && (
-            <div>
+            <div className="space-y-2">
             <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
                 Sales Model
                 <TooltipProvider>
@@ -83,7 +93,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 </TooltipProvider>
             </Label>
             <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
-                <SelectTrigger id={`salesModel-${index}`} className="mt-2 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                 <SelectItem value="launch">Launch</SelectItem>
                 <SelectItem value="even">Even</SelectItem>
@@ -97,7 +107,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isManualMode && (
-          <div>
+          <div className="space-y-2">
             <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
               Sell-Through %
                 <TooltipProvider>
@@ -107,10 +117,13 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     </Tooltip>
                 </TooltipProvider>
             </Label>
-            <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 85" />
+            <div className="relative">
+                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 85" />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
+            </div>
           </div>
         )}
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
             Deposit Paid %
              <TooltipProvider>
@@ -120,7 +133,10 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 </Tooltip>
              </TooltipProvider>
           </Label>
-          <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="mt-2 text-sm" placeholder="e.g., 25" />
+           <div className="relative">
+                <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 25" />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
+           </div>
         </div>
       </div>
     </div>
