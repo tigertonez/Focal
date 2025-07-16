@@ -6,11 +6,14 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
+import { KpiCard } from '@/components/app/KpiCard';
+import { formatCurrency, formatNumber } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 
 // =================================================================
 // PLACEHOLDER COMPONENTS (PART A)
@@ -18,21 +21,61 @@ import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleto
 
 /**
  * KPISection - Renders the 6 main KPI cards.
- * Expected Data (Part B): `totalRevenue`, `totalOperating` (from costSummary),
+ * Expected Data (Part B): `totalRevenue` (from revenueSummary), `totalOperating` (from costSummary),
  * `totalGrossProfit` (from profitSummary), `endingCashBalance` (from cashFlowSummary),
  * `breakEvenMonth` (from profitSummary), `peakFundingNeed` (from cashFlowSummary)
  */
-const KPISection = () => {
+const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }) => {
+  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex h-24 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-sm">
-          KPI Card {i + 1}
-        </div>
-      ))}
+      <KpiCard
+        label="Total Revenue"
+        value={formatCurrency(revenueSummary.totalRevenue, currency)}
+        icon={<TrendingUp />}
+        helpTitle="Total Revenue"
+        help="The total income generated from sales over the forecast period before any costs are deducted."
+      />
+      <KpiCard
+        label="Total Costs"
+        value={formatCurrency(costSummary.totalOperating, currency)}
+        icon={<TrendingDown />}
+        helpTitle="Total Operating Costs"
+        help="The sum of all fixed and variable costs required to run the business."
+      />
+      <KpiCard
+        label="Gross Profit"
+        value={formatCurrency(profitSummary.totalGrossProfit, currency)}
+        icon={<Landmark />}
+        helpTitle="Gross Profit"
+        help="Total Revenue minus the direct cost of goods sold (COGS). It measures how efficiently you produce and sell your products."
+      />
+      <KpiCard
+        label="Ending Cash"
+        value={formatCurrency(cashFlowSummary.endingCashBalance, currency)}
+        icon={<PiggyBank />}
+        helpTitle="Ending Cash Balance"
+        help="The total cash your business will have in the bank at the end of the forecast period."
+      />
+      <KpiCard
+        label="Break-Even"
+        value={profitSummary.breakEvenMonth ? `${profitSummary.breakEvenMonth} Months` : 'N/A'}
+        icon={<CalendarCheck2 />}
+        helpTitle="Profit Break-Even"
+        help="The month in which your cumulative operating profit becomes positive."
+      />
+      <KpiCard
+        label="Funding Need"
+        value={formatCurrency(cashFlowSummary.peakFundingNeed, currency)}
+        icon={<Target />}
+        helpTitle="Peak Funding Need"
+        help="The lowest point of your cumulative cash balance. This is the minimum capital required to prevent your cash from going below zero."
+      />
     </div>
   );
 };
+
 
 /**
  * HealthPanel - Renders the Business Health Score.
@@ -41,9 +84,9 @@ const KPISection = () => {
  */
 const HealthPanel = () => {
   return (
-    <div className="flex h-32 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-sm">
+    <Card className="flex h-32 items-center justify-center rounded-lg text-muted-foreground">
       TODO: Health Score Panel
-    </div>
+    </Card>
   );
 };
 
@@ -55,9 +98,9 @@ const HealthPanel = () => {
  */
 const CashBridge = () => {
   return (
-    <div className="flex h-48 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-sm">
+    <Card className="flex h-48 items-center justify-center rounded-lg text-muted-foreground">
       TODO: Profit-to-Cash Bridge
-    </div>
+    </Card>
   );
 };
 
@@ -74,7 +117,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
       
       {/* --- Row 1: KPI Cards --- */}
-      <KPISection />
+      <KPISection data={data} currency={inputs.parameters.currency} />
       
       {/* --- Row 2: Health Score --- */}
       <HealthPanel />
