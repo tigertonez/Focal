@@ -47,7 +47,7 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
                             <TableHead className="text-right">Cash Out</TableHead>
                             <TableHead className="text-right">Net Flow</TableHead>
                             <TableHead className="text-right">End Balance</TableHead>
-                            <TableHead className="text-right">Status</TableHead>
+                            <TableHead className="text-center w-[140px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -68,8 +68,8 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
                                 )}>
                                     {formatCurrency(row.cumulativeCash, currency)}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <Badge variant={row.status === 'Cash Positive' ? 'default' : 'destructive'} className="w-[120px] justify-center bg-opacity-80">
+                                <TableCell className="text-center">
+                                    <Badge variant={row.status === 'Cash Positive' ? 'default' : 'destructive'} className="w-[120px] justify-center">
                                         {row.status}
                                     </Badge>
                                 </TableCell>
