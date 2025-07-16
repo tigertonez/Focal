@@ -320,10 +320,10 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 .filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments')
                 .reduce((sum, key) => sum + (currentCostsData[key] || 0), 0);
             
-            const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month) || { month };
-            const totalMonthlyUnitsSold = Object.keys(currentUnitsSold)
+            const currentUnitsSoldData = monthlyUnitsSold.find(u => u.month === month) || { month };
+            const totalMonthlyUnitsSold = Object.keys(currentUnitsSoldData)
                 .filter(k => k !== 'month')
-                .reduce((sum, key) => sum + (currentUnitsSold[key] || 0), 0);
+                .reduce((sum, key) => sum + (currentUnitsSoldData[key] || 0), 0);
                 
             const avgVariableCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
             const monthlyCOGS = totalMonthlyUnitsSold * avgVariableCostPerUnit;
