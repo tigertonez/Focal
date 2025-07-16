@@ -14,58 +14,7 @@ import { Terminal } from 'lucide-react';
 import { ProfitToCashBridge } from '@/components/app/summary/ProfitToCashBridge';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 import { SummaryKpiCards } from '@/components/app/summary/SummaryKpiCards';
-import { BusinessHealthScore } from '@/components/app/summary/BusinessHealthScore';
 
-// =================================================================
-// STRATEGY BLUEPRINT: BUSINESS HEALTH SCORE
-// =================================================================
-// PHASE 0: STRATEGY & ALIGNMENT - DO NOT CODE.
-//
-// 1. VISION (ZIELBILD)
-//    - Create a single, powerful "Business Health Score" (0-100 scale).
-//    - The score is automatically calculated from all previously generated KPIs.
-//    - It should provide an immediate, at-a-glance understanding of the business model's viability.
-//    - The score will drive concrete, actionable recommendations.
-//    - NOTE: All numeric inputs will come solely from the existing financial engine outputs.
-//      There will be no hard-coded values or mock data used in the calculation.
-//
-// 2. CALCULATION LOGIC
-//    - KPI Pool: Exclusively use values already calculated by the financial engine:
-//      - Contribution Margin %
-//      - Operating Profit € & Margin %
-//      - Peak Funding Need €
-//      - Cash Runway (months)
-//      - Sell-Through %
-//    - Weighting (Example, adjustable):
-//      - Profitability: 35%
-//      - Liquidity/Cash: 30%
-//      - Efficiency (e.g., Contribution Margin vs. Marketing ROI): 20%
-//      - Demand/Sell-Through: 15%
-//    - Scoring Method:
-//      - Each KPI is normalized to a 0-100 scale based on predefined benchmarks.
-//      - Benchmarks (e.g., thresholds for 'good', 'average', 'poor') will define the scale for each KPI.
-//      - Final Score = Σ (normalized KPI score × weight).
-//      - Benchmarks and weights will be stored in a JSON configuration for easy fine-tuning.
-//
-// 3. UI CONCEPT (WIREFRAME NOTES)
-//    - At the top of the Summary page, display a prominent gauge or large badge (e.g., "Health Score: 78/100").
-//    - Below the score, show a "traffic light" bar with sub-scores for the four main categories (Profit, Cash, Efficiency, Demand), colored according to their performance.
-//    - Action Panel:
-//      - For each KPI performing in the 'red' or 'yellow' zone, automatically display one targeted recommendation.
-//      - Recommendations should be actionable and allow users to click to navigate to the relevant page (e.g., Costs, Inputs) to make adjustments.
-//    - Scenario Switcher (Optional future feature):
-//      - A small toggle (e.g., Base Case / +20% Sales / -10% Margin) that recalculates the Health Score on the fly.
-//
-// 4. RECOMMENDATION GENERATOR (HIGH-LEVEL OUTLINE)
-//    - The engine will compare live KPIs against the defined benchmarks.
-//    - For each underperforming KPI, it will generate a concise recommendation and tactic (e.g., "Raise price by X%", "Reallocate marketing spend", "Reduce specific cost").
-//    - Recommendations will be returned as a simple array of strings to be rendered in the UI, with no additional charts.
-//
-// 5. TODO: IMPLEMENTATION ROADMAP
-//    1. Implement score calculator in financial-engine.ts (Phase 1).
-//    2. Build UI components that consume the new score (Phase 2).
-//    3. Hook auto-recommendations into the Action-Panel (Phase 3).
-//
 function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
 
@@ -97,7 +46,6 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       <div className="space-y-8">
          <SummaryKpiCards data={data} inputs={inputs} />
          <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
-         <BusinessHealthScore healthData={data.businessHealth} />
       </div>
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">

@@ -1,4 +1,4 @@
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 
@@ -382,83 +382,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
 
 
 // =================================================================
-// Business Health Score Calculation
-// =================================================================
-
-const normalize = (value: number, min: number, max: number): number => {
-  if (max === min) return 100; // Avoid division by zero
-  const score = ((value - min) / (max - min)) * 100;
-  return Math.max(0, Math.min(100, score)); // Clamp between 0 and 100
-};
-
-const calculateBusinessHealth = (inputs: EngineInput, data: Omit<EngineOutput, 'businessHealth'>): BusinessHealth => {
-    const { profitSummary, cashFlowSummary, revenueSummary, costSummary } = data;
-    
-    // 1. KPI Pool
-    const operatingMargin = profitSummary.operatingMargin;
-    const peakFundingNeed = cashFlowSummary.peakFundingNeed;
-    const totalRevenue = revenueSummary.totalRevenue;
-    const cashRunway = cashFlowSummary.runway;
-    const contributionMargin = revenueSummary.totalRevenue > 0
-        ? ((revenueSummary.totalRevenue - costSummary.totalVariable) / revenueSummary.totalRevenue) * 100
-        : 0;
-    const totalPlannedUnits = inputs.products.reduce((acc, p) => acc + (p.plannedUnits || 0), 0);
-    const avgSellThrough = totalPlannedUnits > 0
-        ? (revenueSummary.totalSoldUnits / totalPlannedUnits) * 100
-        : 0;
-
-    // 2. Scoring & Benchmarks
-    const operatingMarginScore = normalize(operatingMargin, 0, 30); // 30% is a great margin
-    const peakFundingNeedScore = normalize(totalRevenue - peakFundingNeed, 0, totalRevenue); // Score based on how much of revenue is NOT needed for funding
-    const cashRunwayScore = normalize(cashRunway, 0, 18); // 18 months is a very healthy runway
-    const contributionMarginScore = normalize(contributionMargin, 10, 60); // 10% is low, 60% is great
-    const sellThroughScore = normalize(avgSellThrough, 50, 95); // 50% is ok, 95% is excellent
-
-    // 3. Sub-score calculation
-    const profitabilityScore = normalize((operatingMarginScore * 0.7) + (contributionMarginScore * 0.3), 0, 100);
-    const liquidityScore = normalize((cashRunwayScore * 0.6) + (peakFundingNeedScore * 0.4), 0, 100);
-    const efficiencyScore = contributionMarginScore;
-    const demandScore = sellThroughScore;
-    
-    // 4. Weighting & Final Score
-    const weights = {
-        profitability: 0.35,
-        liquidity: 0.30,
-        efficiency: 0.20,
-        demand: 0.15
-    };
-    
-    const finalScore = 
-        (profitabilityScore * weights.profitability) +
-        (liquidityScore * weights.liquidity) +
-        (efficiencyScore * weights.efficiency) +
-        (demandScore * weights.demand);
-        
-    // 5. Recommendations (simple logic for now)
-    const recommendations: string[] = [];
-    if (profitabilityScore < 50) recommendations.push("Profitability is low. Review pricing and high-cost items.");
-    if (liquidityScore < 50) recommendations.push("Cash position is tight. Watch your runway and consider options to reduce peak funding need.");
-    if (efficiencyScore < 60) recommendations.push("Product-level efficiency (Contribution Margin) could be improved. Analyze unit costs vs. sell price.");
-    if (demandScore < 70) recommendations.push("Sell-through rate is modest. Re-evaluate sales & marketing strategy to boost demand.");
-    if (recommendations.length === 0) recommendations.push("Solid forecast! The business model appears viable. Focus on execution.");
-
-    return {
-        score: Math.round(finalScore),
-        recommendations,
-        subScores: {
-            profitability: { label: "Profitability", score: Math.round(profitabilityScore) },
-            liquidity: { label: "Liquidity", score: Math.round(liquidityScore) },
-            efficiency: { label: "Efficiency", score: Math.round(efficiencyScore) },
-            demand: { label: "Demand", score: Math.round(demandScore) },
-        }
-    };
-};
-
-// =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
 
-function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHealth'> {
+function calculateScenario(inputs: EngineInput): EngineOutput {
     const timeline = createTimeline(inputs);
     const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
     const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
@@ -496,12 +423,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
         achievedResult.cashFlowSummary.potentialCashBalance = potentialResult.cashFlowSummary.endingCashBalance;
         
-        const businessHealth = calculateBusinessHealth(inputs, achievedResult);
-
-        return {
-            ...achievedResult,
-            businessHealth,
-        };
+        return achievedResult;
 
     } catch (e: any) {
         console.error("Error in financial calculation:", e);
