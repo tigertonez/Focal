@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
+import { generateCssId } from "@/lib/generate-css-id"
 
 interface CostTimelineChartProps {
   data: any[];
@@ -37,7 +38,9 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
         const item = allItems.find(p => ('productName' in p ? p.productName : p.name) === key);
         const override = configOverrides ? configOverrides[key] : null;
         
-        newConfig[key] = {
+        const cssId = generateCssId(key);
+        
+        newConfig[cssId] = { // Use the safe CSS ID as the key
           label: override?.label || key,
           color: item ? getProductColor(item) : 'hsl(var(--muted-foreground))',
         };
@@ -101,7 +104,8 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
           content={<ChartTooltipContent 
             labelFormatter={(label) => `Month ${label.replace('M','')}`}
             formatter={(value, name, props) => {
-               const itemConfig = chartConfig[props.dataKey as string];
+               const cssId = generateCssId(props.dataKey as string);
+               const itemConfig = chartConfig[cssId];
                return (
                 <div className="flex items-center">
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
@@ -120,14 +124,17 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
             dataKey: key
         }))} />} />
         
-        {costKeys.map((key) => (
-           <Bar
-              key={key}
-              dataKey={key}
-              fill={`var(--color-${key})`}
-              stackId="a"
-            />
-        ))}
+        {costKeys.map((key) => {
+            const cssId = generateCssId(key);
+            return (
+               <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={`var(--color-${cssId})`} // Use the safe CSS ID here
+                  stackId="a"
+                />
+            )
+        })}
 
       </BarChart>
     </ChartContainer>
