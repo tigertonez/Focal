@@ -157,17 +157,19 @@ export default function InputsPage() {
                 </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-4 pl-6">
-                <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
-                  <SelectItem value="Manual">Manual</SelectItem>
-                  <SelectItem value="Shopify">Shopify</SelectItem>
-                  <SelectItem value="CSV">CSV</SelectItem>
-                </SelectField>
-                {!isManualMode && (
-                    <>
-                        <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Optional" />
-                        <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
-                    </>
-                )}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
+                      <SelectItem value="Manual">Manual Forecast</SelectItem>
+                      <SelectItem value="Shopify" disabled>Shopify (Coming Soon)</SelectItem>
+                      <SelectItem value="CSV" disabled>CSV Import (Coming Soon)</SelectItem>
+                    </SelectField>
+                    {!isManualMode && (
+                        <>
+                            <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Required for data source" />
+                            <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
+                        </>
+                    )}
+                </div>
              </CollapsibleContent>
           </Collapsible>
         </div>

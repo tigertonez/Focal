@@ -37,11 +37,13 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
 // Aggregate sales weights from all products
 const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
     const { forecastMonths } = inputs.parameters;
+    const isManualMode = inputs.realtime.dataSource === 'Manual';
     const aggregatedWeights = Array(forecastMonths).fill(0);
     let totalValue = 0;
 
     inputs.products.forEach(p => {
-        const productValue = (p.plannedUnits || 0) * (p.sellPrice || 0);
+        // In manual mode, weight by potential revenue. In RT mode, this logic would change.
+        const productValue = isManualMode ? (p.plannedUnits || 0) * (p.sellPrice || 0) : (p.sellPrice || 0);
         const productWeights = getSalesWeights(forecastMonths, p.salesModel || 'launch');
         productWeights.forEach((weight, i) => {
             aggregatedWeights[i] += weight * productValue;
@@ -149,6 +151,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         });
 
         const { preOrder, forecastMonths } = inputs.parameters;
+        const isManualMode = inputs.realtime.dataSource === 'Manual';
         const salesStartMonth = preOrder ? 0 : 1;
         
         // --- REVENUE & UNITS CALCULATIONS ---
@@ -166,9 +169,27 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         }
 
         const productBreakdown = inputs.products.map(product => {
-            const soldUnits = (product.plannedUnits || 0) * ((product.sellThrough || 0) / 100);
-            const totalRevenue = soldUnits * (product.sellPrice || 0);
-            const salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
+            let soldUnits = 0;
+            let totalRevenue = 0;
+            let salesWeights: number[] = [];
+
+            if (isManualMode) {
+                // FORECAST LOGIC
+                if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
+                    throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting (plannedUnits, sellThrough, or salesModel).`);
+                }
+                soldUnits = (product.plannedUnits || 0) * ((product.sellThrough || 0) / 100);
+                totalRevenue = soldUnits * (product.sellPrice || 0);
+                salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
+            } else {
+                // REAL-TIME LOGIC (Future-proofed)
+                // In a real scenario, soldUnits and totalRevenue would be fetched from an API for the period.
+                // For now, we assume they are 0 as no real-time data source is connected.
+                soldUnits = 0; // Example: from Shopify API
+                totalRevenue = 0; // Example: from Shopify API
+                // Sales weights might be based on historicals if available
+                salesWeights = getSalesWeights(forecastMonths, 'even'); 
+            }
 
             for (let i = 0; i < forecastMonths; i++) {
                 const currentMonth = salesStartMonth + i;
@@ -230,7 +251,9 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         let totalVariableCost = 0;
 
         const variableCostBreakdown = inputs.products.map(product => {
-            const plannedUnits = product.plannedUnits || 0;
+            // NOTE: Planned units for cost calculations might differ from sold units for revenue.
+            // This assumes we produce based on the plan, even in RT mode.
+            const plannedUnits = product.plannedUnits || 0; 
             const unitCost = product.unitCost || 0;
             const totalProductionCost = plannedUnits * unitCost;
             const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);

@@ -59,7 +59,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
           <div className="space-y-2">
             <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
             <div className="relative">
-                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
+                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
             </div>
           </div>
@@ -92,7 +92,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 </Tooltip>
                 </TooltipProvider>
             </Label>
-            <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel}>
+            <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel || 'launch'}>
                 <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                 <SelectItem value="launch">Launch</SelectItem>
@@ -118,7 +118,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 </TooltipProvider>
             </Label>
             <div className="relative">
-                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 85" />
+                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough || ''} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 85" />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
             </div>
           </div>
