@@ -91,6 +91,9 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
             <TableHeader>
                 <TableRow>
                     <TableHead>Product</TableHead>
+                     <ExplanatoryHeader className="text-right" tooltip="The percentage of planned units you forecast to sell. This is a key driver of revenue and profitability.">
+                        Sell-Through
+                    </ExplanatoryHeader>
                     <ExplanatoryHeader className="text-right" tooltip="Revenue minus the direct costs of producing goods sold (COGS). It shows how profitably you sell your product before overhead.">
                         Gross Profit
                     </ExplanatoryHeader>
@@ -118,6 +121,7 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
                              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }}/>
                              {p.productName}
                         </TableCell>
+                        <TableCell className="text-right">{p.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
                         <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>

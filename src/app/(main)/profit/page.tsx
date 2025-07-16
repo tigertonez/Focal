@@ -33,7 +33,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
   const exceededAmount = achievedGrossProfit - potentialGrossProfit;
-  const exceededPercent = potentialGrossProfit > 0 ? (exceededAmount / potentialGrossProfit) * 100 : 0;
+  const netMarginTooltip = "The percentage of revenue that becomes profit after all costs and taxes are paid. Calculated as: (Total Net Profit / Total Revenue) * 100.";
 
 
   return (
@@ -45,21 +45,15 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           <KpiCard label="Total Gross Profit" value={formatCurrency(profitSummary.totalGrossProfit, currency)} icon={<TrendingUp />} />
           <KpiCard label="Total Operating Profit" value={formatCurrency(profitSummary.totalOperatingProfit, currency)} icon={<Briefcase />} />
           <KpiCard label="Total Net Profit" value={formatCurrency(profitSummary.totalNetProfit, currency)} icon={<Landmark />} />
-          <KpiCard label="Net Margin" value={`${(profitSummary.netMargin || 0).toFixed(1)}%`} icon={<Target />} />
+          <KpiCard label="Net Margin" value={`${(profitSummary.netMargin || 0).toFixed(1)}%`} icon={<Target />} help={netMarginTooltip} />
         </div>
         {potentialGrossProfit > 0 && (
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Achieved vs. Potential Gross Profit</span>
-              {exceededAmount > 0 ? (
-                <span className="font-medium text-green-600">
-                  Exceeded by {formatCurrency(exceededAmount, currency)} ({exceededPercent.toFixed(1)}%)
-                </span>
-              ) : (
-                <span className="font-medium text-foreground">
-                  {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
-                </span>
-              )}
+              <span className="font-medium text-foreground">
+                 Achieved: {formatCurrency(achievedGrossProfit, currency)} ({profitProgress.toFixed(1)}% of Potential)
+              </span>
             </div>
             <Progress value={profitProgress} className="h-2" />
           </div>
