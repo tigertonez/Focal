@@ -43,6 +43,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                         background: "hsl(var(--background))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "var(--radius)",
+                        fontSize: "12px",
                     }}
                     formatter={(value: number) => [formatCurrency(value, currency), "Amount"]}
                 />
@@ -55,8 +56,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     outerRadius={100}
                     innerRadius={0}
                     dataKey="value"
-                    stroke="hsl(var(--background))"
-                    strokeWidth={4}
+                    strokeWidth={0}
                 >
                     {data.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={chartColorVars[index % chartColorVars.length]} />
