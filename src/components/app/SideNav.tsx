@@ -58,40 +58,16 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
 
 
 const DesktopNav = () => {
-    const { setIsCopilotOpen } = useForecast();
-
     return (
-        <aside className="hidden md:flex flex-col justify-between items-center p-3 bg-card border-r h-screen sticky top-0">
-            <div className="flex flex-col items-center space-y-2">
-                <Link href="/" className="p-3 mb-4">
-                     <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
-                     </div>
-                </Link>
-                <nav className="flex flex-col items-center space-y-2">
-                    {navItems.map(item => <NavLink key={item.href} {...item} />)}
-                </nav>
-            </div>
-            <div className="mt-4">
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="accent"
-                                size="icon"
-                                onClick={() => setIsCopilotOpen(true)}
-                                className="h-12 w-12 rounded-full"
-                            >
-                                <Bot className="h-6 w-6" />
-                                <span className="sr-only">Ask AI</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Ask AI for Help</p>
-                        </TooltipContent>
-                    </Tooltip>
-                 </TooltipProvider>
-            </div>
+        <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
+            <Link href="/" className="p-3 mb-4">
+                 <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                 </div>
+            </Link>
+            <nav className="flex flex-col items-center space-y-2">
+                {navItems.map(item => <NavLink key={item.href} {...item} />)}
+            </nav>
         </aside>
     );
 };
@@ -122,16 +98,6 @@ const MobileNav = () => {
                                 {item.label}
                             </Link>
                         ))}
-                         <div className="pt-4 mt-auto border-t">
-                            <Button
-                                variant="accent"
-                                onClick={() => setIsCopilotOpen(true)}
-                                className="w-full justify-start mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-accent-foreground hover:text-accent-foreground/90"
-                            >
-                                <Bot className="h-5 w-5" />
-                                Ask AI
-                            </Button>
-                        </div>
                     </nav>
                 </SheetContent>
             </Sheet>

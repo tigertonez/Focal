@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bot, User, Loader2, ArrowUp } from 'lucide-react';
+import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
@@ -15,12 +15,33 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { cn } from '@/lib/utils';
+
 
 interface Message {
   role: 'user' | 'bot';
   text: string;
 }
+
+const CollapsedBar = ({ onOpen }: { onOpen: () => void }) => (
+    <div 
+        className="fixed bottom-4 left-4 md:left-[84px] w-[calc(100%-32px)] md:w-1/2 max-w-lg h-14 bg-card border rounded-xl shadow-lg flex items-center p-3 gap-3 cursor-pointer hover:shadow-xl transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-5"
+        onClick={onOpen}
+    >
+        <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-primary text-primary-foreground">
+                <Bot size={20} />
+            </AvatarFallback>
+        </Avatar>
+        <p className="text-sm text-muted-foreground">
+           Hi — I’m your Financial Co-Pilot. Ask me anything about these numbers.
+        </p>
+    </div>
+);
+
 
 export function FinancialCopilot() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -33,7 +54,6 @@ export function FinancialCopilot() {
 
   useEffect(() => {
     if (proactiveAnalysis && isCopilotOpen) {
-        // Clear previous messages when a new proactive analysis comes in
         setMessages([]); 
         handleSendMessage(proactiveAnalysis, true);
         setProactiveAnalysis(null);
@@ -65,14 +85,16 @@ export function FinancialCopilot() {
     setIsLoading(true);
     setError(null);
     
-    // Convert our simplified Message state to the format the API expects
     const apiHistory = newMessages.map(msg => ({
       role: msg.role === 'bot' ? 'model' : 'user',
       content: [{ text: msg.text }]
     }));
 
     try {
-      const canvas = await html2canvas(document.body, { logging: false, useCORS: true, ignoreElements: (el) => el.id === 'financial-copilot-container' });
+      const mainContent = document.querySelector('main');
+      if (!mainContent) throw new Error("Main content area not found for screenshot.");
+      
+      const canvas = await html2canvas(mainContent, { logging: false, useCORS: true });
       const screenshotDataUri = canvas.toDataURL('image/png');
 
       const response = await fetch('/api/ask', {
@@ -110,16 +132,25 @@ export function FinancialCopilot() {
   };
   
   if (!isCopilotOpen) {
-    return null;
+    return <CollapsedBar onOpen={() => setIsCopilotOpen(true)} />;
   }
   
   return (
     <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
-        <SheetContent variant="ghost" className="w-[400px] sm:w-[540px] flex flex-col p-0" id="financial-copilot-container">
-             <SheetHeader className="p-4 border-b">
+        <SheetContent 
+            side="bottom" 
+            className="h-[60vh] md:h-[70vh] w-full md:w-1/2 max-w-2xl mx-auto rounded-t-2xl border-t-4 border-primary p-0 flex flex-col"
+        >
+             <SheetHeader className="p-4 border-b flex-row items-center justify-between">
                 <SheetTitle className="flex items-center gap-2">
                     <Bot size={20} /> Financial Copilot
                 </SheetTitle>
+                 <SheetClose asChild>
+                    <Button variant="ghost" size="icon">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                    </Button>
+                 </SheetClose>
              </SheetHeader>
              <ScrollArea className="flex-1" ref={scrollAreaRef}>
                   <div className="space-y-4 p-4">
@@ -127,7 +158,7 @@ export function FinancialCopilot() {
                         <Card className="bg-muted border-dashed h-full">
                             <CardHeader>
                                 <CardTitle className="text-lg">Welcome!</CardTitle>
-                                <CardDescription>I'm your Financial Copilot. Ask me anything about your forecast or for UI improvements.</CardDescription>
+                                <CardDescription>Ask me anything about your forecast or for UI improvements.</CardDescription>
                             </CardHeader>
                             <CardContent className="text-sm text-muted-foreground">
                                 <p>For example, you can ask:</p>
