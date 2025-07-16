@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis, Tooltip } from "recharts"
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -28,15 +28,17 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
     const fixedCosts = grossProfit - operatingProfit;
     const taxes = operatingProfit - netProfit;
 
+    // The data is structured for a stacked bar chart to create the waterfall effect.
+    // 'range' is the invisible base of the bar, and 'value' is the visible part.
     return [
-      { name: "Revenue", value: totalRevenue, range: [0, totalRevenue], color: "hsl(var(--primary))" },
-      { name: "COGS", value: cogs, range: [grossProfit, totalRevenue], color: "hsl(var(--destructive))" },
-      { name: "Gross Profit", value: grossProfit, range: [0, grossProfit], color: "hsl(var(--muted-foreground))" },
-      { name: "Fixed Costs", value: fixedCosts, range: [operatingProfit, grossProfit], color: "hsl(var(--destructive))" },
-      { name: "Op. Profit", value: operatingProfit, range: [0, operatingProfit], color: "hsl(var(--muted-foreground))" },
-      { name: "Taxes", value: taxes, range: [netProfit, operatingProfit], color: "hsl(var(--destructive))" },
-      { name: "Net Profit", value: netProfit, range: [0, netProfit], color: "hsl(var(--accent))" },
-    ].filter(d => d.value !== 0); // Filter out zero-value items like taxes if not applicable
+      { name: "Revenue", value: totalRevenue, range: [0, totalRevenue], fill: "hsl(var(--primary))" },
+      { name: "COGS", value: -cogs, range: [grossProfit, totalRevenue], fill: "hsl(var(--destructive))" },
+      { name: "Gross Profit", value: grossProfit, range: [0, grossProfit], fill: "hsl(var(--muted-foreground))" },
+      { name: "Fixed Costs", value: -fixedCosts, range: [operatingProfit, grossProfit], fill: "hsl(var(--destructive))" },
+      { name: "Op. Profit", value: operatingProfit, range: [0, operatingProfit], fill: "hsl(var(--muted-foreground))" },
+      { name: "Taxes", value: -taxes, range: [netProfit, operatingProfit], fill: "hsl(var(--destructive))" },
+      { name: "Net Profit", value: netProfit, range: [0, netProfit], fill: "hsl(var(--accent))" },
+    ].filter(d => d.value !== 0);
   
   }, [data]);
   
@@ -46,58 +48,63 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
   
   const valueFormatter = (value: number) => {
     const currencySymbol = (currency === 'EUR' ? '€' : '$');
-    if (Math.abs(value) >= 1000) {
-      return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
+    const absValue = Math.abs(value);
+    if (absValue >= 1000) {
+      return `${value < 0 ? '-' : ''}${currencySymbol}${(absValue / 1000).toFixed(0)}k`;
     }
-    return formatCurrency(Number(value), currency).replace(/\.00$/, '');
+    return formatCurrency(value, currency).replace(/\.00$/, '');
   };
 
   return (
     <ChartContainer config={{}} className="h-[250px] w-full">
-      <BarChart
-        accessibilityLayer
-        data={chartData}
-        layout="vertical"
-        margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
-      >
-        <CartesianGrid horizontal={false} />
-        <YAxis
-          dataKey="name"
-          type="category"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          className="text-xs"
-        />
-        <XAxis type="number" hide />
-        <Tooltip
-            cursor={false}
-            content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                    const d = payload[0].payload;
-                    return (
-                        <div className="grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-                            <p className="font-semibold">{d.name}</p>
-                            <p>{formatCurrency(d.value, currency)}</p>
-                        </div>
-                    );
-                }
-                return null;
-            }}
-        />
-        <Bar dataKey="range" stackId="a" isAnimationActive={false}>
-            {chartData.map((item, index) => (
-                <LabelList
-                    key={index}
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+        >
+            <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+            <YAxis
+            dataKey="name"
+            type="category"
+            tickLine={false}
+            tickMargin={5}
+            axisLine={false}
+            className="text-xs"
+            />
+            <XAxis type="number" hide />
+            <Tooltip
+                cursor={{ fill: 'hsl(var(--muted) / 0.5)' }}
+                content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        return (
+                            <div className="grid min-w-[8rem] items-start gap-1.5 rounded-lg border bg-background px-2.5 py-1.5 text-xs shadow-xl">
+                                <p className="font-semibold">{d.name}</p>
+                                <p className="text-foreground">{formatCurrency(d.value, currency)}</p>
+                            </div>
+                        );
+                    }
+                    return null;
+                }}
+            />
+            
+            {/* Invisible bar to create the floating effect */}
+            <Bar dataKey={(d) => d.range[0]} stackId="a" fill="transparent" isAnimationActive={false} />
+
+            {/* Visible bar with the actual value */}
+            <Bar dataKey={(d) => d.range[1] - d.range[0]} stackId="a" isAnimationActive={false}>
+                 <LabelList
                     dataKey="value"
                     position="right"
                     offset={8}
                     className="fill-foreground text-xs font-semibold"
-                    formatter={(value: number) => value > 0 ? valueFormatter(value) : ''}
+                    formatter={(value: number) => valueFormatter(value)}
                 />
-            ))}
-        </Bar>
-      </BarChart>
+            </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </ChartContainer>
   );
 }
