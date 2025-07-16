@@ -11,7 +11,6 @@ import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { ProfitToCashBridge } from '@/components/app/summary/ProfitToCashBridge';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 import { SummaryKpiCards } from '@/components/app/summary/SummaryKpiCards';
 import { BusinessHealthScore } from '@/components/app/summary/BusinessHealthScore';
@@ -45,9 +44,10 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       <SectionHeader title="Financial Summary" description="A high-level overview of your financial forecast." />
       
       <div className="space-y-8">
-         <SummaryKpiCards data={data} inputs={inputs} />
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SummaryKpiCards data={data} inputs={inputs} />
+         </div>
          <BusinessHealthScore healthData={data.businessHealth} />
-         <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
       </div>
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
