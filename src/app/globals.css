@@ -30,13 +30,13 @@
     --fs-label: 12px;
     --fs-value: 24px;
     
-    /* Chart Colors (Professional & Distinguishable) */
-    --chart-1: 220 80% 60%;  /* Main Blue */
-    --chart-2: 180 40% 50%;  /* Muted Teal */
-    --chart-3: 260 50% 70%;  /* Soft Purple */
-    --chart-4: 30 80% 65%;   /* Muted Orange */
-    --chart-5: 210 30% 60%;  /* Slate Blue */
-    --chart-6: 350 75% 70%;  /* Soft Red/Pink */
+    /* Chart Colors (Vibrant & Distinguishable) */
+    --chart-1: 220 80% 60%;  /* Strong Blue */
+    --chart-2: 25 85% 60%;   /* Vibrant Orange */
+    --chart-3: 340 80% 70%;  /* Bright Pink */
+    --chart-4: 140 70% 50%;  /* Clear Green */
+    --chart-5: 280 75% 65%;  /* Rich Violet */
+    --chart-6: 190 80% 55%;  /* Bright Cyan */
   }
  
   .dark {
@@ -60,13 +60,13 @@
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 60%;
     
-    /* Chart Colors (Professional & Distinguishable) */
-    --chart-1: 220 80% 60%;  /* Main Blue */
-    --chart-2: 180 40% 50%;  /* Muted Teal */
-    --chart-3: 260 50% 70%;  /* Soft Purple */
-    --chart-4: 30 80% 65%;   /* Muted Orange */
-    --chart-5: 210 30% 60%;  /* Slate Blue */
-    --chart-6: 350 75% 70%;  /* Soft Red/Pink */
+    /* Chart Colors (Vibrant & Distinguishable) */
+    --chart-1: 220 80% 60%;  /* Strong Blue */
+    --chart-2: 25 85% 60%;   /* Vibrant Orange */
+    --chart-3: 340 80% 70%;  /* Bright Pink */
+    --chart-4: 140 70% 50%;  /* Clear Green */
+    --chart-5: 280 75% 65%;  /* Rich Violet */
+    --chart-6: 190 80% 55%;  /* Bright Cyan */
   }
 }
 
