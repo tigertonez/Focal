@@ -148,7 +148,7 @@ export const MonthlyCashFlowSchema = z.object({
   month: z.number(),
   netCashFlow: z.number(),
   cumulativeCash: z.number(),
-}).catchall(z.number().or(z.string()));
+});
 export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
 
