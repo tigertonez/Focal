@@ -42,7 +42,7 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-center">Month</TableHead>
+                            <TableHead className="text-center w-[80px]">Month</TableHead>
                             <TableHead className="text-right">Cash In</TableHead>
                             <TableHead className="text-right">Cash Out</TableHead>
                             <TableHead className="text-right">Net Flow</TableHead>
