@@ -51,8 +51,10 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     // Using a faster model for quicker insights
     const { output } = await ai.generate({
         model: googleAI.model('gemini-1.5-flash-latest'),
-        prompt: prompt.prompt!,
-        input: input,
+        prompt: {
+            text: prompt.prompt!, // Use the text from the defined prompt
+            input: input,
+        },
         output: {
             schema: AnalyzeProfitabilityOutputSchema
         }
