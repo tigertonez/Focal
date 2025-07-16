@@ -4,9 +4,7 @@
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import {
-  ChartConfig,
   ChartContainer,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
@@ -38,7 +36,7 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
       { name: "Op. Profit", value: operatingProfit, range: [0, operatingProfit], fill: "hsl(var(--muted-foreground))" },
       { name: "Taxes", value: -taxes, range: [netProfit, operatingProfit], fill: "hsl(var(--destructive))" },
       { name: "Net Profit", value: netProfit, range: [0, netProfit], fill: "hsl(var(--accent))" },
-    ].filter(d => d.value !== 0);
+    ].filter(d => d.value !== 0 && !isNaN(d.value));
   
   }, [data]);
   
@@ -49,6 +47,9 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
   const valueFormatter = (value: number) => {
     const currencySymbol = (currency === 'EUR' ? '€' : '$');
     const absValue = Math.abs(value);
+    if (absValue >= 1000000) {
+        return `${value < 0 ? '-' : ''}${currencySymbol}${(absValue / 1000000).toFixed(1)}m`;
+    }
     if (absValue >= 1000) {
       return `${value < 0 ? '-' : ''}${currencySymbol}${(absValue / 1000).toFixed(0)}k`;
     }
@@ -62,16 +63,17 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
             accessibilityLayer
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: 40, left: 10, bottom: 5 }}
         >
             <CartesianGrid horizontal={false} strokeDasharray="3 3" />
             <YAxis
-            dataKey="name"
-            type="category"
-            tickLine={false}
-            tickMargin={5}
-            axisLine={false}
-            className="text-xs"
+              dataKey="name"
+              type="category"
+              tickLine={false}
+              tickMargin={5}
+              axisLine={false}
+              className="text-xs"
+              width={70}
             />
             <XAxis type="number" hide />
             <Tooltip
@@ -90,18 +92,19 @@ export function ProfitWaterfallChart({ data, currency }: ProfitWaterfallChartPro
                 }}
             />
             
-            {/* Invisible bar to create the floating effect */}
-            <Bar dataKey={(d) => d.range[0]} stackId="a" fill="transparent" isAnimationActive={false} />
+            <Bar dataKey="range[0]" stackId="a" fill="transparent" isAnimationActive={false} />
 
-            {/* Visible bar with the actual value */}
             <Bar dataKey={(d) => d.range[1] - d.range[0]} stackId="a" isAnimationActive={false}>
-                 <LabelList
-                    dataKey="value"
-                    position="right"
-                    offset={8}
-                    className="fill-foreground text-xs font-semibold"
-                    formatter={(value: number) => valueFormatter(value)}
-                />
+                 {chartData.map((entry, index) => (
+                    <LabelList
+                        key={`label-${index}`}
+                        dataKey="value"
+                        position="right"
+                        offset={8}
+                        className="fill-foreground text-xs font-semibold"
+                        formatter={(value: number, i) => i === index ? valueFormatter(value) : null}
+                    />
+                ))}
             </Bar>
         </BarChart>
       </ResponsiveContainer>
