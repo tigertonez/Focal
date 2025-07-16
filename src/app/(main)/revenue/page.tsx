@@ -15,6 +15,7 @@ import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { RevenuePieChart } from '@/components/app/revenue/charts/RevenuePieChart';
+import { Progress } from '@/components/ui/progress';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
@@ -27,6 +28,10 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
         // The key in monthlyRevenue data is the raw product name.
         productChartConfig[p.productName] = { label: p.productName };
     });
+    
+    // Calculate revenue potential for progress bar
+    const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits * p.sellPrice), 0);
+    const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -34,12 +39,26 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
 
             <section>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KpiCard label="Total Revenue" value={formatCurrency(revenueSummary.totalRevenue, currency)} />
+                    <KpiCard 
+                        label="Total Revenue" 
+                        value={formatCurrency(revenueSummary.totalRevenue, currency)} 
+                        help="Trend vs. previous period will be shown here when historical data is available."
+                    />
                     <KpiCard label="Total Units Sold" value={revenueSummary.totalSoldUnits.toLocaleString()} icon={<Users />} />
                     <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} />
-                    {/* The sell-through can vary per product, so we show an average or from the first product as an example */}
                     <KpiCard label="Avg. Sell-Through" value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} icon={<Target />} />
                 </div>
+                 {potentialRevenue > 0 && (
+                    <div className="mt-4 space-y-2">
+                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                            <span>Forecasted vs. Potential Revenue</span>
+                             <span className="font-medium text-foreground">
+                                {formatCurrency(revenueSummary.totalRevenue, currency)} of {formatCurrency(potentialRevenue, currency)}
+                            </span>
+                        </div>
+                        <Progress value={revenueProgress} />
+                    </div>
+                )}
             </section>
             
             <section className="grid md:grid-cols-5 gap-8">
@@ -118,6 +137,9 @@ export default function RevenuePage() {
                 <div className="text-center text-muted-foreground mt-16">
                     <p>No revenue data to display.</p>
                     <p className="text-sm">Complete the product information on the Inputs page to see your revenue forecast.</p>
+                     <Button onClick={() => useRouter().push('/costs')} className="mt-4">
+                        Continue to Costs <ArrowRight className="ml-2" />
+                    </Button>
                 </div>
             </div>
         )
