@@ -12,10 +12,10 @@ export const chartColorVars = [
 
 export const productColorVars = [
     "hsl(217, 91%, 60%)", // Primary Blue
-    "hsl(217, 80%, 75%)", // Lighter Blue
-    "hsl(217, 95%, 45%)", // Darker Blue
-    "hsl(210, 90%, 55%)", // Sky Blue
-    "hsl(225, 85%, 65%)", // Indigo Blue
+    "hsl(217, 50%, 70%)", // Muted Lighter Blue
+    "hsl(217, 40%, 50%)", // Muted Darker Blue
+    "hsl(210, 60%, 65%)", // Muted Sky Blue
+    "hsl(225, 50%, 60%)", // Muted Indigo
 ];
 
 export const semanticColorMap: Record<string, string> = {

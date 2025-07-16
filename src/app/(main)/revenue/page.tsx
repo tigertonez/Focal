@@ -9,7 +9,7 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
-import type { EngineOutput, EngineInput } from '@/lib/types';
+import type { EngineOutput, EngineInput, Product } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
         productChartConfig[p.productName] = { label: p.productName };
     });
     
-    const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits * p.sellPrice), 0);
+    const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
 
     return (
@@ -108,12 +108,14 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                 <TableRow>
                                     <TableHead>Product</TableHead>
                                     <TableHead className="text-right">Units Sold</TableHead>
+                                    <TableHead className="text-right">Sell-Through</TableHead>
                                     <TableHead className="text-right">Total Revenue</TableHead>
                                     <TableHead className="text-right">Share</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {revenueSummary.productBreakdown.map((product) => {
+                                    const inputProduct = inputs.products.find(p => p.productName === product.name);
                                     const share = revenueSummary.totalRevenue > 0
                                         ? (product.totalRevenue / revenueSummary.totalRevenue) * 100
                                         : 0;
@@ -121,6 +123,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
+                                            <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(1) ?? 'N/A'}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                             <TableCell className="text-right">{share.toFixed(1)}%</TableCell>
                                         </TableRow>
