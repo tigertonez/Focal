@@ -13,14 +13,38 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber } from "@/lib/utils"
 
-const chartColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--chart-6))",
+const chartColorVars = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
 ];
+
+// Semantic color mapping rule
+const colorMap: Record<string, string> = {
+    "Salaries": "hsl(var(--chart-1))", // Blue
+    "Marketing": "hsl(var(--chart-4))", // Green
+    "Deposits": "hsl(var(--chart-2))", // Orange
+    "Final Payments": "hsl(var(--chart-5))", // Violet
+    "Legal": "hsl(var(--chart-3))", // Pink
+    "Software": "hsl(var(--chart-6))", // Cyan
+    "Buffer": "hsl(var(--muted-foreground))", // Gray for buffer
+};
+
+const getColorForKey = (key: string) => {
+    const lowerKey = key.toLowerCase();
+    for (const mapKey in colorMap) {
+        if (lowerKey.includes(mapKey.toLowerCase())) {
+            return colorMap[mapKey];
+        }
+    }
+    // Fallback for unknown keys
+    const index = Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return `hsl(${chartColorVars[index % chartColorVars.length]})`;
+};
+
 
 interface CostTimelineChartProps {
   data: any[];
@@ -37,11 +61,12 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
     if (data && data.length > 0) {
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
-      allKeys.forEach((key, index) => {
+      
+      allKeys.forEach((key) => {
         const override = configOverrides ? configOverrides[key] : null;
         newConfig[key] = {
           label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-          color: chartColors[index % chartColors.length],
+          color: getColorForKey(key),
         };
       });
       setChartConfig(newConfig);
@@ -111,7 +136,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
             value: chartConfig[key]?.label,
             color: chartConfig[key]?.color,
             dataKey: key
-        })).reverse()} />} />
+        }))} />} />
         
         {costKeys.map((key, index) => (
            <Bar
