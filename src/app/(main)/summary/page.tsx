@@ -44,7 +44,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       <SectionHeader title="Financial Summary" description="A high-level overview of your financial forecast." />
       
       <div className="space-y-8">
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <SummaryKpiCards data={data} inputs={inputs} />
          </div>
          <BusinessHealthScore healthData={data.businessHealth} />
