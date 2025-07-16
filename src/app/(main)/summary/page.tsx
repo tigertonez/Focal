@@ -260,7 +260,7 @@ const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon 
             {icon}
             <span className={cn(isSubtle ? 'text-muted-foreground' : 'font-medium')}>{label}</span>
         </div>
-        <span className={cn(colorClass, 'font-mono font-semibold')}>{formatCurrency(value, currency)}</span>
+        <span className={cn(colorClass, 'font-headline font-bold')}>{formatCurrency(value, currency)}</span>
     </div>
 );
 
