@@ -1,14 +1,20 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import type { EngineOutput, EngineInput } from '@/lib/types';
+import { getFinancials } from '@/lib/get-financials';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
+import { ProfitToCashBridge } from '@/components/app/summary/ProfitToCashBridge';
+import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 
-function SummaryPageContent() {
+function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
 
   const handleDownload = () => {
@@ -20,6 +26,7 @@ function SummaryPageContent() {
       windowWidth: document.documentElement.scrollWidth,
       windowHeight: document.documentElement.scrollHeight,
       useCORS: true,
+      logging: false,
     }).then(canvas => {
       const link = document.createElement('a');
       link.download = 'financial-summary.png';
@@ -33,10 +40,13 @@ function SummaryPageContent() {
 
   return (
     <div className="p-4 md:p-8">
-      <SectionHeader title="Summary" description="A high-level overview of your financial forecast." />
-      <div className="text-center text-muted-foreground">
-        <p>A summary of your forecast will be displayed here.</p>
+      <SectionHeader title="Financial Summary" description="A high-level overview of your financial forecast." />
+      
+      <div className="space-y-8">
+         <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
+         {/* More summary components can be added here in the future */}
       </div>
+
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
         <Button variant="outline" onClick={() => router.push('/inputs')}>
           <ArrowLeft className="mr-2" /> Back to Inputs
@@ -50,21 +60,41 @@ function SummaryPageContent() {
 }
 
 export default function SummaryPage() {
-  // In the future, this page will be converted to a Server Component
-  // that fetches data on the server.
-  const summaryData = null;
+  const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
+    data: null,
+    inputs: null,
+    error: null,
+    isLoading: true,
+  });
 
-  if (!summaryData) {
-    // For now, we show the content with a placeholder.
-    return <SummaryPageContent />;
+  useEffect(() => {
+    const result = getFinancials();
+    setFinancials({ ...result, isLoading: false });
+  }, []);
+
+  const { data, inputs, error, isLoading } = financials;
+
+  if (isLoading) {
+    return <SummaryPageSkeleton />;
   }
-  
-  return (
-    <div className="p-4 md:p-8">
-      <SectionHeader title="Summary" description="A high-level overview of your financial forecast." />
-      <div className="text-center text-muted-foreground">
-        <p>A summary of your forecast will be displayed here.</p>
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-8">
+        <Alert variant="destructive">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Data Error</AlertTitle>
+          <AlertDescription>
+            {error} Please generate a new report from the Inputs page.
+          </AlertDescription>
+        </Alert>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!data || !inputs) {
+    return <SummaryPageSkeleton />;
+  }
+
+  return <SummaryPageContent data={data} inputs={inputs} />;
 }
