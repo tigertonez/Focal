@@ -136,4 +136,15 @@ export default function SummaryPage() {
           <AlertTitle>Data Error</AlertTitle>
           <AlertDescription>
             {error} Please generate a new report from the Inputs page.
-          </Aler
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!data || !inputs) {
+    return <SummaryPageSkeleton />;
+  }
+
+  return <SummaryPageContent data={data} inputs={inputs} />;
+}
