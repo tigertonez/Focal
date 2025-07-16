@@ -16,7 +16,7 @@ import {
 import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { BadgeCheck, BadgeAlert, Lightbulb, Target } from 'lucide-react';
+import { BadgeCheck, Lightbulb, Target, TrendingUp } from 'lucide-react';
 
 interface InsightSectionProps {
   title: string;
@@ -64,6 +64,29 @@ const ProfitInsightsLoader: React.FC = () => (
     </CardContent>
   </Card>
 );
+
+const renderContent = (content: string | string[]) => {
+    if (Array.isArray(content)) {
+        return (
+            <ul className="list-disc list-outside space-y-1 pl-4">
+                {content.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+        )
+    }
+    // Handle cases where the AI might return a single string with bullets
+    if (typeof content === 'string' && content.includes('\n-')) {
+        return (
+             <ul className="list-disc list-outside space-y-1 pl-4">
+                {content.split('\n').map((item, index) => {
+                    const cleanItem = item.replace(/^- /, '');
+                    return cleanItem ? <li key={index}>{cleanItem}</li> : null;
+                })}
+            </ul>
+        )
+    }
+    return <p>{content}</p>
+}
+
 
 export function ProfitInsights({
   data,
@@ -127,28 +150,24 @@ export function ProfitInsights({
       <CardHeader>
         <CardTitle>AI-Powered Insights</CardTitle>
         <CardDescription>
-          Your profitability report at a glance.
+          Your e-commerce growth report.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <InsightSection title="Key Facts" icon={<Target className="text-primary" />}>
-          <ul className="list-disc list-outside space-y-1 pl-4">
-            {insights.keyFacts.map((fact, i) => (
-              <li key={i}>{fact}</li>
-            ))}
-          </ul>
+          {renderContent(insights.keyFacts)}
         </InsightSection>
 
-        <InsightSection title="Strengths" icon={<BadgeCheck className="text-green-500" />}>
-          <p>{insights.strengths}</p>
+        <InsightSection title="What's Working" icon={<BadgeCheck className="text-green-500" />}>
+          {renderContent(insights.strengths)}
         </InsightSection>
 
-        <InsightSection title="Weaknesses" icon={<BadgeAlert className="text-amber-500" />}>
-          <p>{insights.weaknesses}</p>
+        <InsightSection title="Opportunities for Growth" icon={<TrendingUp className="text-amber-500" />}>
+          {renderContent(insights.weaknesses)}
         </InsightSection>
 
-        <InsightSection title="Recommendations" icon={<Lightbulb className="text-blue-500" />}>
-          <p>{insights.recommendations}</p>
+        <InsightSection title="Top Priorities" icon={<Lightbulb className="text-blue-500" />}>
+          {renderContent(insights.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>

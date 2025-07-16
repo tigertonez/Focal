@@ -159,20 +159,10 @@ export type AnalyzeProfitabilityInput = z.infer<
 >;
 
 export const AnalyzeProfitabilityOutputSchema = z.object({
-  keyFacts: z
-    .array(z.string())
-    .describe('A list of the top 3 most important facts from the data.'),
-  strengths: z
-    .string()
-    .describe('A brief paragraph on the key strengths found in the data.'),
-  weaknesses: z
-    .string()
-    .describe('A brief paragraph on the key weaknesses or risks found.'),
-  recommendations: z
-    .string()
-    .describe(
-      'A brief paragraph with actionable strategic recommendations to improve profitability.'
-    ),
+  keyFacts: z.union([z.array(z.string()), z.string()]),
+  strengths: z.string(),
+  weaknesses: z.string(),
+  recommendations: z.string(),
 });
 export type AnalyzeProfitabilityOutput = z.infer<
   typeof AnalyzeProfitabilityOutputSchema

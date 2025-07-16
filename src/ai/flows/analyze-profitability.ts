@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow to analyze profitability data and generate insights.
@@ -23,29 +24,19 @@ const prompt = ai.definePrompt({
   name: 'profitabilityInsightPrompt',
   input: { schema: AnalyzeProfitabilityInputSchema },
   output: { schema: AnalyzeProfitabilityOutputSchema },
-  prompt: `You are an expert financial analyst providing insights for a startup founder. Your tone is concise, encouraging, and clear. The currency is {{{currency}}}.
+  prompt: `You are an expert e-commerce growth consultant. Your tone is direct, data-driven, and focused on actionable advice for a shop owner. The currency is {{{currency}}}.
 
-Analyze the following financial data:
-Revenue Summary:
-\`\`\`json
-{{{json revenueSummary}}}
-\`\`\`
+Analyze the following financial forecast:
+- Revenue Summary: {{{json revenueSummary}}}
+- Cost Summary: {{{json costSummary}}}
+- Profit Summary: {{{json profitSummary}}}
 
-Cost Summary:
-\`\`\`json
-{{{json costSummary}}}
-\`\`\`
+Provide the following analysis in concise, scannable bullet points.
 
-Profit Summary:
-\`\`\`json
-{{{json profitSummary}}}
-\`\`\`
-
-Based on this data, provide the following insights:
-1.  **Key Facts**: Generate a list of the top 3 most important, attention-grabbing facts. These should be single, impactful sentences.
-2.  **Strengths**: Write a brief paragraph (2-3 sentences) highlighting the strongest aspects of the financial forecast.
-3.  **Weaknesses**: Write a brief paragraph (2-3 sentences) identifying the primary risks or areas for improvement.
-4.  **Recommendations**: Write a brief paragraph (2-3 sentences) offering actionable strategic advice to improve profitability.
+- **Key Facts**: List the top 3 most critical numbers a shop owner must know from this forecast.
+- **What's Working**: Identify the biggest strengths and positive drivers in this plan.
+- **Opportunities for Growth**: Pinpoint the 1-2 biggest weaknesses or areas that are holding back profit.
+- **Top Priorities**: Give 2-3 highly specific, actionable recommendations to improve profitability based directly on the numbers provided.
 `,
 });
 
@@ -57,6 +48,20 @@ const analyzeProfitabilityFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    
+    if (!output) {
+      throw new Error("The AI model did not return a valid response.");
+    }
+    
+    // Ensure the output is in the expected format (lists or simple strings)
+    // This is a simplified transformation for demonstration
+    const formattedOutput: AnalyzeProfitabilityOutput = {
+      keyFacts: Array.isArray(output.keyFacts) ? output.keyFacts : [output.keyFacts],
+      strengths: output.strengths,
+      weaknesses: output.weaknesses,
+      recommendations: output.recommendations,
+    };
+
+    return formattedOutput;
   }
 );
