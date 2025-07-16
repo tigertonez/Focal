@@ -20,12 +20,15 @@ import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
-  const { profitSummary, monthlyProfit, revenueSummary } = data;
+  const { profitSummary, revenueSummary } = data;
   const currency = inputs.parameters.currency;
 
   const potentialGrossProfit = revenueSummary.totalRevenue - data.costSummary.totalVariable;
   const profitProgress = potentialGrossProfit > 0 ? (profitSummary.totalGrossProfit / potentialGrossProfit) * 100 : 0;
   
+  const exceededAmount = profitSummary.totalGrossProfit - potentialGrossProfit;
+  const exceededPercent = potentialGrossProfit > 0 ? (exceededAmount / potentialGrossProfit) * 100 : 0;
+
   return (
     <div className="p-4 md:p-8 space-y-8">
       <SectionHeader title="Profit Analysis" description="Analysis of your gross, operating, and net profit." />
@@ -41,9 +44,15 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Achieved vs. Potential Gross Profit</span>
-              <span className="font-medium text-foreground">
-                {formatCurrency(profitSummary.totalGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
-              </span>
+              {exceededAmount > 0 ? (
+                <span className="font-medium text-green-600">
+                  Exceeded by {formatCurrency(exceededAmount, currency)} ({exceededPercent.toFixed(1)}%)
+                </span>
+              ) : (
+                <span className="font-medium text-foreground">
+                  {formatCurrency(profitSummary.totalGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
+                </span>
+              )}
             </div>
             <Progress value={profitProgress} className="h-2" />
           </div>

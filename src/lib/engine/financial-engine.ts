@@ -79,7 +79,8 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
             
             case 'Allocated Monthly':
                 if (forecastMonths > 0) {
-                    const monthlyAmount = cost.amount / forecastMonths;
+                    // If costType is monthly, use the amount directly. Otherwise, divide total by duration.
+                    const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / forecastMonths;
                     for (let i = 0; i < forecastMonths; i++) {
                         const currentMonth = startMonth + i;
                         const timelineMonth = timeline.find(t => t.month === currentMonth);
@@ -266,11 +267,9 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         }
         
         const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => {
-            // The cost 'amount' for monthly costs is already per month, so multiply by forecast duration
             if (cost.costType === 'Monthly Cost') {
                 return sum + (cost.amount * forecastMonths);
             }
-            // For 'Total for Period' costs, the amount is the total, so just add it.
             return sum + cost.amount;
         }, 0);
         
@@ -322,12 +321,18 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 .reduce((sum, key) => sum + (currentCostsData[key] || 0), 0);
             
             const currentUnitsSoldData = monthlyUnitsSold.find(u => u.month === month) || { month };
-            const totalMonthlyUnitsSold = Object.keys(currentUnitsSoldData)
-                .filter(k => k !== 'month')
-                .reduce((sum, key) => sum + (currentUnitsSoldData[key] || 0), 0);
-                
-            const avgVariableCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
-            const monthlyCOGS = totalMonthlyUnitsSold * avgVariableCostPerUnit;
+
+            // ** CORRECTED COGS CALCULATION **
+            // Calculate COGS for the month based on the specific products sold in that month
+            const monthlyCOGS = Object.keys(currentUnitsSoldData)
+                .filter(key => key !== 'month')
+                .reduce((sum, productName) => {
+                    const productInfo = inputs.products.find(p => p.productName === productName);
+                    const unitsSold = currentUnitsSoldData[productName] || 0;
+                    const unitCost = productInfo?.unitCost || 0;
+                    return sum + (unitsSold * unitCost);
+                }, 0);
+
 
             const grossProfit = totalMonthlyRevenue - monthlyCOGS;
             const operatingProfit = grossProfit - totalMonthlyFixedCosts;
