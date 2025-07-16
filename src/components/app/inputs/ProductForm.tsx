@@ -67,8 +67,8 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         <div className="space-y-2">
           <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
            <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
-                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pl-8" placeholder="e.g., 15.50" />
+                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 15.50" />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
             </div>
         </div>
       </div>
@@ -77,8 +77,8 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         <div className="space-y-2">
           <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
           <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
-                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pl-8" placeholder="e.g., 49.99" />
+                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 49.99" />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
           </div>
         </div>
         {isManualMode && (

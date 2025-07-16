@@ -62,15 +62,15 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     </div>
                      <div className="grid grid-cols-2 gap-4">
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">{currency}</span>
                             <Input
                                 name="amount"
                                 type="number"
                                 value={cost.amount}
                                 onChange={handleChange}
                                 placeholder="Amount"
-                                className="text-sm pl-8 pr-24"
+                                className="text-sm pr-28" // Padded right for currency + dropdown
                             />
+                            <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
                              <Select onValueChange={handleSelectChange('costType')} value={costType}>
                                 <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
                                     <SelectValue />
