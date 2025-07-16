@@ -32,7 +32,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_1',
       productName: 'Pro Widget',
-      plannedUnits: 2500,
+      plannedUnits: 1250,
       unitCost: 10,
       sellPrice: 30,
       salesModel: 'launch',
@@ -42,7 +42,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_2',
       productName: 'Basic Widget',
-      plannedUnits: 5000,
+      plannedUnits: 2500,
       unitCost: 5,
       sellPrice: 15,
       salesModel: 'even',
@@ -52,7 +52,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_3',
       productName: 'Super Service',
-      plannedUnits: 250,
+      plannedUnits: 125,
       unitCost: 50,
       sellPrice: 250,
       salesModel: 'growth',
@@ -64,8 +64,7 @@ const initialInputs: EngineInput = {
       { id: 'fc_0', name: 'Salaries', amount: 8000, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost' },
       { id: 'fc_1', name: 'Marketing', amount: 15000, paymentSchedule: 'Allocated According to Sales', costType: 'Total for Period' },
       { id: 'fc_2', name: 'Planning Buffer', amount: 10000, paymentSchedule: 'Allocated Monthly', costType: 'Total for Period' },
-      { id: 'fc_3', name: 'Software & Tools', amount: 5000, paymentSchedule: 'Allocated Quarterly', costType: 'Total for Period' },
-      { id: 'fc_4', name: 'Legal & Admin Setup', amount: 7500, paymentSchedule: 'Paid Up-Front', costType: 'Total for Period' },
+      { id: 'fc_3', name: 'Admin & Tools', amount: 12500, paymentSchedule: 'Paid Up-Front', costType: 'Total for Period' },
   ],
   parameters: {
     forecastMonths: 12,
