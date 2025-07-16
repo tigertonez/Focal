@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { CashFlowPageSkeleton } from '@/components/app/cash-flow/CashFlowPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Wallet, TrendingDown, CalendarClock, Banknote } from 'lucide-react';
+import { ArrowLeft, Wallet, TrendingDown, CalendarClock, Banknote, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -94,9 +94,12 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
       </section>
 
 
-      <footer className="flex justify-end mt-8 pt-6 border-t">
+      <footer className="flex justify-between mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/profit')}>
           <ArrowLeft className="mr-2" /> Back to Profit
+        </Button>
+        <Button onClick={() => router.push('/summary')}>
+          Continue to Summary <ArrowRight className="ml-2" />
         </Button>
       </footer>
     </div>

@@ -14,6 +14,7 @@ import {
   FileText,
   Bot,
   Wallet,
+  LayoutGrid,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -27,6 +28,7 @@ const navItems = [
   { href: '/costs', icon: ShoppingCart, label: 'Costs' },
   { href: '/profit', icon: Landmark, label: 'Profit' },
   { href: '/cash-flow', icon: Wallet, label: 'Cash Flow' },
+  { href: '/summary', icon: LayoutGrid, label: 'Summary' },
 ];
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
