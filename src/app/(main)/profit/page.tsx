@@ -29,11 +29,37 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
 
   // Achieved gross profit is what the engine calculated based on the user's sell-through rate.
   const achievedGrossProfit = profitSummary.totalGrossProfit;
-
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const exceededAmount = achievedGrossProfit - potentialGrossProfit;
-  const netMarginTooltip = "The percentage of revenue that becomes profit after all costs and taxes are paid. Calculated as: (Total Net Profit / Total Revenue) * 100.";
+  // Calculate average net margin across products as requested
+  const totalRevenue = revenueSummary.totalRevenue;
+  const totalFixedCosts = costSummary.totalFixed;
+  const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
+  let totalMarginSum = 0;
+  let productsWithRevenue = 0;
+
+  inputs.products.forEach(product => {
+      const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
+      const productRevenue = revenueData?.totalRevenue || 0;
+      
+      if (productRevenue > 0) {
+          const unitsSold = revenueData?.totalSoldUnits || 0;
+          const productCogs = unitsSold * (product.unitCost || 0);
+          const grossProfit = productRevenue - productCogs;
+          const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
+          const allocatedFixedCosts = totalFixedCosts * revenueShare;
+          const allocatedTaxes = totalTaxes * revenueShare;
+          const operatingProfit = grossProfit - allocatedFixedCosts;
+          const netProfit = operatingProfit - allocatedTaxes;
+          const netMargin = (netProfit / productRevenue) * 100;
+          
+          totalMarginSum += netMargin;
+          productsWithRevenue++;
+      }
+  });
+  
+  const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
+  const netMarginTooltip = "The average of the net profit margins of each individual product. Calculated as: (Sum of each product's Net Margin %) / (Number of products).";
 
 
   return (
@@ -45,14 +71,14 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           <KpiCard label="Total Gross Profit" value={formatCurrency(profitSummary.totalGrossProfit, currency)} icon={<TrendingUp />} />
           <KpiCard label="Total Operating Profit" value={formatCurrency(profitSummary.totalOperatingProfit, currency)} icon={<Briefcase />} />
           <KpiCard label="Total Net Profit" value={formatCurrency(profitSummary.totalNetProfit, currency)} icon={<Landmark />} />
-          <KpiCard label="Net Margin" value={`${(profitSummary.netMargin || 0).toFixed(1)}%`} icon={<Target />} help={netMarginTooltip} />
+          <KpiCard label="Avg. Net Margin" value={`${averageNetMargin.toFixed(1)}%`} icon={<Target />} help={netMarginTooltip} />
         </div>
         {potentialGrossProfit > 0 && (
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Achieved vs. Potential Gross Profit</span>
               <span className="font-medium text-foreground">
-                 Achieved: {formatCurrency(achievedGrossProfit, currency)} ({profitProgress.toFixed(1)}% of Potential)
+                 Achieved: {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)} Potential
               </span>
             </div>
             <Progress value={profitProgress} className="h-2" />
