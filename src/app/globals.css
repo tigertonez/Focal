@@ -30,13 +30,13 @@
     --fs-label: 12px;
     --fs-value: 24px;
     
-    /* Chart Colors (Vibrant & Distinguishable) */
-    --chart-1: 220 80% 60%;  /* Strong Blue */
-    --chart-2: 25 85% 60%;   /* Vibrant Orange */
-    --chart-3: 340 80% 70%;  /* Bright Pink */
-    --chart-4: 140 70% 50%;  /* Clear Green */
-    --chart-5: 280 75% 65%;  /* Rich Violet */
-    --chart-6: 190 80% 55%;  /* Bright Cyan */
+    /* Muted Chart Colors (Dashboard Pro) */
+    --chart-1: 25 65% 61%;   /* #D98F5E - Salaries */
+    --chart-2: 158 30% 50%;  /* #5CA38C - Marketing */
+    --chart-3: 228 50% 60%;  /* #6C80C7 - Planning Buffer */
+    --chart-4: 220 5% 59%;   /* #81868F - Deposits */
+    --chart-5: 268 28% 57%;  /* #9073B0 - Final Payments */
+    --chart-6: 326 31% 58%;  /* #B17793 - Admin & Tools */
   }
  
   .dark {
@@ -60,13 +60,13 @@
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 60%;
     
-    /* Chart Colors (Vibrant & Distinguishable) */
-    --chart-1: 220 80% 60%;  /* Strong Blue */
-    --chart-2: 25 85% 60%;   /* Vibrant Orange */
-    --chart-3: 340 80% 70%;  /* Bright Pink */
-    --chart-4: 140 70% 50%;  /* Clear Green */
-    --chart-5: 280 75% 65%;  /* Rich Violet */
-    --chart-6: 190 80% 55%;  /* Bright Cyan */
+    /* Muted Chart Colors (Dashboard Pro) */
+    --chart-1: 25 65% 61%;   /* #D98F5E - Salaries */
+    --chart-2: 158 30% 50%;  /* #5CA38C - Marketing */
+    --chart-3: 228 50% 60%;  /* #6C80C7 - Planning Buffer */
+    --chart-4: 220 5% 59%;   /* #81868F - Deposits */
+    --chart-5: 268 28% 57%;  /* #9073B0 - Final Payments */
+    --chart-6: 326 31% 58%;  /* #B17793 - Admin & Tools */
   }
 }
 

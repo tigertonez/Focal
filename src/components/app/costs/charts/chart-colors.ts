@@ -14,22 +14,23 @@ export const chartColorVars = [
 ];
 
 export const semanticColorMap: Record<string, string> = {
-    // Specific keywords
-    "revenue": "hsl(var(--chart-1))",
-    "profit": "hsl(var(--chart-4))",
-    "costs": "hsl(var(--destructive))",
-    "salaries": "hsl(var(--chart-2))", 
-    "marketing": "hsl(var(--chart-4))",
-    "deposits": "hsl(var(--chart-2))", 
-    "payments": "hsl(var(--chart-5))", 
-    "legal": "hsl(var(--chart-3))", 
-    "software": "hsl(var(--chart-6))", 
-    "admin": "hsl(var(--chart-3))",
-    "buffer": "hsl(var(--muted-foreground))",
-    "production": "hsl(var(--chart-3))",
+    // Keywords from the new muted palette
+    "salaries": "hsl(var(--chart-1))", 
+    "marketing": "hsl(var(--chart-2))",
+    "buffer": "hsl(var(--chart-3))", // For "Planning Buffer"
+    "contingency": "hsl(var(--chart-3))",
+    "deposits": "hsl(var(--chart-4))",
+    "payments": "hsl(var(--chart-5))", // For "Final Payments"
+    "admin": "hsl(var(--chart-6))",
+    "tools": "hsl(var(--chart-6))",
+    "overheads": "hsl(var(--chart-6))",
 
-    // General types
+    // Legacy/General keywords
+    "revenue": "hsl(var(--primary))",
+    "profit": "hsl(var(--accent))",
+    "costs": "hsl(var(--destructive))",
+    "production": "hsl(var(--chart-5))",
     "fixed": "hsl(var(--chart-5))",
-    "variable": "hsl(var(--chart-1))",
+    "variable": "hsl(var(--chart-4))",
     "operating": "hsl(var(--chart-2))",
 };
