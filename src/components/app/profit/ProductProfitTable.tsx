@@ -25,17 +25,20 @@ const getColorForProduct = (index: number) => {
   return colors[index % colors.length];
 };
 
-const ExplanatoryHeader: React.FC<{ children: React.ReactNode; tooltip: string; className?: string }> = ({ children, tooltip, className }) => (
+const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: string }> = ({ title, tooltip, className }) => (
     <TableHead className={className}>
         <div className="flex items-center justify-end gap-1.5">
-            {children}
+            {title}
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                        <p>{tooltip}</p>
+                    <TooltipContent className="max-w-xs p-3">
+                        <div className="space-y-1">
+                          <p className="font-semibold">{title}</p>
+                          <p className="text-muted-foreground text-xs">{tooltip}</p>
+                        </div>
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -91,27 +94,13 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
             <TableHeader>
                 <TableRow>
                     <TableHead>Product</TableHead>
-                     <ExplanatoryHeader className="text-right" tooltip="The percentage of planned units you forecast to sell. This is a key driver of revenue and profitability.">
-                        Sell-Through
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Revenue minus the direct costs of producing goods sold (COGS). It shows how profitably you sell your product before overhead.">
-                        Gross Profit
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Gross Profit as a percentage of Revenue. A higher percentage means more profit per sale.">
-                        Gross Margin
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Gross Profit minus a share of your fixed operating costs (like salaries and rent). Shows profitability from core business operations.">
-                        Op. Profit
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Operating Profit as a percentage of Revenue. Shows how efficiently your core business generates profit.">
-                        Op. Margin
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Operating Profit minus a share of your taxes. This is the final 'bottom-line' profit for the product.">
-                        Net Profit
-                    </ExplanatoryHeader>
-                    <ExplanatoryHeader className="text-right" tooltip="Net Profit as a percentage of Revenue. The ultimate measure of profitability after all costs and taxes.">
-                        Net Margin
-                    </ExplanatoryHeader>
+                     <ExplanatoryHeader title="Sell-Through" className="text-right" tooltip="The percentage of planned units you forecast to sell. This is a key driver of revenue and profitability." />
+                    <ExplanatoryHeader title="Gross Profit" className="text-right" tooltip="Revenue minus the direct costs of producing goods sold (COGS). It shows how profitably you sell your product before overhead." />
+                    <ExplanatoryHeader title="Gross Margin" className="text-right" tooltip="Gross Profit as a percentage of Revenue. A higher percentage means more profit per sale." />
+                    <ExplanatoryHeader title="Op. Profit" className="text-right" tooltip="Gross Profit minus a share of your fixed operating costs (like salaries and rent). Shows profitability from core business operations." />
+                    <ExplanatoryHeader title="Op. Margin" className="text-right" tooltip="Operating Profit as a percentage of Revenue. Shows how efficiently your core business generates profit." />
+                    <ExplanatoryHeader title="Net Profit" className="text-right" tooltip="Operating Profit minus a share of your taxes. This is the final 'bottom-line' profit for the product." />
+                    <ExplanatoryHeader title="Net Margin" className="text-right" tooltip="Net Profit as a percentage of Revenue. The ultimate measure of profitability after all costs and taxes." />
                 </TableRow>
             </TableHeader>
             <TableBody>
