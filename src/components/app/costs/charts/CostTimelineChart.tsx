@@ -12,20 +12,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
-import { semanticColorMap } from './chart-colors';
-
-const getColorForKey = (key: string): string => {
-    const lowerKey = key.toLowerCase();
-
-    for (const mapKey in semanticColorMap) {
-        if (lowerKey.includes(mapKey.toLowerCase())) {
-            return semanticColorMap[mapKey];
-        }
-    }
-    // Default to product color logic for anything not in the semantic map
-    return getProductColor(key);
-};
-
+import { useForecast } from "@/context/ForecastContext"
 
 interface CostTimelineChartProps {
   data: any[];
@@ -35,25 +22,31 @@ interface CostTimelineChartProps {
 }
 
 export function CostTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: CostTimelineChartProps) {
+  const { inputs } = useForecast();
   const [chartConfig, setChartConfig] = React.useState<ChartConfig>({});
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
+  
+  const allItems = [...inputs.products, ...inputs.fixedCosts];
 
   React.useEffect(() => {
     if (data && data.length > 0) {
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
       
-      allKeys.forEach((key, index) => {
+      allKeys.forEach((key) => {
+        const item = allItems.find(p => ('productName' in p ? p.productName : p.name) === key);
         const override = configOverrides ? configOverrides[key] : null;
+        
         newConfig[key] = {
-          label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-          color: getColorForKey(key),
+          label: override?.label || key,
+          color: item ? getProductColor(item) : 'hsl(var(--muted-foreground))',
         };
       });
+
       setChartConfig(newConfig);
       setCostKeys(allKeys);
     }
-  }, [data, configOverrides]);
+  }, [data, configOverrides, allItems]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>

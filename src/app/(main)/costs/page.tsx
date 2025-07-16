@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, ArrowRight, Building, Package, Activity, Calculator } from 'lucide-react';
-import type { EngineOutput, EngineInput } from '@/lib/types';
+import type { EngineOutput, EngineInput, Product, FixedCostItem } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -30,11 +30,16 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
-    const investmentData = [
-        { name: 'Production', value: costSummary.totalVariable },
-        ...costSummary.fixedCosts.map(cost => ({
+    const investmentData: { name: string; value: number; item: Product | FixedCostItem }[] = [
+        ...inputs.products.map(p => ({
+            name: p.productName,
+            value: (p.plannedUnits || 0) * (p.unitCost || 0),
+            item: p,
+        })),
+        ...inputs.fixedCosts.map(cost => ({
             name: cost.name,
             value: cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount,
+            item: cost,
         })),
     ].filter(item => item.value > 0);
 

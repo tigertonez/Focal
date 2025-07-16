@@ -1,12 +1,15 @@
+
 "use client"
 
 import * as React from "react"
 import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
-import { chartColorVars } from './chart-colors';
+import { getProductColor } from "@/lib/utils";
+import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
+
 interface InvestmentPieChartProps {
-    data: { name: string; value: number }[];
+    data: { name: string; value: number; item: Product | FixedCostItem }[];
     currency: string;
 }
 
@@ -58,7 +61,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     strokeWidth={0}
                 >
                     {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={chartColorVars[index % chartColorVars.length]} />
+                        <Cell key={`cell-${index}`} fill={getProductColor(entry.item)} />
                     ))}
                 </Pie>
                 <Legend 

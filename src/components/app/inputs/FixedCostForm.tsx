@@ -9,10 +9,12 @@ import { Trash2, Info } from 'lucide-react';
 import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getProductColor } from '@/lib/utils';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
     const { updateFixedCost, removeFixedCost, inputs } = useForecast();
     const currency = inputs.parameters.currency;
+    const colorInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -28,6 +30,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
         updateFixedCost(index, name, value);
     };
 
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        updateFixedCost(index, 'color', e.target.value);
+    };
+
     const schedule = cost.paymentSchedule || 'Paid Up-Front';
     const costType = cost.costType || 'Total for Period';
     const name = cost.name.toLowerCase();
@@ -37,10 +43,11 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const planningBufferTooltip = "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast.";
     const planningBufferTitle = "What is a Planning Buffer?";
 
+    const assignedColor = getProductColor(cost);
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-             <div className="flex items-start gap-4">
+             <div className="flex items-start gap-3">
                 <div className="flex-grow space-y-2">
                     <div className="flex items-center gap-2">
                          <Input
@@ -98,9 +105,24 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         </Select>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => removeFixedCost(cost.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0">
-                    <Trash2 size={18} />
-                </Button>
+                <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                    <div 
+                        className="h-5 w-5 rounded-full cursor-pointer border" 
+                        style={{ backgroundColor: assignedColor }}
+                        onClick={() => colorInputRef.current?.click()}
+                    >
+                        <input 
+                            ref={colorInputRef}
+                            type="color"
+                            value={assignedColor}
+                            onChange={handleColorChange}
+                            className="opacity-0 w-0 h-0 absolute"
+                        />
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => removeFixedCost(cost.id)} className="text-muted-foreground hover:text-destructive h-8 w-8">
+                        <Trash2 size={18} />
+                    </Button>
+                </div>
             </div>
         </div>
     );

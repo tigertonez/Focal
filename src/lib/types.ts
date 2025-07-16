@@ -12,6 +12,7 @@ export const ProductSchema = z.object({
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }).optional(),
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).optional(),
   depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
+  color: z.string().optional(),
 });
 export type Product = z.infer<typeof ProductSchema>;
 
@@ -22,6 +23,7 @@ export const FixedCostItemSchema = z.object({
     amount: z.number().min(0, 'Amount must be positive.'),
     paymentSchedule: z.enum(['Allocated Monthly', 'Allocated Quarterly', 'Paid Up-Front', 'Allocated According to Sales']),
     costType: z.enum(['Total for Period', 'Monthly Cost']).default('Total for Period'),
+    color: z.string().optional(),
 });
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
 

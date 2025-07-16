@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Trash2, Info } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getProductColor } from '@/lib/utils';
 
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
   const currency = inputs.parameters.currency;
+  const colorInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -27,6 +29,10 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, name, value);
   };
 
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateProduct(index, 'color', e.target.value);
+  };
+
   const salesModelTooltip = `How sales are distributed over time. 'Launch' is front-loaded, 'Even' is stable, 'Seasonal' peaks mid-period, and 'Growth' increases steadily.`;
   const salesModelTitle = "What is a Sales Model?";
   
@@ -36,10 +42,11 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
   const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery.";
   const depositPaidTitle = "What is a Deposit?";
 
+  const assignedColor = getProductColor(product);
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3">
             <div className="flex-grow space-y-2">
                  <Input
                     name="productName"
@@ -49,9 +56,24 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     className="text-sm px-2"
                 />
             </div>
-            <Button variant="ghost" size="icon" onClick={() => removeProduct(product.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0 mt-1">
-                <Trash2 size={18} />
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                <div 
+                    className="h-5 w-5 rounded-full cursor-pointer border" 
+                    style={{ backgroundColor: assignedColor }}
+                    onClick={() => colorInputRef.current?.click()}
+                >
+                    <input 
+                        ref={colorInputRef}
+                        type="color"
+                        value={assignedColor}
+                        onChange={handleColorChange}
+                        className="opacity-0 w-0 h-0 absolute"
+                    />
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => removeProduct(product.id)} className="text-muted-foreground hover:text-destructive h-8 w-8">
+                    <Trash2 size={18} />
+                </Button>
+            </div>
         </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -84,7 +106,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         {isManualMode && (
             <div className="space-y-2">
             <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
-                {salesModelTitle}
+                Sales Model
                 <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
@@ -114,7 +136,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         {isManualMode && (
           <div className="space-y-2">
             <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
-              {sellThroughTitle}
+              Sell-Through %
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
@@ -135,7 +157,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
         )}
         <div className="space-y-2">
           <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
-            {depositPaidTitle}
+            Deposit %
              <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>

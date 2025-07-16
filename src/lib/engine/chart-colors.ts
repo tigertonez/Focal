@@ -1,6 +1,5 @@
 
-// This file is DEPRECATED and will be removed.
-// Logic has been moved to src/lib/engine/chart-colors.ts
+// This file is being created to centralize chart color definitions.
 
 export const chartColorVars = [
   "hsl(var(--chart-1))",

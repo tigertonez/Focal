@@ -65,7 +65,7 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
 
         return {
             ...product,
-            color: getProductColor(product.productName),
+            color: getProductColor(product),
             unitsSold,
             totalRevenue: productRevenue,
             grossProfit,
