@@ -49,7 +49,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     // Determine if "Month 0" is possible based on global settings
     const hasMonthZero = inputs.parameters.preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
 
-    const assignedColor = getProductColor(cost);
+    const assignedColor = React.useMemo(() => getProductColor(cost), [cost.id, cost.color, cost.name]);
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -101,9 +101,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
             </div>
             
             <div className={cn(
-                "grid grid-cols-2 md:grid-cols-5 gap-4 items-end",
+                "grid grid-cols-2 md:grid-cols-3 gap-4 items-end",
+                 hasMonthZero ? "md:grid-cols-3" : "md:grid-cols-2"
             )}>
-                <div className={cn("space-y-1", hasMonthZero ? "md:col-span-2" : "md:col-span-1")}>
+                <div className="space-y-1 md:col-span-1">
                     <Label className="text-xs">Amount</Label>
                     <div className="relative">
                         <Input
@@ -112,7 +113,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             value={cost.amount}
                             onChange={handleChange}
                             placeholder="Amount"
-                            className="text-sm pr-[140px]" // Padded right for currency + dropdown
+                            className="text-sm pr-[140px]"
                         />
                         <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
                          <Select onValueChange={handleSelectChange('costType')} value={costType}>
@@ -126,7 +127,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         </Select>
                     </div>
                 </div>
-                 <div className="space-y-1 md:col-span-2">
+                 <div className="space-y-1 md:col-span-1">
                     <Label className="text-xs">Payment Schedule</Label>
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                         <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
@@ -144,11 +145,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         <Select 
                             onValueChange={handleSelectChange('startMonth')} 
                             value={startMonth}
-                            disabled={schedule === 'Paid Up-Front'}
                         >
                             <SelectTrigger className="text-sm"><SelectValue placeholder="Start Month" /></SelectTrigger>
                             <SelectContent>
-                                {schedule === 'Paid Up-Front' && <SelectItem value="Up-front">Up-front (in M0)</SelectItem>}
+                                <SelectItem value="Up-front">Up-front (in M0)</SelectItem>
                                 <SelectItem value="Month 0">Month 0 Onward</SelectItem>
                                 <SelectItem value="Month 1">Month 1 Onward</SelectItem>
                             </SelectContent>
