@@ -14,6 +14,9 @@ import { Terminal } from 'lucide-react';
 import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { CashFlowChart } from '@/components/app/cash-flow/charts/CashFlowChart';
+import { CashFlowTable } from '@/components/app/cash-flow/CashFlowTable';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
@@ -72,9 +75,20 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
         )}
       </section>
 
-      <div className="text-center text-muted-foreground pt-8">
-        <p>Cash flow charts and tables will be displayed here in the next step.</p>
-      </div>
+      <section className="grid md:grid-cols-2 gap-8 items-start">
+        <Card>
+            <CardHeader>
+                <CardTitle>Cumulative Cash Flow</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[400px] w-full pl-0">
+               <CashFlowChart data={data} currency={currency} />
+            </CardContent>
+        </Card>
+        <div className="max-h-[480px] overflow-y-auto">
+          <CashFlowTable data={data} currency={currency} />
+        </div>
+      </section>
+
 
       <footer className="flex justify-end mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/summary')}>
