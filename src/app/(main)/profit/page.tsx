@@ -68,10 +68,30 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
       
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Total Gross Profit" value={formatCurrency(profitSummary.totalGrossProfit, currency)} icon={<TrendingUp />} />
-          <KpiCard label="Total Operating Profit" value={formatCurrency(profitSummary.totalOperatingProfit, currency)} icon={<Briefcase />} />
-          <KpiCard label="Total Net Profit" value={formatCurrency(profitSummary.totalNetProfit, currency)} icon={<Landmark />} />
-          <KpiCard label="Avg. Net Margin" value={`${averageNetMargin.toFixed(1)}%`} icon={<Target />} help={netMarginTooltip} />
+          <KpiCard 
+            label="Total Gross Profit" 
+            value={formatCurrency(profitSummary.totalGrossProfit, currency)} 
+            icon={<TrendingUp />} 
+            help="Total Revenue minus the direct Cost of Goods Sold (COGS). It measures how efficiently you produce and sell your products before other expenses."
+          />
+          <KpiCard 
+            label="Total Operating Profit" 
+            value={formatCurrency(profitSummary.totalOperatingProfit, currency)} 
+            icon={<Briefcase />}
+            help="Gross Profit minus all fixed operating costs (like salaries and rent). This shows the profit from core business operations."
+          />
+          <KpiCard 
+            label="Total Net Profit" 
+            value={formatCurrency(profitSummary.totalNetProfit, currency)} 
+            icon={<Landmark />}
+            help="The final 'bottom-line' profit after all expenses, including taxes, have been deducted from revenue. This is your company's actual profit."
+          />
+          <KpiCard 
+            label="Avg. Net Margin" 
+            value={`${averageNetMargin.toFixed(1)}%`} 
+            icon={<Target />} 
+            help={netMarginTooltip} 
+          />
         </div>
         {potentialGrossProfit > 0 && (
           <div className="mt-4 space-y-2">

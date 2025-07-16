@@ -34,10 +34,30 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
             
             <section>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KpiCard label="Total Fixed Costs" value={formatCurrency(costSummary.totalFixed, currency)} icon={<Building />} />
-                    <KpiCard label="Total Variable Costs" value={formatCurrency(costSummary.totalVariable, currency)} icon={<Package />} />
-                    <KpiCard label="Total Operating Costs" value={formatCurrency(costSummary.totalOperating, currency)} icon={<Activity />} />
-                    <KpiCard label="Avg. var. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} icon={<Calculator />} />
+                    <KpiCard 
+                        label="Total Fixed Costs" 
+                        value={formatCurrency(costSummary.totalFixed, currency)} 
+                        icon={<Building />}
+                        help="Recurring, predictable expenses that don't change with sales volume (e.g., salaries, rent). This is your company's baseline cost."
+                    />
+                    <KpiCard 
+                        label="Total Variable Costs" 
+                        value={formatCurrency(costSummary.totalVariable, currency)} 
+                        icon={<Package />}
+                        help="Costs that are directly tied to the number of units you produce (e.g., unit cost, manufacturing deposits). This scales with production."
+                    />
+                    <KpiCard 
+                        label="Total Operating Costs" 
+                        value={formatCurrency(costSummary.totalOperating, currency)} 
+                        icon={<Activity />}
+                        help="The total of all expenses required to run the business (Fixed Costs + Variable Costs)."
+                    />
+                    <KpiCard 
+                        label="Avg. var. Cost per Unit" 
+                        value={formatCurrency(costSummary.avgCostPerUnit, currency)} 
+                        icon={<Calculator />}
+                        help="The average variable cost to produce one unit across all your products (Total Variable Costs / Total Planned Units)."
+                    />
                 </div>
                  {isManualMode && costSummary.totalVariable > 0 && (
                     <div className="mt-4 space-y-2">

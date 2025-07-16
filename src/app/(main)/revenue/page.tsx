@@ -40,11 +40,26 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                         label="Total Revenue" 
                         value={formatCurrency(revenueSummary.totalRevenue, currency)} 
                         icon={<TrendingUp />}
-                        help="Trend vs. previous period will be shown here when historical data is available."
+                        help="The total income generated from sales before any costs are deducted. It's the top-line figure of your forecast."
                     />
-                    <KpiCard label="Total Units Sold" value={formatNumber(revenueSummary.totalSoldUnits)} icon={<Users />} />
-                    <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} icon={<DollarSign />} />
-                    <KpiCard label="Avg. Sell-Through" value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} icon={<Target />} />
+                    <KpiCard 
+                        label="Total Units Sold" 
+                        value={formatNumber(revenueSummary.totalSoldUnits)} 
+                        icon={<Users />}
+                        help="The sum of all units sold across all your products for the entire forecast period."
+                    />
+                    <KpiCard 
+                        label="Avg. Revenue per Unit" 
+                        value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} 
+                        icon={<DollarSign />}
+                        help="The average revenue generated per single unit sold (Total Revenue / Total Units Sold). Useful for understanding pricing effectiveness."
+                    />
+                    <KpiCard 
+                        label="Avg. Sell-Through" 
+                        value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} 
+                        icon={<Target />}
+                        help="The average percentage of your planned stock that is actually sold. This is a key driver of your total revenue."
+                    />
                 </div>
                  {potentialRevenue > 0 && (
                     <div className="mt-4 space-y-2">
