@@ -14,6 +14,7 @@ import { Terminal } from 'lucide-react';
 import { ProfitToCashBridge } from '@/components/app/summary/ProfitToCashBridge';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 import { SummaryKpiCards } from '@/components/app/summary/SummaryKpiCards';
+import { BusinessHealthScore } from '@/components/app/summary/BusinessHealthScore';
 
 function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
@@ -45,6 +46,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       
       <div className="space-y-8">
          <SummaryKpiCards data={data} inputs={inputs} />
+         <BusinessHealthScore healthData={data.businessHealth} />
          <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
       </div>
 
