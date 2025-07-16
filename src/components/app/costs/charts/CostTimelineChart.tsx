@@ -23,15 +23,14 @@ interface CostTimelineChartProps {
 
 export function CostTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: CostTimelineChartProps) {
   const { inputs } = useForecast();
-  const [chartConfig, setChartConfig] = React.useState<ChartConfig>({});
-  const [costKeys, setCostKeys] = React.useState<string[]>([]);
   
-  const allItems = [...inputs.products, ...inputs.fixedCosts];
+  const { chartConfig, costKeys } = React.useMemo(() => {
+    const allItems = [...inputs.products, ...inputs.fixedCosts];
+    const newConfig: ChartConfig = {};
+    let allKeys: string[] = [];
 
-  React.useEffect(() => {
     if (data && data.length > 0) {
-      const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
-      const newConfig: ChartConfig = {};
+      allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       
       allKeys.forEach((key) => {
         const item = allItems.find(p => ('productName' in p ? p.productName : p.name) === key);
@@ -42,11 +41,10 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
           color: item ? getProductColor(item) : 'hsl(var(--muted-foreground))',
         };
       });
-
-      setChartConfig(newConfig);
-      setCostKeys(allKeys);
     }
-  }, [data, configOverrides, allItems]);
+
+    return { chartConfig: newConfig, costKeys: allKeys };
+  }, [data, configOverrides, inputs.products, inputs.fixedCosts]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
