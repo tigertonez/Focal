@@ -110,8 +110,6 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                     <TableHead className="text-right">Units Sold</TableHead>
                                     <TableHead className="text-right">Sell-Through</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
-                                    <TableHead className="text-right">COGS/Unit</TableHead>
-                                    <TableHead className="text-right">GP/Unit</TableHead>
                                     <TableHead className="text-right">Total Revenue</TableHead>
                                     <TableHead className="text-right">% of Revenue</TableHead>
                                 </TableRow>
@@ -125,17 +123,12 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                                         ? (product.totalRevenue / revenueSummary.totalRevenue) * 100
                                         : 0;
 
-                                    const cogsPerUnit = inputProduct.unitCost;
-                                    const grossProfitPerUnit = inputProduct.sellPrice - cogsPerUnit;
-
                                     return (
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(1) ?? 'N/A'}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(cogsPerUnit, currency)}</TableCell>
-                                            <TableCell className="text-right font-semibold text-green-600">{formatCurrency(grossProfitPerUnit, currency)}</TableCell>
                                             <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                             <TableCell className="text-right">{share.toFixed(1)}%</TableCell>
                                         </TableRow>
