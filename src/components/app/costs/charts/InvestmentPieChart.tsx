@@ -53,7 +53,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     cy="50%"
                     labelLine={false}
                     label={<CustomLabel />}
-                    outerRadius={100}
+                    outerRadius={120}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
