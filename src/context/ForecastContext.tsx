@@ -64,6 +64,8 @@ const initialInputs: EngineInput = {
       { id: 'fc_0', name: 'Salaries', amount: 15000, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost' },
       { id: 'fc_1', name: 'Marketing', amount: 20000, paymentSchedule: 'Allocated According to Sales', costType: 'Total for Period' },
       { id: 'fc_2', name: 'Planning Buffer', amount: 6000, paymentSchedule: 'Allocated Monthly', costType: 'Total for Period' },
+      { id: 'fc_3', name: 'Software & Tools', amount: 4500, paymentSchedule: 'Allocated Quarterly', costType: 'Total for Period' },
+      { id: 'fc_4', name: 'Legal & Admin Setup', amount: 5000, paymentSchedule: 'Paid Up-Front', costType: 'Total for Period' },
   ],
   parameters: {
     forecastMonths: 12,
