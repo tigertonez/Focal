@@ -1,6 +1,4 @@
 
-'use server';
-
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import type { EngineInput, EngineOutput } from '@/lib/types';
@@ -78,7 +76,7 @@ const SummaryPage = ({ data }: { data: EngineOutput }) => (
     <View style={styles.section}>
       <Text style={styles.heading}>Financial Summary</Text>
       <Text>TODO: Render KPISection, HealthPanel, and CashBridge</Text>
-    </Vew>
+    </View>
   </Page>
 );
 
