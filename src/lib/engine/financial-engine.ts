@@ -67,9 +67,12 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
         const schedule = cost.paymentSchedule || 'Paid Up-Front';
         const costAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
         
+        // Month 1 is always the start for these allocations, regardless of M0's existence
+        const firstRegularMonth = 1;
+
         switch (schedule) {
             case 'Paid Up-Front':
-                const firstMonth = timeline.find(t => t.month === timelineMonths[0]);
+                const firstMonth = timeline.find(t => t.month === firstRegularMonth);
                 if (firstMonth) {
                     firstMonth[cost.name] = (firstMonth[cost.name] || 0) + costAmount;
                 }
@@ -78,7 +81,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
             case 'Allocated Monthly':
                 if (forecastMonths > 0) {
                     const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / forecastMonths;
-                    const salesTimeline = timeline.filter(t => t.month >= 1); // Costs allocated from month 1
+                    const salesTimeline = timeline.filter(t => t.month >= 1);
                     salesTimeline.forEach(month => {
                         month[cost.name] = (month[cost.name] || 0) + monthlyAmount;
                     });
@@ -135,7 +138,13 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     
     // --- TIMELINE SETUP ---
-    const timelineMonths = Array.from({ length: forecastMonths }, (_, i) => i + (preOrder ? 0 : 1));
+    const hasDeposits = inputs.products.some(p => (p.depositPct || 0) > 0);
+    const useMonthZero = preOrder || hasDeposits;
+    
+    const timelineMonths = useMonthZero
+        ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) // M0, M1, ..., M12
+        : Array.from({ length: forecastMonths }, (_, i) => i + 1); // M1, M2, ..., M12
+
     
     // --- REVENUE & UNITS CALCULATIONS ---
     const monthlyRevenueTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
@@ -254,15 +263,16 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     
     const monthlyCostTimeline = buildFixedCostTimeline(inputs, timelineMonths);
     
-    const depositPaymentMonth = preOrder ? 0 : 1;
-    const finalPaymentMonth = 1;
-
-    const depositMonth = monthlyCostTimeline.find(t => t.month === depositPaymentMonth);
-    if (depositMonth) {
-        depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;
+    // Deposit payment is ALWAYS in Month 0 if it exists
+    if (useMonthZero) {
+        const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
+        if (depositMonth) {
+            depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;
+        }
     }
-
-    const finalPaymentMonthData = monthlyCostTimeline.find(t => t.month === finalPaymentMonth);
+    
+    // Final payment is ALWAYS in Month 1
+    const finalPaymentMonthData = monthlyCostTimeline.find(t => t.month === 1);
     if (finalPaymentMonthData) {
         finalPaymentMonthData['Final Payments'] = (finalPaymentMonthData['Final Payments'] || 0) + totalFinalPayments;
     }
@@ -304,6 +314,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let profitBreakEvenMonth: number | null = null;
     
     for (const month of timelineMonths) {
+        // No profit/loss in Month 0 as there's no revenue component there unless it's a pre-order
         const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
         const totalMonthlyRevenue = Object.values(currentRevenueData).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
 
@@ -321,7 +332,8 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
                 const unitCost = productInfo?.unitCost || 0;
                 return sum + (unitsSold * unitCost);
             }, 0);
-
+        
+        // Month 0 only has costs, no revenue, so profit is negative fixed cost.
         const grossProfit = totalMonthlyRevenue - monthlyCOGS;
         const operatingProfit = grossProfit - totalMonthlyFixedCosts;
         const netProfit = operatingProfit > 0 ? operatingProfit * (1 - (taxRate / 100)) : operatingProfit;
@@ -333,11 +345,9 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             netProfit
         });
 
-        if (month >= 1) { // Only track break-even from month 1 onwards
-          cumulativeOperatingProfit += operatingProfit;
-          if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0) {
-              profitBreakEvenMonth = month;
-          }
+        cumulativeOperatingProfit += operatingProfit;
+        if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
+            profitBreakEvenMonth = month;
         }
     }
     
@@ -376,7 +386,7 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             peakFundingNeed = cumulativeCash;
         }
 
-        if (cashBreakEvenMonth === null && cumulativeCash > 0 && month > 0) {
+        if (cashBreakEvenMonth === null && cumulativeCash > 0 && month >= 1) {
             cashBreakEvenMonth = month;
         }
 

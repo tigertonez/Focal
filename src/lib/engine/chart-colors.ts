@@ -1,4 +1,5 @@
 
+
 // This file is being created to centralize chart color definitions.
 
 export const chartColorVars = [
