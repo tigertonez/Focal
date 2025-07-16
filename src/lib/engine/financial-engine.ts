@@ -17,8 +17,11 @@ import type { MonthlyCost } from '@/lib/types';
 const createTimeline = (inputs: EngineInput) => {
     const { forecastMonths, preOrder } = inputs.parameters;
     
+    // Month 0 is required if pre-order mode is on, OR if any product has a deposit.
     const requiresMonthZero = preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
 
+    // If month 0 is required, the timeline runs from 0 to forecastMonths (e.g., 0-12 for a 12-month forecast).
+    // The actual sales period (for weights) is still the number of forecast months.
     const timelineMonths = requiresMonthZero
       ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
@@ -170,8 +173,9 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
     inputs.fixedCosts.forEach(cost => {
-        let schedule = cost.paymentSchedule || 'Paid Up-Front';
+        const schedule = cost.paymentSchedule || 'Paid Up-Front';
         
+        // Handle "Paid Up-Front" separately as a special case. It always happens in Month 0 if available.
         if (schedule === 'Paid Up-Front') {
             if (requiresMonthZero) {
                 const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
@@ -180,15 +184,24 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
                     upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
                 }
             }
-            return;
+            return; // Stop processing for this cost item.
         }
 
-        let startMonthChoice = cost.startMonth || 'Month 1';
-        if (startMonthChoice === 'Up-front') { // Treat 'Up-front' as 'Month 0' for allocation purposes
-            startMonthChoice = 'Month 0';
+        // --- Decision Tree for Start Month ---
+        // Determine the starting month for all other allocation schedules.
+        let allocationStartMonth = 1; // Default to Month 1
+        if (requiresMonthZero) {
+             // If month 0 exists, respect the user's choice.
+            if (cost.startMonth === 'Month 0') {
+                allocationStartMonth = 0;
+            } else if (cost.startMonth === 'Up-front') {
+                 // Treat "Up-front" selection as Month 0 for allocation purposes
+                allocationStartMonth = 0;
+            } else {
+                // Default to Month 1 if not specified otherwise
+                allocationStartMonth = 1;
+            }
         }
-        
-        const allocationStartMonth = startMonthChoice === 'Month 0' && requiresMonthZero ? 0 : 1;
         
         const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= allocationStartMonth);
         const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * allocationTimeline.length : cost.amount;
@@ -213,8 +226,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
 
             case 'Allocated According to Sales':
                 const salesWeights = getAggregatedSalesWeights(inputs, timeline, allocationStartMonth);
-                const salesCostTimeline = monthlyCostTimeline.filter(t => t.month >= allocationStartMonth);
-                salesCostTimeline.forEach((month, i) => {
+                allocationTimeline.forEach((month, i) => {
                     if (salesWeights[i] !== undefined) {
                         month[cost.name] = (month[cost.name] || 0) + (totalCostAmount * salesWeights[i]);
                     }
@@ -246,6 +258,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline) => {
 
     const monthlyFixedCostTimeline = buildFixedCostTimeline(inputs, timeline);
     
+    // Add variable costs (deposits and final payments) to the timeline
     if (timeline.requiresMonthZero && totalDepositsPaid > 0) {
         const depositMonth = monthlyFixedCostTimeline.find(t => t.month === 0);
         if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;
@@ -254,8 +267,18 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline) => {
     const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === 1);
     if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + totalFinalPayments;
     
-    const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) =>
-        sum + (cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount), 0);
+    // Calculate total fixed cost based on what's actually allocated in the timeline.
+    const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => {
+        const startMonth = (timeline.requiresMonthZero && (cost.startMonth === 'Month 0' || cost.startMonth === 'Up-front')) ? 0 : 1;
+        const allocationLength = timeline.timelineMonths.filter(m => m >= startMonth).length;
+        
+        if (cost.paymentSchedule === 'Paid Up-Front') {
+            return sum + (cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount);
+        }
+        
+        return sum + (cost.costType === 'Monthly Cost' ? cost.amount * allocationLength : cost.amount)
+    }, 0);
+
 
     const costSummary = {
         totalFixed: totalFixedCostInPeriod, totalVariable: totalVariableCost,
