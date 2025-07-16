@@ -40,14 +40,26 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
         
         const cssId = generateCssId(key);
         
-        newConfig[cssId] = { // Use the safe CSS ID as the key
+        newConfig[key] = { // Use the original key for lookup
           label: override?.label || key,
-          color: item ? getProductColor(item) : 'hsl(var(--muted-foreground))',
+          color: `var(--color-${cssId})`, // Reference the CSS variable
         };
+
+        if (item) {
+          newConfig[key].color = `var(--color-${generateCssId(item.id)})`;
+        }
       });
     }
 
-    return { chartConfig: newConfig, costKeys: allKeys };
+    // This part is for the <style> tag generation
+    const styleConfig: ChartConfig = {};
+     [...inputs.products, ...inputs.fixedCosts].forEach(item => {
+        const id = ('productName' in item) ? item.id : item.id;
+        const cssId = generateCssId(id);
+        styleConfig[cssId] = { color: getProductColor(item) };
+    });
+
+    return { chartConfig: {...styleConfig, ...newConfig}, costKeys: allKeys };
   }, [data, configOverrides, inputs.products, inputs.fixedCosts]);
   
   if (!data || data.length === 0) {
@@ -65,11 +77,17 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
     return formatCurrency(Number(value), currency || 'USD').replace(/\.00$/, '');
   };
   
-  const tooltipFormatter = (value: number) => {
-    if (formatAs === 'number') {
-        return formatNumber(value);
-    }
-    return formatCurrency(Number(value), currency || 'USD');
+  const tooltipFormatter = (value: number, name: string) => {
+    const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
+    return (
+        <div className="flex items-center">
+            <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartConfig[name]?.color }}/>
+            <div className="flex flex-1 justify-between">
+                <span>{chartConfig[name]?.label || name}</span>
+                <span className="ml-4 font-bold">{formattedValue}</span>
+            </div>
+        </div>
+    )
   };
 
   const chartData = data.map(monthData => {
@@ -103,34 +121,17 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
           cursor={false}
           content={<ChartTooltipContent 
             labelFormatter={(label) => `Month ${label.replace('M','')}`}
-            formatter={(value, name, props) => {
-               const cssId = generateCssId(props.dataKey as string);
-               const itemConfig = chartConfig[cssId];
-               return (
-                <div className="flex items-center">
-                    <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
-                    <div className="flex flex-1 justify-between">
-                        <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{tooltipFormatter(Number(value))}</span>
-                    </div>
-                </div>
-              )
-            }}
+            formatter={tooltipFormatter}
         />}
         />
-        <ChartLegend content={<ChartLegendContent payload={Object.keys(chartConfig).map(key => ({
-            value: chartConfig[key]?.label,
-            color: chartConfig[key]?.color as string,
-            dataKey: key
-        }))} />} />
+        <ChartLegend />
         
         {costKeys.map((key) => {
-            const cssId = generateCssId(key);
             return (
                <Bar
                   key={key}
                   dataKey={key}
-                  fill={`var(--color-${cssId})`} // Use the safe CSS ID here
+                  fill={chartConfig[key]?.color}
                   stackId="a"
                 />
             )
