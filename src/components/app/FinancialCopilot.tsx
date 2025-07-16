@@ -2,10 +2,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -35,6 +34,7 @@ export function FinancialCopilot() {
 
   useEffect(() => {
     if (isCopilotOpen) {
+        setMessages([{ role: 'bot', text: "Hi! Ask me anything about your forecast." }]);
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
@@ -42,18 +42,28 @@ export function FinancialCopilot() {
             }
         }, 100);
     }
-  }, [messages, isCopilotOpen]);
+  }, [isCopilotOpen]);
+
+   useEffect(() => {
+    if (messages.length > 1) { // Scroll on new messages, but not initial welcome
+        setTimeout(() => {
+            const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
+            if (scrollViewport) {
+                scrollViewport.scrollTo({ top: scrollViewport.scrollHeight, behavior: 'smooth' });
+            }
+        }, 100);
+    }
+  }, [messages]);
+
 
   const handleSendMessage = async (question?: string, isProactive: boolean = false) => {
     const currentInput = question || input;
     if (currentInput.trim() === '' || isLoading) return;
 
     const userMessage: Message = { role: 'user', text: currentInput };
-    const newMessages = [...messages, userMessage];
+    const newMessages = isProactive ? [userMessage] : [...messages, userMessage];
     
-    if (!isProactive) {
-       setMessages(newMessages);
-    }
+    setMessages(newMessages);
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -67,8 +77,8 @@ export function FinancialCopilot() {
       const mainContent = document.querySelector('main');
       if (!mainContent) throw new Error("Main content area not found for screenshot.");
       
-      const canvas = await html2canvas(mainContent, { logging: false, useCORS: true });
-      const screenshotDataUri = canvas.toDataURL('image/png');
+      const canvas = await import('html2canvas').then(m => m.default);
+      const screenshotDataUri = await canvas(mainContent, { logging: false, useCORS: true }).then(c => c.toDataURL('image/png'));
 
       const response = await fetch('/api/ask', {
         method: 'POST',
@@ -88,11 +98,7 @@ export function FinancialCopilot() {
       const result = await response.json();
       const botMessage: Message = { role: 'bot', text: result.answer };
       
-      if (isProactive) {
-          setMessages([userMessage, botMessage]);
-      } else {
-          setMessages(prev => [...prev, botMessage]);
-      }
+      setMessages(prev => [...prev, botMessage]);
 
     } catch (err: any) {
         const errorMessage = err.message || 'An unexpected error occurred.';
@@ -109,39 +115,26 @@ export function FinancialCopilot() {
   }
   
   return (
-    <Card className="fixed bottom-4 left-4 w-full max-w-3xl h-[25vh] max-h-[240px] z-50 flex flex-col shadow-2xl rounded-xl border-t-4 border-primary animate-in slide-in-from-bottom-5">
-      <CardHeader className="flex flex-row items-center justify-between p-3 border-b bg-background rounded-t-xl">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Bot size={18} /> Financial Copilot
-        </CardTitle>
-        <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="h-7 w-7">
+    <Card className="fixed bottom-4 left-4 w-full max-w-xl h-[25vh] max-h-[200px] z-50 flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5">
+        <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-md z-10">
             <X className="h-4 w-4" />
         </Button>
-      </CardHeader>
-      
-      <ScrollArea className="flex-1 bg-background" ref={scrollAreaRef}>
+
+        <ScrollArea className="flex-1" ref={scrollAreaRef}>
           <div className="space-y-4 p-4 text-sm">
-            {messages.length === 0 && !isLoading && (
-                <div className="flex items-start gap-3">
-                    <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                    <div className="p-3 rounded-lg bg-muted">
-                        <p>Welcome! Ask me anything about your forecast or for UI improvements.</p>
-                    </div>
-                </div>
-            )}
             {messages.map((msg, index) => (
               <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                {msg.role === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                <div className={`p-3 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
-                 {msg.role === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0" />}
+                 {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
               </div>
             ))}
              {isLoading && (
               <div className="flex items-start gap-3">
-                <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-                <div className="p-3 rounded-lg bg-muted flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-muted-foreground">Thinking...</span>
                 </div>
@@ -155,7 +148,7 @@ export function FinancialCopilot() {
              )}
           </div>
         </ScrollArea>
-        <div className="p-3 border-t bg-background rounded-b-xl">
+        <div className="p-2 border-t bg-background rounded-b-xl">
           <div className="relative">
             <Textarea
               value={input}
