@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, value, style, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & { indicatorClassName?: string }
+>(({ className, value, indicatorClassName, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
@@ -19,10 +19,9 @@ const Progress = React.forwardRef<
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all"
+      className={cn("h-full w-full flex-1 bg-primary transition-all", indicatorClassName)}
       style={{ 
-        transform: `translateX(-${100 - (value || 0)}%)`,
-        ...(style) // Allow overriding style for dynamic colors, e.g., indicator background
+        transform: `translateX(-${100 - (value || 0)}%)`
       }}
     />
   </ProgressPrimitive.Root>

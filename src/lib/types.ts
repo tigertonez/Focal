@@ -153,6 +153,23 @@ export const MonthlyCashFlowSchema = z.object({
 export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
 
+// Health Score Schema
+export const BusinessHealthScoreKpiSchema = z.object({
+  label: z.string(),
+  value: z.number(), // The normalized score (0-100)
+  weight: z.number(),
+});
+export type BusinessHealthScoreKpi = z.infer<typeof BusinessHealthScoreKpiSchema>;
+
+export const BusinessHealthSchema = z.object({
+  score: z.number(),
+  insights: z.array(z.string()),
+  alerts: z.array(z.string()),
+  kpis: z.array(BusinessHealthScoreKpiSchema),
+});
+export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
+
+
 // --- AI-related Schemas ---
 
 export const AnalyzeProfitabilityInputSchema = z.object({
@@ -188,5 +205,6 @@ export const EngineOutputSchema = z.object({
     monthlyProfit: z.array(MonthlyProfitSchema),
     cashFlowSummary: CashFlowSummarySchema,
     monthlyCashFlow: z.array(MonthlyCashFlowSchema),
+    businessHealth: BusinessHealthSchema.optional(),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;

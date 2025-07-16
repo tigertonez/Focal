@@ -1,4 +1,4 @@
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, CashFlowSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
 
@@ -383,6 +383,72 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
 
 
 // =================================================================
+// Business Health Score Calculation
+// =================================================================
+
+const normalize = (value: number, min: number, max: number, inverse: boolean = false): number => {
+    const clampedValue = Math.max(min, Math.min(value, max));
+    const normalized = (clampedValue - min) / (max - min);
+    const score = (inverse ? 1 - normalized : normalized) * 100;
+    return Math.max(0, Math.min(score, 100)); // Ensure score is between 0 and 100
+};
+
+const calculateBusinessHealth = (
+    inputs: EngineInput,
+    summaries: {
+        revenue: ReturnType<typeof RevenueSummarySchema.parse>,
+        cost: ReturnType<typeof CostSummarySchema.parse>,
+        profit: ReturnType<typeof ProfitSummarySchema.parse>,
+        cash: ReturnType<typeof CashFlowSummarySchema.parse>
+    }
+): BusinessHealth => {
+    const weights = {
+        netMargin: 0.25, cashRunway: 0.20, contributionMargin: 0.15,
+        peakFunding: 0.15, sellThrough: 0.15, breakEven: 0.10,
+    };
+
+    // Calculate Raw KPIs
+    const netMargin = summaries.profit.netMargin; // Already a percentage
+    const cashRunway = summaries.cash.runway; // In months
+    const totalCogs = summaries.cost.totalVariable - summaries.cost.cogsOfUnsoldGoods;
+    const contributionMargin = summaries.revenue.totalRevenue > 0 ? ((summaries.revenue.totalRevenue - totalCogs) / summaries.revenue.totalRevenue) * 100 : 0;
+    const peakFundingNeed = summaries.cash.peakFundingNeed;
+    const avgSellThrough = inputs.products.length > 0
+        ? inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length
+        : 0;
+    const breakEvenMonths = summaries.profit.breakEvenMonth || inputs.parameters.forecastMonths + 1;
+
+    // Normalize KPIs to a 0-100 score
+    const kpis: BusinessHealthScoreKpi[] = [
+        { label: 'Net Margin', value: normalize(netMargin, 0, 25), weight: weights.netMargin },
+        { label: 'Cash Runway', value: normalize(cashRunway, 0, 12), weight: weights.cashRunway },
+        { label: 'Contribution Margin', value: normalize(contributionMargin, 10, 60), weight: weights.contributionMargin },
+        { label: 'Peak Funding', value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true), weight: weights.peakFunding },
+        { label: 'Sell-Through', value: normalize(avgSellThrough, 50, 100), weight: weights.sellThrough },
+        { label: 'Break-Even', value: normalize(breakEvenMonths, 1, 12, true), weight: weights.breakEven },
+    ];
+    
+    // Calculate Final Score
+    const finalScore = kpis.reduce((acc, kpi) => acc + (kpi.value * kpi.weight), 0);
+
+    // Generate Insights & Alerts
+    const insights: string[] = [];
+    const alerts: string[] = [];
+    if (kpis.find(k => k.label === 'Net Margin')?.value > 75) insights.push("Excellent net margins indicate strong pricing and cost control.");
+    if (kpis.find(k => k.label === 'Sell-Through')?.value > 80) insights.push("High sell-through rate suggests strong product-market fit.");
+    if (kpis.find(k => k.label === 'Cash Runway')?.value < 30) alerts.push("Cash runway is critically low (under 3 months).");
+    if (kpis.find(k => k.label === 'Peak Funding')?.value < 50) alerts.push("High peak funding need relative to revenue poses a risk.");
+
+    return {
+        score: finalScore,
+        kpis,
+        insights,
+        alerts,
+    };
+};
+
+
+// =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
 
@@ -421,6 +487,13 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         potentialInputs.products.forEach((p: Product) => { p.sellThrough = 100; });
         
         const potentialResult = calculateScenario(potentialInputs);
+        
+        const healthScore = calculateBusinessHealth(inputs, {
+            revenue: achievedResult.revenueSummary,
+            cost: achievedResult.costSummary,
+            profit: achievedResult.profitSummary,
+            cash: achievedResult.cashFlowSummary
+        });
 
         const finalResult: EngineOutput = {
             ...achievedResult,
@@ -428,6 +501,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 ...achievedResult.cashFlowSummary,
                 potentialCashBalance: potentialResult.cashFlowSummary.endingCashBalance
             },
+            businessHealth: healthScore,
         };
         
         return finalResult;
