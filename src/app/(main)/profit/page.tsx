@@ -36,7 +36,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           <KpiCard label="Total Gross Profit" value={formatCurrency(profitSummary.totalGrossProfit, currency)} icon={<TrendingUp />} />
           <KpiCard label="Total Operating Profit" value={formatCurrency(profitSummary.totalOperatingProfit, currency)} icon={<Briefcase />} />
           <KpiCard label="Total Net Profit" value={formatCurrency(profitSummary.totalNetProfit, currency)} icon={<Landmark />} />
-          <KpiCard label="Net Margin" value={`${profitSummary.netMargin.toFixed(1)}%`} icon={<Target />} />
+          <KpiCard label="Net Margin" value={`${(profitSummary.netMargin || 0).toFixed(1)}%`} icon={<Target />} />
         </div>
         {potentialGrossProfit > 0 && (
           <div className="mt-4 space-y-2">
