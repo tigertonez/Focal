@@ -16,7 +16,6 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
-import { ProfitLayersChart } from '@/components/app/profit/charts/ProfitLayersChart';
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
@@ -51,21 +50,13 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
         )}
       </section>
 
-      <section className="grid md:grid-cols-2 gap-8">
+      <section className="grid md:grid-cols-1 gap-8">
          <Card>
             <CardHeader>
                 <CardTitle>Cumulative Operating Profit</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
                <ProfitBreakdownChart data={data} currency={currency} />
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-                <CardTitle>How Profit is Calculated</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[350px] w-full flex items-center">
-                <ProfitLayersChart data={profitSummary} currency={currency} totalRevenue={revenueSummary.totalRevenue} />
             </CardContent>
         </Card>
       </section>
