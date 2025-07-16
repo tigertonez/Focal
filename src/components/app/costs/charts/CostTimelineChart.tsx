@@ -26,40 +26,41 @@ interface CostTimelineChartProps {
 export function CostTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: CostTimelineChartProps) {
   const { inputs } = useForecast();
   
-  const { chartConfig, costKeys } = React.useMemo(() => {
-    const allItems = [...inputs.products, ...inputs.fixedCosts];
+  const { chartConfig, costKeys, styleContent } = React.useMemo(() => {
     const newConfig: ChartConfig = {};
-    let allKeys: string[] = [];
+    const styleLines: string[] = [];
+    const allItems = [...inputs.products, ...inputs.fixedCosts, { id: 'Deposits', name: 'Deposits'}, { id: 'Final Payments', name: 'Final Payments'}];
+    
+    allItems.forEach(item => {
+        const name = 'productName' in item ? item.productName : item.name;
+        if (!name) return;
 
-    if (data && data.length > 0) {
-      allKeys = Object.keys(data[0]).filter(key => key !== 'month');
-      
-      allKeys.forEach((key) => {
-        const item = allItems.find(p => ('productName' in p ? p.productName : p.name) === key);
-        const override = configOverrides ? configOverrides[key] : null;
+        const color = getProductColor(item);
+        const cssId = generateCssId(name);
         
-        const cssId = generateCssId(key);
-        
-        newConfig[key] = { // Use the original key for lookup
-          label: override?.label || key,
-          color: `var(--color-${cssId})`, // Reference the CSS variable
+        newConfig[name] = {
+          label: name,
+          color: `var(--color-${cssId})`,
         };
-
-        if (item) {
-          newConfig[key].color = `var(--color-${generateCssId(item.id)})`;
-        }
-      });
-    }
-
-    // This part is for the <style> tag generation
-    const styleConfig: ChartConfig = {};
-     [...inputs.products, ...inputs.fixedCosts].forEach(item => {
-        const id = ('productName' in item) ? item.id : item.id;
-        const cssId = generateCssId(id);
-        styleConfig[cssId] = { color: getProductColor(item) };
+        styleLines.push(`--color-${cssId}: ${color};`);
     });
 
-    return { chartConfig: {...styleConfig, ...newConfig}, costKeys: allKeys };
+    // Apply any specific overrides for things like units sold charts
+    if (configOverrides) {
+        Object.keys(configOverrides).forEach(key => {
+            if (newConfig[key]) {
+                newConfig[key].label = configOverrides[key].label;
+            }
+        });
+    }
+
+    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month') : [];
+
+    return { 
+        chartConfig: newConfig, 
+        costKeys: allKeys,
+        styleContent: `[data-chart] { ${styleLines.join(' ')} }`
+    };
   }, [data, configOverrides, inputs.products, inputs.fixedCosts]);
   
   if (!data || data.length === 0) {
@@ -97,47 +98,52 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
   });
 
   return (
-    <ChartContainer config={chartConfig} className="h-full w-full">
-      <BarChart 
-        accessibilityLayer 
-        data={chartData}
-        margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
-        stackOffset="sign"
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-        />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={10}
-          tickFormatter={(value) => valueFormatter(Number(value))}
-        />
-        <ChartTooltip
-          cursor={false}
-          content={<ChartTooltipContent 
-            labelFormatter={(label) => `Month ${label.replace('M','')}`}
-            formatter={tooltipFormatter}
-        />}
-        />
-        <ChartLegend />
-        
-        {costKeys.map((key) => {
-            return (
-               <Bar
-                  key={key}
-                  dataKey={key}
-                  fill={chartConfig[key]?.color}
-                  stackId="a"
-                />
-            )
-        })}
+    <>
+      <style>{styleContent}</style>
+      <ChartContainer config={chartConfig} className="h-full w-full" data-chart>
+        <BarChart 
+          accessibilityLayer 
+          data={chartData}
+          margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+          stackOffset="sign"
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="month"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tickFormatter={(value) => valueFormatter(Number(value))}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent 
+              labelFormatter={(label) => `Month ${label.replace('M','')}`}
+              formatter={tooltipFormatter}
+          />}
+          />
+          <ChartLegend />
+          
+          {costKeys.map((key) => {
+              const itemConfig = chartConfig[key];
+              return (
+                 <Bar
+                    key={key}
+                    dataKey={key}
+                    fill={itemConfig?.color}
+                    stackId="a"
+                    name={itemConfig?.label || key}
+                  />
+              )
+          })}
 
-      </BarChart>
-    </ChartContainer>
+        </BarChart>
+      </ChartContainer>
+    </>
   )
 }
