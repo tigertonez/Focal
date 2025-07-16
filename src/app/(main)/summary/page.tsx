@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, 'useEffect', useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
@@ -27,7 +27,7 @@ import { DownloadReportButton } from '@/components/app/summary/DownloadReportBut
 // =================================================================
 
 const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }) => {
-  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } from data;
+  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
