@@ -45,8 +45,6 @@ export default function InputsPage() {
     addProduct,
     addFixedCost,
     saveDraft,
-    runProactiveAnalysis,
-    setIsCopilotOpen,
   } = useForecast();
 
   const { getReport, isLoading } = useFinancials();
@@ -189,23 +187,6 @@ export default function InputsPage() {
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Get Report
             </Button>
-          
-          <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button onClick={() => {
-                        runProactiveAnalysis();
-                        setIsCopilotOpen(true);
-                    }} variant="accent">
-                        <Bot className="mr-2" />
-                        Let AI review
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Get an AI-powered review of your inputs.</p>
-                </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </footer>
       </main>
     </div>
