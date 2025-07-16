@@ -135,16 +135,20 @@ export const MonthlyProfitSchema = z.object({
 });
 export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
 
-// Cash-Flow-related schemas (placeholders)
+// Cash-Flow-related schemas
 export const CashFlowSummarySchema = z.object({
     endingCashBalance: z.number(),
+    peakFundingNeed: z.number(),
     runway: z.number(),
+    breakEvenMonth: z.number().nullable(),
 });
 export type CashFlowSummary = z.infer<typeof CashFlowSummarySchema>;
 
 export const MonthlyCashFlowSchema = z.object({
   month: z.number(),
-}).catchall(z.number());
+  netCashFlow: z.number(),
+  cumulativeCash: z.number(),
+}).catchall(z.number().or(z.string()));
 export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
 

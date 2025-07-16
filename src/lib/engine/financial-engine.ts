@@ -1,6 +1,6 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 // In a real scenario, this would come from a more complex revenue calculation engine.
@@ -62,7 +62,7 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
     const timelineDuration = forecastMonths;
     const startMonth = preOrder ? 0 : 1;
 
-    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
+    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration + (preOrder ? 1 : 0) }, (_, i) => ({ month: i + (preOrder ? 0 : 1) }));
 
     const salesWeights = getAggregatedSalesWeights(inputs);
 
@@ -80,7 +80,6 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
             
             case 'Allocated Monthly':
                 if (forecastMonths > 0) {
-                    // If costType is monthly, use the amount directly. Otherwise, divide total by duration.
                     const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / forecastMonths;
                     for (let i = 0; i < forecastMonths; i++) {
                         const currentMonth = startMonth + i;
@@ -137,7 +136,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                  throw new Error(`Product "${p.productName || 'Unnamed'}" must have a Unit Cost and Sales Price.`);
             }
             if (p.unitCost > p.sellPrice && p.productName) {
-                // This is a warning, not a critical error that should stop the calculation.
                 console.warn(`Product "${p.productName}" has a Unit Cost higher than its Sales Price.`);
             }
         });
@@ -147,9 +145,10 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         
         // --- REVENUE & UNITS CALCULATIONS ---
         const timelineDuration = forecastMonths;
-        const startMonth = preOrder ? 0 : 1;
-        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
-        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
+        const startMonth = preOrder ? 1 : 1; // Sales always start in month 1
+        
+        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: forecastMonths + 1 }, (_, i) => ({ month: i }));
+        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: forecastMonths + 1 }, (_, i) => ({ month: i }));
         
         const productBreakdown = inputs.products.map(product => {
             let soldUnits = 0;
@@ -157,7 +156,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             let salesWeights: number[] = [];
 
             if (isManualMode) {
-                // FORECAST LOGIC
                 if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                     throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting (plannedUnits, sellThrough, or salesModel).`);
                 }
@@ -165,7 +163,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 totalRevenue = soldUnits * (product.sellPrice || 0);
                 salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
             } else {
-                // REAL-TIME LOGIC (Future-proofed)
                 soldUnits = 0;
                 totalRevenue = 0;
                 salesWeights = getSalesWeights(forecastMonths, 'even'); 
@@ -173,7 +170,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
             for (let i = 0; i < forecastMonths; i++) {
                 const currentMonth = startMonth + i;
-                
                 const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === currentMonth);
                  if (revenueTimelineMonth) {
                     const monthlyProductRevenue = totalRevenue * salesWeights[i];
@@ -185,6 +181,17 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                     const monthlyProductUnits = soldUnits * salesWeights[i];
                     unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
                 }
+            }
+             // Handle pre-order revenue
+            if (preOrder) {
+                const preOrderRevenue = (totalRevenue * salesWeights[0]) / 2; // Assume half of first month sales are pre-orders
+                const firstMonthRevenue = (totalRevenue * salesWeights[0]) / 2;
+                
+                const preOrderMonthData = monthlyRevenueTimeline.find(m => m.month === 0);
+                if (preOrderMonthData) preOrderMonthData[product.productName] = (preOrderMonthData[product.productName] || 0) + preOrderRevenue;
+                
+                const firstMonthData = monthlyRevenueTimeline.find(m => m.month === 1);
+                if (firstMonthData) firstMonthData[product.productName] = firstMonthRevenue; // Overwrite, don't add
             }
 
             return {
@@ -304,25 +311,24 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
         // --- PROFIT CALCULATIONS ---
         const monthlyProfit: MonthlyProfit[] = [];
-        let breakEvenMonth: number | null = null;
         let cumulativeOperatingProfit = 0;
-
-        for (let i = 0; i < timelineDuration; i++) {
-            const month = startMonth + i;
+        let profitBreakEvenMonth: number | null = null;
+        
+        const fullTimelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
+        const profitStartMonth = preOrder ? 0 : 1;
+        
+        for (let i = 0; i < fullTimelineDuration; i++) {
+            const month = profitStartMonth + i;
             
             const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
-            const currentCostsData = monthlyCosts.find(c => c.month === month) || { month };
-            
-            const totalMonthlyRevenue = Object.keys(currentRevenueData)
-                .filter(k => k !== 'month')
-                .reduce((sum, key) => sum + (currentRevenueData[key] || 0), 0);
+            const totalMonthlyRevenue = Object.values(currentRevenueData).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
 
-            const totalMonthlyFixedCosts = Object.keys(currentCostsData)
+            const currentFixedCostsData = monthlyCosts.find(c => c.month === month) || { month };
+            const totalMonthlyFixedCosts = Object.keys(currentFixedCostsData)
                 .filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments')
-                .reduce((sum, key) => sum + (currentCostsData[key] || 0), 0);
+                .reduce((sum, key) => sum + (currentFixedCostsData[key] || 0), 0);
             
             const currentUnitsSoldData = monthlyUnitsSold.find(u => u.month === month) || { month };
-
             const monthlyCOGS = Object.keys(currentUnitsSoldData)
                 .filter(key => key !== 'month')
                 .reduce((sum, productName) => {
@@ -331,7 +337,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                     const unitCost = productInfo?.unitCost || 0;
                     return sum + (unitsSold * unitCost);
                 }, 0);
-
 
             const grossProfit = totalMonthlyRevenue - monthlyCOGS;
             const operatingProfit = grossProfit - totalMonthlyFixedCosts;
@@ -344,9 +349,11 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 netProfit
             });
 
-            cumulativeOperatingProfit += operatingProfit;
-            if (breakEvenMonth === null && cumulativeOperatingProfit > 0) {
-                breakEvenMonth = month;
+            if (month >= 1) { // Only track break-even from month 1 onwards
+              cumulativeOperatingProfit += operatingProfit;
+              if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0) {
+                  profitBreakEvenMonth = month;
+              }
             }
         }
         
@@ -361,11 +368,53 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             grossMargin: totalRevenue > 0 ? (totalGrossProfit / totalRevenue) * 100 : 0,
             operatingMargin: totalRevenue > 0 ? (totalOperatingProfit / totalRevenue) * 100 : 0,
             netMargin: totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0,
-            breakEvenMonth,
+            breakEvenMonth: profitBreakEvenMonth,
         };
 
 
-        // --- CASH FLOW (PLACEHOLDERS) ---
+        // --- CASH FLOW CALCULATIONS ---
+        const monthlyCashFlow: MonthlyCashFlow[] = [];
+        let cumulativeCash = 0;
+        let peakFundingNeed = 0;
+        let cashBreakEvenMonth: number | null = null;
+        
+        for (let i = 0; i < fullTimelineDuration; i++) {
+            const month = profitStartMonth + i;
+            
+            const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
+            const cashOutCosts = Object.values(monthlyCosts.find(c => c.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
+            const cashOutTax = (monthlyProfit.find(p => p.month === month)?.netProfit || 0) < (monthlyProfit.find(p => p.month === month)?.operatingProfit || 0) 
+                ? (monthlyProfit.find(p => p.month === month)?.operatingProfit || 0) - (monthlyProfit.find(p => p.month === month)?.netProfit || 0)
+                : 0;
+
+            const netCashFlow = cashIn - cashOutCosts - cashOutTax;
+            cumulativeCash += netCashFlow;
+
+            if (cumulativeCash < peakFundingNeed) {
+                peakFundingNeed = cumulativeCash;
+            }
+
+            if (cashBreakEvenMonth === null && cumulativeCash > 0 && month > 0) {
+                cashBreakEvenMonth = month;
+            }
+
+            monthlyCashFlow.push({
+                month,
+                netCashFlow,
+                cumulativeCash
+            });
+        }
+        
+        const avgMonthlyFixedCost = costSummary.totalFixed / forecastMonths;
+        const runway = cumulativeCash > 0 && avgMonthlyFixedCost > 0 ? cumulativeCash / avgMonthlyFixedCost : (cumulativeCash > 0 ? Infinity : 0);
+
+        const cashFlowSummary = {
+            endingCashBalance: cumulativeCash,
+            peakFundingNeed: Math.abs(peakFundingNeed),
+            runway: isFinite(runway) ? runway : 0,
+            breakEvenMonth: cashBreakEvenMonth,
+        };
+
         return { 
             costSummary,
             monthlyCosts,
@@ -374,9 +423,8 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             monthlyUnitsSold,
             profitSummary,
             monthlyProfit,
-            // Placeholders for future data
-            cashFlowSummary: { endingCashBalance: 0, runway: 0 },
-            monthlyCashFlow: [],
+            cashFlowSummary,
+            monthlyCashFlow,
         };
 
     } catch (e: any) {

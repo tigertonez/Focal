@@ -13,6 +13,7 @@ import {
   Menu,
   FileText,
   Bot,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -25,7 +26,7 @@ const navItems = [
   { href: '/revenue', icon: DollarSign, label: 'Revenue' },
   { href: '/costs', icon: ShoppingCart, label: 'Costs' },
   { href: '/profit', icon: Landmark, label: 'Profit' },
-  { href: '/cash-flow', icon: LineChart, label: 'Cash Flow' },
+  { href: '/cash-flow', icon: Wallet, label: 'Cash Flow' },
   { href: '/summary', icon: FileText, label: 'Summary' },
 ];
 
