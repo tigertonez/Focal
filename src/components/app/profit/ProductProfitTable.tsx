@@ -26,24 +26,37 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
     const { costSummary, revenueSummary, profitSummary } = data;
     const { currency } = inputs.parameters;
 
+    const totalRevenue = revenueSummary.totalRevenue;
+    const totalFixedCosts = costSummary.totalFixed;
+    const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
+
     const productData = inputs.products.map((product, index) => {
         const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
         const unitsSold = revenueData?.totalSoldUnits || 0;
-        const totalRevenue = revenueData?.totalRevenue || 0;
+        const productRevenue = revenueData?.totalRevenue || 0;
         
-        const avgVariableCostPerUnit = costSummary.avgCostPerUnit;
         const productCogs = unitsSold * (product.unitCost || 0);
 
-        const grossProfit = totalRevenue - productCogs;
-        const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+        const grossProfit = productRevenue - productCogs;
+        const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
+        
+        // Allocate shared costs based on revenue contribution
+        const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
+        const allocatedFixedCosts = totalFixedCosts * revenueShare;
+        const allocatedTaxes = totalTaxes * revenueShare;
+
+        const operatingProfit = grossProfit - allocatedFixedCosts;
+        const netProfit = operatingProfit - allocatedTaxes;
         
         return {
             ...product,
             color: getColorForProduct(index),
             unitsSold,
-            totalRevenue,
+            totalRevenue: productRevenue,
             grossProfit,
             grossMargin,
+            operatingProfit,
+            netProfit,
         };
     });
 
@@ -52,10 +65,10 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
             <TableHeader>
                 <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Units Sold</TableHead>
-                    <TableHead className="text-right">Total Revenue</TableHead>
                     <TableHead className="text-right">Gross Profit</TableHead>
                     <TableHead className="text-right">Gross Margin</TableHead>
+                    <TableHead className="text-right">Operating Profit</TableHead>
+                    <TableHead className="text-right">Net Profit</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,10 +78,10 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
                              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }}/>
                              {p.productName}
                         </TableCell>
-                        <TableCell className="text-right">{formatNumber(p.unitsSold)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(p.totalRevenue, currency)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
                         <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
                     </TableRow>
                 ))}
             </TableBody>
