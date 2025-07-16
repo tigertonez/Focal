@@ -175,21 +175,6 @@ export type AnalyzeProfitabilityOutput = z.infer<
   typeof AnalyzeProfitabilityOutputSchema
 >;
 
-// --- Business Health Score Schemas ---
-export const SubScoreSchema = z.object({
-    label: z.string(),
-    score: z.number(),
-    value: z.string(),
-    benchmark: z.string(),
-});
-export type SubScore = z.infer<typeof SubScoreSchema>;
-
-export const BusinessHealthSchema = z.object({
-    score: z.number(),
-    subScores: z.array(SubScoreSchema),
-});
-export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
-
 
 // --- Main Engine Output Schema ---
 // This is the single source of truth for all calculated financial data
@@ -203,6 +188,5 @@ export const EngineOutputSchema = z.object({
     monthlyProfit: z.array(MonthlyProfitSchema),
     cashFlowSummary: CashFlowSummarySchema,
     monthlyCashFlow: z.array(MonthlyCashFlowSchema),
-    businessHealth: BusinessHealthSchema.optional(),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;

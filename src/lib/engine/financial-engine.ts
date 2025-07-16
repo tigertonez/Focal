@@ -1,65 +1,6 @@
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, BusinessHealthSchema, type BusinessHealth } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
-
-
-// =================================================================
-// Business Health Score Calculation
-// =================================================================
-const calculateBusinessHealth = (inputs: EngineInput, data: Omit<EngineOutput, 'businessHealth'>): BusinessHealth => {
-    const { profitSummary, cashFlowSummary, revenueSummary, costSummary } = data;
-    const { currency } = inputs.parameters;
-
-    const normalize = (value: number, min: number, max: number) => {
-        if (max === min) return value >= max ? 100 : 0;
-        const score = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
-        return Math.round(score);
-    };
-
-    // 1. Profitability Score (Weight: 35%)
-    const opMargin = profitSummary.operatingMargin;
-    const opMarginScore = normalize(opMargin, 0, 25); // Benchmark: 0% is bad, 25%+ is great
-
-    // 2. Liquidity Score (Weight: 30%)
-    const runwayMonths = cashFlowSummary.runway;
-    const runwayScore = normalize(isFinite(runwayMonths) ? runwayMonths : 999, 3, 12); // Benchmark: <3 months is bad, 12+ is great
-
-    const fundingNeedRatio = cashFlowSummary.peakFundingNeed / (revenueSummary.totalRevenue || 1);
-    const fundingNeedScore = 100 - normalize(fundingNeedRatio, 0.1, 0.5); // Benchmark: 10% is good, >50% is bad
-
-    const liquidityScore = Math.round((runwayScore * 0.6) + (fundingNeedScore * 0.4));
-    
-    // 3. Efficiency Score (Weight: 20%)
-    const contributionMargin = revenueSummary.totalRevenue > 0
-        ? ((revenueSummary.totalRevenue - costSummary.totalVariable) / revenueSummary.totalRevenue) * 100
-        : 0;
-    const cmScore = normalize(contributionMargin, 20, 60); // Benchmark: 20% is ok, 60%+ is great
-
-    // 4. Demand Score (Weight: 15%)
-    const totalPlanned = inputs.products.reduce((acc, p) => acc + (p.plannedUnits || 0), 0);
-    const avgSellThrough = totalPlanned > 0
-        ? (revenueSummary.totalSoldUnits / totalPlanned) * 100
-        : 0;
-    const sellThroughScore = normalize(avgSellThrough, 60, 95); // Benchmark: <60% is bad, 95%+ is great
-
-    // Weighted Total Score
-    const totalScore = Math.round(
-        (opMarginScore * 0.35) +
-        (liquidityScore * 0.30) +
-        (cmScore * 0.20) +
-        (sellThroughScore * 0.15)
-    );
-
-    return BusinessHealthSchema.parse({
-        score: totalScore,
-        subScores: [
-            { label: 'Profitability', score: opMarginScore, value: `${opMargin.toFixed(1)}%`, benchmark: 'Op. Margin' },
-            { label: 'Liquidity', score: liquidityScore, value: `${isFinite(runwayMonths) ? formatNumber(runwayMonths) : '∞'} mo`, benchmark: 'Runway' },
-            { label: 'Efficiency', score: cmScore, value: `${contributionMargin.toFixed(1)}%`, benchmark: 'Contrib. Margin' },
-            { label: 'Demand', score: sellThroughScore, value: `${avgSellThrough.toFixed(1)}%`, benchmark: 'Sell-Through' }
-        ]
-    });
-};
 
 
 // =================================================================
@@ -487,7 +428,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 ...achievedResult.cashFlowSummary,
                 potentialCashBalance: potentialResult.cashFlowSummary.endingCashBalance
             },
-            businessHealth: calculateBusinessHealth(inputs, achievedResult),
         };
         
         return finalResult;

@@ -27,7 +27,6 @@ const navItems = [
   { href: '/costs', icon: ShoppingCart, label: 'Costs' },
   { href: '/profit', icon: Landmark, label: 'Profit' },
   { href: '/cash-flow', icon: Wallet, label: 'Cash Flow' },
-  { href: '/summary', icon: FileText, label: 'Summary' },
 ];
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
