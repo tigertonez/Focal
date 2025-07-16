@@ -38,7 +38,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     <KpiCard label="Total Units Sold" value={revenueSummary.totalSoldUnits.toLocaleString()} icon={<Users />} />
                     <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} />
                     {/* The sell-through can vary per product, so we show an average or from the first product as an example */}
-                    <KpiCard label="Avg. Sell-Through" value={`${(revenueSummary.productBreakdown.reduce((acc, p) => acc + (inputs.products.find(ip => ip.productName === p.name)?.sellThrough || 0), 0) / revenueSummary.productBreakdown.length).toFixed(0)}%`} icon={<Target />} />
+                    <KpiCard label="Avg. Sell-Through" value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} icon={<Target />} />
                 </div>
             </section>
             
