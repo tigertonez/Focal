@@ -71,7 +71,8 @@ const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] =
         
         switch (schedule) {
             case 'Paid Up-Front':
-                const firstMonth = timeline.find(t => t.month === startMonth);
+                const firstMonthIndex = preOrder ? 0 : 1;
+                const firstMonth = timeline.find(t => t.month === firstMonthIndex);
                 if (firstMonth) {
                     firstMonth[cost.name] = (firstMonth[cost.name] || 0) + cost.amount;
                 }
@@ -322,8 +323,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             
             const currentUnitsSoldData = monthlyUnitsSold.find(u => u.month === month) || { month };
 
-            // ** CORRECTED COGS CALCULATION **
-            // Calculate COGS for the month based on the specific products sold in that month
             const monthlyCOGS = Object.keys(currentUnitsSoldData)
                 .filter(key => key !== 'month')
                 .reduce((sum, productName) => {
