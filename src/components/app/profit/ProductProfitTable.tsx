@@ -3,7 +3,7 @@
 
 import type { EngineInput, EngineOutput } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import React from "react";
@@ -12,18 +12,6 @@ interface ProductProfitTableProps {
     data: EngineOutput;
     inputs: EngineInput;
 }
-
-const getColorForProduct = (index: number) => {
-  const colors = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-    "hsl(var(--chart-6))",
-  ];
-  return colors[index % colors.length];
-};
 
 const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: string }> = ({ title, tooltip, className }) => (
     <TableHead className={className}>
@@ -54,7 +42,7 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
     const totalFixedCosts = costSummary.totalFixed;
     const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
 
-    const productData = inputs.products.map((product, index) => {
+    const productData = inputs.products.map((product) => {
         const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
         const unitsSold = revenueData?.totalSoldUnits || 0;
         const productRevenue = revenueData?.totalRevenue || 0;
@@ -77,7 +65,7 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
 
         return {
             ...product,
-            color: getColorForProduct(index),
+            color: getProductColor(product.productName),
             unitsSold,
             totalRevenue: productRevenue,
             grossProfit,

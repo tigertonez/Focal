@@ -11,31 +11,19 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency, formatNumber } from "@/lib/utils"
-import { chartColorVars, semanticColorMap } from './chart-colors';
-
-const knownKeys = Object.keys(semanticColorMap);
-const colorCycle = chartColorVars.filter(color => 
-    !Object.values(semanticColorMap).includes(color)
-);
-let assignedColors: Record<string, string> = {};
-let nextColorIndex = 0;
+import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
+import { semanticColorMap } from './chart-colors';
 
 const getColorForKey = (key: string): string => {
     const lowerKey = key.toLowerCase();
 
-    for (const mapKey of knownKeys) {
+    for (const mapKey in semanticColorMap) {
         if (lowerKey.includes(mapKey.toLowerCase())) {
             return semanticColorMap[mapKey];
         }
     }
-    
-    if (!assignedColors[key]) {
-        assignedColors[key] = colorCycle[nextColorIndex % colorCycle.length];
-        nextColorIndex++;
-    }
-
-    return assignedColors[key];
+    // Default to product color logic for anything not in the semantic map
+    return getProductColor(key);
 };
 
 
@@ -51,15 +39,11 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    // Reset color assignment on data change to ensure consistency
-    assignedColors = {};
-    nextColorIndex = 0;
-    
     if (data && data.length > 0) {
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
       
-      allKeys.forEach((key) => {
+      allKeys.forEach((key, index) => {
         const override = configOverrides ? configOverrides[key] : null;
         newConfig[key] = {
           label: override?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
