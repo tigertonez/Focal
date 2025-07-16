@@ -12,38 +12,19 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber } from "@/lib/utils"
+import { chartColorVars, semanticColorMap } from './chart-colors';
 
-const chartColorVars = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-];
-
-// Semantic color mapping rule
-const colorMap: Record<string, string> = {
-    "Salaries": "hsl(var(--chart-1))", // Blue
-    "Marketing": "hsl(var(--chart-4))", // Green
-    "Deposits": "hsl(var(--chart-2))", // Orange
-    "Final Payments": "hsl(var(--chart-5))", // Violet
-    "Legal": "hsl(var(--chart-3))", // Pink
-    "Software": "hsl(var(--chart-6))", // Cyan
-    "Admin & Tools": "hsl(var(--chart-3))",
-    "Buffer": "hsl(var(--muted-foreground))", // Gray for buffer
-};
 
 const getColorForKey = (key: string) => {
     const lowerKey = key.toLowerCase();
-    for (const mapKey in colorMap) {
+    for (const mapKey in semanticColorMap) {
         if (lowerKey.includes(mapKey.toLowerCase())) {
-            return colorMap[mapKey];
+            return semanticColorMap[mapKey];
         }
     }
-    // Fallback for unknown keys
+    // Fallback for unknown keys by hashing the key to a color
     const index = Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return `hsl(${chartColorVars[index % chartColorVars.length]})`;
+    return chartColorVars[index % chartColorVars.length];
 };
 
 

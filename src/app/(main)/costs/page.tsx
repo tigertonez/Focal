@@ -17,7 +17,8 @@ import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
+import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
+
 
 function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
     const router = useRouter();
@@ -29,6 +30,15 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
+    const investmentData = [
+        { name: 'Production', value: costSummary.totalVariable },
+        ...costSummary.fixedCosts.map(cost => ({
+            name: cost.name,
+            value: cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount,
+        })),
+    ].filter(item => item.value > 0);
+
+
     return (
         <div className="p-4 md:p-8 space-y-8">
             <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
@@ -111,13 +121,16 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                         </Card>
                     </div>
                     <div className="space-y-2">
-                         <h2 className="text-xl font-semibold">Future Cost Component</h2>
+                        <h2 className="text-xl font-semibold">Investment Breakdown</h2>
                          <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Placeholder</CardTitle>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.59L12 15.17l-1.41 1.42L9.17 18l-2.83-2.83 1.41-1.41L9.17 15.17l1.41-1.42L12 15.17l2.83-2.83 1.41 1.41L14.83 18l1.41-1.41.01.01.01-.01zM12 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+                                    Investment Breakdown
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-24 w-full" />
+                            <CardContent className="h-[300px] w-full">
+                                <InvestmentPieChart data={investmentData} />
                             </CardContent>
                          </Card>
                     </div>
