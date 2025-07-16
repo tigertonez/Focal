@@ -301,7 +301,7 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
                             colorClass="text-red-600"
                             icon={<MinusCircle className="h-4 w-4 text-red-500" />}
                         />
-                         <p className="pl-8 text-xs text-muted-foreground">*Based on the estimated tax rate provided. Actual taxes may differ.</p>
+                         <p className="pl-8 text-xs text-muted-foreground text-left">*Based on the estimated tax rate provided. Actual taxes may differ.</p>
                     </div>
 
                     <Separator className="my-2" />
