@@ -4,9 +4,9 @@
 import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
-import type { EngineOutput, EngineInput, BusinessHealth } from '@/lib/types';
+import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -32,7 +32,7 @@ const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
       <KpiCard
         label="Total Revenue"
         value={formatCurrency(revenueSummary.totalRevenue, currency)}
@@ -102,15 +102,22 @@ const HealthBar = ({ label, value }: { label: string, value: number }) => {
     );
 };
 
-const HealthPanel = ({ healthData }: { healthData?: BusinessHealth }) => {
+const HealthPanel = ({ healthData, onRecalculate }: { healthData?: BusinessHealth, onRecalculate: () => void }) => {
     const [isOpen, setIsOpen] = useState(false);
+    
     if (!healthData) {
         return (
-            <Card className="flex h-32 items-center justify-center rounded-lg text-muted-foreground">
-                Business Health Score data is not available.
+            <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center">
+                 <CardTitle className="mb-2">Business Health Score</CardTitle>
+                 <p className="text-muted-foreground mb-4 text-sm">This feature is new. Please re-run your report to see the analysis.</p>
+                 <Button onClick={onRecalculate}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Go to Inputs & Recalculate
+                 </Button>
             </Card>
         );
     }
+    
     const { score, kpis, insights, alerts } = healthData;
 
     const getScoreColor = (s: number) => {
@@ -215,7 +222,10 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       <KPISection data={data} currency={inputs.parameters.currency} />
       
       {/* --- Row 2: Health Score --- */}
-      <HealthPanel healthData={data.businessHealth} />
+      <HealthPanel 
+        healthData={data.businessHealth} 
+        onRecalculate={() => router.push('/inputs')}
+      />
 
       {/* --- Row 3: Profit-to-Cash Bridge --- */}
       <CashBridge />
