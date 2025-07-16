@@ -97,6 +97,7 @@ export default function RevenuePage() {
         error: null,
         isLoading: true,
     });
+    const router = useRouter();
 
     useEffect(() => {
         const result = getFinancials();
@@ -134,7 +135,7 @@ export default function RevenuePage() {
                 <div className="text-center text-muted-foreground mt-16">
                     <p>No revenue data to display.</p>
                     <p className="text-sm">Complete the product information on the Inputs page to see your revenue forecast.</p>
-                     <Button onClick={() => useRouter().push('/costs')} className="mt-4">
+                     <Button onClick={() => router.push('/costs')} className="mt-4">
                         Continue to Costs <ArrowRight className="ml-2" />
                     </Button>
                 </div>
