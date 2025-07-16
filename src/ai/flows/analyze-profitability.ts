@@ -32,6 +32,8 @@ Analyze the following financial forecast:
 - Cost Summary: {{{json costSummary}}}
 - Profit Summary: {{{json profitSummary}}}
 
+When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**. Do not use quotation marks for numbers.
+
 Provide the following analysis. For any sections that are lists, provide them as a JSON array of strings.
 
 - **Key Facts**: List the top 3 most critical numbers a shop owner must know from this forecast.
@@ -48,7 +50,6 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     outputSchema: AnalyzeProfitabilityOutputSchema,
   },
   async (input) => {
-    // A defined prompt that specifies an output schema will automatically handle generation.
     const { output } = await prompt(input);
     
     if (!output) {

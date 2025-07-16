@@ -65,12 +65,17 @@ const ProfitInsightsLoader: React.FC = () => (
   </Card>
 );
 
+const createMarkup = (text: string) => {
+    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return { __html: boldedText };
+};
+
 const renderContent = (content: string[]) => {
     if (!content || content.length === 0) return null;
     
     return (
         <ul className="list-disc list-outside space-y-1 pl-4">
-            {content.map((item, index) => <li key={index}>{item}</li>)}
+            {content.map((item, index) => <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />)}
         </ul>
     )
 }
