@@ -13,7 +13,6 @@ import {
   AnalyzeProfitabilityOutputSchema,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
-import { googleAI } from '@genkit-ai/googleai';
 
 export async function analyzeProfitability(
   input: AnalyzeProfitabilityInput
@@ -25,6 +24,7 @@ const prompt = ai.definePrompt({
   name: 'profitabilityInsightPrompt',
   input: { schema: AnalyzeProfitabilityInputSchema },
   output: { schema: AnalyzeProfitabilityOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an expert e-commerce growth consultant. Your tone is direct, data-driven, and focused on actionable advice for a shop owner. The currency is {{{currency}}}.
 
 Analyze the following financial forecast:
@@ -48,17 +48,8 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     outputSchema: AnalyzeProfitabilityOutputSchema,
   },
   async (input) => {
-    // Create the full prompt with the user's data.
-    const filledPrompt = await prompt(input);
-
-    // Use a faster model for quicker insights
-    const { output } = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash-latest'),
-        prompt: filledPrompt,
-        output: {
-            schema: AnalyzeProfitabilityOutputSchema
-        }
-    });
+    // A defined prompt that specifies an output schema will automatically handle generation.
+    const { output } = await prompt(input);
     
     if (!output) {
       throw new Error("The AI model did not return a valid response.");
