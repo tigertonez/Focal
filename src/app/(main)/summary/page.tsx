@@ -14,6 +14,7 @@ import { Terminal } from 'lucide-react';
 import { ProfitToCashBridge } from '@/components/app/summary/ProfitToCashBridge';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 import { SummaryKpiCards } from '@/components/app/summary/SummaryKpiCards';
+import { BusinessHealthScore } from '@/components/app/summary/BusinessHealthScore';
 
 // =================================================================
 // STRATEGY BLUEPRINT: BUSINESS HEALTH SCORE
@@ -95,8 +96,8 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       
       <div className="space-y-8">
          <SummaryKpiCards data={data} inputs={inputs} />
+         <BusinessHealthScore healthData={data.businessHealth} />
          <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
-         {/* More summary components can be added here in the future */}
       </div>
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
@@ -150,5 +151,3 @@ export default function SummaryPage() {
 
   return <SummaryPageContent data={data} inputs={inputs} />;
 }
-
-    

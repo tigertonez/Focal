@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // --- Section A: Product ---
@@ -153,6 +152,25 @@ export const MonthlyCashFlowSchema = z.object({
 });
 export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
+// Business Health Schemas
+export const SubScoreSchema = z.object({
+  label: z.string(),
+  score: z.number(), // 0-100
+});
+export type SubScore = z.infer<typeof SubScoreSchema>;
+
+export const BusinessHealthSchema = z.object({
+  score: z.number(), // 0-100
+  recommendations: z.array(z.string()),
+  subScores: z.object({
+    profitability: SubScoreSchema,
+    liquidity: SubScoreSchema,
+    efficiency: SubScoreSchema,
+    demand: SubScoreSchema,
+  }),
+});
+export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
+
 
 // --- AI-related Schemas ---
 
@@ -189,5 +207,6 @@ export const EngineOutputSchema = z.object({
     monthlyProfit: z.array(MonthlyProfitSchema),
     cashFlowSummary: CashFlowSummarySchema,
     monthlyCashFlow: z.array(MonthlyCashFlowSchema),
+    businessHealth: BusinessHealthSchema,
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;
