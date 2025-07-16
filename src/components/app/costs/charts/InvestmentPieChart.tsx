@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 
 
 interface InvestmentPieChartProps {
-    data: { name: string; value: number; item: Product | FixedCostItem }[];
+    data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
     currency: string;
 }
 
@@ -60,9 +60,17 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     dataKey="value"
                     strokeWidth={0}
                 >
-                    {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getProductColor(entry.item)} />
-                    ))}
+                    {data.map((entry, index) => {
+                        let color;
+                        if (entry.color) {
+                            color = entry.color;
+                        } else if (entry.item) {
+                            color = getProductColor(entry.item);
+                        } else {
+                            color = 'hsl(var(--muted-foreground))';
+                        }
+                        return <Cell key={`cell-${index}`} fill={color} />;
+                    })}
                 </Pie>
                 <Legend 
                     iconSize={10} 

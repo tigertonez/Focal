@@ -30,17 +30,17 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
-    const investmentData: { name: string; value: number; item: Product | FixedCostItem }[] = [
-        ...inputs.products.map(p => ({
-            name: p.productName,
-            value: (p.plannedUnits || 0) * (p.unitCost || 0),
-            item: p,
-        })),
-        ...inputs.fixedCosts.map(cost => ({
-            name: cost.name,
-            value: cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount,
-            item: cost,
-        })),
+    const investmentData = [
+      {
+        name: 'Total Variable Costs',
+        value: costSummary.totalVariable,
+        color: 'hsl(var(--primary))',
+      },
+      ...inputs.fixedCosts.map(cost => ({
+          name: cost.name,
+          value: cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount,
+          item: cost,
+      })),
     ].filter(item => item.value > 0);
 
 
