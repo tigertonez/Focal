@@ -27,7 +27,7 @@ const SubScoreItem: React.FC<{ subScore: SubScore, icon: React.ReactNode }> = ({
                         {subScore.score}/100
                     </span>
                 </div>
-                <Progress value={subScore.score} style={{ backgroundColor: scoreColor }} indicatorClassName="bg-primary" />
+                <Progress value={subScore.score} style={{ backgroundColor: scoreColor }} />
             </div>
         </div>
     );
@@ -59,7 +59,7 @@ export function BusinessHealthScore({ healthData }: { healthData?: BusinessHealt
                         </div>
                         <div className="flex items-center gap-4 w-full sm:w-auto justify-between">
                             <div 
-                                className="text-2xl font-bold px-4 py-2 rounded-lg text-white text-center w-[80px]"
+                                className="text-2xl font-bold px-4 py-2 rounded-lg text-white text-center min-w-[80px]"
                                 style={{ backgroundColor: getScoreColor(score) }}
                                 aria-label={`Business Health Score: ${score}`}
                             >
@@ -88,19 +88,3 @@ export function BusinessHealthScore({ healthData }: { healthData?: BusinessHealt
         </Card>
     );
 }
-
-// Add a specific class for the Progress indicator to be targeted
-const ProgressWithIndicatorClass = React.forwardRef<
-  React.ElementRef<typeof Progress>,
-  React.ComponentProps<typeof Progress> & { indicatorClassName?: string }
->(({ indicatorClassName, ...props }, ref) => (
-  <Progress
-    ref={ref}
-    {...props}
-    // This is a prop that doesn't exist on the base component, so we pass it down
-    // via a custom implementation or style prop if needed.
-    // For now, let's assume we can add a class to the indicator.
-    // This is a conceptual change. The actual Progress component needs to support it.
-    // Let's modify the Progress component to accept this.
-  />
-));

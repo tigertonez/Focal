@@ -96,8 +96,8 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       
       <div className="space-y-8">
          <SummaryKpiCards data={data} inputs={inputs} />
-         <BusinessHealthScore healthData={data.businessHealth} />
          <ProfitToCashBridge data={data} currency={inputs.parameters.currency} />
+         <BusinessHealthScore healthData={data.businessHealth} />
       </div>
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
