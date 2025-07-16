@@ -1,4 +1,5 @@
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -141,10 +142,10 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
 
         const { preOrder, forecastMonths, taxRate } = inputs.parameters;
         const isManualMode = inputs.realtime.dataSource === 'Manual';
-        const startMonth = preOrder ? 0 : 1;
         
         // --- REVENUE & UNITS CALCULATIONS ---
         const timelineDuration = forecastMonths;
+        const startMonth = preOrder ? 0 : 1;
         const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
         const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: startMonth + i }));
         
