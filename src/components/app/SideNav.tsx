@@ -58,6 +58,8 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
 
 
 const DesktopNav = () => {
+    const { setIsCopilotOpen } = useForecast();
+
     return (
         <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
             <Link href="/" className="p-3 mb-4">
@@ -68,6 +70,22 @@ const DesktopNav = () => {
             <nav className="flex flex-col items-center space-y-2">
                 {navItems.map(item => <NavLink key={item.href} {...item} />)}
             </nav>
+            <div className="flex-grow" />
+            <div className="flex flex-col items-center gap-2 mt-4 pt-4 border-t w-full">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="accent" size="icon" onClick={() => setIsCopilotOpen(true)}>
+                            <Bot />
+                            <span className="sr-only">Ask AI</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Ask AI</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+            </div>
         </aside>
     );
 };
@@ -99,6 +117,11 @@ const MobileNav = () => {
                             </Link>
                         ))}
                     </nav>
+                    <div className="mt-auto">
+                        <Button className="w-full" variant="accent" onClick={() => setIsCopilotOpen(true)}>
+                            <Bot className="mr-2" /> Ask AI
+                        </Button>
+                    </div>
                 </SheetContent>
             </Sheet>
             <div className="flex-1 text-center font-bold">
