@@ -14,17 +14,28 @@ import {
 import { formatCurrency, formatNumber } from "@/lib/utils"
 import { chartColorVars, semanticColorMap } from './chart-colors';
 
+const knownKeys = Object.keys(semanticColorMap);
+const colorCycle = chartColorVars.filter(color => 
+    !Object.values(semanticColorMap).includes(color)
+);
+let assignedColors: Record<string, string> = {};
+let nextColorIndex = 0;
 
-const getColorForKey = (key: string) => {
+const getColorForKey = (key: string): string => {
     const lowerKey = key.toLowerCase();
-    for (const mapKey in semanticColorMap) {
+
+    for (const mapKey of knownKeys) {
         if (lowerKey.includes(mapKey.toLowerCase())) {
             return semanticColorMap[mapKey];
         }
     }
-    // Fallback for unknown keys by hashing the key to a color
-    const index = Array.from(key).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return chartColorVars[index % chartColorVars.length];
+    
+    if (!assignedColors[key]) {
+        assignedColors[key] = colorCycle[nextColorIndex % colorCycle.length];
+        nextColorIndex++;
+    }
+
+    return assignedColors[key];
 };
 
 
@@ -40,6 +51,10 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
 
   React.useEffect(() => {
+    // Reset color assignment on data change to ensure consistency
+    assignedColors = {};
+    nextColorIndex = 0;
+    
     if (data && data.length > 0) {
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
