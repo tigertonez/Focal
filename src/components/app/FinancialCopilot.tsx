@@ -109,9 +109,13 @@ export function FinancialCopilot() {
     }
   };
   
+  if (!isCopilotOpen) {
+    return null;
+  }
+  
   return (
     <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0" id="financial-copilot-container">
+        <SheetContent variant="ghost" className="w-[400px] sm:w-[540px] flex flex-col p-0" id="financial-copilot-container">
              <SheetHeader className="p-4 border-b">
                 <SheetTitle className="flex items-center gap-2">
                     <Bot size={20} /> Financial Copilot

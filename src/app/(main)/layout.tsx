@@ -11,13 +11,15 @@ export default function MainLayout({
 }) {
   return (
     <ForecastProvider>
-      <div className="relative flex min-h-screen bg-background">
+      <div className="flex h-screen bg-background">
         <SideNav />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <div className="flex flex-1 overflow-hidden">
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+          <FinancialCopilot />
+        </div>
       </div>
-      <FinancialCopilot />
     </ForecastProvider>
   );
 }
