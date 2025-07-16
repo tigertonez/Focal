@@ -61,27 +61,24 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                 )}
             </section>
             
-            <section className="grid md:grid-cols-5 gap-8">
-                <div className="md:col-span-3">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Monthly Revenue Timeline</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px] w-full pl-0">
-                           <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="md:col-span-2">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Revenue by Product</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px] w-full flex items-center justify-center">
-                            <RevenuePieChart data={revenueSummary.productBreakdown} currency={currency} />
-                        </CardContent>
-                    </Card>
-                </div>
+            <section className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Revenue Timeline</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full pl-0">
+                       <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Revenue by Product</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full flex items-center justify-center">
+                        <RevenuePieChart data={revenueSummary.productBreakdown} currency={currency} />
+                    </CardContent>
+                </Card>
             </section>
 
             <footer className="flex justify-end mt-8 pt-6 border-t">
