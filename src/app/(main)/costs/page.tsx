@@ -197,7 +197,7 @@ export default function CostsPage() {
                     <AlertTitle>Calculation Error</AlertTitle>
                     <AlertDescription>
                         {error} Please correct the issues on the Inputs page and try again.
-                    </AlerTDescription>
+                    </AlertDescription>
                 </Alert>
             </div>
         );
