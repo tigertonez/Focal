@@ -48,13 +48,13 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     outputSchema: AnalyzeProfitabilityOutputSchema,
   },
   async (input) => {
-    // Using a faster model for quicker insights
+    // Create the full prompt with the user's data.
+    const filledPrompt = await prompt(input);
+
+    // Use a faster model for quicker insights
     const { output } = await ai.generate({
         model: googleAI.model('gemini-1.5-flash-latest'),
-        prompt: {
-            text: prompt.prompt!, // Use the text from the defined prompt
-            input: input,
-        },
+        prompt: filledPrompt,
         output: {
             schema: AnalyzeProfitabilityOutputSchema
         }
