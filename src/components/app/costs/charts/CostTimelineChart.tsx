@@ -53,8 +53,6 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
   }
   
-  const reversedCostKeys = [...costKeys].reverse();
-
   const valueFormatter = (value: number) => {
     if (formatAs === 'number') {
       return formatNumber(value);
@@ -115,13 +113,13 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
             dataKey: key
         })).reverse()} />} />
         
-        {reversedCostKeys.map((key, index) => (
+        {costKeys.map((key, index) => (
            <Bar
               key={key}
               dataKey={key}
               fill={chartConfig[key]?.color}
               stackId="a"
-              radius={index === reversedCostKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+              radius={index === costKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />
         ))}
 
