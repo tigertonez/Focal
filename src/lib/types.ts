@@ -158,6 +158,7 @@ export const BusinessHealthScoreKpiSchema = z.object({
   label: z.string(),
   value: z.number(), // The normalized score (0-100)
   weight: z.number(),
+  tooltip: z.string(),
 });
 export type BusinessHealthScoreKpi = z.infer<typeof BusinessHealthScoreKpiSchema>;
 

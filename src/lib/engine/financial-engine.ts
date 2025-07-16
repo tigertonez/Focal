@@ -407,7 +407,7 @@ const calculateBusinessHealth = (
         peakFunding: 0.15, sellThrough: 0.15, breakEven: 0.10,
     };
 
-    // Calculate Raw KPIs
+    // 1. Calculate Raw KPIs from dynamic financial data
     const netMargin = summaries.profit.netMargin; // Already a percentage
     const cashRunway = summaries.cash.runway; // In months
     const totalCogs = summaries.cost.totalVariable - summaries.cost.cogsOfUnsoldGoods;
@@ -418,20 +418,50 @@ const calculateBusinessHealth = (
         : 0;
     const breakEvenMonths = summaries.profit.breakEvenMonth || inputs.parameters.forecastMonths + 1;
 
-    // Normalize KPIs to a 0-100 score
+    // 2. Normalize KPIs to a 0-100 score with explanatory tooltips
     const kpis: BusinessHealthScoreKpi[] = [
-        { label: 'Net Margin', value: normalize(netMargin, 0, 25), weight: weights.netMargin },
-        { label: 'Cash Runway', value: normalize(cashRunway, 0, 12), weight: weights.cashRunway },
-        { label: 'Contribution Margin', value: normalize(contributionMargin, 10, 60), weight: weights.contributionMargin },
-        { label: 'Peak Funding', value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true), weight: weights.peakFunding },
-        { label: 'Sell-Through', value: normalize(avgSellThrough, 50, 100), weight: weights.sellThrough },
-        { label: 'Break-Even', value: normalize(breakEvenMonths, 1, 12, true), weight: weights.breakEven },
+        { 
+            label: 'Net Margin', 
+            value: normalize(netMargin, 0, 25), 
+            weight: weights.netMargin,
+            tooltip: 'Measures final profit as a % of revenue. Scored on a scale from 0% (score: 0) to 25%+ (score: 100).'
+        },
+        { 
+            label: 'Cash Runway', 
+            value: normalize(cashRunway, 0, 12), 
+            weight: weights.cashRunway,
+            tooltip: 'Months of operation your cash reserves can cover. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).'
+        },
+        { 
+            label: 'Contribution Margin', 
+            value: normalize(contributionMargin, 10, 60), 
+            weight: weights.contributionMargin,
+            tooltip: 'Measures per-unit profitability before fixed costs. Scored on a scale from 10% (score: 0) to 60%+ (score: 100).'
+        },
+        { 
+            label: 'Peak Funding', 
+            value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true), 
+            weight: weights.peakFunding,
+            tooltip: 'The minimum capital needed. Scored inversely; a lower need (relative to revenue) is better.'
+        },
+        { 
+            label: 'Sell-Through', 
+            value: normalize(avgSellThrough, 50, 100), 
+            weight: weights.sellThrough,
+            tooltip: 'The % of inventory you expect to sell. Scored on a scale from 50% (score: 0) to 100% (score: 100).'
+        },
+        { 
+            label: 'Break-Even', 
+            value: normalize(breakEvenMonths, 1, 12, true), 
+            weight: weights.breakEven,
+            tooltip: 'The months until profitability. Scored inversely; a shorter time to break-even is better (12 months = 0, 1 month = 100).'
+        },
     ];
     
-    // Calculate Final Score
+    // 3. Calculate Final Weighted Score
     const finalScore = kpis.reduce((acc, kpi) => acc + (kpi.value * kpi.weight), 0);
 
-    // Generate Insights & Alerts
+    // 4. Generate Rule-Based Insights & Alerts
     const insights: string[] = [];
     const alerts: string[] = [];
     if (kpis.find(k => k.label === 'Net Margin')?.value > 75) insights.push("Excellent net margins indicate strong pricing and cost control.");

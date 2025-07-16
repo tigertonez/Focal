@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
-import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi } from '@/lib/types';
+import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -16,7 +16,10 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
+
 
 // =================================================================
 // PLACEHOLDER COMPONENTS (PART A & B)
@@ -85,26 +88,66 @@ const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }
  * Expected Data (Part B): `healthScore` (0-100), `insights[]` (array of strings),
  * `alerts[]` (array of strings)
  */
-const HealthBar = ({ label, value }: { label: string, value: number }) => {
+const HealthBar = ({ label, value, tooltip }: { label: string, value: number, tooltip: string }) => {
     const getColor = (v: number) => {
         if (v < 40) return 'bg-destructive';
         if (v < 70) return 'bg-yellow-500';
         return 'bg-green-500';
     };
     return (
-        <div className="space-y-1">
-            <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-semibold">{value.toFixed(0)} / 100</span>
-            </div>
-            <Progress value={value} indicatorClassName={getColor(value)} />
-        </div>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className="font-semibold">{value.toFixed(0)} / 100</span>
+                        </div>
+                        <Progress value={value} indicatorClassName={getColor(value)} />
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs p-3">
+                    <p className="text-muted-foreground text-xs">{tooltip}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 };
 
-const HealthPanel = ({ healthData, onRecalculate }: { healthData?: BusinessHealth, onRecalculate: () => void }) => {
+const HealthPanel = ({ 
+  healthData,
+  financialSummaries,
+  onRecalculate 
+}: { 
+  healthData?: BusinessHealth,
+  financialSummaries: { revenue: RevenueSummary, cost: CostSummary, profit: ProfitSummary },
+  onRecalculate: () => void 
+}) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     
+    const handleStrategize = useCallback(async () => {
+        if (!healthData) return;
+        setIsLoading(true);
+        setError(null);
+        setAiInsights(null);
+        try {
+            const result = await strategizeHealthScore({
+                businessHealth: healthData,
+                revenueSummary: financialSummaries.revenue,
+                costSummary: financialSummaries.cost,
+                profitSummary: financialSummaries.profit,
+            });
+            setAiInsights(result);
+        } catch (e: any) {
+            setError(e.message || 'Failed to get AI strategy.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [healthData, financialSummaries]);
+
     if (!healthData) {
         return (
             <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center">
@@ -129,8 +172,16 @@ const HealthPanel = ({ healthData, onRecalculate }: { healthData?: BusinessHealt
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Business Health Score</CardTitle>
-                <CardDescription>A weighted score based on key financial metrics to gauge your plan's viability.</CardDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>Business Health Score</CardTitle>
+                        <CardDescription>A weighted score based on key financial metrics to gauge your plan's viability.</CardDescription>
+                    </div>
+                    <Button onClick={handleStrategize} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                        Strategize with AI
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
@@ -159,6 +210,41 @@ const HealthPanel = ({ healthData, onRecalculate }: { healthData?: BusinessHealt
                         </Collapsible>
                     </div>
                 </div>
+                
+                {error && (
+                    <Alert variant="destructive" className="mt-4">
+                        <ShieldAlert className="h-4 w-4" />
+                        <AlertTitle>AI Strategy Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+                
+                {aiInsights && (
+                     <Alert className="mt-6">
+                        <Lightbulb className="h-4 w-4" />
+                        <AlertTitle>AI-Powered Strategy</AlertTitle>
+                        <AlertDescription>
+                          <div className="space-y-3 mt-2">
+                             <div>
+                                <h4 className="font-semibold text-foreground">Strategic Summary</h4>
+                                <p className="text-muted-foreground">{aiInsights.summary}</p>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold text-foreground">Top Opportunities</h4>
+                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                    {aiInsights.opportunities.map((item, i) => <li key={i}>{item}</li>)}
+                                </ul>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold text-foreground">Key Risks to Mitigate</h4>
+                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                    {aiInsights.risks.map((item, i) => <li key={i}>{item}</li>)}
+                                </ul>
+                            </div>
+                          </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {(insights.length > 0 || alerts.length > 0) && (
                   <div className="mt-6 space-y-4">
@@ -223,7 +309,12 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
       
       {/* --- Row 2: Health Score --- */}
       <HealthPanel 
-        healthData={data.businessHealth} 
+        healthData={data.businessHealth}
+        financialSummaries={{
+          revenue: data.revenueSummary,
+          cost: data.costSummary,
+          profit: data.profitSummary,
+        }}
         onRecalculate={() => router.push('/inputs')}
       />
 
