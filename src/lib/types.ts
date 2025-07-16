@@ -113,17 +113,24 @@ export const MonthlyUnitsSoldSchema = z.object({
 export type MonthlyUnitsSold = z.infer<typeof MonthlyUnitsSoldSchema>;
 
 
-// Profit-related schemas (placeholders)
+// Profit-related schemas
 export const ProfitSummarySchema = z.object({
-    grossProfit: z.number(),
-    operatingProfit: z.number(),
-    netProfit: z.number(),
+    totalGrossProfit: z.number(),
+    totalOperatingProfit: z.number(),
+    totalNetProfit: z.number(),
+    grossMargin: z.number(),
+    operatingMargin: z.number(),
+    netMargin: z.number(),
+    breakEvenMonth: z.number().nullable(),
 });
 export type ProfitSummary = z.infer<typeof ProfitSummarySchema>;
 
 export const MonthlyProfitSchema = z.object({
   month: z.number(),
-}).catchall(z.number());
+  grossProfit: z.number(),
+  operatingProfit: z.number(),
+  netProfit: z.number(),
+});
 export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
 
 // Cash-Flow-related schemas (placeholders)

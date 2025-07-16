@@ -1,5 +1,5 @@
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 // In a real scenario, this would come from a more complex revenue calculation engine.
@@ -150,24 +150,15 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             }
         });
 
-        const { preOrder, forecastMonths } = inputs.parameters;
+        const { preOrder, forecastMonths, taxRate } = inputs.parameters;
         const isManualMode = inputs.realtime.dataSource === 'Manual';
         const salesStartMonth = preOrder ? 0 : 1;
         
         // --- REVENUE & UNITS CALCULATIONS ---
-        const timelineDuration = preOrder ? forecastMonths : forecastMonths + 1;
-        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
-        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i }));
+        const timelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
+        const monthlyRevenueTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
+        const monthlyUnitsTimeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: preOrder ? i : i + 1 }));
         
-        if (!preOrder) {
-            monthlyRevenueTimeline.shift();
-            monthlyUnitsTimeline.shift();
-            for(let i = 0; i < monthlyRevenueTimeline.length; i++) {
-                monthlyRevenueTimeline[i].month = i + 1;
-                monthlyUnitsTimeline[i].month = i + 1;
-            }
-        }
-
         const productBreakdown = inputs.products.map(product => {
             let soldUnits = 0;
             let totalRevenue = 0;
@@ -183,24 +174,22 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
             } else {
                 // REAL-TIME LOGIC (Future-proofed)
-                // In a real scenario, soldUnits and totalRevenue would be fetched from an API for the period.
-                // For now, we assume they are 0 as no real-time data source is connected.
-                soldUnits = 0; // Example: from Shopify API
-                totalRevenue = 0; // Example: from Shopify API
-                // Sales weights might be based on historicals if available
+                soldUnits = 0;
+                totalRevenue = 0;
                 salesWeights = getSalesWeights(forecastMonths, 'even'); 
             }
 
             for (let i = 0; i < forecastMonths; i++) {
-                const currentMonth = salesStartMonth + i;
+                const currentMonthIndexInSales = i;
+                const timelineMonthIndex = preOrder ? currentMonthIndexInSales + 1 : currentMonthIndexInSales;
                 
-                const revenueTimelineMonth = monthlyRevenueTimeline.find(t => t.month === currentMonth);
-                if (revenueTimelineMonth) {
+                const revenueTimelineMonth = monthlyRevenueTimeline[timelineMonthIndex];
+                 if (revenueTimelineMonth) {
                     const monthlyProductRevenue = totalRevenue * salesWeights[i];
                     revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + monthlyProductRevenue;
                 }
 
-                const unitsTimelineMonth = monthlyUnitsTimeline.find(t => t.month === currentMonth);
+                const unitsTimelineMonth = monthlyUnitsTimeline[timelineMonthIndex];
                 if (unitsTimelineMonth) {
                     const monthlyProductUnits = soldUnits * salesWeights[i];
                     unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyProductUnits;
@@ -251,8 +240,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         let totalVariableCost = 0;
 
         const variableCostBreakdown = inputs.products.map(product => {
-            // NOTE: Planned units for cost calculations might differ from sold units for revenue.
-            // This assumes we produce based on the plan, even in RT mode.
             const plannedUnits = product.plannedUnits || 0; 
             const unitCost = product.unitCost || 0;
             const totalProductionCost = plannedUnits * unitCost;
@@ -289,7 +276,14 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             finalPaymentMonthData['Final Payments'] = (finalPaymentMonthData['Final Payments'] || 0) + totalFinalPayments;
         }
         
-        const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => sum + cost.amount, 0);
+        const totalFixedCostInPeriod = inputs.fixedCosts.reduce((sum, cost) => {
+            // Adjust for monthly cost type
+            if (cost.costType === 'Monthly Cost') {
+                return sum + (cost.amount * forecastMonths);
+            }
+            return sum + cost.amount;
+        }, 0);
+
         const totalOperating = totalFixedCostInPeriod + totalVariableCost;
         const avgCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
         
@@ -321,18 +315,70 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         }).filter(Boolean) as MonthlyCost[];
 
 
-        // --- PROFIT, CASH FLOW (PLACEHOLDERS) ---
-        // This section will be built out in future steps.
+        // --- PROFIT CALCULATIONS ---
+        const monthlyProfit: MonthlyProfit[] = [];
+        let breakEvenMonth: number | null = null;
+        let cumulativeOperatingProfit = 0;
 
+        for (let i = 0; i < timelineDuration; i++) {
+            const month = preOrder ? i : i + 1;
+            
+            const currentRevenue = monthlyRevenue.find(r => r.month === month);
+            const currentCosts = monthlyCosts.find(c => c.month === month);
+
+            const totalMonthlyRevenue = currentRevenue ? Object.values(currentRevenue).filter(v => typeof v === 'number').reduce((s, v) => s + v, 0) - currentRevenue.month : 0;
+            const totalMonthlyCosts = currentCosts ? Object.values(currentCosts).filter(v => typeof v === 'number').reduce((s, v) => s + v, 0) - currentCosts.month : 0;
+            
+            // Note: Variable costs are tied to production schedule (deposits/final payments), not sales.
+            // For profit calculation, we should use COGS (Cost of Goods Sold) which is tied to sales.
+            // Simplified COGS: (total variable cost / total planned units) * units sold this month
+            const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month);
+            const totalMonthlyUnitsSold = currentUnitsSold ? Object.values(currentUnitsSold).filter(v => typeof v === 'number').reduce((s, v) => s + v, 0) - currentUnitsSold.month : 0;
+            const avgVariableCostPerUnit = totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0;
+            const monthlyCOGS = totalMonthlyUnitsSold * avgVariableCostPerUnit;
+
+            const grossProfit = totalMonthlyRevenue - monthlyCOGS;
+            const operatingProfit = grossProfit - totalMonthlyCosts; // Fixed costs are already in monthlyCosts
+            const netProfit = operatingProfit > 0 ? operatingProfit * (1 - (taxRate / 100)) : operatingProfit;
+            
+            monthlyProfit.push({
+                month,
+                grossProfit,
+                operatingProfit,
+                netProfit
+            });
+
+            cumulativeOperatingProfit += operatingProfit;
+            if (breakEvenMonth === null && cumulativeOperatingProfit > 0) {
+                breakEvenMonth = month;
+            }
+        }
+        
+        const totalGrossProfit = monthlyProfit.reduce((sum, p) => sum + p.grossProfit, 0);
+        const totalOperatingProfit = monthlyProfit.reduce((sum, p) => sum + p.operatingProfit, 0);
+        const totalNetProfit = monthlyProfit.reduce((sum, p) => sum + p.netProfit, 0);
+
+        const profitSummary = {
+            totalGrossProfit,
+            totalOperatingProfit,
+            totalNetProfit,
+            grossMargin: totalRevenue > 0 ? (totalGrossProfit / totalRevenue) * 100 : 0,
+            operatingMargin: totalRevenue > 0 ? (totalOperatingProfit / totalRevenue) * 100 : 0,
+            netMargin: totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0,
+            breakEvenMonth,
+        };
+
+
+        // --- CASH FLOW (PLACEHOLDERS) ---
         return { 
             costSummary,
             monthlyCosts,
             revenueSummary,
             monthlyRevenue,
             monthlyUnitsSold,
+            profitSummary,
+            monthlyProfit,
             // Placeholders for future data
-            profitSummary: { grossProfit: 0, operatingProfit: 0, netProfit: 0 },
-            monthlyProfit: [],
             cashFlowSummary: { endingCashBalance: 0, runway: 0 },
             monthlyCashFlow: [],
         };
