@@ -13,6 +13,7 @@ import {
   AnalyzeProfitabilityOutputSchema,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
+import { googleAI } from '@genkit-ai/googleai';
 
 export async function analyzeProfitability(
   input: AnalyzeProfitabilityInput
@@ -47,21 +48,20 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     outputSchema: AnalyzeProfitabilityOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Using a faster model for quicker insights
+    const { output } = await ai.generate({
+        model: googleAI.model('gemini-1.5-flash-latest'),
+        prompt: prompt.prompt!,
+        input: input,
+        output: {
+            schema: AnalyzeProfitabilityOutputSchema
+        }
+    });
     
     if (!output) {
       throw new Error("The AI model did not return a valid response.");
     }
-    
-    // Ensure the output is in the expected format (lists or simple strings)
-    // This is a simplified transformation for demonstration
-    const formattedOutput: AnalyzeProfitabilityOutput = {
-      keyFacts: Array.isArray(output.keyFacts) ? output.keyFacts : [output.keyFacts],
-      strengths: output.strengths,
-      weaknesses: output.weaknesses,
-      recommendations: output.recommendations,
-    };
 
-    return formattedOutput;
+    return output;
   }
 );

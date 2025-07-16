@@ -17,7 +17,6 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
-import { OperatingProfitPieChart } from '@/components/app/profit/charts/OperatingProfitPieChart';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
@@ -31,13 +30,10 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const totalRevenue = revenueSummary.totalRevenue;
-  const totalFixedCosts = costSummary.totalFixed;
-  const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
   let totalMarginSum = 0;
   let productsWithRevenue = 0;
 
-  const productProfitData = inputs.products.map((product) => {
+  inputs.products.forEach((product) => {
       const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
       const productRevenue = revenueData?.totalRevenue || 0;
       
@@ -45,19 +41,12 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           const unitsSold = revenueData?.totalSoldUnits || 0;
           const productCogs = unitsSold * (product.unitCost || 0);
           const grossProfit = productRevenue - productCogs;
-          const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
-          const allocatedFixedCosts = totalFixedCosts * revenueShare;
-          const allocatedTaxes = totalTaxes * revenueShare;
-          const operatingProfit = grossProfit - allocatedFixedCosts;
-          const netProfit = operatingProfit - allocatedTaxes;
+          const netProfit = grossProfit - (costSummary.totalFixed * (productRevenue / revenueSummary.totalRevenue)) - ((profitSummary.totalOperatingProfit - profitSummary.totalNetProfit) * (productRevenue / revenueSummary.totalRevenue));
           const netMargin = (netProfit / productRevenue) * 100;
           
           totalMarginSum += netMargin;
           productsWithRevenue++;
-
-          return { ...product, operatingProfit, netProfit, netMargin };
       }
-      return { ...product, operatingProfit: 0, netProfit: 0, netMargin: 0 };
   });
 
   const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
@@ -113,7 +102,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
         )}
       </section>
 
-      <section className="grid md:grid-cols-1 gap-8">
+      <section>
          <Card>
             <CardHeader>
                 <CardTitle>Cumulative Operating Profit</CardTitle>
@@ -135,15 +124,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           </Card>
         </section>
 
-        <section className="grid md:grid-cols-2 gap-8 pt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Operating Profit by Product</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <OperatingProfitPieChart productData={productProfitData} currency={currency} />
-                </CardContent>
-            </Card>
+        <section className="pt-4">
             <ProfitInsights data={data} currency={currency} />
         </section>
 
