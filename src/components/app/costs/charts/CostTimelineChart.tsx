@@ -71,9 +71,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
 
   const chartData = data.map(monthData => {
       const newMonthData = {...monthData};
-      if (typeof newMonthData.month === 'number') {
-          newMonthData.month = `M${newMonthData.month}`;
-      }
+      newMonthData.month = `M${newMonthData.month}`;
       return newMonthData;
   });
 
