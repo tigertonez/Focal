@@ -17,15 +17,15 @@ import type { EngineOutput } from "@/lib/types"
 const chartConfig = {
   revenue: {
     label: "Revenue",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--chart-4))", // Green
   },
   costs: {
     label: "Total Costs",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--chart-2))", // Orange
   },
   cumulativeProfit: {
     label: "Cumulative Operating Profit",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(var(--chart-1))", // Blue
   }
 } satisfies ChartConfig
 
@@ -86,7 +86,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
           tickFormatter={(value) => valueFormatter(Number(value))}
         />
         <ChartTooltip
-          cursor={false}
+          cursor={true}
           content={<ChartTooltipContent 
             formatter={(value, name) => {
                const itemConfig = chartConfig[name as keyof typeof chartConfig];
@@ -102,11 +102,11 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
             }}
           />}
         />
-        <ChartLegend />
+        <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
-        <Bar dataKey="costs" fill="hsl(var(--chart-1))" stackId="stack" radius={[0, 0, 4, 4]} />
-        <Bar dataKey="revenue" fill="hsl(var(--chart-2))" stackId="stack" radius={[4, 4, 0, 0]} />
-        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-4))" strokeWidth={3} dot={false} yAxisId={0} />
+        <Bar dataKey="costs" fill="hsl(var(--chart-2))" stackId="stack" radius={[0, 0, 4, 4]} />
+        <Bar dataKey="revenue" fill="hsl(var(--chart-4))" stackId="stack" radius={[4, 4, 0, 0]} />
+        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-1))" strokeWidth={3} dot={false} yAxisId={0} />
 
       </ComposedChart>
     </ChartContainer>
