@@ -20,14 +20,21 @@ import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
-  const { profitSummary, revenueSummary } = data;
+  const { profitSummary, revenueSummary, costSummary } = data;
   const currency = inputs.parameters.currency;
 
-  const potentialGrossProfit = revenueSummary.totalRevenue - data.costSummary.totalVariable;
-  const profitProgress = potentialGrossProfit > 0 ? (profitSummary.totalGrossProfit / potentialGrossProfit) * 100 : 0;
+  // Potential is calculated at 100% sell-through for all products.
+  const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits || 0) * (p.sellPrice || 0), 0);
+  const potentialGrossProfit = potentialRevenue - costSummary.totalVariable;
+
+  // Achieved gross profit is what the engine calculated based on the user's sell-through rate.
+  const achievedGrossProfit = profitSummary.totalGrossProfit;
+
+  const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const exceededAmount = profitSummary.totalGrossProfit - potentialGrossProfit;
+  const exceededAmount = achievedGrossProfit - potentialGrossProfit;
   const exceededPercent = potentialGrossProfit > 0 ? (exceededAmount / potentialGrossProfit) * 100 : 0;
+
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -50,7 +57,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
                 </span>
               ) : (
                 <span className="font-medium text-foreground">
-                  {formatCurrency(profitSummary.totalGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
+                  {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
                 </span>
               )}
             </div>
