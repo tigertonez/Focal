@@ -75,7 +75,7 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
         )}
       </section>
 
-      <section className="grid md:grid-cols-2 gap-8 items-start">
+      <section className="space-y-8">
         <Card>
             <CardHeader>
                 <CardTitle>Cumulative Cash Flow</CardTitle>
@@ -84,7 +84,7 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
                <CashFlowChart data={data} currency={currency} />
             </CardContent>
         </Card>
-        <div className="max-h-[480px] overflow-y-auto">
+        <div className="overflow-y-auto">
           <CashFlowTable data={data} currency={currency} />
         </div>
       </section>
