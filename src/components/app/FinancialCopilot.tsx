@@ -5,19 +5,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet"
-import { Avatar, AvatarFallback } from '../ui/avatar';
 
 interface Message {
   role: 'user' | 'bot';
@@ -117,9 +109,9 @@ export function FinancialCopilot() {
   }
   
   return (
-    <Card className="fixed bottom-4 left-[88px] w-1/2 max-w-2xl h-[50vh] max-h-[500px] z-50 flex flex-col shadow-2xl rounded-t-xl border-t-4 border-primary animate-in slide-in-from-bottom-5">
-      <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-        <CardTitle className="text-base flex items-center gap-2">
+    <Card className="fixed bottom-4 left-[88px] w-full max-w-md h-[45vh] max-h-[400px] z-50 flex flex-col shadow-2xl rounded-xl border-t-4 border-primary animate-in slide-in-from-bottom-5">
+      <CardHeader className="flex flex-row items-center justify-between p-3 border-b bg-background rounded-t-xl">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Bot size={18} /> Financial Copilot
         </CardTitle>
         <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="h-7 w-7">
@@ -127,28 +119,20 @@ export function FinancialCopilot() {
         </Button>
       </CardHeader>
       
-      <ScrollArea className="flex-1" ref={scrollAreaRef}>
-          <div className="space-y-4 p-4">
+      <ScrollArea className="flex-1 bg-background" ref={scrollAreaRef}>
+          <div className="space-y-4 p-4 text-sm">
             {messages.length === 0 && !isLoading && (
-                <Card className="bg-muted border-dashed h-full">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Welcome!</CardTitle>
-                        <CardDescription>Ask me anything about your forecast or for UI improvements.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground">
-                        <p>For example, you can ask:</p>
-                        <ul className="list-disc pl-5 mt-2 space-y-1">
-                            <li>"Review my fixed costs for any issues."</li>
-                            <li>"Are my product margins realistic?"</li>
-                            <li>"How can I make this page clearer?"</li>
-                        </ul>
-                    </CardContent>
-                </Card>
+                <div className="flex items-start gap-3">
+                    <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                    <div className="p-3 rounded-lg bg-muted">
+                        <p>Welcome! Ask me anything about your forecast or for UI improvements.</p>
+                    </div>
+                </div>
             )}
             {messages.map((msg, index) => (
               <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                 {msg.role === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                <div className={`p-3 rounded-lg max-w-sm text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                <div className={`p-3 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
                  {msg.role === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0" />}
@@ -159,7 +143,7 @@ export function FinancialCopilot() {
                 <Bot className="h-6 w-6 text-primary flex-shrink-0" />
                 <div className="p-3 rounded-lg bg-muted flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">Thinking...</span>
+                    <span className="text-muted-foreground">Thinking...</span>
                 </div>
               </div>
             )}
@@ -184,6 +168,7 @@ export function FinancialCopilot() {
                   handleSendMessage();
                 }
               }}
+              rows={1}
             />
             <Button
               type="submit"
