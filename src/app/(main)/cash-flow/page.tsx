@@ -24,7 +24,7 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
   const { cashFlowSummary, profitSummary } = data;
   const currency = inputs.parameters.currency;
 
-  const potentialCashPosition = profitSummary.totalGrossProfit; // Use Gross Profit as a proxy for potential cash
+  const potentialCashPosition = cashFlowSummary.potentialCashBalance;
   const cashProgress = potentialCashPosition > 0 ? (cashFlowSummary.endingCashBalance / potentialCashPosition) * 100 : 0;
 
   return (

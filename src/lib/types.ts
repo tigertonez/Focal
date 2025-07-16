@@ -138,6 +138,7 @@ export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
 // Cash-Flow-related schemas
 export const CashFlowSummarySchema = z.object({
     endingCashBalance: z.number(),
+    potentialCashBalance: z.number(),
     peakFundingNeed: z.number(),
     runway: z.number(),
     breakEvenMonth: z.number().nullable(),
