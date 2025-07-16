@@ -143,13 +143,12 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
             dataKey: key
         }))} />} />
         
-        {costKeys.map((key, index) => (
+        {costKeys.map((key) => (
            <Bar
               key={key}
               dataKey={key}
               fill={chartConfig[key]?.color}
               stackId="a"
-              radius={index === costKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />
         ))}
 

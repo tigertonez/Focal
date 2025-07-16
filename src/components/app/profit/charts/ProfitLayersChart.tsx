@@ -97,7 +97,6 @@ export function ProfitLayersChart({ data, totalRevenue, currency }: ProfitLayers
         <Bar
           dataKey="totalRevenue"
           stackId="a"
-          radius={[5, 5, 5, 5]}
           fill={"hsl(var(--chart-4))"}
         >
           <LabelList
