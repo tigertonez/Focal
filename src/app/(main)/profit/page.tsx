@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { OperatingProfitPieChart } from '@/components/app/profit/charts/OperatingProfitPieChart';
-import { ProfitBreakdownCard } from '@/components/app/profit/ProfitBreakdownCard';
+import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 
 function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
   const router = useRouter();
@@ -144,7 +144,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
                     <OperatingProfitPieChart productData={productProfitData} currency={currency} />
                 </CardContent>
             </Card>
-            <ProfitBreakdownCard data={data} currency={currency} />
+            <ProfitInsights data={data} currency={currency} />
         </section>
 
       <footer className="flex justify-end mt-8 pt-6 border-t">
@@ -153,7 +153,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
         </Button>
       </footer>
     </div>
-  )
+  );
 }
 
 export default function ProfitPage() {
