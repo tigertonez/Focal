@@ -35,7 +35,7 @@ const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: 
                         <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs p-3">
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left">
                           <p className="font-semibold">{title}</p>
                           <p className="text-muted-foreground text-xs">{tooltip}</p>
                         </div>
