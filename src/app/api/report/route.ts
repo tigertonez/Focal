@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToStream } from '@react-pdf/renderer';
 import { calculateFinancials } from '@/lib/engine/financial-engine';
