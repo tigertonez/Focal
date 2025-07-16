@@ -42,7 +42,10 @@ const financialCopilotFlow = ai.defineFlow(
     inputSchema: FinancialCopilotInputSchema,
     outputSchema: FinancialCopilotOutputSchema,
   },
-  async ({ screenshotDataUri, history }) => {
+  async (input) => {
+    // Correctly parse the input to ensure type safety
+    const { screenshotDataUri, history } = FinancialCopilotInputSchema.parse(input);
+
     const systemPrompt = `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, scannable, and actionable advice based *only* on what you see in the screenshot and the conversation history.
 
 IMPORTANT:
