@@ -34,7 +34,7 @@ const initialInputs: EngineInput = {
       productName: 'Pro Widget',
       plannedUnits: 1250,
       unitCost: 10,
-      sellPrice: 30,
+      sellPrice: 90, // was 30
       salesModel: 'launch',
       sellThrough: 80,
       depositPct: 25,
@@ -44,7 +44,7 @@ const initialInputs: EngineInput = {
       productName: 'Basic Widget',
       plannedUnits: 2500,
       unitCost: 5,
-      sellPrice: 15,
+      sellPrice: 45, // was 15
       salesModel: 'even',
       sellThrough: 95,
       depositPct: 10,
@@ -54,7 +54,7 @@ const initialInputs: EngineInput = {
       productName: 'Super Service',
       plannedUnits: 125,
       unitCost: 50,
-      sellPrice: 250,
+      sellPrice: 750, // was 250
       salesModel: 'growth',
       sellThrough: 100,
       depositPct: 0,
