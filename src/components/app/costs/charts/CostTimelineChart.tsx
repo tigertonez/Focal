@@ -110,7 +110,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
         />
         <ChartLegend content={<ChartLegendContent payload={Object.keys(chartConfig).map(key => ({
             value: chartConfig[key]?.label,
-            color: chartConfig[key]?.color,
+            color: chartConfig[key]?.color as string,
             dataKey: key
         }))} />} />
         
@@ -118,7 +118,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
            <Bar
               key={key}
               dataKey={key}
-              fill={chartConfig[key]?.color}
+              fill={`var(--color-${key})`}
               stackId="a"
             />
         ))}
