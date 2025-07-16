@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2 } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2, MinusCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -15,22 +15,16 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
+import { Separator } from '@/components/ui/separator';
 
 
 // =================================================================
-// PLACEHOLDER COMPONENTS (PART A & B)
+// Child Components
 // =================================================================
 
-/**
- * KPISection - Renders the 6 main KPI cards.
- * Expected Data (Part B): `totalRevenue` (from revenueSummary), `totalOperating` (from costSummary),
- * `totalGrossProfit` (from profitSummary), `endingCashBalance` (from cashFlowSummary),
- * `breakEvenMonth` (from profitSummary), `peakFundingNeed` (from cashFlowSummary)
- */
 const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }) => {
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
@@ -83,11 +77,6 @@ const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }
 };
 
 
-/**
- * HealthPanel - Renders the Business Health Score.
- * Expected Data (Part B): `healthScore` (0-100), `insights[]` (array of strings),
- * `alerts[]` (array of strings)
- */
 const HealthBar = ({ label, value, tooltip }: { label: string, value: number, tooltip: string }) => {
     const getColor = (v: number) => {
         if (v < 40) return 'bg-destructive';
@@ -233,14 +222,14 @@ const HealthPanel = ({
                     </Alert>
                 )}
 
-                {(insights.length > 0 || alerts.length > 0) && (
+                {(insights.length > 0 || alerts.length > 0) && !aiInsights && (
                   <div className="mt-6 space-y-4">
                       {insights.length > 0 && (
                           <Alert variant="default">
                               <Lightbulb className="h-4 w-4" />
                               <AlertTitle>Insights</AlertTitle>
                               <AlertDescription>
-                                  <ul className="list-disc pl-5">
+                                  <ul className="list-disc pl-5 mt-1">
                                       {insights.map((item, i) => <li key={i}>{item}</li>)}
                                   </ul>
                               </AlertDescription>
@@ -251,7 +240,7 @@ const HealthPanel = ({
                               <ShieldAlert className="h-4 w-4" />
                               <AlertTitle>Alerts</AlertTitle>
                               <AlertDescription>
-                                  <ul className="list-disc pl-5">
+                                  <ul className="list-disc pl-5 mt-1">
                                     {alerts.map((item, i) => <li key={i}>{item}</li>)}
                                   </ul>
                               </AlertDescription>
@@ -265,18 +254,68 @@ const HealthPanel = ({
 };
 
 
-/**
- * CashBridge - Renders the Profit-to-Cash bridge visual.
- * Expected Data (Part B): `operatingProfit`, `cogsOfUnsoldGoods` (from costSummary),
- * `totalNetProfit` vs `totalOperatingProfit` for taxes,
- * `endingCashBalance` (from cashFlowSummary)
- */
-const CashBridge = () => {
-  return (
-    <Card className="flex h-48 items-center justify-center rounded-lg text-muted-foreground">
-      TODO: Profit-to-Cash Bridge
-    </Card>
-  );
+const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon }: { label: string, value: number, currency: string, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode }) => (
+    <div className={cn("flex items-center justify-between py-2", isSubtle ? 'text-sm' : 'text-base')}>
+        <div className="flex items-center gap-2">
+            {icon}
+            <span className={cn(isSubtle ? 'text-muted-foreground' : 'font-medium')}>{label}</span>
+        </div>
+        <span className={cn(colorClass, 'font-mono font-semibold')}>{formatCurrency(value, currency)}</span>
+    </div>
+);
+
+const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }) => {
+    const { profitSummary, costSummary, cashFlowSummary } = data;
+
+    const operatingProfit = profitSummary.totalOperatingProfit;
+    const unsoldInventoryValue = costSummary.cogsOfUnsoldGoods;
+    const estTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
+    const endingCash = cashFlowSummary.endingCashBalance;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Profit to Cash Bridge</CardTitle>
+                <CardDescription>How your operating profit converts to your final cash balance.</CardDescription>
+            </CardHeader>
+            <CardContent className="px-6 py-4">
+                <div className="space-y-1">
+                    <BridgeRow 
+                        label="Operating Profit" 
+                        value={operatingProfit} 
+                        currency={currency} 
+                        icon={<PlusCircle className="h-4 w-4 text-green-500" />}
+                    />
+                    <BridgeRow 
+                        label="Cash Tied in Unsold Inventory" 
+                        value={-unsoldInventoryValue} 
+                        currency={currency} 
+                        colorClass="text-red-600"
+                        icon={<MinusCircle className="h-4 w-4 text-red-500" />}
+                    />
+                    <div className="space-y-1">
+                        <BridgeRow 
+                            label="Estimated Taxes" 
+                            value={-estTaxes} 
+                            currency={currency} 
+                            colorClass="text-red-600"
+                            icon={<MinusCircle className="h-4 w-4 text-red-500" />}
+                        />
+                         <p className="pl-8 text-xs text-muted-foreground">*Based on the estimated tax rate provided. Actual taxes may differ.</p>
+                    </div>
+
+                    <Separator className="my-2" />
+
+                    <BridgeRow 
+                        label="Ending Cash Balance" 
+                        value={endingCash} 
+                        currency={currency} 
+                        colorClass="text-blue-600 font-bold"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+    );
 };
 
 
@@ -291,10 +330,8 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
     <div className="p-4 md:p-8 space-y-8">
       <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
       
-      {/* --- Row 1: KPI Cards --- */}
       <KPISection data={data} currency={inputs.parameters.currency} />
       
-      {/* --- Row 2: Health Score --- */}
       <HealthPanel 
         healthData={data.businessHealth}
         financialSummaries={{
@@ -305,8 +342,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
         onRecalculate={() => router.push('/inputs')}
       />
 
-      {/* --- Row 3: Profit-to-Cash Bridge --- */}
-      <CashBridge />
+      <CashBridge data={data} currency={inputs.parameters.currency} />
 
       <footer className="flex justify-start mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
