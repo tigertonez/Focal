@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, 'useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -60,8 +60,9 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   });
 
   const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
-  const netMarginTooltip = "This is an average of the net profit margins of all your products. It's useful for a general sense of product-level profitability, but isn't weighted by revenue.";
+  
   const netMarginTitle = "Average Net Margin";
+  const netMarginTooltip = "The average of the net profit margins from each of your products. This KPI gives a general sense of product-level profitability, but it isn't weighted by revenue.";
 
   return (
     <div className="p-4 md:p-8 space-y-8">
