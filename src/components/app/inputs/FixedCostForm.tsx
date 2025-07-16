@@ -101,10 +101,9 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
             </div>
             
             <div className={cn(
-                "grid grid-cols-1 gap-4 items-end",
-                hasMonthZero ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2"
+                "grid grid-cols-2 md:grid-cols-5 gap-4 items-end",
             )}>
-                <div className="space-y-1">
+                <div className={cn("space-y-1", hasMonthZero ? "md:col-span-2" : "md:col-span-1")}>
                     <Label className="text-xs">Amount</Label>
                     <div className="relative">
                         <Input
@@ -113,7 +112,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             value={cost.amount}
                             onChange={handleChange}
                             placeholder="Amount"
-                            className="text-sm pr-28" // Padded right for currency + dropdown
+                            className="text-sm pr-[140px]" // Padded right for currency + dropdown
                         />
                         <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
                          <Select onValueChange={handleSelectChange('costType')} value={costType}>
@@ -127,7 +126,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         </Select>
                     </div>
                 </div>
-                 <div className="space-y-1">
+                 <div className="space-y-1 md:col-span-2">
                     <Label className="text-xs">Payment Schedule</Label>
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                         <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
@@ -140,7 +139,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     </Select>
                  </div>
                  {hasMonthZero && (
-                    <div className="space-y-1">
+                    <div className="space-y-1 md:col-span-1">
                         <Label className="text-xs">Start In</Label>
                         <Select 
                             onValueChange={handleSelectChange('startMonth')} 
