@@ -17,15 +17,15 @@ import type { EngineOutput } from "@/lib/types"
 const chartConfig = {
   revenue: {
     label: "Revenue",
-    color: "hsl(var(--chart-4))", // Green
+    color: "hsl(var(--chart-1))", // Blue
   },
   costs: {
     label: "Total Costs",
-    color: "hsl(var(--chart-2))", // Orange
+    color: "hsl(0, 75%, 65%)", // Subtle Red
   },
   cumulativeProfit: {
     label: "Cumulative Operating Profit",
-    color: "hsl(var(--chart-1))", // Blue
+    color: "hsl(140, 30%, 40%)", // Muted Tree Green
   }
 } satisfies ChartConfig
 
@@ -104,9 +104,9 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
-        <Bar dataKey="costs" fill="hsl(var(--chart-2))" stackId="stack" radius={[0, 0, 4, 4]} />
-        <Bar dataKey="revenue" fill="hsl(var(--chart-4))" stackId="stack" radius={[4, 4, 0, 0]} />
-        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--chart-1))" strokeWidth={3} dot={false} yAxisId={0} />
+        <Bar dataKey="costs" fill="hsl(0, 75%, 65%)" stackId="stack" />
+        <Bar dataKey="revenue" fill="hsl(var(--chart-1))" stackId="stack" />
+        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(140, 30%, 40%)" strokeWidth={3} dot={false} yAxisId={0} />
 
       </ComposedChart>
     </ChartContainer>
