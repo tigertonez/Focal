@@ -34,7 +34,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
   const [costKeys, setCostKeys] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    if (data.length > 0) {
+    if (data && data.length > 0) {
       const allKeys = Object.keys(data[0]).filter(key => key !== 'month');
       const newConfig: ChartConfig = {};
       allKeys.forEach((key, index) => {
