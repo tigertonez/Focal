@@ -59,10 +59,10 @@ const getAggregatedSalesWeights = (inputs: EngineInput): number[] => {
 
 const buildFixedCostTimeline = (inputs: EngineInput): Record<string, number>[] => {
     const { preOrder, forecastMonths } = inputs.parameters;
-    const timelineDuration = forecastMonths;
+    const timelineDuration = forecastMonths + (preOrder ? 1 : 0);
     const startMonth = preOrder ? 0 : 1;
 
-    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration + (preOrder ? 1 : 0) }, (_, i) => ({ month: i + (preOrder ? 0 : 1) }));
+    const timeline: Record<string, number>[] = Array.from({ length: timelineDuration }, (_, i) => ({ month: i + startMonth }));
 
     const salesWeights = getAggregatedSalesWeights(inputs);
 
@@ -162,17 +162,9 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             
             const salesWeights = getSalesWeights(forecastMonths, product.salesModel || 'launch');
 
-            const month1Units = soldUnits * salesWeights[0];
-            const preOrderUnits = preOrder ? month1Units * 0.10 : 0; // Assume 10% of M1 sales are pre-orders
-
             for (let i = 0; i < forecastMonths; i++) {
                 const currentMonth = 1 + i;
                 let monthlyProductUnits = soldUnits * salesWeights[i];
-                
-                // Adjust M1 units for pre-orders
-                if (currentMonth === 1) {
-                    monthlyProductUnits -= preOrderUnits;
-                }
                 
                 const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === currentMonth);
                 if (revenueTimelineMonth) {
@@ -186,12 +178,23 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
             }
 
             if (preOrder) {
-                const preOrderRevenue = preOrderUnits * (product.sellPrice || 0);
+                // Pre-order logic: Take 10% of Month 1's units and move them to Month 0
+                const month1Units = soldUnits * salesWeights[0];
+                const preOrderUnits = month1Units * 0.10; 
+                
+                // Add to month 0
                 const preOrderMonthData = monthlyRevenueTimeline.find(m => m.month === 0);
-                if (preOrderMonthData) preOrderMonthData[product.productName] = (preOrderMonthData[product.productName] || 0) + preOrderRevenue;
+                if (preOrderMonthData) preOrderMonthData[product.productName] = (preOrderMonthData[product.productName] || 0) + (preOrderUnits * (product.sellPrice || 0));
 
                 const preOrderUnitsData = monthlyUnitsTimeline.find(m => m.month === 0);
                 if (preOrderUnitsData) preOrderUnitsData[product.productName] = (preOrderUnitsData[product.productName] || 0) + preOrderUnits;
+                
+                // Subtract from month 1
+                const month1RevenueData = monthlyRevenueTimeline.find(m => m.month === 1);
+                if (month1RevenueData) month1RevenueData[product.productName] -= (preOrderUnits * (product.sellPrice || 0));
+                
+                const month1UnitsData = monthlyUnitsTimeline.find(m => m.month === 1);
+                if (month1UnitsData) month1UnitsData[product.productName] -= preOrderUnits;
             }
         }
         
@@ -315,11 +318,8 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let cumulativeOperatingProfit = 0;
     let profitBreakEvenMonth: number | null = null;
     
-    const fullTimelineDuration = preOrder ? forecastMonths + 1 : forecastMonths;
-    const profitStartMonth = preOrder ? 0 : 1;
-    
-    for (let i = 0; i < fullTimelineDuration; i++) {
-        const month = profitStartMonth + i;
+    for (let i = 0; i < timelineDuration; i++) {
+        const month = i + startMonth;
         
         const currentRevenueData = monthlyRevenue.find(r => r.month === month) || { month };
         const totalMonthlyRevenue = Object.values(currentRevenueData).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
@@ -379,8 +379,8 @@ function calculateScenario(inputs: EngineInput): EngineOutput {
     let peakFundingNeed = 0;
     let cashBreakEvenMonth: number | null = null;
     
-    for (let i = 0; i < fullTimelineDuration; i++) {
-        const month = profitStartMonth + i;
+    for (let i = 0; i < timelineDuration; i++) {
+        const month = i + startMonth;
         
         const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
         const cashOutCosts = Object.values(monthlyCosts.find(c => c.month === month) || {}).reduce((sum, val) => typeof val === 'number' && val > 0 ? sum + val : sum, 0);
