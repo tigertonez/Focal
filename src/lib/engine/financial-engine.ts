@@ -66,36 +66,34 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
 
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'Paid Up-Front';
-        const startMonthChoice = cost.startMonth || 'Month 1';
-        
-        // Handle "Paid Up-Front" separately as it's a one-time payment
+        let startMonthChoice = cost.startMonth || 'Month 1';
+
+        // Override: if 'Paid Up-Front', it must start 'Up-front'
         if (schedule === 'Paid Up-Front') {
-            const upFrontMonth = hasMonthZero ? 0 : 1;
-            const monthData = timeline.find(t => t.month === upFrontMonth);
-            if (monthData) {
+            startMonthChoice = 'Up-front';
+        }
+
+        // Handle "Paid Up-Front" separately as it's a one-time payment in Month 0
+        if (startMonthChoice === 'Up-front' && hasMonthZero) {
+            const upFrontMonth = timeline.find(t => t.month === 0);
+            if (upFrontMonth) {
                 const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
-                monthData[cost.name] = (monthData[cost.name] || 0) + totalCost;
+                upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
             }
             return; // Skip remaining logic for this cost
         }
 
         // Determine the actual starting month for allocations
-        let allocationStartMonth = 1; // Default start
-        if (hasMonthZero) {
-            if (startMonthChoice === 'Month 0') allocationStartMonth = 0;
-            else if (startMonthChoice === 'Up-front') { // Treat 'Up-front' for allocated costs as M0 start
-                allocationStartMonth = 0; 
-            }
-        }
+        let allocationStartMonth = (startMonthChoice === 'Month 0' && hasMonthZero) ? 0 : 1;
         
         const allocationTimeline = timeline.filter(t => t.month >= allocationStartMonth);
-        const allocationMonths = allocationTimeline.length;
         const totalCostAmount = cost.costType === 'Monthly Cost' ? cost.amount * forecastMonths : cost.amount;
+        const totalAllocationMonths = forecastMonths - (allocationStartMonth === 0 ? -1 : 0);
 
         switch (schedule) {
             case 'Allocated Monthly':
-                if (allocationMonths > 0) {
-                    const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : totalCostAmount / forecastMonths;
+                if (totalAllocationMonths > 0) {
+                    const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : totalCostAmount / totalAllocationMonths;
                     allocationTimeline.forEach(month => {
                         month[cost.name] = (month[cost.name] || 0) + monthlyAmount;
                     });
@@ -103,7 +101,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timelineMonths: number[]): 
                 break;
 
             case 'Allocated Quarterly':
-                const quarters = Math.ceil(allocationMonths / 3);
+                const quarters = Math.ceil(totalAllocationMonths / 3);
                 if (quarters > 0) {
                     const quarterlyAmount = totalCostAmount / quarters;
                     for (let q = 0; q < quarters; q++) {

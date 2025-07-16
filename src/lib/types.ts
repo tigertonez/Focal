@@ -78,7 +78,6 @@ export const CostSummarySchema = z.object({
     variableCosts: z.array(VariableCostBreakdownSchema),
     totalDepositsPaid: z.number(),
     totalFinalPayments: z.number(),
-    planningBuffer: z.number().optional(),
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
 

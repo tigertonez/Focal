@@ -9,7 +9,7 @@ import { Trash2, Info } from 'lucide-react';
 import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getProductColor } from '@/lib/utils';
+import { getProductColor, cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
@@ -45,6 +45,8 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const isDynamicCost = isMarketingCost || isPlanningBuffer;
     const planningBufferTooltip = "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast.";
     const planningBufferTitle = "What is a Planning Buffer?";
+    
+    // Determine if "Month 0" is possible based on global settings
     const hasMonthZero = inputs.parameters.preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
 
     const assignedColor = getProductColor(cost);
@@ -98,7 +100,10 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+            <div className={cn(
+                "grid grid-cols-1 gap-4 items-end",
+                hasMonthZero ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2"
+            )}>
                 <div className="space-y-1">
                     <Label className="text-xs">Amount</Label>
                     <div className="relative">
@@ -134,17 +139,23 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         </SelectContent>
                     </Select>
                  </div>
-                 <div className="space-y-1">
-                    <Label className="text-xs">Start In</Label>
-                    <Select onValueChange={handleSelectChange('startMonth')} value={startMonth} disabled={schedule === 'Paid Up-Front'}>
-                        <SelectTrigger className="text-sm"><SelectValue placeholder="Start Month" /></SelectTrigger>
-                        <SelectContent>
-                            {hasMonthZero && <SelectItem value="Up-front">Up-front (in M0)</SelectItem>}
-                            {hasMonthZero && <SelectItem value="Month 0">Month 0 Onward</SelectItem>}
-                            <SelectItem value="Month 1">Month 1 Onward</SelectItem>
-                        </SelectContent>
-                    </Select>
-                 </div>
+                 {hasMonthZero && (
+                    <div className="space-y-1">
+                        <Label className="text-xs">Start In</Label>
+                        <Select 
+                            onValueChange={handleSelectChange('startMonth')} 
+                            value={startMonth}
+                            disabled={schedule === 'Paid Up-Front'}
+                        >
+                            <SelectTrigger className="text-sm"><SelectValue placeholder="Start Month" /></SelectTrigger>
+                            <SelectContent>
+                                {schedule === 'Paid Up-Front' && <SelectItem value="Up-front">Up-front (in M0)</SelectItem>}
+                                <SelectItem value="Month 0">Month 0 Onward</SelectItem>
+                                <SelectItem value="Month 1">Month 1 Onward</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                 )}
             </div>
         </div>
     );
