@@ -8,7 +8,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Target, ArrowRight } from 'lucide-react';
+import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { getFinancials } from '@/lib/get-financials';
@@ -39,10 +39,11 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                     <KpiCard 
                         label="Total Revenue" 
                         value={formatCurrency(revenueSummary.totalRevenue, currency)} 
+                        icon={<TrendingUp />}
                         help="Trend vs. previous period will be shown here when historical data is available."
                     />
                     <KpiCard label="Total Units Sold" value={formatNumber(revenueSummary.totalSoldUnits)} icon={<Users />} />
-                    <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} />
+                    <KpiCard label="Avg. Revenue per Unit" value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} icon={<DollarSign />} />
                     <KpiCard label="Avg. Sell-Through" value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} icon={<Target />} />
                 </div>
                  {potentialRevenue > 0 && (

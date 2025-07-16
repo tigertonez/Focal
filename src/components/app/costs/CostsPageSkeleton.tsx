@@ -3,6 +3,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Building, Package, Activity, Calculator } from 'lucide-react';
 
 export function CostsPageSkeleton() {
   return (
@@ -11,10 +12,10 @@ export function CostsPageSkeleton() {
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Total Fixed Costs" value={<Skeleton className="h-7 w-24" />} />
-          <KpiCard label="Total Variable Costs" value={<Skeleton className="h-7 w-24" />} />
-          <Kpi_Card label="Total Operating Costs" value={<Skeleton className="h-7 w-24" />} />
-          <Kpi_Card label="Avg. Cost per Unit" value={<Skeleton className="h-7 w-20" />} />
+          <KpiCard label="Total Fixed Costs" value={<Skeleton className="h-7 w-24" />} icon={<Building />} />
+          <KpiCard label="Total Variable Costs" value={<Skeleton className="h-7 w-24" />} icon={<Package />} />
+          <KpiCard label="Total Operating Costs" value={<Skeleton className="h-7 w-24" />} icon={<Activity />} />
+          <KpiCard label="Avg. Cost per Unit" value={<Skeleton className="h-7 w-20" />} icon={<Calculator />} />
         </div>
         <div className="mt-4 space-y-2">
           <div className="flex justify-between text-sm">
@@ -25,7 +26,7 @@ export function CostsPageSkeleton() {
         </div>
       </section>
       
-      <section className="grid md:grid-cols-2 gap-8">
+      <section>
         <Card>
           <CardHeader>
             <CardTitle>Monthly Cost Timeline</CardTitle>
@@ -41,26 +42,9 @@ export function CostsPageSkeleton() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Variable Cost Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center items-center">
-             <Skeleton className="h-48 w-48 rounded-full" />
-          </CardContent>
-        </Card>
       </section>
       
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Cost Timeline</h2>
-        <Card>
-            <CardContent className="p-2">
-                <Skeleton className="h-40 w-full" />
-            </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid md:grid-cols-2 gap-8">
+      <section className="grid md:grid-cols-2 gap-8 pt-4">
         <div>
             <h2 className="text-xl font-semibold mb-2">Fixed Cost Breakdown</h2>
             <Card>
@@ -84,19 +68,3 @@ export function CostsPageSkeleton() {
     </div>
   );
 }
-
-// A simple skeleton for the KpiCard that doesn't need to be a separate component
-const Kpi_Card = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-xl font-bold font-headline">
-          {value}
-        </div>
-      </CardContent>
-    </Card>
-)

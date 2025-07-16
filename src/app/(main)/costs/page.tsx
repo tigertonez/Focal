@@ -12,7 +12,7 @@ import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineCha
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ArrowRight } from 'lucide-react';
+import { Terminal, ArrowRight, Building, Package, Activity, Calculator } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
@@ -34,10 +34,10 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
             
             <section>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KpiCard label="Total Fixed Costs" value={formatCurrency(costSummary.totalFixed, currency)} />
-                    <KpiCard label="Total Variable Costs" value={formatCurrency(costSummary.totalVariable, currency)} />
-                    <KpiCard label="Total Operating Costs" value={formatCurrency(costSummary.totalOperating, currency)} />
-                    <KpiCard label="Avg. var. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} />
+                    <KpiCard label="Total Fixed Costs" value={formatCurrency(costSummary.totalFixed, currency)} icon={<Building />} />
+                    <KpiCard label="Total Variable Costs" value={formatCurrency(costSummary.totalVariable, currency)} icon={<Package />} />
+                    <KpiCard label="Total Operating Costs" value={formatCurrency(costSummary.totalOperating, currency)} icon={<Activity />} />
+                    <KpiCard label="Avg. var. Cost per Unit" value={formatCurrency(costSummary.avgCostPerUnit, currency)} icon={<Calculator />} />
                 </div>
                  {isManualMode && costSummary.totalVariable > 0 && (
                     <div className="mt-4 space-y-2">

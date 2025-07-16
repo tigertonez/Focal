@@ -3,6 +3,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Wallet, CalendarClock, CircleOff, Banknote } from 'lucide-react';
 
 export function CashFlowPageSkeleton() {
   return (
@@ -11,10 +12,10 @@ export function CashFlowPageSkeleton() {
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Ending Cash Balance" value={<Skeleton className="h-7 w-28" />} />
-          <KpiCard label="Cash Runway" value={<Skeleton className="h-7 w-24" />} />
-          <KpiCard label="Net Burn" value={<Skeleton className="h-7 w-20" />} />
-          <KpiCard label="Funding Needed" value={<Skeleton className="h-7 w-24" />} />
+          <KpiCard label="Ending Cash Balance" value={<Skeleton className="h-7 w-28" />} icon={<Wallet />} />
+          <KpiCard label="Cash Runway" value={<Skeleton className="h-7 w-24" />} icon={<CalendarClock />} />
+          <KpiCard label="Net Burn" value={<Skeleton className="h-7 w-20" />} icon={<CircleOff />} />
+          <KpiCard label="Funding Needed" value={<Skeleton className="h-7 w-24" />} icon={<Banknote />} />
         </div>
       </section>
       

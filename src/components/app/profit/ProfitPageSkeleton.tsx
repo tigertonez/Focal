@@ -3,6 +3,8 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TrendingUp, Goal, Briefcase, Landmark } from 'lucide-react';
+
 
 export function ProfitPageSkeleton() {
   return (
@@ -11,10 +13,10 @@ export function ProfitPageSkeleton() {
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Gross Profit Margin" value={<Skeleton className="h-7 w-20" />} />
-          <KpiCard label="Operating Profit Margin" value={<Skeleton className="h-7 w-20" />} />
-          <KpiCard label="Net Profit Margin" value={<Skeleton className="h-7 w-20" />} />
-          <KpiCard label="Break-Even Month" value={<Skeleton className="h-7 w-24" />} />
+          <KpiCard label="Gross Profit Margin" value={<Skeleton className="h-7 w-20" />} icon={<TrendingUp />} />
+          <KpiCard label="Operating Profit Margin" value={<Skeleton className="h-7 w-20" />} icon={<Briefcase />} />
+          <KpiCard label="Net Profit Margin" value={<Skeleton className="h-7 w-20" />} icon={<Landmark />} />
+          <KpiCard label="Break-Even Month" value={<Skeleton className="h-7 w-24" />} icon={<Goal />} />
         </div>
       </section>
       

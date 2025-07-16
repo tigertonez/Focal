@@ -3,6 +3,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
 
 export function RevenuePageSkeleton() {
   return (
@@ -11,10 +12,10 @@ export function RevenuePageSkeleton() {
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Total Revenue" value={<Skeleton className="h-7 w-24" />} />
-          <KpiCard label="Avg. Revenue per Unit" value={<Skeleton className="h-7 w-20" />} />
-          <KpiCard label="Lifetime Value (LTV)" value={<Skeleton className="h-7 w-24" />} />
-          <KpiCard label="Customer Acquisition Cost (CAC)" value={<Skeleton className="h-7 w-20" />} />
+          <KpiCard label="Total Revenue" value={<Skeleton className="h-7 w-24" />} icon={<TrendingUp />} />
+          <KpiCard label="Total Units Sold" value={<Skeleton className="h-7 w-20" />} icon={<Users />} />
+          <KpiCard label="Avg. Revenue per Unit" value={<Skeleton className="h-7 w-24" />} icon={<DollarSign />} />
+          <KpiCard label="Avg. Sell-Through" value={<Skeleton className="h-7 w-20" />} icon={<Target />} />
         </div>
       </section>
       
@@ -34,18 +35,25 @@ export function RevenuePageSkeleton() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue by Product</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center items-center">
-             <Skeleton className="h-48 w-48 rounded-full" />
-          </CardContent>
+         <Card>
+            <CardHeader>
+                <CardTitle>Monthly Units Sold</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="h-72 w-full flex items-end gap-2">
+                    <Skeleton className="h-1/3 w-full" />
+                    <Skeleton className="h-2/3 w-full" />
+                    <Skeleton className="h-1/2 w-full" />
+                    <Skeleton className="h-3/4 w-full" />
+                    <Skeleton className="h-1/4 w-full" />
+                    <Skeleton className="h-full w-full" />
+                </div>
+            </CardContent>
         </Card>
       </section>
       
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Revenue Breakdown</h2>
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Revenue by Product</h2>
         <Card>
             <CardContent className="p-2">
                 <Skeleton className="h-40 w-full" />
