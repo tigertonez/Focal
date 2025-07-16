@@ -1,7 +1,7 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { chartColorVars, semanticColorMap } from "./engine/chart-colors"
+import { chartColorVars, semanticColorMap, productColorVars } from "./engine/chart-colors"
 import type { FixedCostItem, Product } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
@@ -27,7 +27,8 @@ export function formatNumber(value: number) {
 // --- Centralized Product Color Assignment ---
 
 const assignedColors: Record<string, string> = {};
-let nextColorIndex = 0;
+let nextProductColorIndex = 0;
+let nextFixedCostColorIndex = 0;
 
 /**
  * Assigns a consistent color to a product or fixed cost item.
@@ -36,7 +37,8 @@ let nextColorIndex = 0;
  * @returns A CSS color string (hex or HSL).
  */
 export function getProductColor(item: Product | FixedCostItem): string {
-    const name = 'productName' in item ? item.productName : item.name;
+    const isProduct = 'productName' in item;
+    const name = isProduct ? item.productName : item.name;
 
     // 1. Priority: Use user-defined color if it exists
     if (item.color) {
@@ -47,21 +49,29 @@ export function getProductColor(item: Product | FixedCostItem): string {
     if (assignedColors[name]) {
         return assignedColors[name];
     }
-
-    // 3. Check for semantic matches in the predefined map
-    const lowerName = name.toLowerCase();
-    for (const key in semanticColorMap) {
-        if (lowerName.includes(key.toLowerCase())) {
-            const color = semanticColorMap[key];
-            assignedColors[name] = color;
-            return color;
+    
+    // 3. For Fixed Costs, check for semantic matches
+    if (!isProduct) {
+        const lowerName = name.toLowerCase();
+        for (const key in semanticColorMap) {
+            if (lowerName.includes(key.toLowerCase())) {
+                const color = semanticColorMap[key];
+                assignedColors[name] = color;
+                return color;
+            }
         }
     }
 
-    // 4. Fallback: Assign next available color from the default palette
-    const color = chartColorVars[nextColorIndex % chartColorVars.length];
-    assignedColors[name] = color;
-    nextColorIndex++;
+    // 4. Fallback: Assign next available color from the appropriate default palette
+    let color: string;
+    if (isProduct) {
+        color = productColorVars[nextProductColorIndex % productColorVars.length];
+        nextProductColorIndex++;
+    } else {
+        color = chartColorVars[nextFixedCostColorIndex % chartColorVars.length];
+        nextFixedCostColorIndex++;
+    }
     
+    assignedColors[name] = color;
     return color;
 }
