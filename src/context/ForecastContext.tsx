@@ -32,7 +32,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_1',
       productName: 'Pro Widget',
-      plannedUnits: 5000,
+      plannedUnits: 2500,
       unitCost: 10,
       sellPrice: 30,
       salesModel: 'launch',
@@ -42,7 +42,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_2',
       productName: 'Basic Widget',
-      plannedUnits: 10000,
+      plannedUnits: 5000,
       unitCost: 5,
       sellPrice: 15,
       salesModel: 'even',
@@ -52,7 +52,7 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_initial_3',
       productName: 'Super Service',
-      plannedUnits: 500,
+      plannedUnits: 250,
       unitCost: 50,
       sellPrice: 250,
       salesModel: 'growth',
