@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer.server';
 
@@ -11,8 +12,9 @@ export async function POST(_: NextRequest) {
         'Content-Disposition': 'attachment; filename="stub.pdf"',
       },
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error('PDF-FAIL', e);
-    return NextResponse.json({ error: 'Failed to generate PDF.' }, { status: 500 });
+    console.error('STACK', e.stack);
+    return NextResponse.json({ error: 'Failed to generate PDF.', stack: e.stack }, { status: 500 });
   }
 }

@@ -11,7 +11,10 @@ export function DownloadReportButton() {
     try {
       const res = await fetch('/api/report', { method: 'POST' });
       console.log('PDF-STATUS', res.status);
-      if (!res.ok) throw new Error('Stub failed');
+      if (!res.ok) {
+        console.log('PDF-TEXT', await res.text());
+        throw new Error('Stub failed');
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement('a'), { href: url, download: 'report.pdf' });
