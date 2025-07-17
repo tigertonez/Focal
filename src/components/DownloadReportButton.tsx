@@ -17,7 +17,7 @@ export function DownloadReportButton() {
   const [downloadState, setDownloadState] = useState<DownloadState>('idle');
   const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 1; // Only one automatic retry
 
   const handleDownload = async () => {
     // --- 1. Guard against missing data ---
@@ -35,7 +35,7 @@ export function DownloadReportButton() {
 
     // --- 2. Fetch PDF from API with AbortController ---
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20-second timeout
 
     try {
       const response = await fetch('/api/report', {
@@ -52,11 +52,16 @@ export function DownloadReportButton() {
 
       // --- 3. Handle non-OK responses ---
       if (!response.ok) {
+        if (response.status === 429) {
+          toast({ variant: 'destructive', title: 'Server Busy', description: 'Too many requests. Please try again in a minute.' });
+          setDownloadState('error');
+          return;
+        }
         const errorText = await response.text();
         console.error(`Download failed with status ${response.status}:`, errorText);
         try {
             const errorData = JSON.parse(errorText);
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            throw new Error(errorData.details || errorData.error || `HTTP error! status: ${response.status}`);
         } catch {
             throw new Error(errorText || `HTTP error! status: ${response.status}`);
         }
@@ -83,9 +88,13 @@ export function DownloadReportButton() {
     } catch (error: any) {
         console.error('Download failed:', error);
         // --- 5. Exponential back-off retry logic ---
+        if (error.name === 'AbortError') {
+             toast({ variant: 'destructive', title: 'Request Timed Out', description: 'The server took too long to respond.' });
+        }
+        
         if (retryCount < MAX_RETRIES) {
             setRetryCount(retryCount + 1);
-            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+            const delay = Math.pow(2, retryCount) * 1000; // 1s
             toast({
                 variant: 'destructive',
                 title: 'Download Failed',
