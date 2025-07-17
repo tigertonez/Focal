@@ -14,7 +14,7 @@ export function DownloadReportButton() {
       if (!res.ok) throw new Error('Stub failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: 'stub.pdf' });
+      const a = Object.assign(document.createElement('a'), { href: url, download: 'report.pdf' });
       document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     } catch (e) { 
       console.error(e);
