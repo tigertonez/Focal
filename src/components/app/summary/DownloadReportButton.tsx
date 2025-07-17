@@ -3,60 +3,39 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-type ButtonState = 'idle' | 'generating' | 'error';
+import { Download, Loader2 } from 'lucide-react';
 
 export function DownloadReportButton() {
-  const [status, setStatus] = useState<ButtonState>('idle');
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleDownload = async () => {
-    setStatus('generating');
-
+    setIsLoading(true);
     try {
       const response = await fetch('/api/report', {
         method: 'POST',
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+        console.error('Failed to generate PDF stub');
+        alert('Download failed. Check the console for errors.');
+        setIsLoading(false);
+        return;
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'report.pdf';
+      a.download = 'stub.pdf';
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      
-      setStatus('idle');
-
-    } catch (error: any) {
-      setStatus('error');
-      console.error('Download error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Download Failed',
-        description: error.message,
-      });
-      setTimeout(() => setStatus('idle'), 5000);
-    }
-  };
-
-  const getButtonContent = () => {
-    switch (status) {
-      case 'generating':
-        return <><Loader2 className="animate-spin mr-2" /> Generating...</>;
-      case 'error':
-        return <><AlertCircle className="mr-2" /> Error, Retry?</>;
-      default:
-        return <><Download className="mr-2" /> Download Report</>;
+    } catch (error) {
+      console.error('Failed to generate PDF stub:', error);
+      alert('Download failed. Check the console for errors.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,10 +44,15 @@ export function DownloadReportButton() {
       <Button
         size="lg"
         onClick={handleDownload}
-        disabled={status === 'generating'}
+        disabled={isLoading}
         className="shadow-lg"
       >
-        {getButtonContent()}
+        {isLoading ? (
+          <Loader2 className="animate-spin mr-2" />
+        ) : (
+          <Download className="mr-2" />
+        )}
+        Download Report
       </Button>
     </div>
   );
