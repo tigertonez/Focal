@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       console.error('PDF-VALIDATION-FAIL', validation.error.flatten());
-      return NextResponse.json({ error: 'Invalid data provided for report.', details: validation.error.flatten() }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data provided for report.', details: validation.error.flatten() }, { status: 422 });
     }
     
     const { inputs, data } = validation.data;

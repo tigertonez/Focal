@@ -17,7 +17,7 @@ export function DownloadReportButton() {
         toast({
             variant: "destructive",
             title: "Cannot generate report",
-            description: financials.error || "No forecast data found. Please run a report first."
+            description: "Please run a report from the Inputs page first.",
         });
         setLoading(false);
         return;
@@ -36,9 +36,10 @@ export function DownloadReportButton() {
         console.error('PDF-FAIL-BODY', errorBody);
         throw new Error(errorBody.error || 'Failed to generate PDF from server.');
       }
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: 'financial-report.pdf' });
+      const a = Object.assign(document.createElement('a'), { href: url, download: 'FinancialForecastReport.pdf' });
       document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     } catch (e: any) { 
       console.error(e);
