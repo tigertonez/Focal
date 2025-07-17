@@ -144,27 +144,27 @@ export default function ReportDocument({
           <View style={styles.kpiContainer}>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Total Revenue</Text>
-              <Text style={styles.kpiValue}>{safeCurrency(data?.revenueSummary.totalRevenue, currency)}</Text>
+              <Text style={styles.kpiValue}>{String(safeCurrency(data?.revenueSummary.totalRevenue, currency))}</Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Total Costs</Text>
-              <Text style={styles.kpiValue}>{safeCurrency(data?.costSummary.totalOperating, currency)}</Text>
+              <Text style={styles.kpiValue}>{String(safeCurrency(data?.costSummary.totalOperating, currency))}</Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Gross Profit</Text>
-              <Text style={styles.kpiValue}>{safeCurrency(data?.profitSummary.totalGrossProfit, currency)}</Text>
+              <Text style={styles.kpiValue}>{String(safeCurrency(data?.profitSummary.totalGrossProfit, currency))}</Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Ending Cash</Text>
-              <Text style={styles.kpiValue}>{safeCurrency(data?.cashFlowSummary.endingCashBalance, currency)}</Text>
+              <Text style={styles.kpiValue}>{String(safeCurrency(data?.cashFlowSummary.endingCashBalance, currency))}</Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Profit Break-Even</Text>
-              <Text style={styles.kpiValue}>{safeString(data?.profitSummary.breakEvenMonth)} Months</Text>
+              <Text style={styles.kpiValue}>{String(safeString(data?.profitSummary.breakEvenMonth))} Months</Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Peak Funding Need</Text>
-              <Text style={styles.kpiValue}>{safeCurrency(data?.cashFlowSummary.peakFundingNeed, currency)}</Text>
+              <Text style={styles.kpiValue}>{String(safeCurrency(data?.cashFlowSummary.peakFundingNeed, currency))}</Text>
             </View>
           </View>
         </View>
@@ -188,12 +188,12 @@ export default function ReportDocument({
             {/* Table Body */}
             {inputs?.products.map((p, i) => (
               <View key={p.id} style={[styles.tableRow, i === inputs.products.length - 1 ? { borderBottomWidth: 0 } : {}]}>
-                <View style={[styles.tableCol, { flex: 3 }]}><Text style={styles.tableCell}>{safeString(p.productName)}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{safeString(p.plannedUnits)}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{safeCurrency(p.unitCost, currency)}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{safeCurrency(p.sellPrice, currency)}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{safePercent(p.sellThrough)}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{safePercent(p.depositPct)}</Text></View>
+                <View style={[styles.tableCol, { flex: 3 }]}><Text style={styles.tableCell}>{String(safeString(p.productName))}</Text></View>
+                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeString(p.plannedUnits))}</Text></View>
+                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeCurrency(p.unitCost, currency))}</Text></View>
+                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeCurrency(p.sellPrice, currency))}</Text></View>
+                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safePercent(p.sellThrough))}</Text></View>
+                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safePercent(p.depositPct))}</Text></View>
               </View>
             ))}
           </View>
