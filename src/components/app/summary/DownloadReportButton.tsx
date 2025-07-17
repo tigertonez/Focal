@@ -23,14 +23,12 @@ export function DownloadReportButton() {
         return;
     }
     
-    // Set a session cookie with the report data for the server to read
-    document.cookie = `financials=${encodeURIComponent(JSON.stringify({ inputs: financials.inputs, data: financials.data }))}; path=/; SameSite=Lax`;
-
     try {
+      // Pass the live data directly in the request body
       const res = await fetch('/api/report', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}), // Body is empty, server reads from cookie
+        body: JSON.stringify({ inputs: financials.inputs, data: financials.data }),
       });
       
       if (!res.ok) {

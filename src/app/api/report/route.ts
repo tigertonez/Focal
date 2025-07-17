@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer.server';
 import { z } from 'zod';
 import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
-import { getFinancialsServer } from '@/lib/pdf/getFinancialsServer';
 
 const ReportPayloadSchema = z.object({
   inputs: EngineInputSchema,
@@ -12,7 +11,7 @@ const ReportPayloadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const reportPayload = getFinancialsServer();
+    const reportPayload = await req.json();
 
     if (!reportPayload) {
       return NextResponse.json({ error: 'No valid forecast found. Please run a new report.' }, { status: 400 });
