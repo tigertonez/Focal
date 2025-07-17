@@ -1,22 +1,9 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { buildPdfStream } from '@/lib/pdf/buildPdfStream';
-import { Readable } from 'stream';
-
-// Helper function to convert a Readable stream to a Buffer
-async function streamToBuffer(stream: Readable): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk instanceof Buffer ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
-}
+import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer';
 
 export async function POST(_req: NextRequest) {
   try {
-    const stream = await buildPdfStream() as unknown as Readable;
-    const buffer = await streamToBuffer(stream);
-
+    const buffer = await buildPdfBuffer();
     return new NextResponse(buffer, {
       status: 200,
       headers: {
@@ -26,6 +13,9 @@ export async function POST(_req: NextRequest) {
     });
   } catch (err) {
     console.error('PDF stub error:', err);
-    return NextResponse.json({ error: 'Failed to generate PDF stub.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to generate PDF stub.' },
+      { status: 500 }
+    );
   }
 }
