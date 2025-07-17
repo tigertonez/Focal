@@ -19,6 +19,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { cn } from '@/lib/utils';
 import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
 import { Separator } from '@/components/ui/separator';
+import { DownloadReportButton } from '@/components/DownloadReportButton';
 
 
 // =================================================================
@@ -328,7 +329,9 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
+      <div className="flex justify-between items-start">
+        <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
+      </div>
       
       <KPISection data={data} currency={inputs.parameters.currency} />
       
@@ -349,6 +352,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
       </footer>
+      <DownloadReportButton />
     </div>
   );
 }
