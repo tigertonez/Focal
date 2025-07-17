@@ -12,9 +12,9 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const stream = await buildPdfStream();
+    const stream = await buildPdfStream() as unknown as Readable;
     const buffer = await streamToBuffer(stream);
 
     return new NextResponse(buffer, {
@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
         'Content-Disposition': 'attachment; filename="stub.pdf"',
       },
     });
-  } catch (err: any) {
-    console.error('PDF stub error', err);
+  } catch (err) {
+    console.error('PDF stub error:', err);
     return NextResponse.json({ error: 'Failed to generate PDF stub.' }, { status: 500 });
   }
 }

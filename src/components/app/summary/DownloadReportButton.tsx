@@ -14,6 +14,8 @@ export function DownloadReportButton() {
       const response = await fetch('/api/report', {
         method: 'POST',
       });
+      
+      console.log('PDF download response status:', response.status);
 
       if (!response.ok) {
         console.error('Failed to generate PDF stub');
