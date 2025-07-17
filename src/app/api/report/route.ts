@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer';
+import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer.server';
 
-export async function POST(_req: NextRequest) {
+export async function POST(_: NextRequest) {
   try {
-    const buffer = await buildPdfBuffer();
-    return new NextResponse(buffer, {
+    const buf = await buildPdfBuffer();
+    return new NextResponse(buf, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="stub.pdf"',
       },
     });
-  } catch (err) {
-    console.error('PDF stub error:', err);
-    return NextResponse.json(
-      { error: 'Failed to generate PDF stub.' },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error('PDF-FAIL', e);
+    return NextResponse.json({ error: 'Failed to generate PDF.' }, { status: 500 });
   }
 }

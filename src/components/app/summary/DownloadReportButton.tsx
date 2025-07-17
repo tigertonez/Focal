@@ -1,43 +1,26 @@
 'use client';
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 
 export function DownloadReportButton() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const response = await fetch('/api/report', {
-        method: 'POST',
-      });
-      
-      console.log('PDF download response status:', response.status);
-
-      if (!response.ok) {
-        console.error('Failed to generate PDF stub');
-        alert('Download failed. Check the console for errors.');
-        setIsLoading(false);
-        return;
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'stub.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to generate PDF stub:', error);
-      alert('Download failed. Check the console for errors.');
-    } finally {
-      setIsLoading(false);
+      const res = await fetch('/api/report', { method: 'POST' });
+      console.log('PDF-STATUS', res.status);
+      if (!res.ok) throw new Error('Stub failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: 'stub.pdf' });
+      document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch (e) { 
+      console.error(e);
+      alert('Download failed. Check console.'); 
     }
+    setLoading(false);
   };
 
   return (
@@ -45,10 +28,10 @@ export function DownloadReportButton() {
       <Button
         size="lg"
         onClick={handleDownload}
-        disabled={isLoading}
+        disabled={loading}
         className="shadow-lg"
       >
-        {isLoading ? (
+        {loading ? (
           <Loader2 className="animate-spin mr-2" />
         ) : (
           <Download className="mr-2" />
