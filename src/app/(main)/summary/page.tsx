@@ -19,6 +19,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { cn } from '@/lib/utils';
 import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
 import { Separator } from '@/components/ui/separator';
+import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
 
 
 // =================================================================
@@ -351,6 +352,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
       </footer>
+      <DownloadReportButton />
     </div>
   );
 }
