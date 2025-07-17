@@ -1,12 +1,8 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
-import type { EngineInput, EngineOutput } from '@/lib/types';
 
 const FG = '#333333';
 const BORDER = '#e5e5e5';
 const BG = '#f4f4f4';
-const PRIMARY = '#3b82f6';
-const RED = '#ef4444';
-const GREEN = '#22c55e';
 
 const styles = StyleSheet.create({
   page:   { padding: 30, fontSize: 9, fontFamily: 'Helvetica', color: FG },
@@ -26,11 +22,10 @@ const styles = StyleSheet.create({
 });
 
 const safeString = (v: any) => String(v ?? '-');
-const safeCurrency = (v: any, currency: string = 'USD') => {
+const safeCurrency = (v: any) => {
     const num = Number(v);
     if (isNaN(num)) return '-';
-    const symbol = currency === 'EUR' ? '€' : '$';
-    return `${symbol}${num.toFixed(2)}`;
+    return `$${num.toFixed(2)}`;
 };
 const safePercent = (v: any) => {
     const num = Number(v);
@@ -38,75 +33,51 @@ const safePercent = (v: any) => {
     return `${num.toFixed(1)}%`;
 };
 
+/* Named export, plain React component */
+export function ReportDocument({ data }: { data: any }) {
 
-const PdfStub = () => (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Report Error</Text>
-        <Text>No valid forecast data was provided to generate the report.</Text>
-      </Page>
-    </Document>
-);
-
-export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: EngineOutput }) {
-  if (!inputs || !data) {
-    return <PdfStub />;
+  if (!data) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.header}>Report Error</Text>
+          <Text>No valid forecast data was provided to generate the report.</Text>
+        </Page>
+      </Document>
+    );
   }
-
-  const { currency } = inputs.parameters;
-  const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
     <Document>
       {/* Page 1: Summary */}
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Financial Summary</Text>
+        <Text style={styles.header}>{safeString(data.title)}</Text>
+        <Text style={styles.subHeader}>KPI Summary</Text>
         <View style={styles.kpiRow}>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Total Revenue</Text><Text style={styles.kpiVal}>{safeCurrency(revenueSummary.totalRevenue, currency)}</Text></View>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Total Costs</Text><Text style={styles.kpiVal}>{safeCurrency(costSummary.totalOperating, currency)}</Text></View>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Gross Profit</Text><Text style={styles.kpiVal}>{safeCurrency(profitSummary.totalGrossProfit, currency)}</Text></View>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Ending Cash</Text><Text style={styles.kpiVal}>{safeCurrency(cashFlowSummary.endingCashBalance, currency)}</Text></View>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Profit Break-Even</Text><Text style={styles.kpiVal}>{profitSummary.breakEvenMonth ? `${profitSummary.breakEvenMonth} Months` : 'N/A'}</Text></View>
-            <View style={styles.kpiCard}><Text style={styles.kpiLab}>Funding Need</Text><Text style={styles.kpiVal}>{safeCurrency(cashFlowSummary.peakFundingNeed, currency)}</Text></View>
+            {data.kpis.map((kpi: any) => (
+               <View key={safeString(kpi.label)} style={styles.kpiCard}>
+                 <Text style={styles.kpiLab}>{safeString(kpi.label).toUpperCase()}</Text>
+                 <Text style={styles.kpiVal}>{kpi.label.includes('Need') ? safeCurrency(kpi.value) : safeString(kpi.value)}</Text>
+               </View>
+            ))}
         </View>
       </Page>
 
       {/* Page 2: Inputs */}
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Forecast Inputs</Text>
+        <Text style={styles.header}>Inputs Sheet</Text>
         <Text style={styles.subHeader}>Products & Services</Text>
         <View style={styles.table}>
             <View style={styles.row}>
-                <Text style={{...styles.hcell, flex: 2}}>Product</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>Units</Text>
+                <Text style={{...styles.hcell, flex: 3}}>Product</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>Unit Cost</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>Sell Price</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>Sell-Thru</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>Deposit</Text>
             </View>
-            {inputs.products.map(p => (
-                <View key={p.id} style={styles.row}>
-                    <Text style={{...styles.cell, flex: 2}}>{safeString(p.productName)}</Text>
-                    <Text style={styles.cellRight}>{safeString(p.plannedUnits)}</Text>
-                    <Text style={styles.cellRight}>{safeCurrency(p.unitCost, currency)}</Text>
-                    <Text style={styles.cellRight}>{safeCurrency(p.sellPrice, currency)}</Text>
-                    <Text style={styles.cellRight}>{safePercent(p.sellThrough)}</Text>
-                    <Text style={styles.cellRight}>{safePercent(p.depositPct)}</Text>
-                </View>
-            ))}
-        </View>
-         <Text style={styles.subHeader}>Fixed Costs</Text>
-        <View style={styles.table}>
-            <View style={styles.row}>
-                <Text style={{...styles.hcell, flex: 3}}>Cost Name</Text>
-                <Text style={{...styles.hcell, flex: 2, textAlign: 'right'}}>Amount</Text>
-                <Text style={{...styles.hcell, flex: 2}}>Schedule</Text>
-            </View>
-            {inputs.fixedCosts.map(c => (
-                <View key={c.id} style={styles.row}>
-                    <Text style={{...styles.cell, flex: 3}}>{safeString(c.name)}</Text>
-                    <Text style={{...styles.cell, flex: 2, textAlign: 'right'}}>{`${safeCurrency(c.amount, currency)} (${c.costType === 'Monthly Cost' ? 'p/m' : 'total'})`}</Text>
-                    <Text style={{...styles.cell, flex: 2}}>{safeString(c.paymentSchedule)}</Text>
+            {data.products.map((p: any) => (
+                <View key={safeString(p.name)} style={styles.row}>
+                    <Text style={{...styles.cell, flex: 3}}>{safeString(p.name)}</Text>
+                    <Text style={styles.cellRight}>{safeCurrency(p.unitCost)}</Text>
+                    <Text style={styles.cellRight}>{safeCurrency(p.sellPrice)}</Text>
                 </View>
             ))}
         </View>
