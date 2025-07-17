@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer.server';
 import { z } from 'zod';
 import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
+import { getFinancialsServer } from '@/lib/pdf/getFinancialsServer';
 
 const ReportPayloadSchema = z.object({
   inputs: EngineInputSchema,
@@ -11,8 +12,13 @@ const ReportPayloadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const validation = ReportPayloadSchema.safeParse(body);
+    const reportPayload = getFinancialsServer();
+
+    if (!reportPayload) {
+      return NextResponse.json({ error: 'No valid forecast found. Please run a new report.' }, { status: 400 });
+    }
+
+    const validation = ReportPayloadSchema.safeParse(reportPayload);
 
     if (!validation.success) {
       console.error('PDF-VALIDATION-FAIL', validation.error.flatten());
@@ -21,9 +27,8 @@ export async function POST(req: NextRequest) {
     
     const { inputs, data } = validation.data;
 
-    // Additional check for essential summary objects
     if (!data.costSummary || !data.profitSummary) {
-      return NextResponse.json({ error: 'Missing cost/profit data' }, { status: 422 });
+      return NextResponse.json({ error: 'Missing cost/profit data. Please re-run the forecast.' }, { status: 422 });
     }
 
     const buf = await buildPdfBuffer({ inputs, data });

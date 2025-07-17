@@ -22,22 +22,28 @@ export function DownloadReportButton() {
         setLoading(false);
         return;
     }
+    
+    // Set a session cookie with the report data for the server to read
+    document.cookie = `financials=${encodeURIComponent(JSON.stringify({ inputs: financials.inputs, data: financials.data }))}; path=/; SameSite=Lax`;
 
     try {
       const res = await fetch('/api/report', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputs: financials.inputs, data: financials.data }),
+        body: JSON.stringify({}), // Body is empty, server reads from cookie
       });
       
-      console.log('PDF-STATUS', res.status);
       if (!res.ok) {
         const errorBody = await res.json();
-        console.error('PDF-FAIL-BODY', errorBody);
         throw new Error(errorBody.error || 'Failed to generate PDF from server.');
       }
 
       const blob = await res.blob();
+
+      if (blob.size > 2 * 1024 * 1024) { // 2MB limit
+        throw new Error("Report too large to download. Please refine your forecast range.");
+      }
+
       const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement('a'), { href: url, download: 'FinancialForecastReport.pdf' });
       document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);

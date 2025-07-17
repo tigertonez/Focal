@@ -5,13 +5,15 @@ import type { EngineInput, EngineOutput, FixedCostItem, Product } from '@/lib/ty
 // Safe Data Helpers
 // =================================================================
 const safeString = (v: any) => String(v ?? '-');
-const safeNumber = (v: any) => isFinite(v) ? Number(v).toLocaleString('de-DE') : '0';
+const safeNumber = (v: any) => isFinite(Number(v)) ? Number(v).toLocaleString('de-DE') : '0';
+
 const safeCurrency = (v: any, currency: string = 'USD') => {
   const num = Number(v);
   if (isNaN(num)) return '-';
   const symbol = currency === 'EUR' ? '€' : '$';
   return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 };
+
 const safePercent = (v: any) => {
     const num = Number(v);
     if (isNaN(num)) return '-';
@@ -34,13 +36,11 @@ const styles = StyleSheet.create({
   header: { fontSize: 18, marginBottom: 24, fontFamily: 'Helvetica-Bold', color: PRIMARY_BLUE },
   subHeader: { fontSize: 12, marginBottom: 12, fontFamily: 'Helvetica-Bold' },
   
-  // KPI Cards
   kpiRow:  { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
   kpiCard: { borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 4, padding: 10, width: '32%', marginBottom: 10 },
   kpiLabel:  { fontSize: 8, fontFamily: 'Helvetica-Bold', color: TEXT_SECONDARY, marginBottom: 4, textTransform: 'uppercase' },
   kpiValue:  { fontSize: 14, fontFamily: 'Helvetica-Bold', color: TEXT_PRIMARY },
   
-  // Table
   table: { display: 'flex', flexDirection: 'column', borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 3, marginBottom: 20 },
   tableHeader: { flexDirection: 'row', backgroundColor: TABLE_HEADER_BG, borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
   row:   { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
@@ -51,7 +51,6 @@ const styles = StyleSheet.create({
   cell_wide: { flex: 2, padding: 8 },
   cellRight: { textAlign: 'right' },
 
-  // Page numbering
   pageNumber: {
     position: 'absolute',
     fontSize: 8,
@@ -83,10 +82,10 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
   const { currency } = inputs.parameters;
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
-  const PageNumber = ({ pageNumber, totalPages }: { pageNumber: number, totalPages: number }) => (
-    <Text style={styles.pageNumber} fixed>
-      Page {pageNumber} / {totalPages}
-    </Text>
+  const PageNumbering = ({ page, totalPages }) => (
+    <Text style={styles.pageNumber} render={({ pageNumber, totalPageNumber }) => (
+      `Page ${pageNumber} / ${totalPageNumber}`
+    )} fixed />
   );
 
   return (
@@ -106,13 +105,13 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
             </View>
             <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>GROSS PROFIT</Text>
-                <Text style={{...styles.kpiValue, color: profitSummary.totalGrossProfit > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                <Text style={{...styles.kpiValue, color: profitSummary.totalGrossProfit >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safeCurrency(profitSummary.totalGrossProfit, currency)}
                 </Text>
             </View>
             <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>ENDING CASH</Text>
-                 <Text style={{...styles.kpiValue, color: cashFlowSummary.endingCashBalance > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                 <Text style={{...styles.kpiValue, color: cashFlowSummary.endingCashBalance >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safeCurrency(cashFlowSummary.endingCashBalance, currency)}
                 </Text>
             </View>
@@ -127,7 +126,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                 </Text>
             </View>
         </View>
-        <PageNumber pageNumber={1} totalPages={5} />
+        <PageNumbering />
       </Page>
 
       {/* Page 2: Input Sheet */}
@@ -148,7 +147,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                 </View>
             ))}
         </View>
-        <PageNumber pageNumber={2} totalPages={5} />
+        <PageNumbering />
       </Page>
       
       {/* Page 3: Revenue */}
@@ -169,7 +168,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                 </View>
             ))}
         </View>
-        <PageNumber pageNumber={3} totalPages={5} />
+        <PageNumbering />
       </Page>
 
       {/* Page 4: Costs */}
@@ -192,7 +191,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                 </View>
             ))}
         </View>
-        <PageNumber pageNumber={4} totalPages={5} />
+        <PageNumbering />
       </Page>
       
       {/* Page 5: Profits */}
@@ -202,25 +201,25 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
         <View style={styles.kpiRow}>
             <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>TOTAL GROSS PROFIT</Text>
-                <Text style={{...styles.kpiValue, color: profitSummary.totalGrossProfit > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                <Text style={{...styles.kpiValue, color: profitSummary.totalGrossProfit >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safeCurrency(profitSummary.totalGrossProfit, currency)}
                 </Text>
             </View>
             <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>TOTAL NET PROFIT</Text>
-                 <Text style={{...styles.kpiValue, color: profitSummary.totalNetProfit > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                 <Text style={{...styles.kpiValue, color: profitSummary.totalNetProfit >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safeCurrency(profitSummary.totalNetProfit, currency)}
                 </Text>
             </View>
              <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>GROSS MARGIN</Text>
-                <Text style={{...styles.kpiValue, color: profitSummary.grossMargin > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                <Text style={{...styles.kpiValue, color: profitSummary.grossMargin >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safePercent(profitSummary.grossMargin)}
                 </Text>
             </View>
             <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>NET MARGIN</Text>
-                <Text style={{...styles.kpiValue, color: profitSummary.netMargin > 0 ? ACCENT_GREEN : DANGER_RED }}>
+                <Text style={{...styles.kpiValue, color: profitSummary.netMargin >= 0 ? ACCENT_GREEN : DANGER_RED }}>
                     {safePercent(profitSummary.netMargin)}
                 </Text>
             </View>
@@ -231,7 +230,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                 </Text>
             </View>
         </View>
-        <PageNumber pageNumber={5} totalPages={5} />
+        <PageNumbering />
       </Page>
     </Document>
   );
