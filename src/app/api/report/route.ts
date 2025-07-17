@@ -20,13 +20,19 @@ export async function POST(req: NextRequest) {
     }
     
     const { inputs, data } = validation.data;
+
+    // Additional check for essential summary objects
+    if (!data.costSummary || !data.profitSummary) {
+      return NextResponse.json({ error: 'Missing cost/profit data' }, { status: 422 });
+    }
+
     const buf = await buildPdfBuffer({ inputs, data });
 
     return new NextResponse(buf, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="financial-report.pdf"',
+        'Content-Disposition': 'attachment; filename="ForecastReport.pdf"',
       },
     });
   } catch (e: any) {

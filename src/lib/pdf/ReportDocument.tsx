@@ -1,8 +1,8 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
-import type { EngineInput, EngineOutput } from '@/lib/types';
+import type { EngineInput, EngineOutput, FixedCostItem, Product } from '@/lib/types';
 
 const safeString = (v: any) => String(v ?? '-');
-const safeNumber = (v: any) => String(Number(v).toLocaleString() ?? '-');
+const safeNumber = (v: any) => isFinite(v) ? Number(v).toLocaleString('de-DE') : '0';
 const safeCurrency = (v: any, currency: string = 'USD') => {
   const num = Number(v);
   if (isNaN(num)) return '-';
@@ -14,7 +14,6 @@ const safePercent = (v: any) => {
     if (isNaN(num)) return '-';
     return `${num.toFixed(1)}%`;
 };
-
 
 const FG = '#333333';
 const BORDER = '#e5e5e5';
@@ -31,9 +30,10 @@ const styles = StyleSheet.create({
   kpiVal:  { fontSize: 11, fontFamily: 'Helvetica-Bold' },
 
   table: { display: 'flex', flexDirection: 'column', borderWidth: 1, borderColor: BORDER, borderRadius: 3, marginBottom: 20 },
+  tableHeader: { flexDirection: 'row', backgroundColor: BG, borderBottomWidth: 1, borderBottomColor: BORDER },
   row:   { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER },
   row_last: { flexDirection: 'row' },
-  hcell: { flex: 1, padding: 5, backgroundColor: BG, fontFamily: 'Helvetica-Bold' },
+  hcell: { flex: 1, padding: 5, fontFamily: 'Helvetica-Bold' },
   cell:  { flex: 1, padding: 5 },
   cellRight: { flex: 1, padding: 5, textAlign: 'right' },
 });
@@ -92,22 +92,16 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
         <Text style={styles.header}>Inputs Sheet</Text>
         <Text style={styles.subHeader}>Products & Services</Text>
         <View style={styles.table}>
-            <View style={styles.row}>
+            <View style={styles.tableHeader}>
                 <Text style={{...styles.hcell, flex: 3}}>PRODUCT</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>PLANNED UNITS</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>UNIT COST</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>SELL PRICE</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>SELL-THROUGH</Text>
-                <Text style={{...styles.hcell, textAlign: 'right'}}>DEPOSIT</Text>
             </View>
-            {inputs.products.map((p, i) => (
+            {inputs.products.map((p: Product, i: number) => (
                 <View key={p.id} style={i === inputs.products.length - 1 ? styles.row_last : styles.row}>
                     <Text style={{...styles.cell, flex: 3}}>{safeString(p.productName)}</Text>
-                    <Text style={styles.cellRight}>{safeNumber(p.plannedUnits)}</Text>
                     <Text style={styles.cellRight}>{safeCurrency(p.unitCost, currency)}</Text>
                     <Text style={styles.cellRight}>{safeCurrency(p.sellPrice, currency)}</Text>
-                    <Text style={styles.cellRight}>{safePercent(p.sellThrough)}</Text>
-                    <Text style={styles.cellRight}>{safePercent(p.depositPct)}</Text>
                 </View>
             ))}
         </View>
@@ -117,7 +111,7 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
         <Text style={styles.header}>Revenue Breakdown</Text>
         <Text style={styles.subHeader}>Performance by Product</Text>
         <View style={styles.table}>
-            <View style={styles.row}>
+            <View style={styles.tableHeader}>
                 <Text style={{...styles.hcell, flex: 3}}>PRODUCT</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>UNITS SOLD</Text>
                 <Text style={{...styles.hcell, textAlign: 'right'}}>TOTAL REVENUE</Text>
@@ -129,6 +123,54 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
                     <Text style={styles.cellRight}>{safeCurrency(p.totalRevenue, currency)}</Text>
                 </View>
             ))}
+        </View>
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>Costs</Text>
+        <Text style={styles.subHeader}>Fixed & Variable Costs</Text>
+        <View style={styles.table}>
+            <View style={styles.tableHeader}>
+                <Text style={{...styles.hcell, flex: 3}}>NAME</Text>
+                <Text style={{...styles.hcell, flex: 2}}>TYPE</Text>
+                <Text style={{...styles.hcell, textAlign: 'right'}}>AMOUNT</Text>
+                <Text style={{...styles.hcell, flex: 2}}>SCHEDULE</Text>
+            </View>
+             {costSummary.fixedCosts.map((c: FixedCostItem, i: number) => (
+                <View key={c.id} style={i === costSummary.fixedCosts.length - 1 ? styles.row_last : styles.row}>
+                    <Text style={{...styles.cell, flex: 3}}>{safeString(c.name)}</Text>
+                    <Text style={{...styles.cell, flex: 2}}>{safeString(c.costType)}</Text>
+                    <Text style={styles.cellRight}>{safeCurrency(c.amount, currency)}</Text>
+                    <Text style={{...styles.cell, flex: 2}}>{safeString(c.paymentSchedule)}</Text>
+                </View>
+            ))}
+        </View>
+      </Page>
+      
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>Profits</Text>
+        <Text style={styles.subHeader}>Key Profit Metrics</Text>
+        <View style={styles.kpiRow}>
+            <View style={styles.kpiCard}>
+                <Text style={styles.kpiLab}>TOTAL GROSS PROFIT</Text>
+                <Text style={styles.kpiVal}>{safeCurrency(profitSummary.totalGrossProfit, currency)}</Text>
+            </View>
+            <View style={styles.kpiCard}>
+                <Text style={styles.kpiLab}>TOTAL NET PROFIT</Text>
+                <Text style={styles.kpiVal}>{safeCurrency(profitSummary.totalNetProfit, currency)}</Text>
+            </View>
+             <View style={styles.kpiCard}>
+                <Text style={styles.kpiLab}>GROSS MARGIN</Text>
+                <Text style={styles.kpiVal}>{safePercent(profitSummary.grossMargin)}</Text>
+            </View>
+            <View style={styles.kpiCard}>
+                <Text style={styles.kpiLab}>NET MARGIN</Text>
+                <Text style={styles.kpiVal}>{safePercent(profitSummary.netMargin)}</Text>
+            </View>
+            <View style={styles.kpiCard}>
+                <Text style={styles.kpiLab}>PROFIT BREAK-EVEN</Text>
+                <Text style={styles.kpiVal}>{profitSummary.breakEvenMonth ? `${safeString(profitSummary.breakEvenMonth)} Months` : 'N/A'}</Text>
+            </View>
         </View>
       </Page>
 
