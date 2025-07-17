@@ -204,5 +204,3 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} />;
 }
-
-    

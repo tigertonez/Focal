@@ -5,9 +5,9 @@ import { ForecastProvider } from '@/context/ForecastContext';
 import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
 import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const isPdfMode = searchParams.get('pdf') === '1';
 
@@ -32,5 +32,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </ForecastProvider>
+  );
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AppShellContent>{children}</AppShellContent>
+    </Suspense>
   );
 }
