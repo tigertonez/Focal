@@ -1,64 +1,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
-import { Readable } from 'stream';
-
-// Placeholder: In a real scenario, this would be imported
-async function streamToBuffer(stream: Readable): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk instanceof Buffer ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
-}
-
+import { buildPdfStream } from '@/lib/pdf/buildPdfStream';
 
 export async function POST(req: NextRequest) {
-  // TODO: Add rate limiting
-  
   try {
-    const body = await req.json();
+    // For now, we don't need to read the body. Just generate the stub.
+    const stream = await buildPdfStream();
 
-    // 1. Validate inputs & data
-    const inputsResult = EngineInputSchema.safeParse(body.inputs);
-    const dataResult = EngineOutputSchema.safeParse(body.data);
-
-    if (!inputsResult.success || !dataResult.success) {
-      console.error("PDF Payload Validation Error:", {
-        inputs: !inputsResult.success ? inputsResult.error.flatten() : 'OK',
-        data: !dataResult.success ? dataResult.error.flatten() : 'OK'
-      });
-      return NextResponse.json({ error: 'Invalid payload provided.' }, { status: 400 });
-    }
-
-    // 2. Dynamically import the server-side PDF builder
-    const { buildPdfStream } = await import('@/lib/pdf/buildPdfStream');
-
-    // 3. Generate the PDF stream
-    const pdfStream = await buildPdfStream({
-      inputs: inputsResult.data,
-      data: dataResult.data,
-    });
-
-    // 4. Buffer the stream to avoid partial responses
-    const pdfBuffer = await streamToBuffer(pdfStream);
-
-    // 5. Create the response
-    const today = new Date().toISOString().split('T')[0];
-    const filename = `forecast-${today}.pdf`;
-
-    return new NextResponse(pdfBuffer, {
+    // The stream is directly piped to the response body.
+    return new NextResponse(stream, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': 'attachment; filename="report.pdf"',
       },
     });
-  } catch (error) {
-    console.error('Failed to generate PDF:', error);
-    return NextResponse.json(
-      { error: 'PDF generation failed.', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+  } catch (err: any) {
+    console.error('PDF stub error', err);
+    return NextResponse.json({ error: 'Failed to generate PDF stub.' }, { status: 500 });
   }
 }

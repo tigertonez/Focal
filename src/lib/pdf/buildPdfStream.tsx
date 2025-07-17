@@ -1,20 +1,21 @@
 
 'use server';
 
-import { renderToStream } from '@react-pdf/renderer';
-import { ReportDocument } from './ReportDocument';
-import type { EngineInput, EngineOutput } from '@/lib/types';
+import { Document, Page, Text, renderToStream } from '@react-pdf/renderer';
 import type { Readable } from 'stream';
 
 /**
- * Renders a React component to a Node.js stream.
+ * Renders a React component to a Node.js stream for the PDF report.
  * This function is marked as a server-only module.
  */
-export async function buildPdfStream(props: {
-  inputs: EngineInput;
-  data: EngineOutput;
-}): Promise<Readable> {
-  // `renderToStream` returns a Node.js Readable stream.
-  const stream = await renderToStream(<ReportDocument {...props} />);
+export async function buildPdfStream(): Promise<Readable> {
+  // For now, render a minimal stub document to verify the plumbing.
+  const stream = await renderToStream(
+    <Document>
+      <Page size="A4">
+        <Text>PDF stub v1</Text>
+      </Page>
+    </Document>
+  );
   return stream;
 }
