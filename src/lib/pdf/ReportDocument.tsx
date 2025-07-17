@@ -5,19 +5,30 @@ import type { EngineInput, EngineOutput, FixedCostItem, Product } from '@/lib/ty
 // Safe Data Helpers
 // =================================================================
 const safeString = (v: any) => String(v ?? '-');
-const safeNumber = (v: any) => isFinite(Number(v)) ? Number(v).toLocaleString('de-DE') : '0';
-
+const safeNumber = (v: any) => {
+    const num = Number(v);
+    return isFinite(num) ? num.toLocaleString('en-US') : '0';
+};
 const safeCurrency = (v: any, currency: string = 'USD') => {
   const num = Number(v);
   if (isNaN(num)) return '-';
   const symbol = currency === 'EUR' ? '€' : '$';
-  return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `${symbol}${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 };
 
 const safePercent = (v: any) => {
     const num = Number(v);
     if (isNaN(num)) return '-';
     return `${num.toFixed(1)}%`;
+};
+
+const safeCurrencyColored = (v: any, currency: string = 'USD') => {
+    const num = Number(v);
+    const isNegative = num < 0;
+    return {
+        text: safeCurrency(v, currency),
+        color: isNegative ? '#DC2626' : '#059669',
+    };
 };
 
 // =================================================================
@@ -36,19 +47,19 @@ const styles = StyleSheet.create({
   header: { fontSize: 18, marginBottom: 24, fontFamily: 'Helvetica-Bold', color: PRIMARY_BLUE },
   subHeader: { fontSize: 12, marginBottom: 12, fontFamily: 'Helvetica-Bold' },
   
-  kpiRow:  { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
-  kpiCard: { borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 4, padding: 10, width: '32%', marginBottom: 10 },
+  kpiRow:  { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20, gap: 10 },
+  kpiCard: { borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 4, padding: 10, width: '31%', marginBottom: 10 },
   kpiLabel:  { fontSize: 8, fontFamily: 'Helvetica-Bold', color: TEXT_SECONDARY, marginBottom: 4, textTransform: 'uppercase' },
   kpiValue:  { fontSize: 14, fontFamily: 'Helvetica-Bold', color: TEXT_PRIMARY },
   
   table: { display: 'flex', flexDirection: 'column', borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 3, marginBottom: 20 },
-  tableHeader: { flexDirection: 'row', backgroundColor: TABLE_HEADER_BG, borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
-  row:   { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
-  row_last: { flexDirection: 'row' },
-  hcell: { flex: 1, padding: 8, fontFamily: 'Helvetica-Bold' },
-  hcell_wide: { flex: 2, padding: 8, fontFamily: 'Helvetica-Bold' },
-  cell:  { flex: 1, padding: 8 },
-  cell_wide: { flex: 2, padding: 8 },
+  tableHeader: { flexDirection: 'row', backgroundColor: TABLE_HEADER_BG, borderBottomWidth: 1, borderBottomColor: BORDER_COLOR, padding: 4 },
+  row:   { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER_COLOR, padding: 4 },
+  row_last: { flexDirection: 'row', padding: 4 },
+  hcell: { flex: 1, fontFamily: 'Helvetica-Bold' },
+  hcell_wide: { flex: 2, fontFamily: 'Helvetica-Bold' },
+  cell:  { flex: 1 },
+  cell_wide: { flex: 2 },
   cellRight: { textAlign: 'right' },
 
   pageNumber: {
@@ -82,9 +93,9 @@ export function ReportDocument({ inputs, data }: { inputs?: EngineInput; data?: 
   const { currency } = inputs.parameters;
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
-  const PageNumbering = ({ page, totalPages }) => (
-    <Text style={styles.pageNumber} render={({ pageNumber, totalPageNumber }) => (
-      `Page ${pageNumber} / ${totalPageNumber}`
+  const PageNumbering = () => (
+    <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
+      `Page ${pageNumber} / ${totalPages}`
     )} fixed />
   );
 

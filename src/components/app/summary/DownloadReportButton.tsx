@@ -43,7 +43,7 @@ export function DownloadReportButton() {
       }
 
       const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: 'FinancialForecastReport.pdf' });
+      const a = Object.assign(document.createElement('a'), { href: url, download: `ForecastReport-${Date.now()}.pdf` });
       document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     } catch (e: any) { 
       console.error(e);

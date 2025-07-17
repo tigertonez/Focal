@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="ForecastReport.pdf"',
+        'Content-Disposition': `attachment; filename="ForecastReport-${Date.now()}.pdf"`,
       },
     });
   } catch (e: any) {
