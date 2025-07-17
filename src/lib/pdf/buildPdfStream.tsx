@@ -16,7 +16,8 @@ import type { Readable } from 'stream';
 export async function buildPdfStream(
   props: { inputs: EngineInput; data: EngineOutput }
 ): Promise<Readable> {
-  // renderToStream returns a Node.js stream
+  // renderToStream returns a Node.js stream.
+  // Any rendering error inside ReportDocument will be caught by the API route's try/catch block.
   const stream = await renderToStream(<ReportDocument {...props} />);
   return stream as Readable;
 }

@@ -26,15 +26,15 @@ export async function POST(req: NextRequest) {
   }
   rateLimitStore.set(ip, [...userRequests, now]);
 
-  // --- 2. Request Processing ---
+  // --- 2. Request Processing & Validation ---
   try {
     const body = await req.json();
 
-    // Validate inputs and data using Zod schemas
     const parsedInputs = EngineInputSchema.safeParse(body.inputs);
     const parsedData = EngineOutputSchema.safeParse(body.data);
 
     if (!parsedInputs.success || !parsedData.success) {
+      // Log the detailed validation error server-side for debugging.
       console.error('Zod validation failed:', {
         inputs: !parsedInputs.success ? parsedInputs.error.flatten() : 'success',
         data: !parsedData.success ? parsedData.error.flatten() : 'success',
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
 
   } catch (err: any) {
     console.error('PDF route error:', err);
+    // Return a generic error to the client to avoid leaking implementation details.
     return NextResponse.json(
       { error: 'Failed to generate PDF.', details: err.message },
       { status: 500 }
