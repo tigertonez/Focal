@@ -1,201 +1,56 @@
-'use client';
-import React from 'react';
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-} from '@react-pdf/renderer';
-import type { EngineInput, EngineOutput } from '@/lib/types';
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 
-// ==================================
-// STYLES
-// ==================================
-const styles = StyleSheet.create({
-  page: {
-    fontFamily: 'Helvetica',
-    fontSize: 10,
-    paddingTop: 30,
-    paddingHorizontal: 40,
-    paddingBottom: 30,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    fontSize: 20,
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#1e293b',
-    fontFamily: 'Helvetica-Bold',
-  },
-  section: {
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
-    color: '#334155',
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingBottom: 3,
-  },
-  // KPI Styles
-  kpiContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  kpiCard: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 4,
-    padding: 10,
-    width: '32%',
-    marginBottom: 10,
-  },
-  kpiLabel: {
-    fontSize: 9,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  kpiValue: {
-    fontSize: 16,
-    fontFamily: 'Helvetica-Bold',
-    color: '#0f172a',
-  },
-  // Table Styles
-  table: {
-    display: 'flex',
-    width: 'auto',
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  tableHeaderRow: {
-    backgroundColor: '#f8fafc',
-    flexDirection: 'row',
-  },
-  tableCol: {
-    padding: 6,
-    borderStyle: 'solid',
-  },
-  tableHeader: {
-    fontFamily: 'Helvetica-Bold',
-    color: '#475569',
-  },
-  tableCell: {
-    fontFamily: 'Helvetica',
-    color: '#334155',
-  },
-});
+/* Single export – _named_ function (not async, not default) */
+export function ReportDocument() {
+  const safe  = (v: any) => String(v ?? '-');
 
-// ==================================
-// HELPERS
-// ==================================
-const safeString = (value: any): string => {
-  if (value === null || typeof value === 'undefined') return '';
-  return String(value);
-};
+  /* HEX colours only */
+  const FG     = '#333333';
+  const BORDER = '#e5e5e5';
+  const BG     = '#f4f4f4';
 
-const safeCurrency = (value: any, currency: string = 'USD'): string => {
-  const num = Number(value);
-  if (isNaN(num)) return '';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-  }).format(num);
-};
+  const styles = StyleSheet.create({
+    page:   { padding: 30, fontSize: 9, fontFamily: 'Helvetica', color: FG },
+    header: { fontSize: 18, marginBottom: 12, fontWeight: 'bold' },
 
-const safePercent = (value: any): string => {
-  const num = Number(value);
-  if (isNaN(num)) return '';
-  return `${num.toFixed(1)}%`;
-};
+    kpiRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+    kpiCard: { width: 110, borderWidth: 1, borderColor: BORDER, borderRadius: 4, padding: 8 },
+    kpiLab:  { fontSize: 7, marginBottom: 2, color: FG },
+    kpiVal:  { fontSize: 11, fontWeight: 'bold' },
 
-// ==================================
-// DOCUMENT COMPONENT
-// ==================================
-export default function ReportDocument({
-  inputs,
-  data,
-}: {
-  inputs?: EngineInput;
-  data?: EngineOutput;
-}) {
-  const currency = inputs?.parameters.currency || 'USD';
+    table: { display: 'flex', borderWidth: 1, borderColor: BORDER, borderRadius: 3 },
+    row:   { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER },
+    hcell: { flex: 1, padding: 4, backgroundColor: BG, fontWeight: 'bold' },
+    cell:  { flex: 1, padding: 4 }
+  });
+
+  /* tiny hard-coded mock numbers just to render */
+  const mock = { Revenue: 290625, Costs: 164750, Profit: 262578, Cash: 100059 };
 
   return (
     <Document>
-      {/* PAGE 1: SUMMARY */}
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Financial Summary</Text>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Key Performance Indicators</Text>
-          <View style={styles.kpiContainer}>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Total Revenue</Text>
-              <Text style={styles.kpiValue}>{String(safeCurrency(data?.revenueSummary.totalRevenue, currency))}</Text>
+        <Text style={styles.header}>Summary (mock)</Text>
+        <View style={styles.kpiRow}>
+          {Object.entries(mock).map(([k, v]) => (
+            <View key={k} style={styles.kpiCard}>
+              <Text style={styles.kpiLab}>{safe(k)}</Text>
+              <Text style={styles.kpiVal}>{safe(v)}</Text>
             </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Total Costs</Text>
-              <Text style={styles.kpiValue}>{String(safeCurrency(data?.costSummary.totalOperating, currency))}</Text>
-            </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Gross Profit</Text>
-              <Text style={styles.kpiValue}>{String(safeCurrency(data?.profitSummary.totalGrossProfit, currency))}</Text>
-            </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Ending Cash</Text>
-              <Text style={styles.kpiValue}>{String(safeCurrency(data?.cashFlowSummary.endingCashBalance, currency))}</Text>
-            </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Profit Break-Even</Text>
-              <Text style={styles.kpiValue}>{String(safeString(data?.profitSummary.breakEvenMonth))} Months</Text>
-            </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Peak Funding Need</Text>
-              <Text style={styles.kpiValue}>{String(safeCurrency(data?.cashFlowSummary.peakFundingNeed, currency))}</Text>
-            </View>
-          </View>
+          ))}
         </View>
       </Page>
 
-      {/* PAGE 2: INPUTS */}
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Input Sheet</Text>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Products &amp; Services</Text>
-          <View style={styles.table}>
-            {/* Table Header */}
-            <View style={[styles.tableHeaderRow, { borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }]}>
-              <View style={[styles.tableCol, { flex: 3 }]}><Text style={styles.tableHeader}>Product</Text></View>
-              <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableHeader}>Units</Text></View>
-              <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableHeader}>Unit Cost</Text></View>
-              <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableHeader}>Sell Price</Text></View>
-              <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableHeader}>Sell-Thru</Text></View>
-              <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableHeader}>Deposit</Text></View>
-            </View>
-            {/* Table Body */}
-            {inputs?.products.map((p, i) => (
-              <View key={p.id} style={[styles.tableRow, i === inputs.products.length - 1 ? { borderBottomWidth: 0 } : {}]}>
-                <View style={[styles.tableCol, { flex: 3 }]}><Text style={styles.tableCell}>{String(safeString(p.productName))}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeString(p.plannedUnits))}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeCurrency(p.unitCost, currency))}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safeCurrency(p.sellPrice, currency))}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safePercent(p.sellThrough))}</Text></View>
-                <View style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}><Text style={styles.tableCell}>{String(safePercent(p.depositPct))}</Text></View>
-              </View>
-            ))}
+        <Text style={styles.header}>Inputs (mock)</Text>
+        <View style={styles.table}>
+          <View style={styles.row}>
+            <Text style={styles.hcell}>Product</Text>
+            <Text style={styles.hcell}>Units</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.cell}>Widget A</Text>
+            <Text style={styles.cell}>{safe(1250)}</Text>
           </View>
         </View>
       </Page>
