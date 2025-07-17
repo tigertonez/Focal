@@ -4,15 +4,31 @@
 import { ForecastProvider } from '@/context/ForecastContext';
 import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
+import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  const isPdfMode = searchParams.get('pdf') === '1';
+
+  // Add data-pdf-ready attribute when the app is ready for PDF rendering
+  useEffect(() => {
+    if (isPdfMode) {
+      // A short delay to ensure all content and charts have rendered
+      const timer = setTimeout(() => {
+        document.body.setAttribute('data-pdf-ready', '1');
+      }, 2000); 
+      return () => clearTimeout(timer);
+    }
+  }, [isPdfMode]);
+
   return (
     <ForecastProvider>
       <div className="flex h-screen bg-background">
-        <SideNav />
+        {!isPdfMode && <SideNav />}
         <main className="flex-1 overflow-auto relative">
           {children}
-          <FinancialCopilot />
+          {!isPdfMode && <FinancialCopilot />}
         </main>
       </div>
     </ForecastProvider>
