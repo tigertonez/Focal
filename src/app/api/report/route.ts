@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer.server';
+import { buildPdfBuffer } from '@/lib/pdf/buildPdfBuffer';
 
 export async function POST(_: NextRequest) {
   try {
