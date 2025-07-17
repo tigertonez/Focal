@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
+import { AppShell } from '@/components/app/AppShell';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -35,7 +36,7 @@ export default function RootLayout({
           fontHeadline.variable
         )}
       >
-        {children}
+        <AppShell>{children}</AppShell>
         <Toaster />
       </body>
     </html>
