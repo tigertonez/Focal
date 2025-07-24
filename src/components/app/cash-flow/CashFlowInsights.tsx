@@ -26,23 +26,23 @@ const InsightSection: React.FC<{ title: string; icon: React.ReactNode; children:
   </div>
 );
 
-const InsightsLoader: React.FC = () => (
+const InsightsLoader: React.FC<{ t: any }> = ({ t }) => (
   <Card>
     <CardHeader>
-      <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cash Flow Health</CardTitle>
-      <CardDescription>AI-powered analysis of your cash flow is loading...</CardDescription>
+      <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.cashFlow.title}</CardTitle>
+      <CardDescription>{t.insights.loaderDescription}</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Generating your cash flow analysis...</p>
+        <p className="text-muted-foreground">{t.insights.loaderText}</p>
       </div>
     </CardContent>
   </Card>
 );
 
 export function CashFlowInsights() {
-  const { inputs, financials } = useForecast();
+  const { inputs, financials, t } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCashFlowOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,23 +100,23 @@ export function CashFlowInsights() {
   );
 
   if (isLoading) {
-    return <InsightsLoader />;
+    return <InsightsLoader t={t} />;
   }
 
   if (error) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Cash Flow Health</CardTitle>
+          <CardTitle>{t.insights.cashFlow.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <AlertTitle>Error Generating Insights</AlertTitle>
+            <AlertTitle>{t.insights.errorTitle}</AlertTitle>
             <AlertDescription>
-              <p>{error || 'Could not load AI insights.'}</p>
+              <p>{error || t.insights.errorDescription}</p>
               <Button variant="outline" size="sm" className="mt-4" onClick={getInsights}>
                  <RefreshCcw className="mr-2 h-4 w-4" />
-                 Retry
+                 {t.insights.retry}
               </Button>
             </AlertDescription>
           </Alert>
@@ -129,13 +129,13 @@ export function CashFlowInsights() {
      return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cash Flow Health</CardTitle>
-                <CardDescription>Get AI-powered analysis and recommendations for your cash flow.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.cashFlow.title}</CardTitle>
+                <CardDescription>{t.insights.cashFlow.description}</CardDescription>
             </CardHeader>
             <CardContent>
                 <Button onClick={getInsights} disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Analysis
+                    {t.insights.generateAnalysis}
                 </Button>
             </CardContent>
         </Card>
@@ -147,19 +147,19 @@ export function CashFlowInsights() {
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cash Flow Health</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.cashFlow.title}</CardTitle>
               <CardDescription>
-                AI-powered analysis of your cash flow.
+                {t.insights.cashFlow.description}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
                 <RefreshCcw className="mr-2 h-4 w-4" />
-                Regenerate
+                {t.insights.regenerate}
             </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <InsightSection title="Key Metrics Analysis" icon={<Lightbulb className="text-amber-500" />}>
+        <InsightSection title={t.insights.cashFlow.insights} icon={<Lightbulb className="text-amber-500" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {insights.insights.map((item, i) => (
                   <div key={i} className="text-sm">
@@ -171,10 +171,12 @@ export function CashFlowInsights() {
               ))}
             </div>
         </InsightSection>
-        <InsightSection title="Recommendations" icon={<TrendingUp className="text-blue-500" />}>
+        <InsightSection title={t.insights.cashFlow.recommendations} icon={<TrendingUp className="text-blue-500" />}>
           {renderList(insights.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>
   );
 }
+
+    

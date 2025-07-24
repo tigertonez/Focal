@@ -27,16 +27,16 @@ const InsightSection: React.FC<{ title: string; icon: React.ReactNode; children:
   </div>
 );
 
-const InsightsLoader: React.FC = () => (
+const InsightsLoader: React.FC<{ t: any }> = ({ t }) => (
   <Card>
     <CardHeader>
-      <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cost Analysis</CardTitle>
-      <CardDescription>AI-powered analysis of your costs is loading...</CardDescription>
+      <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.costs.title}</CardTitle>
+      <CardDescription>{t.insights.loaderDescription}</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Generating your cost analysis...</p>
+        <p className="text-muted-foreground">{t.insights.loaderText}</p>
       </div>
     </CardContent>
   </Card>
@@ -49,7 +49,7 @@ interface CostsInsightsProps {
 }
 
 export function CostsInsights({ costSummary, revenueSummary, currency }: CostsInsightsProps) {
-  const { inputs } = useForecast();
+  const { inputs, t } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCostsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,23 +101,23 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
   );
 
   if (isLoading) {
-    return <InsightsLoader />;
+    return <InsightsLoader t={t} />;
   }
 
   if (error) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Cost Analysis</CardTitle>
+          <CardTitle>{t.insights.costs.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <AlertTitle>Error Generating Insights</AlertTitle>
+            <AlertTitle>{t.insights.errorTitle}</AlertTitle>
             <AlertDescription>
-              <p>{error || 'Could not load AI insights.'}</p>
+              <p>{error || t.insights.errorDescription}</p>
               <Button variant="outline" size="sm" className="mt-4" onClick={getInsights}>
                  <RefreshCcw className="mr-2 h-4 w-4" />
-                 Retry
+                 {t.insights.retry}
               </Button>
             </AlertDescription>
           </Alert>
@@ -130,13 +130,13 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
      return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cost Analysis</CardTitle>
-                <CardDescription>Get AI-powered analysis of your cost structure.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.costs.title}</CardTitle>
+                <CardDescription>{t.insights.costs.description}</CardDescription>
             </CardHeader>
             <CardContent>
                 <Button onClick={getInsights} disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Analysis
+                    {t.insights.generateAnalysis}
                 </Button>
             </CardContent>
         </Card>
@@ -148,25 +148,27 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cost Analysis</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.costs.title}</CardTitle>
               <CardDescription>
-                AI-powered analysis of your cost structure.
+                {t.insights.costs.description}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
                 <RefreshCcw className="mr-2 h-4 w-4" />
-                Regenerate
+                {t.insights.regenerate}
             </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <InsightSection title="Key Insights" icon={<Lightbulb className="text-amber-500" />}>
+        <InsightSection title={t.insights.costs.insights} icon={<Lightbulb className="text-amber-500" />}>
           {renderList(insights.insights)}
         </InsightSection>
-        <InsightSection title="Recommendations" icon={<TrendingUp className="text-blue-500" />}>
+        <InsightSection title={t.insights.costs.recommendations} icon={<TrendingUp className="text-blue-500" />}>
           {renderList(insights.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>
   );
 }
+
+    

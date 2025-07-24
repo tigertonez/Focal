@@ -13,21 +13,7 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
-
-const chartConfig = {
-  revenue: {
-    label: "Revenue",
-    color: "hsl(var(--primary))",
-  },
-  costs: {
-    label: "Total Costs",
-    color: "hsl(0, 75%, 65%)", // Subtle Red
-  },
-  cumulativeProfit: {
-    label: "Cumulative Operating Profit",
-    color: "hsl(var(--accent))",
-  }
-} satisfies ChartConfig
+import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
@@ -35,6 +21,23 @@ interface ProfitBreakdownChartProps {
 }
 
 export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
+  const { t } = useForecast();
+  
+  const chartConfig = React.useMemo(() => ({
+    revenue: {
+      label: t.insights.charts.revenue,
+      color: "hsl(var(--primary))",
+    },
+    costs: {
+      label: t.insights.charts.totalCosts,
+      color: "hsl(0, 75%, 65%)", // Subtle Red
+    },
+    cumulativeProfit: {
+      label: t.insights.charts.cumulativeProfit,
+      color: "hsl(var(--accent))",
+    }
+  }), [t]) satisfies ChartConfig
+
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     return data.monthlyProfit.map(p => {
@@ -112,3 +115,5 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     </ChartContainer>
   )
 }
+
+    

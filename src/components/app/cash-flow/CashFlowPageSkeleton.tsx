@@ -63,3 +63,5 @@ export function CashFlowPageSkeleton({ t }: {t: any}) {
     </div>
   );
 }
+
+    

@@ -21,46 +21,48 @@ export function ProfitPageSkeleton({ t }: {t: any}) {
         </div>
       </section>
       
-      <section className="grid md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] w-full flex items-end gap-2 p-4">
-                <Skeleton className="h-1/3 w-full" />
-                <Skeleton className="h-1/2 w-full" />
-                <Skeleton className="h-2/3 w-full" />
-                <Skeleton className="h-1/4 w-full" />
-                <Skeleton className="h-3/4 w-full" />
-                <Skeleton className="h-1/2 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.insights.profit.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] w-full p-4 space-y-4">
-               <Skeleton className="h-12 w-full" />
-               <Skeleton className="h-12 w-full" />
-               <Skeleton className="h-12 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-      
       <section>
          <Card>
             <CardHeader>
-              <CardTitle>{t.pages.profit.table.title}</CardTitle>
+                <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
-                <Skeleton className="h-40 w-full" />
+            <CardContent className="h-[350px] w-full pl-0">
+               <div className="h-full w-full flex items-end gap-2 p-4">
+                    <Skeleton className="h-1/3 w-full" />
+                    <Skeleton className="h-1/2 w-full" />
+                    <Skeleton className="h-2/3 w-full" />
+                    <Skeleton className="h-1/4 w-full" />
+                    <Skeleton className="h-3/4 w-full" />
+                    <Skeleton className="h-1/2 w-full" />
+                </div>
             </CardContent>
         </Card>
       </section>
+
+       <section>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t.pages.profit.table.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-40 w-full" />
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="pt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t.insights.profit.title}</CardTitle>
+                    <CardDescription><Skeleton className="h-4 w-72" /></CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-24 w-full" />
+                </CardContent>
+            </Card>
+        </section>
     </div>
   );
 }
+
+    

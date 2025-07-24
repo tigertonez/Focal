@@ -13,21 +13,7 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
-
-const chartConfig = {
-  cashIn: {
-    label: "Cash In",
-    color: "hsl(var(--primary))",
-  },
-  cashOut: {
-    label: "Cash Out",
-    color: "hsl(var(--destructive) / 0.8)",
-  },
-  cumulativeCash: {
-    label: "Cumulative Cash",
-    color: "hsl(var(--accent))",
-  }
-} satisfies ChartConfig
+import { useForecast } from "@/context/ForecastContext";
 
 interface CashFlowChartProps {
   data: EngineOutput;
@@ -35,6 +21,24 @@ interface CashFlowChartProps {
 }
 
 export function CashFlowChart({ data, currency }: CashFlowChartProps) {
+  const { t } = useForecast();
+
+  const chartConfig = React.useMemo(() => ({
+    cashIn: {
+      label: t.insights.charts.cashIn,
+      color: "hsl(var(--primary))",
+    },
+    cashOut: {
+      label: t.insights.charts.cashOut,
+      color: "hsl(var(--destructive) / 0.8)",
+    },
+    cumulativeCash: {
+      label: t.insights.charts.cumulativeCash,
+      color: "hsl(var(--accent))",
+    }
+  }), [t]) satisfies ChartConfig;
+
+
   const chartData = React.useMemo(() => {
     const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
     return monthlyCashFlow.map(cf => {
@@ -110,3 +114,5 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
     </ChartContainer>
   )
 }
+
+    

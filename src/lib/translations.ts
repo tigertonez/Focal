@@ -99,6 +99,14 @@ export const translations = {
                 endingCash: "Ending Cash Balance",
             }
         },
+        charts: {
+          revenue: "Revenue",
+          totalCosts: "Total Costs",
+          cumulativeProfit: "Cumulative Operating Profit",
+          cashIn: "Cash In",
+          cashOut: "Cash Out",
+          cumulativeCash: "Cumulative Cash",
+        },
         download: "Download Report",
     },
     pages: {
@@ -439,6 +447,14 @@ export const translations = {
                 endingCash: "Endkassenbestand",
             }
         },
+        charts: {
+          revenue: "Umsatz",
+          totalCosts: "Gesamtkosten",
+          cumulativeProfit: "Kumulierter Betriebsgewinn",
+          cashIn: "Einzahlungen",
+          cashOut: "Auszahlungen",
+          cumulativeCash: "Kumulierter Cashflow",
+        },
         download: "Bericht herunterladen",
     },
     pages: {
@@ -683,3 +699,5 @@ export const translations = {
 };
 
 export type Translations = typeof translations;
+
+    
