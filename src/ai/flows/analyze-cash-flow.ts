@@ -42,10 +42,10 @@ The currency is {{{currency}}}.
 Analyze the following cash flow summary:
 {{{json cashFlowSummary}}}
 
-When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**. Do not use quotation marks for numbers.
+CRITICAL FORMATTING RULE: When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
 
 Based on the summary, generate the following:
-1.  **Insights**: Create a list of key metrics. The label should be the metric name (e.g., "Peak Funding Need") and the value should be the formatted number (e.g., "**€15,234**" or "**4 Months**" or "**Infinite**"). Include:
+1.  **Insights**: Create a list of key metrics. The label should be the metric name (e.g., "Peak Funding Need") and the value should be the formatted, bolded KPI value (e.g., "**€15,234**" or "**4 Months**" or "**Infinite**"). Include:
     - Peak Funding Need
     - Months to Break-Even
     - Final Cash Position
