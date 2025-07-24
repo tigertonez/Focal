@@ -63,7 +63,7 @@ Here is the structure you MUST follow for each key:
 
 1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value (which MUST be bolded), and explain what it means. Use short paragraphs per bullet.
 
-2.  **whatsWorking**: Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language.
+2.  **whatsWorking**: Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. If there are no clear strengths, state "The current plan shows areas for improvement across the board."
 
 3.  **issues**: Diagnose weak points in plain language using bullet points. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it.
 

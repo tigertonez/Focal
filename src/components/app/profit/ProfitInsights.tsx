@@ -13,7 +13,6 @@ import {
   type EngineOutput,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered, RefreshCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
