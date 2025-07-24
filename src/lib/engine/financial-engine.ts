@@ -242,7 +242,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
 const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]) => {
     let totalPlannedUnits = 0, totalVariableCost = 0;
 
-    const monthlyFixedCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
+    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
     
     inputs.products.forEach(product => {
         const plannedUnits = product.plannedUnits || 0;
@@ -253,20 +253,20 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
             const remainingCost = totalProductionCost - depositPaid;
             
             if (timeline.requiresMonthZero && depositPaid > 0) {
-                const depositMonth = monthlyFixedCostTimeline.find(t => t.month === 0);
+                const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
                 if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
             }
 
             const firstSaleMonthForProduct = timeline.timelineMonths.find(m => (monthlyUnitsSold.find(u => u.month === m) || {})[product.productName] > 0);
             if (firstSaleMonthForProduct !== undefined) {
-                const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === firstSaleMonthForProduct);
+                const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === firstSaleMonthForProduct);
                 if (finalPaymentMonth) {
                     finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
                 }
             }
         } else if (product.costModel === 'monthly') {
             // Add JIT costs to the main cost timeline
-            monthlyFixedCostTimeline.forEach(month => {
+            monthlyCostTimeline.forEach(month => {
                 const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
                 if (unitsThisMonth > 0) {
                     month[product.productName] = (month[product.productName] || 0) + (unitsThisMonth * (product.unitCost || 0));
@@ -291,7 +291,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + p.depositPaid, 0);
     const totalFinalPayments = variableCostBreakdown.reduce((sum, p) => sum + p.remainingCost, 0);
     
-    const totalFixedCostInPeriod = monthlyFixedCostTimeline.reduce((total, month) => {
+    const totalFixedCostInPeriod = monthlyCostTimeline.reduce((total, month) => {
         return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
             if (key === 'month' || key === 'Deposits' || key === 'Final Payments') return monthTotal;
             // Exclude JIT costs from this total as they are COGS
@@ -317,7 +317,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     };
     
     const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name), ...inputs.products.filter(p => p.costModel === 'monthly').map(p => p.productName)]);
-    const monthlyCosts = monthlyFixedCostTimeline.map(monthData => {
+    const monthlyCosts = monthlyCostTimeline.map(monthData => {
         const completeMonth: Record<string, any> = {};
         allCostKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
         return MonthlyCostSchema.parse(completeMonth);
@@ -520,7 +520,7 @@ function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHea
     const timeline = createTimeline(inputs);
     const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
     const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
-    const costData = calculateCosts(inputs, timeline, monthlyUnitsTimeline);
+    const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
     const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
 
     return {
