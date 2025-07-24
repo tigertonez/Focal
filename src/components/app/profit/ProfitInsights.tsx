@@ -66,7 +66,7 @@ const ProfitInsightsLoader: React.FC = () => (
 
 const createMarkup = (text: string | undefined) => {
     if (!text) return { __html: '' };
-    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>');
+    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>');
     return { __html: boldedText };
 };
 
@@ -74,10 +74,10 @@ const renderContent = (content: string | undefined) => {
     if (!content) return <p>No insights generated.</p>;
     
     // Check if it's a numbered list
-    if (content.match(/^\s*1\./m)) {
+    if (content.match(/^\s*\d+\.\s*/m)) {
       const items = content.split(/\n\s*\d+\.\s*/).filter(item => item.trim() !== '');
       return (
-        <ul className="list-decimal list-outside space-y-1.5 pl-4">
+        <ul className="list-decimal list-outside space-y-2.5 pl-4">
           {items.map((item, index) => (
             <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
           ))}

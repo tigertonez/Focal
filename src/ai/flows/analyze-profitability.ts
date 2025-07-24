@@ -36,6 +36,8 @@ The actual input you get combines these:
 
 Your job is to analyze this data and return a JSON object with EXACTLY the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
+When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**. Do not use quotation marks for numbers.
+
 1. **explanation** (≤ 150 words)
    - Briefly define Gross Profit, Operating Profit, and Net Profit.
    - For each, show its current value from the data and state in one sentence why it matters for a small business.
