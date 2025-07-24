@@ -17,6 +17,12 @@ const prompt = ai.definePrompt({
   name: 'costInsightPrompt',
   input: { schema: AnalyzeCostsInputSchema },
   output: { schema: AnalyzeCostsOutputSchema },
+  config: {
+    maxOutputTokens: 512,
+    temperature: 0.4,
+    topP: 0.95,
+    topK: 40,
+  },
   prompt: `You are a financial analyst specializing in cost optimization for small businesses.
 The currency is {{{currency}}}.
 

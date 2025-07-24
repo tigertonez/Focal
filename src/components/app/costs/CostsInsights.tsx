@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles } from 'lucide-react';
+import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { analyzeCosts, type AnalyzeCostsOutput } from '@/ai/flows/analyze-costs';
 import type { CostSummary, RevenueSummary } from '@/lib/types';
@@ -45,7 +45,7 @@ interface CostsInsightsProps {
 
 export function CostsInsights({ costSummary, revenueSummary, currency }: CostsInsightsProps) {
   const [insights, setInsights] = useState<AnalyzeCostsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getInsights = useCallback(async () => {
@@ -61,9 +61,22 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
     }
   }, [costSummary, revenueSummary, currency]);
 
-  useEffect(() => {
-    getInsights();
-  }, [getInsights]);
+  if (!insights && !isLoading && !error) {
+     return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Cost Analysis</CardTitle>
+                <CardDescription>Get AI-powered analysis of your cost structure.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={getInsights} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Analysis
+                </Button>
+            </CardContent>
+        </Card>
+    );
+  }
 
   if (isLoading) {
     return <InsightsLoader />;

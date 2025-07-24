@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -12,14 +12,11 @@ import {
 import {
   type EngineOutput,
   type AnalyzeProfitabilityOutput,
-  type Product,
-  type FixedCostItem,
 } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered } from 'lucide-react';
+import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered, RefreshCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw } from 'lucide-react';
 import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
 import { getProductColor } from '@/lib/utils';
 import { useForecast } from '@/context/ForecastContext';
@@ -77,13 +74,12 @@ export function ProfitInsights({
 }) {
   const { inputs } = useForecast();
   const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getInsights = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    setInsights(null); // Clear previous insights
     try {
       const result = await analyzeProfitability({
           revenueSummary: data.revenueSummary,
@@ -99,10 +95,6 @@ export function ProfitInsights({
       setIsLoading(false);
     }
   }, [data, currency]);
-
-  useEffect(() => {
-    getInsights();
-  }, [getInsights]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -131,7 +123,6 @@ export function ProfitInsights({
   const renderContent = (content: string | undefined) => {
     if (!content) return <p>No insights generated.</p>;
     
-    // Check for Top Priorities list
     if (content.startsWith('🧭 Top Priorities')) {
       const listContent = content.replace('🧭 Top Priorities', '').trim();
        const items = listContent.split('<br><br>').filter(item => item.trim());
@@ -147,7 +138,6 @@ export function ProfitInsights({
       );
     }
     
-    // Check for bullet points (used in explanation)
     if (content.includes('•')) {
       return (
         <ul className="list-none space-y-3">
@@ -161,7 +151,6 @@ export function ProfitInsights({
       );
     }
     
-    // For all other sections (paragraphs)
     const paragraphs = content.split('\n').filter(p => p.trim());
     return (
         <div className="space-y-2">
@@ -169,6 +158,23 @@ export function ProfitInsights({
                 <p key={i} className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(p)} />
             ))}
         </div>
+    );
+  }
+
+  if (!insights && !isLoading && !error) {
+     return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Your Growth Report</CardTitle>
+                <CardDescription>Get an AI-powered analysis of your profit forecast.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={getInsights} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Analysis
+                </Button>
+            </CardContent>
+        </Card>
     );
   }
 

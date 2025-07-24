@@ -19,6 +19,12 @@ const prompt = ai.definePrompt({
   name: 'cashFlowInsightPrompt',
   input: { schema: AnalyzeCashFlowInputSchema },
   output: { schema: AnalyzeCashFlowOutputSchema },
+  config: {
+    maxOutputTokens: 512,
+    temperature: 0.4,
+    topP: 0.95,
+    topK: 40,
+  },
   prompt: `You are an expert financial analyst providing advice to a business owner.
 The currency is {{{currency}}}.
 

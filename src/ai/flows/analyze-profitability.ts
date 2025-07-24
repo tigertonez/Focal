@@ -27,6 +27,12 @@ const prompt = ai.definePrompt({
   input: { schema: AnalyzeProfitabilityInputSchema },
   output: { schema: AnalyzeProfitabilityOutputSchema },
   model: 'googleai/gemini-1.5-flash-latest',
+  config: {
+    maxOutputTokens: 512,
+    temperature: 0.4,
+    topP: 0.95,
+    topK: 40,
+  },
   prompt: `You are an advanced financial analyst AI writing a growth report for an early-stage founder with limited financial background. Your tone must be clear, educational, and confidence-building. Your mission is to help them understand their numbers and know what to do next.
 
 You will receive a JSON payload containing the user's profit forecast data.

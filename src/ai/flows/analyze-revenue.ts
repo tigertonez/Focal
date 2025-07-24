@@ -18,6 +18,12 @@ const prompt = ai.definePrompt({
   name: 'revenueInsightPrompt',
   input: { schema: AnalyzeRevenueInputSchema },
   output: { schema: AnalyzeRevenueOutputSchema },
+  config: {
+    maxOutputTokens: 512,
+    temperature: 0.4,
+    topP: 0.95,
+    topK: 40,
+  },
   prompt: `You are a business strategist specializing in revenue growth for early-stage companies.
 The currency is {{{currency}}}.
 
