@@ -264,6 +264,14 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
                     finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
                 }
             }
+        } else if (product.costModel === 'monthly') {
+            // Add JIT costs to the main cost timeline
+            monthlyFixedCostTimeline.forEach(month => {
+                const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
+                if (unitsThisMonth > 0) {
+                    month[product.productName] = (month[product.productName] || 0) + (unitsThisMonth * (product.unitCost || 0));
+                }
+            });
         }
         
         totalPlannedUnits += plannedUnits;
@@ -286,6 +294,9 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalFixedCostInPeriod = monthlyFixedCostTimeline.reduce((total, month) => {
         return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
             if (key === 'month' || key === 'Deposits' || key === 'Final Payments') return monthTotal;
+            // Exclude JIT costs from this total as they are COGS
+            const isJitCost = inputs.products.some(p => p.productName === key && p.costModel === 'monthly');
+            if (isJitCost) return monthTotal;
             return monthTotal + value;
         }, 0);
     }, 0);
@@ -305,7 +316,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         cogsOfUnsoldGoods,
     };
     
-    const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name)]);
+    const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name), ...inputs.products.filter(p => p.costModel === 'monthly').map(p => p.productName)]);
     const monthlyCosts = monthlyFixedCostTimeline.map(monthData => {
         const completeMonth: Record<string, any> = {};
         allCostKeys.forEach(key => { completeMonth[key] = monthData[key] || 0; });
@@ -332,7 +343,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
 
-        const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {}).filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments').reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
+        const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {}).filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments' && !inputs.products.some(p => p.productName === k)).reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
         
         const monthlyCOGS = inputs.products.reduce((s, p) => {
             const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
@@ -341,7 +352,9 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         
         const grossProfit = totalMonthlyRevenue - monthlyCOGS;
         const operatingProfit = grossProfit - totalMonthlyFixedCosts;
-        const netProfit = operatingProfit > 0 ? operatingProfit * (1 - (taxRate / 100)) : operatingProfit;
+        
+        const monthlyTaxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
+        const netProfit = operatingProfit - monthlyTaxes;
         
         cumulativeOperatingProfit += operatingProfit;
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
@@ -349,20 +362,22 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
 
         // Calculate weighted average net margin contribution for this month
-        inputs.products.forEach(p => {
-            const productRevenue = (monthlyRevenue.find(r => r.month === month) || {})[p.productName] || 0;
-            if (productRevenue > 0) {
-                const productCOGS = ((monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0) * (p.unitCost || 0);
-                const productGrossProfit = productRevenue - productCOGS;
-                const revenueShare = totalMonthlyRevenue > 0 ? productRevenue / totalMonthlyRevenue : 0;
-                const allocatedFixed = totalMonthlyFixedCosts * revenueShare;
-                const allocatedTax = (operatingProfit > 0 ? operatingProfit - netProfit : 0) * revenueShare;
-                const productNetProfit = productGrossProfit - allocatedFixed - allocatedTax;
-                const productNetMargin = productNetProfit / productRevenue;
-                totalWeightedMarginSum += productNetMargin * productRevenue;
-            }
-        });
-
+        if (totalMonthlyRevenue > 0) {
+            inputs.products.forEach(p => {
+                const productRevenue = (monthlyRevenue.find(r => r.month === month) || {})[p.productName] || 0;
+                if (productRevenue > 0) {
+                    const productCOGS = ((monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0) * (p.unitCost || 0);
+                    const productGrossProfit = productRevenue - productCOGS;
+                    const revenueShare = productRevenue / totalMonthlyRevenue;
+                    const allocatedFixed = totalMonthlyFixedCosts * revenueShare;
+                    const allocatedTax = monthlyTaxes * revenueShare;
+                    const productNetProfit = productGrossProfit - allocatedFixed - allocatedTax;
+                    const productNetMargin = productNetProfit / productRevenue;
+                    totalWeightedMarginSum += productNetMargin * productRevenue;
+                }
+            });
+        }
+        
         return { month, grossProfit, operatingProfit, netProfit };
     });
     
@@ -387,14 +402,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         
         const costsThisMonth = monthlyCosts.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsThisMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-
-        // Add monthly COGS for 'monthly' cost model products
-        inputs.products.forEach(p => {
-            if (p.costModel === 'monthly') {
-                const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
-                cashOutCosts += units * (p.unitCost || 0);
-            }
-        });
 
         const profitMonth = monthlyProfit.find(p => p.month === month);
         const cashOutTax = (profitMonth?.operatingProfit || 0) > 0 ? (profitMonth?.operatingProfit || 0) - (profitMonth?.netProfit || 0) : 0;
