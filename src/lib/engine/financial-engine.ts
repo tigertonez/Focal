@@ -130,14 +130,11 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
         
         if (isManualMode && isLowVolume) {
             const soldUnits = product.estimatedSales || 0;
-            const monthlySale = salesTimeline.length > 0 ? soldUnits / salesTimeline.length : 0;
-            salesTimeline.forEach((month) => {
-                const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === month);
-                if (unitsTimelineMonth) {
-                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlySale;
-                }
-            });
-
+            const saleMonth = product.saleMonth === 0 || product.saleMonth ? product.saleMonth : 1; // Default to month 1
+            const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === saleMonth);
+            if (unitsTimelineMonth) {
+                unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + soldUnits;
+            }
         } else if (isManualMode) {
             if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                 throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting.`);

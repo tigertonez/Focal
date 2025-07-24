@@ -11,6 +11,7 @@ import { Trash2, Info } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProductColor } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs } = useForecast();
@@ -25,7 +26,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, name as keyof Product, finalValue);
   };
 
-  const handleSelectChange = (name: keyof Product) => (value: string) => {
+  const handleSelectChange = (name: keyof Product) => (value: string | number) => {
     updateProduct(index, name, value);
   };
 
@@ -45,6 +46,8 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
   const assignedColor = getProductColor(product);
   
   const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
+  
+  const timeline = Array.from({ length: inputs.parameters.forecastMonths }, (_, i) => i + 1);
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -126,25 +129,28 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[68px] items-start">
             {isManualMode && isLowVolume && (
-                 <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium flex items-center gap-2">
-                        Estimated Units to Sell
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                    <p>For low-volume items, enter the total number of units you expect to sell over the forecast period.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </Label>
-                    <div className="relative">
-                        <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                 <>
+                    <div className="space-y-2">
+                        <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">Units to Sell</Label>
+                        <div className="relative">
+                            <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
+                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                        </div>
                     </div>
-                </div>
+                     <div className="space-y-2">
+                        <Label htmlFor={`saleMonth-${index}`} className="text-sm font-medium">Sale Month</Label>
+                        <Select onValueChange={(v) => handleSelectChange('saleMonth')(parseInt(v))} value={String(product.saleMonth || 1)}>
+                            <SelectTrigger id={`saleMonth-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {timeline.map(month => (
+                                    <SelectItem key={month} value={String(month)}>Month {month}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                 </>
             )}
             
             {isManualMode && !isLowVolume && (
@@ -200,5 +206,3 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     </div>
   );
 };
-
-    

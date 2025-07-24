@@ -14,6 +14,7 @@ export const ProductSchema = z.object({
   depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
   color: z.string().optional(),
   estimatedSales: z.number().optional(),
+  saleMonth: z.number().optional(),
 });
 export type Product = z.infer<typeof ProductSchema>;
 
