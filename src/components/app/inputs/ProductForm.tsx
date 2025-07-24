@@ -36,13 +36,15 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
   const salesModelTooltip = `How sales are distributed over time. 'Launch' is front-loaded, 'Even' is stable, 'Seasonal' peaks mid-period, and 'Growth' increases steadily.`;
   const salesModelTitle = "What is a Sales Model?";
   
-  const sellThroughTooltip = "The percentage of your total planned units that you expect to sell. A crucial driver for your revenue forecast.";
+  const sellThroughTooltip = "The percentage of your total planned stock that you expect to sell. A crucial driver for your revenue forecast.";
   const sellThroughTitle = "What is Sell-Through %?";
   
   const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery.";
   const depositPaidTitle = "What is a Deposit?";
 
   const assignedColor = getProductColor(product);
+  
+  const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -103,7 +105,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
           </div>
         </div>
-        {isManualMode && (
+        {isManualMode && !isLowVolume && (
             <div className="space-y-2">
             <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
                 Sales Model
@@ -133,7 +135,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {isManualMode && (
+        {isManualMode && !isLowVolume && (
           <div className="space-y-2">
             <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
               Sell-Through %
@@ -154,6 +156,25 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
             </div>
           </div>
+        )}
+        {isManualMode && isLowVolume && (
+            <div className="space-y-2">
+                <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium flex items-center gap-2">
+                    Estimated Units to Sell
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                                <p>For low-volume items, enter the total number of units you expect to sell over the forecast period.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </Label>
+                <div className="relative">
+                    <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                </div>
+            </div>
         )}
         <div className="space-y-2">
           <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">

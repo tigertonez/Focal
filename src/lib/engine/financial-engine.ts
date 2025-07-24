@@ -1,3 +1,4 @@
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, CashFlowSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
@@ -125,7 +126,19 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
     const monthlyUnitsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
     products.forEach(product => {
-        if (isManualMode) {
+        const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
+        
+        if (isManualMode && isLowVolume) {
+            const soldUnits = product.estimatedSales || 0;
+            const monthlySale = salesTimeline.length > 0 ? soldUnits / salesTimeline.length : 0;
+            salesTimeline.forEach((month) => {
+                const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === month);
+                if (unitsTimelineMonth) {
+                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlySale;
+                }
+            });
+
+        } else if (isManualMode) {
             if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                 throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting.`);
             }

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // --- Section A: Product ---
@@ -12,6 +13,7 @@ export const ProductSchema = z.object({
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).optional(),
   depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
   color: z.string().optional(),
+  estimatedSales: z.number().optional(),
 });
 export type Product = z.infer<typeof ProductSchema>;
 
