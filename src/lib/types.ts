@@ -186,7 +186,7 @@ export type AnalyzeProfitabilityInput = z.infer<
 
 export const AnalyzeProfitabilityOutputSchema = z.object({
   explanation: z.string().describe("A brief, beginner-friendly explanation of Gross Profit, Operating Profit, and Net Profit, including their current values and why they matter."),
-  whatsWorking: z.string().describe("A summary of 1-2 healthy metrics (like strong gross margin or sell-through) and the business decisions that likely led to them."),
+  whatsWorking: z.string().optional().describe("A summary of 1-2 healthy metrics (like strong gross margin or sell-through) and the business decisions that likely led to them. Omit if no clear strengths exist."),
   issues: z.string().describe("A summary of 1-2 negative or below-benchmark metrics, tying each issue directly to the numbers that prove it."),
   opportunities: z.string().describe("A summary of 1-2 concrete, data-driven suggestions for improvement, using product names where relevant."),
   topPriorities: z.string().describe("A numbered list of 3-5 actionable, founder-friendly next steps, each starting with a verb."),
