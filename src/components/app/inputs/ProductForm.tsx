@@ -133,7 +133,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             {isManualMode && isLowVolume && (
                  <>
                     <div className="space-y-2">
-                        <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">Units to Sell</Label>
+                        <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">Estimated Sales (Units)</Label>
                         <div className="relative">
                             <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
                             <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>

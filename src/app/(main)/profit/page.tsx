@@ -30,8 +30,8 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  let totalMarginSum = 0;
-  let productsWithRevenue = 0;
+  let totalWeightedMarginSum = 0;
+  let totalRevenueForMargin = 0;
 
   inputs.products.forEach((product) => {
       const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
@@ -42,17 +42,17 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
           const productCogs = unitsSold * (product.unitCost || 0);
           const grossProfit = productRevenue - productCogs;
           const netProfit = grossProfit - (costSummary.totalFixed * (productRevenue / revenueSummary.totalRevenue)) - ((profitSummary.totalOperatingProfit - profitSummary.totalNetProfit) * (productRevenue / revenueSummary.totalRevenue));
-          const netMargin = (netProfit / productRevenue) * 100;
+          const netMargin = (netProfit / productRevenue); // as a decimal
           
-          totalMarginSum += netMargin;
-          productsWithRevenue++;
+          totalWeightedMarginSum += netMargin * productRevenue;
+          totalRevenueForMargin += productRevenue;
       }
   });
 
-  const averageNetMargin = productsWithRevenue > 0 ? totalMarginSum / productsWithRevenue : 0;
-  
+  const averageNetMargin = totalRevenueForMargin > 0 ? (totalWeightedMarginSum / totalRevenueForMargin) * 100 : 0;
+
   const netMarginTitle = "Average Net Margin";
-  const netMarginTooltip = "The average of the net profit margins from each of your products. This KPI gives a general sense of product-level profitability, but it isn't weighted by revenue.";
+  const netMarginTooltip = "The weighted average of the net profit margins from each of your products, calculated based on each product's contribution to total revenue.";
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -94,7 +94,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Achieved vs. Potential Gross Profit</span>
               <span className="font-medium text-foreground">
-                 Achieved: {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)} Potential
+                 {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
               </span>
             </div>
             <Progress value={profitProgress} className="h-2" />

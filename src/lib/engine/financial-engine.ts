@@ -1,4 +1,5 @@
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, CashFlowSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
@@ -127,6 +128,15 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
 
     products.forEach(product => {
         const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
+        
+        // Dynamically calculate sell-through for low volume items
+        if (isLowVolume) {
+            if (product.plannedUnits && product.estimatedSales) {
+                product.sellThrough = (product.estimatedSales / product.plannedUnits) * 100;
+            } else {
+                product.sellThrough = 0;
+            }
+        }
         
         if (isManualMode && isLowVolume) {
             const soldUnits = product.estimatedSales || 0;
