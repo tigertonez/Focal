@@ -9,20 +9,9 @@ import { formatCurrency, formatNumber } from '../utils';
 // Timeline Calculation Helpers
 // =================================================================
 
-/**
- * Creates a timeline object based on forecast parameters.
- * This is the single source of truth for all date-related calculations.
- * @param inputs The user-provided forecast inputs.
- * @returns An object containing all relevant month arrays for the forecast.
- */
 const createTimeline = (inputs: EngineInput) => {
     const { forecastMonths, preOrder } = inputs.parameters;
-    
-    // Month 0 is required if pre-order mode is on, OR if any product has a deposit.
     const requiresMonthZero = preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
-
-    // If month 0 is required, the timeline runs from 0 to forecastMonths (e.g., 0-12 for a 12-month forecast).
-    // The actual sales period (for weights) is still the number of forecast months.
     const timelineMonths = requiresMonthZero
       ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
@@ -129,7 +118,6 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
     products.forEach(product => {
         const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
         
-        // Dynamically calculate sell-through for low volume items
         if (isLowVolume) {
             if (product.plannedUnits && product.estimatedSales) {
                 product.sellThrough = (product.estimatedSales / product.plannedUnits) * 100;
@@ -256,40 +244,44 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 
     const monthlyFixedCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
     
-    let totalDepositsPaid = 0;
-    let totalFinalPayments = 0;
+    inputs.products.forEach(product => {
+        const plannedUnits = product.plannedUnits || 0;
+        const totalProductionCost = plannedUnits * (product.unitCost || 0);
+
+        if (product.costModel === 'batch') {
+            const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
+            const remainingCost = totalProductionCost - depositPaid;
+            
+            if (timeline.requiresMonthZero && depositPaid > 0) {
+                const depositMonth = monthlyFixedCostTimeline.find(t => t.month === 0);
+                if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
+            }
+
+            const firstSaleMonthForProduct = timeline.timelineMonths.find(m => (monthlyUnitsSold.find(u => u.month === m) || {})[product.productName] > 0);
+            if (firstSaleMonthForProduct !== undefined) {
+                const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === firstSaleMonthForProduct);
+                if (finalPaymentMonth) {
+                    finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+                }
+            }
+        }
+        
+        totalPlannedUnits += plannedUnits;
+        totalVariableCost += totalProductionCost;
+    });
 
     const variableCostBreakdown = inputs.products.map(product => {
         const plannedUnits = product.plannedUnits || 0;
         const totalProductionCost = plannedUnits * (product.unitCost || 0);
         const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
-        const remainingCost = totalProductionCost - depositPaid;
-        
-        totalPlannedUnits += plannedUnits;
-        totalVariableCost += totalProductionCost;
-        totalDepositsPaid += depositPaid;
-        totalFinalPayments += remainingCost;
-
-        // Schedule the final payment for this product individually
-        const firstSaleMonthForProduct = timeline.timelineMonths.find(m => (monthlyUnitsSold.find(u => u.month === m) || {})[product.productName] > 0);
-        
-        if (firstSaleMonthForProduct !== undefined) {
-            const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === firstSaleMonthForProduct);
-            if (finalPaymentMonth) {
-                finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
-            }
-        }
-        
         return {
             name: product.productName, plannedUnits, unitCost: product.unitCost, totalProductionCost,
-            depositPaid, remainingCost
+            depositPaid, remainingCost: totalProductionCost - depositPaid
         };
     });
-    
-    if (timeline.requiresMonthZero && totalDepositsPaid > 0) {
-        const depositMonth = monthlyFixedCostTimeline.find(t => t.month === 0);
-        if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;
-    }
+
+    const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + p.depositPaid, 0);
+    const totalFinalPayments = variableCostBreakdown.reduce((sum, p) => sum + p.remainingCost, 0);
     
     const totalFixedCostInPeriod = monthlyFixedCostTimeline.reduce((total, month) => {
         return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
@@ -298,7 +290,6 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         }, 0);
     }, 0);
     
-    const totalSoldUnits = monthlyUnitsSold.reduce((total, month) => total + Object.values(month).filter(v => typeof v === 'number').reduce((s, v) => s + v, 0), 0);
     const totalCogsOfSoldGoods = inputs.products.reduce((total, product) => {
         const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[product.productName] || 0), 0);
         return total + (unitsSoldForProduct * (product.unitCost || 0));
@@ -307,7 +298,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 
     const costSummary = {
         totalFixed: totalFixedCostInPeriod, totalVariable: totalVariableCost,
-        totalOperating: totalFixedCostInPeriod + totalVariableCost,
+        totalOperating: totalFixedCostInPeriod + totalCogsOfSoldGoods,
         avgCostPerUnit: totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0,
         fixedCosts: inputs.fixedCosts, variableCosts: variableCostBreakdown,
         totalDepositsPaid, totalFinalPayments,
@@ -335,42 +326,50 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const { monthlyCosts, costSummary } = costData;
     const { taxRate } = inputs.parameters;
 
-    const monthlyProfit: MonthlyProfit[] = [];
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
-    
-    for (const month of timelineMonths) {
-        const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {})
-            .reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
+    let totalWeightedMarginSum = 0;
 
-        const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {})
-            .filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments')
-            .reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
+        const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
+
+        const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {}).filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments').reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
         
-        const monthlyCOGS = Object.keys(monthlyUnitsSold.find(u => u.month === month) || {})
-            .filter(k => k !== 'month')
-            .reduce((s, pName) => {
-                const product = inputs.products.find(p => p.productName === pName);
-                const units = (monthlyUnitsSold.find(u => u.month === month) || {})[pName] || 0;
-                 if (units > 0) { // Only add COGS if units were sold this month
-                    return s + (units * (product?.unitCost || 0));
-                }
-                return s;
-            }, 0);
+        const monthlyCOGS = inputs.products.reduce((s, p) => {
+            const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
+            return s + (units * (p.unitCost || 0));
+        }, 0);
         
         const grossProfit = totalMonthlyRevenue - monthlyCOGS;
         const operatingProfit = grossProfit - totalMonthlyFixedCosts;
         const netProfit = operatingProfit > 0 ? operatingProfit * (1 - (taxRate / 100)) : operatingProfit;
         
-        monthlyProfit.push({ month, grossProfit, operatingProfit, netProfit });
         cumulativeOperatingProfit += operatingProfit;
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
             profitBreakEvenMonth = month;
         }
-    }
+
+        // Calculate weighted average net margin contribution for this month
+        inputs.products.forEach(p => {
+            const productRevenue = (monthlyRevenue.find(r => r.month === month) || {})[p.productName] || 0;
+            if (productRevenue > 0) {
+                const productCOGS = ((monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0) * (p.unitCost || 0);
+                const productGrossProfit = productRevenue - productCOGS;
+                const revenueShare = totalMonthlyRevenue > 0 ? productRevenue / totalMonthlyRevenue : 0;
+                const allocatedFixed = totalMonthlyFixedCosts * revenueShare;
+                const allocatedTax = (operatingProfit > 0 ? operatingProfit - netProfit : 0) * revenueShare;
+                const productNetProfit = productGrossProfit - allocatedFixed - allocatedTax;
+                const productNetMargin = productNetProfit / productRevenue;
+                totalWeightedMarginSum += productNetMargin * productRevenue;
+            }
+        });
+
+        return { month, grossProfit, operatingProfit, netProfit };
+    });
     
     const totalGrossProfit = monthlyProfit.reduce((s, p) => s + p.grossProfit, 0);
     const totalOperatingProfit = monthlyProfit.reduce((s, p) => s + p.operatingProfit, 0);
     const totalNetProfit = monthlyProfit.reduce((s, p) => s + p.netProfit, 0);
+    const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalWeightedMarginSum / revenueSummary.totalRevenue) * 100 : 0;
 
     const profitSummary = {
         totalGrossProfit, totalOperatingProfit, totalNetProfit,
@@ -378,14 +377,25 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         operatingMargin: revenueSummary.totalRevenue > 0 ? (totalOperatingProfit / revenueSummary.totalRevenue) * 100 : 0,
         netMargin: revenueSummary.totalRevenue > 0 ? (totalNetProfit / revenueSummary.totalRevenue) * 100 : 0,
         breakEvenMonth: profitBreakEvenMonth,
+        weightedAvgNetMargin,
     };
 
-    const monthlyCashFlow: MonthlyCashFlow[] = [];
     let cumulativeCash = 0, peakFundingNeed = 0, cashBreakEvenMonth: number | null = null;
     
-    for (const month of timelineMonths) {
+    const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
-        const cashOutCosts = Object.values(monthlyCosts.find(c => c.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
+        
+        const costsThisMonth = monthlyCosts.find(c => c.month === month) || {};
+        let cashOutCosts = Object.entries(costsThisMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
+
+        // Add monthly COGS for 'monthly' cost model products
+        inputs.products.forEach(p => {
+            if (p.costModel === 'monthly') {
+                const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
+                cashOutCosts += units * (p.unitCost || 0);
+            }
+        });
+
         const profitMonth = monthlyProfit.find(p => p.month === month);
         const cashOutTax = (profitMonth?.operatingProfit || 0) > 0 ? (profitMonth?.operatingProfit || 0) - (profitMonth?.netProfit || 0) : 0;
 
@@ -395,8 +405,8 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
         if (cashBreakEvenMonth === null && cumulativeCash > 0 && month >= 1) cashBreakEvenMonth = month;
 
-        monthlyCashFlow.push({ month, netCashFlow, cumulativeCash });
-    }
+        return { month, netCashFlow, cumulativeCash };
+    });
     
     const avgMonthlyFixedCost = costSummary.totalFixed / timeline.forecastMonths;
     const runway = cumulativeCash > 0 && avgMonthlyFixedCost > 0 ? cumulativeCash / avgMonthlyFixedCost : (cumulativeCash > 0 ? Infinity : 0);
@@ -420,7 +430,7 @@ const normalize = (value: number, min: number, max: number, inverse: boolean = f
     const clampedValue = Math.max(min, Math.min(value, max));
     const normalized = (clampedValue - min) / (max - min);
     const score = (inverse ? 1 - normalized : normalized) * 100;
-    return Math.max(0, Math.min(score, 100)); // Ensure score is between 0 and 100
+    return Math.max(0, Math.min(score, 100));
 };
 
 const calculateBusinessHealth = (
@@ -437,9 +447,8 @@ const calculateBusinessHealth = (
         peakFunding: 0.15, sellThrough: 0.15, breakEven: 0.10,
     };
 
-    // 1. Calculate Raw KPIs from dynamic financial data
-    const netMargin = summaries.profit.netMargin; // Already a percentage
-    const cashRunway = summaries.cash.runway; // In months
+    const netMargin = summaries.profit.netMargin;
+    const cashRunway = summaries.cash.runway;
     const totalCogs = summaries.cost.totalVariable - summaries.cost.cogsOfUnsoldGoods;
     const contributionMargin = summaries.revenue.totalRevenue > 0 ? ((summaries.revenue.totalRevenue - totalCogs) / summaries.revenue.totalRevenue) * 100 : 0;
     const peakFundingNeed = summaries.cash.peakFundingNeed;
@@ -448,7 +457,6 @@ const calculateBusinessHealth = (
         : 0;
     const breakEvenMonths = summaries.profit.breakEvenMonth || inputs.parameters.forecastMonths + 1;
 
-    // 2. Normalize KPIs to a 0-100 score with explanatory tooltips
     const kpis: BusinessHealthScoreKpi[] = [
         { 
             label: 'Net Margin', 
@@ -488,22 +496,11 @@ const calculateBusinessHealth = (
         },
     ];
     
-    // 3. Calculate Final Weighted Score
     const finalScore = kpis.reduce((acc, kpi) => acc + (kpi.value * kpi.weight), 0);
-
-    // 4. Generate Rule-Based Insights & Alerts
-    const insights: string[] = [];
-    const alerts: string[] = [];
-    if (kpis.find(k => k.label === 'Net Margin')?.value > 75) insights.push("Excellent net margins indicate strong pricing and cost control.");
-    if (kpis.find(k => k.label === 'Sell-Through')?.value > 80) insights.push("High sell-through rate suggests strong product-market fit.");
-    if (kpis.find(k => k.label === 'Cash Runway')?.value < 30) alerts.push("Cash runway is critically low (under 3 months).");
-    if (kpis.find(k => k.label === 'Peak Funding')?.value < 50) alerts.push("High peak funding need relative to revenue poses a risk.");
 
     return {
         score: finalScore,
         kpis,
-        insights,
-        alerts,
     };
 };
 
@@ -546,7 +543,6 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         const potentialInputs = JSON.parse(JSON.stringify(inputs));
         potentialInputs.products.forEach((p: Product) => { 
             p.sellThrough = 100; 
-            // For low volume, potential means selling all planned units
             if (p.plannedUnits >= 1 && p.plannedUnits <= 10) {
                 p.estimatedSales = p.plannedUnits;
             }
@@ -567,7 +563,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
                 ...achievedResult.cashFlowSummary,
                 potentialCashBalance: potentialResult.cashFlowSummary.endingCashBalance
             },
-            profitSummary: { // Also add potential for gross profit
+            profitSummary: { 
                 ...achievedResult.profitSummary,
                 potentialGrossProfit: potentialResult.profitSummary.totalGrossProfit,
             },

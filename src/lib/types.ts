@@ -1,17 +1,18 @@
 
+
 import { z } from 'zod';
 
 // --- Section A: Product ---
 export const ProductSchema = z.object({
   id: z.string(), 
   productName: z.string({ required_error: 'Product name is required.' }).min(1, 'Product name is required.'),
-  // Make forecast-specific fields optional
   plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(0).optional(),
   unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0),
   sellPrice: z.number({ required_error: 'Sales price is required.' }).min(0),
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }).optional(),
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).optional(),
   depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
+  costModel: z.enum(['batch', 'monthly']).default('batch').optional(),
   color: z.string().optional(),
   estimatedSales: z.number().optional(),
   saleMonth: z.number().optional(),
@@ -121,12 +122,13 @@ export type MonthlyUnitsSold = z.infer<typeof MonthlyUnitsSoldSchema>;
 // Profit-related schemas
 export const ProfitSummarySchema = z.object({
     totalGrossProfit: z.number(),
-    potentialGrossProfit: z.number().optional(), // Added field for potential
+    potentialGrossProfit: z.number().optional(),
     totalOperatingProfit: z.number(),
     totalNetProfit: z.number(),
     grossMargin: z.number(),
     operatingMargin: z.number(),
     netMargin: z.number(),
+    weightedAvgNetMargin: z.number().optional(), // New field
     breakEvenMonth: z.number().nullable(),
 });
 export type ProfitSummary = z.infer<typeof ProfitSummarySchema>;

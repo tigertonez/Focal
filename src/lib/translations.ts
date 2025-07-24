@@ -1,4 +1,5 @@
 
+
 export const translations = {
   en: {
     nav: {
@@ -89,14 +90,16 @@ export const translations = {
                 opportunities: "Top Opportunities",
                 risks: "Key Risks to Mitigate",
             },
-            bridge: {
-                title: "Profit to Cash Bridge",
-                description: "How your operating profit converts to your final cash balance.",
+            waterfall: {
+                title: "Financial Waterfall",
+                description: "How your total revenue is allocated to costs and profit.",
+                revenue: "Total Revenue",
+                cogs: "Cost of Goods Sold (COGS)",
+                grossProfit: "Gross Profit",
+                opex: "Operating Expenses",
                 operatingProfit: "Operating Profit",
-                unsoldInventory: "Cash Tied in Unsold Inventory",
                 taxes: "Estimated Taxes",
-                taxNote: "*Based on the estimated tax rate provided. Actual taxes may differ.",
-                endingCash: "Ending Cash Balance",
+                netProfit: "Net Profit",
             }
         },
         charts: {
@@ -294,6 +297,11 @@ export const translations = {
                 even: "Even",
                 seasonal: "Seasonal",
                 growth: "Growth",
+            },
+            costModel: {
+                title: "Cost Model",
+                batch: "Production Batch",
+                monthly: "Monthly (JIT)",
             }
         },
         fixedCosts: {
@@ -437,14 +445,16 @@ export const translations = {
                 opportunities: "Größte Chancen",
                 risks: "Wichtigste Risiken zur Minderung",
             },
-            bridge: {
-                title: "Gewinn-zu-Cash-Brücke",
-                description: "Wie sich Ihr Betriebsgewinn in Ihren endgültigen Kassenbestand umwandelt.",
+            waterfall: {
+                title: "Finanz-Wasserfall",
+                description: "Wie sich Ihr Gesamtumsatz auf Kosten und Gewinn verteilt.",
+                revenue: "Gesamtumsatz",
+                cogs: "Kosten der verkauften Waren (COGS)",
+                grossProfit: "Bruttogewinn",
+                opex: "Betriebsausgaben",
                 operatingProfit: "Betriebsgewinn",
-                unsoldInventory: "In unverkauftem Inventar gebundenes Kapital",
                 taxes: "Geschätzte Steuern",
-                taxNote: "*Basierend auf dem geschätzten Steuersatz. Tatsächliche Steuern können abweichen.",
-                endingCash: "Endkassenbestand",
+                netProfit: "Nettogewinn",
             }
         },
         charts: {
@@ -642,6 +652,11 @@ export const translations = {
                 even: "Gleichmäßig",
                 seasonal: "Saisonal",
                 growth: "Wachstum",
+            },
+            costModel: {
+                title: "Kostenmodell",
+                batch: "Produktions-Charge",
+                monthly: "Monatlich (JIT)",
             }
         },
         fixedCosts: {
@@ -699,5 +714,3 @@ export const translations = {
 };
 
 export type Translations = typeof translations;
-
-    

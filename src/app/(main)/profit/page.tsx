@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -29,26 +30,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  let totalWeightedMarginSum = 0;
-  let totalRevenueForMargin = 0;
-
-  inputs.products.forEach((product) => {
-      const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
-      const productRevenue = revenueData?.totalRevenue || 0;
-      
-      if (productRevenue > 0) {
-          const unitsSold = revenueData?.totalSoldUnits || 0;
-          const productCogs = unitsSold * (product.unitCost || 0);
-          const grossProfit = productRevenue - productCogs;
-          const netProfit = grossProfit - (costSummary.totalFixed * (productRevenue / revenueSummary.totalRevenue)) - ((profitSummary.totalOperatingProfit - profitSummary.totalNetProfit) * (productRevenue / revenueSummary.totalRevenue));
-          const netMargin = (netProfit / productRevenue); // as a decimal
-          
-          totalWeightedMarginSum += netMargin * productRevenue;
-          totalRevenueForMargin += productRevenue;
-      }
-  });
-
-  const averageNetMargin = totalRevenueForMargin > 0 ? (totalWeightedMarginSum / totalRevenueForMargin) * 100 : 0;
+  const averageNetMargin = profitSummary.weightedAvgNetMargin ?? 0;
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;

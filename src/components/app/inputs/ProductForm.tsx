@@ -12,6 +12,7 @@ import type { Product } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProductColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
   const { updateProduct, removeProduct, inputs, t } = useForecast();
@@ -27,6 +28,10 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
   };
 
   const handleSelectChange = (name: keyof Product) => (value: string | number) => {
+    updateProduct(index, name, value);
+  };
+  
+  const handleRadioChange = (name: keyof Product) => (value: string) => {
     updateProduct(index, name, value);
   };
 
@@ -119,6 +124,25 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 </div>
             </div>
         </div>
+        
+         <div className="space-y-3">
+            <Label className="text-sm font-medium">{t.inputs.products.costModel.title}</Label>
+            <RadioGroup 
+                defaultValue={product.costModel || 'batch'} 
+                onValueChange={handleRadioChange('costModel')}
+                className="flex items-center gap-4"
+            >
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
+                    <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
+                    <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
+                </div>
+            </RadioGroup>
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[68px] items-start">
             {isManualMode && isLowVolume && (

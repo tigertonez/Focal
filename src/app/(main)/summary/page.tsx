@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2, MinusCircle, PlusCircle, Sparkles, ListOrdered, CheckCircle } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2, MinusCircle, PlusCircle, Sparkles, ListOrdered, CheckCircle, ChevronRight, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -21,6 +22,7 @@ import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/fl
 import { Separator } from '@/components/ui/separator';
 import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
 import { useForecast } from '@/context/ForecastContext';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 // =================================================================
@@ -315,8 +317,8 @@ const HealthPanel = ({
 };
 
 
-const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon }: { label: string, value: number, currency: string, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode }) => (
-    <div className={cn("flex items-center justify-between py-2", isSubtle ? 'text-sm' : 'text-base')}>
+const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon, indent = false }: { label: string, value: number, currency: string, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode, indent?: boolean }) => (
+    <div className={cn("flex items-center justify-between py-1.5", isSubtle ? 'text-sm' : 'text-base', indent && 'pl-6')}>
         <div className="flex items-center gap-2">
             {icon}
             <span className={cn(isSubtle ? 'text-muted-foreground' : 'font-medium')}>{label}</span>
@@ -325,57 +327,47 @@ const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon 
     </div>
 );
 
-const CashBridge = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
-    const { profitSummary, costSummary, cashFlowSummary } = data;
+const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
+    const { revenueSummary, costSummary, profitSummary } = data;
 
+    const totalRevenue = revenueSummary.totalRevenue;
+    const cogs = revenueSummary.totalRevenue - profitSummary.totalGrossProfit;
+    const grossProfit = profitSummary.totalGrossProfit;
+    const opex = profitSummary.totalGrossProfit - profitSummary.totalOperatingProfit;
     const operatingProfit = profitSummary.totalOperatingProfit;
-    const unsoldInventoryValue = costSummary.cogsOfUnsoldGoods;
-    const estTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
-    const endingCash = cashFlowSummary.endingCashBalance;
+    const taxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
+    const netProfit = profitSummary.totalNetProfit;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t.insights.summary.bridge.title}</CardTitle>
-                <CardDescription>{t.insights.summary.bridge.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="px-6 py-4">
-                <div className="space-y-1">
-                    <BridgeRow 
-                        label={t.insights.summary.bridge.operatingProfit}
-                        value={operatingProfit} 
-                        currency={currency} 
-                        icon={<PlusCircle className="h-4 w-4 text-green-500" />}
-                    />
-                    <BridgeRow 
-                        label={t.insights.summary.bridge.unsoldInventory}
-                        value={-unsoldInventoryValue} 
-                        currency={currency} 
-                        colorClass="text-red-600"
-                        icon={<MinusCircle className="h-4 w-4 text-red-500" />}
-                    />
-                    <div className="space-y-1">
-                        <BridgeRow 
-                            label={t.insights.summary.bridge.taxes}
-                            value={-estTaxes} 
-                            currency={currency} 
-                            colorClass="text-red-600"
-                            icon={<MinusCircle className="h-4 w-4 text-red-500" />}
-                        />
-                         <p className="pl-8 text-xs text-muted-foreground text-left">{t.insights.summary.bridge.taxNote}</p>
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    <BridgeRow 
-                        label={t.insights.summary.bridge.endingCash}
-                        value={endingCash} 
-                        currency={currency} 
-                        colorClass="text-blue-600 font-bold"
-                    />
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                 <div className="flex w-full items-center justify-between rounded-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80">
+                     <div className="flex items-center gap-3">
+                         <BarChart className="h-5 w-5 text-primary" />
+                         <span>{t.insights.summary.waterfall.title}</span>
+                     </div>
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
                 </div>
-            </CardContent>
-        </Card>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <Card className="rounded-t-none border-t-0">
+                    <CardContent className="px-6 py-4">
+                        <div className="space-y-1">
+                            <BridgeRow label={t.insights.summary.waterfall.revenue} value={totalRevenue} currency={currency} />
+                            <BridgeRow label={t.insights.summary.waterfall.cogs} value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <Separator className="my-1" />
+                            <BridgeRow label={t.insights.summary.waterfall.grossProfit} value={grossProfit} currency={currency} />
+                            <BridgeRow label={t.insights.summary.waterfall.opex} value={-opex} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <Separator className="my-1" />
+                            <BridgeRow label={t.insights.summary.waterfall.operatingProfit} value={operatingProfit} currency={currency} />
+                            <BridgeRow label={t.insights.summary.waterfall.taxes} value={-taxes} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <Separator className="my-1" />
+                            <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} currency={currency} colorClass="text-blue-600 font-bold" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </CollapsibleContent>
+        </Collapsible>
     );
 };
 
@@ -406,7 +398,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         t={t}
       />
 
-      <CashBridge data={data} currency={inputs.parameters.currency} t={t} />
+      <FinancialWaterfall data={data} currency={inputs.parameters.currency} t={t} />
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
@@ -468,5 +460,3 @@ export default function SummaryPage() {
 
     return <SummaryPageContent data={data} inputs={inputs} t={t} />;
 }
-
-    
