@@ -28,12 +28,12 @@ const prompt = ai.definePrompt({
   output: { schema: AnalyzeProfitabilityOutputSchema },
   model: 'googleai/gemini-1.5-pro-latest',
   config: {
-    maxOutputTokens: 512,
+    maxOutputTokens: 1024,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,
   },
-  prompt: `You are an advanced financial analyst AI writing a growth report for an early-stage founder with limited financial background. Your tone must be clear, educational, and confidence-building. Your mission is to help them understand their numbers and know what to do next.
+  prompt: `You are an expert financial analyst AI writing a growth report for an early-stage founder with limited financial background. Your tone must be clear, educational, and confidence-building. Your mission is to help them understand their numbers and know what to do next.
 
 You will receive a JSON payload containing the user's profit forecast data.
 - Revenue Summary: {{{json revenueSummary}}}
@@ -46,22 +46,21 @@ Infer the business type from product names (e.g., 'Goldring' -> jewelry).
 Your output MUST be ONLY a JSON object with the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
 CRITICAL FORMATTING RULES:
+- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), you MUST wrap it in single quotes, like 'this'.
 - Use bullet points (•) for all list-based sections ('whatsWorking', 'issues', 'opportunities', 'explanation').
 - Do NOT use numbered lists, except for 'topPriorities'.
-- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
-- Do NOT use asterisks (*) for any other reason.
 
 ---
 Here is the structure you MUST follow for each key:
 
-1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value (which MUST be bolded), and explain what it means. Use short paragraphs per bullet.
+1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value (which MUST be bolded), and explain what it means for their business in simple terms.
 
-2.  **whatsWorking**: Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. CRITICAL: If there are no clear strengths, you MUST output the single sentence "The current plan shows areas for improvement across the board."
+2.  **whatsWorking**: Find at least one positive aspect of the financial plan, even if the overall picture is negative. This could be a healthy gross margin on a specific product, or the fact that revenue is being generated. If there are no clear strengths, you MUST output the single sentence "The current plan shows areas for improvement across the board."
 
-3.  **issues**: Diagnose weak points in plain language using bullet points. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it.
+3.  **issues**: Diagnose 1-2 key weak points in plain language using bullet points. Go beyond the numbers on the screen. For example, if operating profit is negative, calculate the operating loss per €100 of revenue to make it more tangible. Always tie issues back to the specific numbers that prove it.
 
-4.  **opportunities**: Give 2-3 data-driven, tactical suggestions as bullet points based on the business type. For jewelry, this might be sourcing materials; for fashion, it could be batch production. Be specific and ethical.
+4.  **opportunities**: Give 2-3 data-driven, tactical suggestions as bullet points based on the business type. These should be concrete actions like "Explore cost-saving opportunities for materials like 'Steine'..." or "Consider a price adjustment for the 'Goldring' product line...".
 
 5.  **topPriorities**: Output exactly five, clear, numbered action points. Each point should be a descriptive sentence (1-2 lines). CRITICAL: Add two <br> tags after each priority to create visual spacing. Start with "🧭 Top Priorities".
 ---
@@ -83,7 +82,8 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     
     const cleanString = (str: string | undefined) => {
       if (!str) return '';
-      return str.replace(/^(.*?:\s*)/, '').trim();
+      // This regex was too aggressive and removed valid content. Removing it.
+      return str.trim();
     }
     
     if (!output.whatsWorking || output.whatsWorking.trim() === '') {

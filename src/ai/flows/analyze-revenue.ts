@@ -35,16 +35,16 @@ Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendati
 
 CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list items.
-- Do NOT use asterisks (*) or any other form of bolding.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
+- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
+- When you reference a specific product name (e.g., 'Goldring 2'), you MUST wrap it in single quotes, like 'this'.
 - Each bullet point should be a concise, single sentence.
 
 Here is the structure you MUST follow:
 
-1.  **insights**: Provide a bulleted list of 2-3 key insights. Focus on revenue concentration (e.g., dependency on one product), the relationship between units sold and revenue per unit, and overall sales performance. Frame insights constructively.
-    Example: "• The 'Goldring' product line is the primary driver of revenue, showing strong market demand."
+1.  **insights**: Provide a bulleted list of 2-3 key insights. Go beyond the numbers on the screen. Focus on revenue concentration (e.g., dependency on one product), the relationship between units sold and revenue per unit, and overall sales performance. Frame insights constructively.
+    Example: "• The 'Goldring' product line is the primary driver of revenue, contributing **65%** of the total, which shows strong market demand but also a concentration risk."
 
-2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve revenue. For example, suggest pricing strategies, diversification opportunities, or ways to improve sell-through rate.
+2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve revenue. For example, suggest pricing strategies, diversification opportunities, or ways to improve sell-through rate on specific products.
     Example: "• Consider a small price increase for 'Goldring' to capitalize on its popularity and improve margins."
 `,
 });

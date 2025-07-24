@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles, Loader2 } from 'lucide-react';
+import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles, Loader2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { analyzeCosts, type AnalyzeCostsOutput } from '@/ai/flows/analyze-costs';
 import type { CostSummary, RevenueSummary } from '@/lib/types';
@@ -72,13 +72,24 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
   const createMarkup = (text: string): { __html: string } => {
     if (!text) return { __html: '' };
     let processedText = text
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground/90">$1</strong>')
       .replace(/'([^']*)'/g, (match, itemName) => {
         const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
         return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
       });
     return { __html: processedText };
   };
+
+  const renderList = (items: string[]) => (
+    <ul className="list-none space-y-3">
+        {items.map((item, i) => (
+          <li key={i} className="flex gap-2">
+            <span className="text-primary">•</span>
+            <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
+          </li>
+        ))}
+    </ul>
+  );
 
   if (isLoading) {
     return <InsightsLoader />;
@@ -139,36 +150,20 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-3">
-             <h3 className="font-semibold text-sm flex items-center gap-2">
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-amber-500" />
                 Key Insights
             </h3>
-            <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-none">
-                {insights.insights.map((item, i) => (
-                  <li key={i} className="flex gap-2">
-                      <span className="text-primary">•</span>
-                      <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
-                  </li>
-                ))}
-            </ul>
-          </div>
-           <div className="space-y-3">
-             <h3 className="font-semibold text-sm flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-blue-500" />
+            <div className="pl-7">{renderList(insights.insights)}</div>
+        </div>
+        <div className="space-y-2">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-500" />
                 Recommendations
             </h3>
-              <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-none">
-                 {insights.recommendations.map((item, i) => (
-                    <li key={i} className="flex gap-2">
-                        <span className="text-primary">•</span>
-                        <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
-                    </li>
-                 ))}
-              </ul>
-          </div>
+            <div className="pl-7">{renderList(insights.recommendations)}</div>
         </div>
       </CardContent>
     </Card>

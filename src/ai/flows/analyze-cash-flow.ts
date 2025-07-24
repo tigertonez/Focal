@@ -36,8 +36,8 @@ Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendati
 
 CRITICAL FORMATTING RULES:
 - When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 - Use bullet points (•) for all 'recommendations'. Do NOT use bolding in recommendations. Each recommendation should be a concise, single sentence.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 
 Here is the structure you MUST follow:
 
@@ -46,9 +46,10 @@ Here is the structure you MUST follow:
     - Months to Break-Even
     - Final Cash Position
     - Cash Runway (Months)
+    Provide a one-sentence interpretation for each metric, explaining what it means for the business.
 
-2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Do NOT use bolding.
-    Example: "• The high funding requirement suggests a need to either raise deposits or delay production to manage cash flow."
+2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Go beyond the obvious; suggest specific strategies.
+    Example: "• The high funding requirement suggests a need to either raise deposits for products like 'Goldring 1' or delay production to manage cash flow."
 `,
 });
 

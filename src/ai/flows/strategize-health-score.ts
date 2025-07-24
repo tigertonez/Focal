@@ -26,7 +26,7 @@ const prompt = ai.definePrompt({
   input: { schema: StrategizeHealthScoreInputSchema },
   output: { schema: StrategizeHealthScoreOutputSchema },
    config: {
-    maxOutputTokens: 512,
+    maxOutputTokens: 768,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,
@@ -44,22 +44,22 @@ Your output MUST be ONLY a JSON object with 4 keys: "summary", "strengths", "opp
 
 CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list items in "strengths", "opportunities", and "risks".
-- Do NOT use asterisks (*) or any other form of bolding.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
-- Each bullet point should be a concise, single sentence.
+- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), you MUST wrap it in single quotes, like 'this'.
+- Each bullet point should be a concise, single sentence that explains the 'why' behind the number.
 
 Here is the structure you MUST follow:
 
-1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability but is constrained by a tight cash flow.")
+1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability potential with a score of **78/100**, but is constrained by a tight cash flow.")
 
-2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point.
-    Example: "• The high 'Net Margin' score indicates strong pricing and cost control, which is a key strength."
+2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point, providing context.
+    Example: "• The high 'Net Margin' score of **85/100** indicates strong pricing and cost control, which is a key strength for long-term profitability."
 
-3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point.
-    Example: "• Address the low 'Cash Runway' score by exploring options to increase initial funding or reduce early-stage costs."
+3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point. Be specific.
+    Example: "• Address the low 'Cash Runway' score of **25/100** by exploring options to increase initial funding or reduce early-stage costs on items like 'Marketing'."
 
-4.  **risks**: Based on the health score and financial data, identify the top 2 most significant risks this business plan faces in a bulleted list.
-    Example: "• A high dependency on the 'Goldring' product line presents a concentration risk if market demand shifts."
+4.  **risks**: Based on the health score and financial data, identify the top 2 most significant risks this business plan faces in a bulleted list. Explain the implication.
+    Example: "• A high dependency on the 'Goldring' product line, which accounts for **70%** of revenue, presents a concentration risk if market demand shifts."
 `,
 });
 
@@ -75,7 +75,6 @@ const strategizeHealthScoreFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid strategic analysis.");
     }
     
-    // Cleanup to remove the bullet points if the AI includes them
     const cleanList = (list: string[]) => list.map(item => item.startsWith('• ') ? item.substring(2) : item);
     output.strengths = cleanList(output.strengths);
     output.opportunities = cleanList(output.opportunities);

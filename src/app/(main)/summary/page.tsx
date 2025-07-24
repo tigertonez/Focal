@@ -187,7 +187,7 @@ const HealthPanel = ({
         const textToProcess = Array.isArray(text) ? text.join(' ') : text;
         
         let processedText = textToProcess
-            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground/90">$1</strong>')
             .replace(/'([^']*)'/g, (match, itemName) => {
                 const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
                 return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
@@ -310,7 +310,7 @@ const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon 
             {icon}
             <span className={cn(isSubtle ? 'text-muted-foreground' : 'font-medium')}>{label}</span>
         </div>
-        <span className={cn(colorClass, 'font-headline font-bold')}>{formatCurrency(value, currency)}</span>
+        <span className={cn(colorClass, 'font-bold')}>{formatCurrency(value, currency)}</span>
     </div>
 );
 
