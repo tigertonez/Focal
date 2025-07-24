@@ -15,7 +15,6 @@ import {
   Bot,
   Wallet,
   LayoutGrid,
-  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -77,9 +76,8 @@ const DesktopNav = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                       <Button variant="ghost" size="icon" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
-                            <Languages />
-                            <span className="sr-only">{t.nav.toggleLanguage}</span>
+                       <Button variant="ghost" className="h-10 w-10 font-bold" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
+                            {locale === 'en' ? 'DE' : 'EN'}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
@@ -142,8 +140,8 @@ const MobileNav = () => {
                         ))}
                     </nav>
                     <div className="mt-auto space-y-2">
-                        <Button className="w-full" variant="ghost" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
-                            <Languages className="mr-2" /> {t.nav.toggleLanguage}
+                        <Button className="w-full font-bold" variant="ghost" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
+                           <span className="mr-2">{locale === 'en' ? 'DE' : 'EN'}</span> {t.nav.toggleLanguage}
                         </Button>
                         <Button className="w-full" variant="accent" onClick={() => setIsCopilotOpen(true)}>
                             <Bot className="mr-2" /> {t.nav.askAI}
