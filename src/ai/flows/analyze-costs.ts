@@ -4,27 +4,10 @@
  * @fileOverview A Genkit flow for analyzing cost data and generating insights.
  *
  * - analyzeCosts - A function that takes cost summary data and returns insights.
- * - AnalyzeCostsInput - The input type for the analyzeCosts function.
- * - AnalyzeCostsOutput - The return type for the analyzeCosts function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import { CostSummarySchema, RevenueSummarySchema } from '@/lib/types';
-
-export const AnalyzeCostsInputSchema = z.object({
-  costSummary: CostSummarySchema,
-  revenueSummary: RevenueSummarySchema,
-  currency: z.string(),
-});
-export type AnalyzeCostsInput = z.infer<typeof AnalyzeCostsInputSchema>;
-
-export const AnalyzeCostsOutputSchema = z.object({
-  insights: z.array(z.string()).describe("A list of 2-3 key insights derived from the cost summary."),
-  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cost analysis."),
-});
-export type AnalyzeCostsOutput = z.infer<typeof AnalyzeCostsOutputSchema>;
-
+import { AnalyzeCostsInputSchema, AnalyzeCostsOutputSchema, type AnalyzeCostsInput, type AnalyzeCostsOutput } from '@/lib/types';
 
 export async function analyzeCosts(input: AnalyzeCostsInput): Promise<AnalyzeCostsOutput> {
   return analyzeCostsFlow(input);

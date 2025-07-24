@@ -4,28 +4,11 @@
  * @fileOverview A Genkit flow for analyzing cash flow data and generating insights.
  *
  * - analyzeCashFlow - A function that takes cash flow data and returns insights and recommendations.
- * - AnalyzeCashFlowInput - The input type for the analyzeCashFlow function.
- * - AnalyzeCashFlowOutput - The return type for the analyzeCashFlow function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { CashFlowSummarySchema } from '@/lib/types';
-
-export const AnalyzeCashFlowInputSchema = z.object({
-  cashFlowSummary: CashFlowSummarySchema,
-  currency: z.string(),
-});
-export type AnalyzeCashFlowInput = z.infer<typeof AnalyzeCashFlowInputSchema>;
-
-export const AnalyzeCashFlowOutputSchema = z.object({
-  insights: z.array(z.object({
-    label: z.string(),
-    value: z.string(),
-  })).describe("A list of key insight metrics derived from the summary."),
-  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cash flow analysis."),
-});
-export type AnalyzeCashFlowOutput = z.infer<typeof AnalyzeCashFlowOutputSchema>;
+import { AnalyzeCashFlowInputSchema, AnalyzeCashFlowOutputSchema, type AnalyzeCashFlowInput, type AnalyzeCashFlowOutput } from '@/lib/types';
 
 
 export async function analyzeCashFlow(input: AnalyzeCashFlowInput): Promise<AnalyzeCashFlowOutput> {

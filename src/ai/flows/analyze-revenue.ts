@@ -4,25 +4,10 @@
  * @fileOverview A Genkit flow for analyzing revenue data and generating insights.
  *
  * - analyzeRevenue - A function that takes revenue summary data and returns insights.
- * - AnalyzeRevenueInput - The input type for the analyzeRevenue function.
- * - AnalyzeRevenueOutput - The return type for the analyzeRevenue function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import { RevenueSummarySchema } from '@/lib/types';
-
-export const AnalyzeRevenueInputSchema = z.object({
-  revenueSummary: RevenueSummarySchema,
-  currency: z.string(),
-});
-export type AnalyzeRevenueInput = z.infer<typeof AnalyzeRevenueInputSchema>;
-
-export const AnalyzeRevenueOutputSchema = z.object({
-  insights: z.array(z.string()).describe("A list of 2-3 key insights derived from the revenue summary."),
-  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the revenue analysis."),
-});
-export type AnalyzeRevenueOutput = z.infer<typeof AnalyzeRevenueOutputSchema>;
+import { AnalyzeRevenueInputSchema, AnalyzeRevenueOutputSchema, type AnalyzeRevenueInput, type AnalyzeRevenueOutput } from '@/lib/types';
 
 
 export async function analyzeRevenue(input: AnalyzeRevenueInput): Promise<AnalyzeRevenueOutput> {

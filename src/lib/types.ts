@@ -198,6 +198,46 @@ export type AnalyzeProfitabilityOutput = z.infer<
   typeof AnalyzeProfitabilityOutputSchema
 >;
 
+export const AnalyzeRevenueInputSchema = z.object({
+  revenueSummary: RevenueSummarySchema,
+  currency: z.string(),
+});
+export type AnalyzeRevenueInput = z.infer<typeof AnalyzeRevenueInputSchema>;
+
+export const AnalyzeRevenueOutputSchema = z.object({
+  insights: z.array(z.string()).describe("A list of 2-3 key insights derived from the revenue summary."),
+  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the revenue analysis."),
+});
+export type AnalyzeRevenueOutput = z.infer<typeof AnalyzeRevenueOutputSchema>;
+
+export const AnalyzeCostsInputSchema = z.object({
+  costSummary: CostSummarySchema,
+  revenueSummary: RevenueSummarySchema,
+  currency: z.string(),
+});
+export type AnalyzeCostsInput = z.infer<typeof AnalyzeCostsInputSchema>;
+
+export const AnalyzeCostsOutputSchema = z.object({
+  insights: z.array(z.string()).describe("A list of 2-3 key insights derived from the cost summary."),
+  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cost analysis."),
+});
+export type AnalyzeCostsOutput = z.infer<typeof AnalyzeCostsOutputSchema>;
+
+export const AnalyzeCashFlowInputSchema = z.object({
+  cashFlowSummary: CashFlowSummarySchema,
+  currency: z.string(),
+});
+export type AnalyzeCashFlowInput = z.infer<typeof AnalyzeCashFlowInputSchema>;
+
+export const AnalyzeCashFlowOutputSchema = z.object({
+  insights: z.array(z.object({
+    label: z.string(),
+    value: z.string(),
+  })).describe("A list of key insight metrics derived from the summary."),
+  recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cash flow analysis."),
+});
+export type AnalyzeCashFlowOutput = z.infer<typeof AnalyzeCashFlowOutputSchema>;
+
 
 // --- Main Engine Output Schema ---
 // This is the single source of truth for all calculated financial data
