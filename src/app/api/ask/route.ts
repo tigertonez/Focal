@@ -22,6 +22,7 @@ const CopilotSchema = z.object({
   action: z.literal('copilot'),
   history: z.array(CopilotMessageSchema),
   screenshotDataUri: z.string(),
+  language: z.string().optional(),
 });
 
 const CalculateFinancialsSchema = z.object({
@@ -53,10 +54,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'copilot') {
-        const { history, screenshotDataUri } = validation.data;
+        const { history, screenshotDataUri, language } = validation.data;
         const result = await financialCopilot({
           history: history,
           screenshotDataUri: screenshotDataUri,
+          language: language,
         });
         return NextResponse.json(result);
     }

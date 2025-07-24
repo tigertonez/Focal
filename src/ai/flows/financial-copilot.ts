@@ -24,6 +24,7 @@ const FinancialCopilotInputSchema = z.object({
     "A screenshot of the application's current view, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
   history: z.array(MessageSchema).optional().describe('The conversation history.'),
+  language: z.string().optional(),
 });
 export type FinancialCopilotInput = z.infer<typeof FinancialCopilotInputSchema>;
 
@@ -44,23 +45,23 @@ const financialCopilotFlow = ai.defineFlow(
   },
   async (input) => {
     // Correctly parse the input to ensure type safety
-    const { screenshotDataUri, history } = FinancialCopilotInputSchema.parse(input);
+    const { screenshotDataUri, history, language } = FinancialCopilotInputSchema.parse(input);
 
-    const systemPrompt = `You are a lean and fast UI/UX and logic assistant helping a developer build a financial forecasting tool. Your goal is to provide quick, scannable, and actionable advice based *only* on what you see in the screenshot and the conversation history.
+    const systemPrompt = `You are an expert UI/UX and financial analyst acting as a copilot for a user building a business forecast.
+Your role is to analyze the provided screenshot and answer the user's questions.
+The user-specified language for the output is: ${language || 'en'}. You MUST generate your entire response in this language.
 
-IMPORTANT:
-- Your response must be concise. Use plain text, bullet points, or numbered lists. Do NOT use markdown.
-- Do NOT speculate or infer information that isn't present in the screenshot. Base your answer strictly on the visual evidence.
-- If you don't see any issues or cannot answer the question from the image, say so directly. For example: "Based on the screenshot, I don't see any immediate issues."
-- Remember the previous conversation to provide context-aware suggestions.
+When the user asks for a review or to find issues, analyze the screenshot for:
+1.  **UI/UX Issues**: Point out confusing layouts, unclear labels, or inconsistent design.
+2.  **Financial Logic**: Identify potential mathematical errors, logical inconsistencies (e.g., costs exceeding revenue without explanation), or missing data points that a financial analyst would question.
+3.  **Clarity**: Assess if the information is presented clearly and is easy to understand.
 
-When the developer asks for help (e.g., "find issues", "review this"), analyze the screenshot for:
+CRITICAL FORMATTING RULES:
+- When you output a specific calculated value (like a monetary amount, percentage, or unit count), you MUST make it bold using Markdown's double asterisks, like **this**.
+- When you reference a specific user-entered item name (like a product 'Goldring 2' or a cost 'Salaries'), you MUST wrap it in single quotes, like 'this'.
+- Use bullet points (•) for all lists to ensure your response is scannable and easy to read.
 
-1.  **Logical Gaps**: Does the data make sense from a developer's perspective? Is required data missing? Are there logical conflicts?
-2.  **UI/UX Friction**: Is the interface confusing? Are labels unclear? Suggest simpler layouts or clearer descriptions.
-3.  **Clarity and Simplicity**: Is the information presented clearly?
-
-Always be constructive and provide direct, actionable feedback for the developer.`;
+Your tone is professional, helpful, and direct. Base your answers *only* on what is visible in the screenshot and the conversation history. Do not speculate. If you see no issues, state that clearly.`;
 
     // Map Zod history to Genkit's Message[] type
     const genkitHistory: Message[] = history?.map(h => ({
@@ -91,11 +92,6 @@ Always be constructive and provide direct, actionable feedback for the developer
 
     if (!output) {
         throw new Error("The AI model did not return a valid response. Please try rephrasing your question.");
-    }
-    
-    const answer = output.answer.toLowerCase();
-    if (answer.includes("no issues") || answer.includes("looks good") || answer.includes("i don't see")) {
-      return { answer: "I've reviewed the screen and couldn't spot any immediate issues. Everything looks to be in order based on your inputs." };
     }
 
     return output;

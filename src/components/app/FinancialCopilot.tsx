@@ -20,7 +20,7 @@ export function FinancialCopilot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen, t } = useForecast();
+  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen, t, locale } = useForecast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +87,7 @@ export function FinancialCopilot() {
           action: 'copilot',
           history: apiHistory,
           screenshotDataUri,
+          language: locale,
         }),
       });
 
