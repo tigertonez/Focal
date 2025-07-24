@@ -78,125 +78,127 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
         </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {isManualMode && (
-          <div className="space-y-2">
-            <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
-            <div className="relative">
-                <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
+                <div className="relative">
+                    <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                </div>
             </div>
-          </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
-           <div className="relative">
-                <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 15.50" />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+            <div className="space-y-2">
+                <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
+                <div className="relative">
+                    <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 15.50" />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+                </div>
             </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-        <div className="space-y-2">
-          <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
-          <div className="relative">
-                <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 49.99" />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
-          </div>
-        </div>
-        {isManualMode && !isLowVolume && (
-            <div className="space-y-2">
-            <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
-                Sales Model
-                <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                    <TooltipContent className="max-w-xs p-3">
-                        <div className="space-y-1 text-left">
-                            <p className="font-semibold">{salesModelTitle}</p>
-                            <p className="text-muted-foreground text-xs">{salesModelTooltip}</p>
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-                </TooltipProvider>
-            </Label>
-            <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel || 'launch'}>
-                <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                <SelectItem value="launch">Launch</SelectItem>
-                <SelectItem value="even">Even</SelectItem>
-                <SelectItem value="seasonal">Seasonal</SelectItem>
-                <SelectItem value="growth">Growth</SelectItem>
-                </SelectContent>
-            </Select>
-            </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {isManualMode && !isLowVolume && (
-          <div className="space-y-2">
-            <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
-              Sell-Through %
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs p-3">
-                            <div className="space-y-1 text-left">
-                                <p className="font-semibold">{sellThroughTitle}</p>
-                                <p className="text-muted-foreground text-xs">{sellThroughTooltip}</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </Label>
-            <div className="relative">
-                <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough || ''} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 85" />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
-            </div>
-          </div>
-        )}
-        {isManualMode && isLowVolume && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div className="space-y-2">
-                <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium flex items-center gap-2">
-                    Estimated Units to Sell
+                <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
+                <div className="relative">
+                    <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 49.99" />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+                </div>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
+                    Deposit %
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                                <p>For low-volume items, enter the total number of units you expect to sell over the forecast period.</p>
+                            <TooltipContent className="max-w-xs p-3">
+                                <div className="space-y-1 text-left">
+                                    <p className="font-semibold">{depositPaidTitle}</p>
+                                    <p className="text-muted-foreground text-xs">{depositPaidTooltip}</p>
+                                </div>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </Label>
                 <div className="relative">
-                    <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                    <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 25" />
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
                 </div>
             </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
-            Deposit %
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                     <TooltipContent className="max-w-xs p-3">
-                        <div className="space-y-1 text-left">
-                            <p className="font-semibold">{depositPaidTitle}</p>
-                            <p className="text-muted-foreground text-xs">{depositPaidTooltip}</p>
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-             </TooltipProvider>
-          </Label>
-           <div className="relative">
-                <Input id={`depositPct-${index}`} name="depositPct" type="number" value={product.depositPct} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 25" />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
-           </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isManualMode && isLowVolume && (
+                 <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium flex items-center gap-2">
+                        Estimated Units to Sell
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                    <p>For low-volume items, enter the total number of units you expect to sell over the forecast period.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </Label>
+                    <div className="relative">
+                        <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                    </div>
+                </div>
+            )}
+            
+            {isManualMode && !isLowVolume && (
+                <>
+                    <div className="space-y-2">
+                        <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
+                        Sell-Through %
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                    <TooltipContent className="max-w-xs p-3">
+                                        <div className="space-y-1 text-left">
+                                            <p className="font-semibold">{sellThroughTitle}</p>
+                                            <p className="text-muted-foreground text-xs">{sellThroughTooltip}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </Label>
+                        <div className="relative">
+                            <Input id={`sellThrough-${index}`} name="sellThrough" type="number" value={product.sellThrough || ''} onChange={handleChange} className="text-sm pr-6" placeholder="e.g., 85" />
+                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
+                            Sales Model
+                            <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipContent className="max-w-xs p-3">
+                                    <div className="space-y-1 text-left">
+                                        <p className="font-semibold">{salesModelTitle}</p>
+                                        <p className="text-muted-foreground text-xs">{salesModelTooltip}</p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                            </TooltipProvider>
+                        </Label>
+                        <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel || 'launch'}>
+                            <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="launch">Launch</SelectItem>
+                            <SelectItem value="even">Even</SelectItem>
+                            <SelectItem value="seasonal">Seasonal</SelectItem>
+                            <SelectItem value="growth">Growth</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </>
+            )}
+        </div>
     </div>
   );
 };
+
+    
