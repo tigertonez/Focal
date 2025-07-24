@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // --- Section A: Product ---
@@ -237,6 +236,21 @@ export const AnalyzeCashFlowOutputSchema = z.object({
   recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cash flow analysis."),
 });
 export type AnalyzeCashFlowOutput = z.infer<typeof AnalyzeCashFlowOutputSchema>;
+
+export const StrategizeHealthScoreInputSchema = z.object({
+  businessHealth: BusinessHealthSchema,
+  revenueSummary: RevenueSummarySchema,
+  costSummary: CostSummarySchema,
+  profitSummary: ProfitSummarySchema,
+});
+export type StrategizeHealthScoreInput = z.infer<typeof StrategizeHealthScoreInputSchema>;
+
+export const StrategizeHealthScoreOutputSchema = z.object({
+  summary: z.string().describe("A concise, one-sentence summary of the business's overall financial health based on the score."),
+  opportunities: z.array(z.string()).describe("A bulleted list of the top 2-3 strategic opportunities for improvement based on the lowest-scoring KPIs."),
+  risks: z.array(z.string()).describe("A bulleted list of the top 2-3 risks the business faces, identified from the health score analysis."),
+});
+export type StrategizeHealthScoreOutput = z.infer<typeof StrategizeHealthScoreOutputSchema>;
 
 
 // --- Main Engine Output Schema ---

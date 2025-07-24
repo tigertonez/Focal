@@ -8,23 +8,13 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import { BusinessHealthSchema, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema } from '@/lib/types';
+import { 
+    type StrategizeHealthScoreInput, 
+    StrategizeHealthScoreInputSchema,
+    type StrategizeHealthScoreOutput,
+    StrategizeHealthScoreOutputSchema
+} from '@/lib/types';
 
-export const StrategizeHealthScoreInputSchema = z.object({
-  businessHealth: BusinessHealthSchema,
-  revenueSummary: RevenueSummarySchema,
-  costSummary: CostSummarySchema,
-  profitSummary: ProfitSummarySchema,
-});
-export type StrategizeHealthScoreInput = z.infer<typeof StrategizeHealthScoreInputSchema>;
-
-export const StrategizeHealthScoreOutputSchema = z.object({
-  summary: z.string().describe("A concise, one-sentence summary of the business's overall financial health based on the score."),
-  opportunities: z.array(z.string()).describe("A bulleted list of the top 2-3 strategic opportunities for improvement based on the lowest-scoring KPIs."),
-  risks: z.array(z.string()).describe("A bulleted list of the top 2-3 risks the business faces, identified from the health score analysis."),
-});
-export type StrategizeHealthScoreOutput = z.infer<typeof StrategizeHealthScoreOutputSchema>;
 
 export async function strategizeHealthScore(input: StrategizeHealthScoreInput): Promise<StrategizeHealthScoreOutput> {
   return strategizeHealthScoreFlow(input);
