@@ -24,9 +24,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
   const { profitSummary, revenueSummary, costSummary } = data;
   const currency = inputs.parameters.currency;
 
-  const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits || 0) * (p.sellPrice || 0), 0);
-  const potentialGrossProfit = potentialRevenue - costSummary.totalVariable;
-
+  const potentialGrossProfit = profitSummary.potentialGrossProfit ?? 0;
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   

@@ -121,6 +121,7 @@ export type MonthlyUnitsSold = z.infer<typeof MonthlyUnitsSoldSchema>;
 // Profit-related schemas
 export const ProfitSummarySchema = z.object({
     totalGrossProfit: z.number(),
+    potentialGrossProfit: z.number().optional(), // Added field for potential
     totalOperatingProfit: z.number(),
     totalNetProfit: z.number(),
     grossMargin: z.number(),

@@ -344,7 +344,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
             .reduce((s, pName) => {
                 const product = inputs.products.find(p => p.productName === pName);
                 const units = (monthlyUnitsSold.find(u => u.month === month) || {})[pName] || 0;
-                return s + (units * (product?.unitCost || 0));
+                 if (units > 0) { // Only add COGS if units were sold this month
+                    return s + (units * (product?.unitCost || 0));
+                }
+                return s;
             }, 0);
         
         const grossProfit = totalMonthlyRevenue - monthlyCOGS;
@@ -534,7 +537,13 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         const achievedResult = calculateScenario(inputs);
 
         const potentialInputs = JSON.parse(JSON.stringify(inputs));
-        potentialInputs.products.forEach((p: Product) => { p.sellThrough = 100; });
+        potentialInputs.products.forEach((p: Product) => { 
+            p.sellThrough = 100; 
+            // For low volume, potential means selling all planned units
+            if (p.plannedUnits >= 1 && p.plannedUnits <= 10) {
+                p.estimatedSales = p.plannedUnits;
+            }
+        });
         
         const potentialResult = calculateScenario(potentialInputs);
         
@@ -550,6 +559,10 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             cashFlowSummary: {
                 ...achievedResult.cashFlowSummary,
                 potentialCashBalance: potentialResult.cashFlowSummary.endingCashBalance
+            },
+            profitSummary: { // Also add potential for gross profit
+                ...achievedResult.profitSummary,
+                potentialGrossProfit: potentialResult.profitSummary.totalGrossProfit,
             },
             businessHealth: healthScore,
         };
