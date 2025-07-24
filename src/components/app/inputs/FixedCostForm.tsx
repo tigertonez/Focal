@@ -130,8 +130,6 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                         <SelectContent>
                             <SelectItem value="Paid Up-Front">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
                             <SelectItem value="Allocated Monthly">{t.inputs.fixedCosts.paymentSchedule.monthly}</SelectItem>
-                            <SelectItem value="Allocated Quarterly">{t.inputs.fixedCosts.paymentSchedule.quarterly}</SelectItem>
-                            <SelectItem value="Allocated According to Sales">{t.inputs.fixedCosts.paymentSchedule.accordingToSales}</SelectItem>
                         </SelectContent>
                     </Select>
                  </div>

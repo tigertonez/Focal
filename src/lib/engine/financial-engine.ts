@@ -208,33 +208,8 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
             ? cost.amount * allocationTimeline.length
             : cost.amount;
         
-        switch (schedule) {
-            case 'Allocated Monthly':
-                const monthlyAmount = allocationTimeline.length > 0 ? totalCostAmount / allocationTimeline.length : 0;
-                allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + monthlyAmount; });
-                break;
-
-            case 'Allocated Quarterly':
-                const quarters = Math.ceil(allocationTimeline.length / 3);
-                if (quarters > 0) {
-                    const quarterlyAmount = totalCostAmount / quarters;
-                    for (let q = 0; q < quarters; q++) {
-                        if (q * 3 < allocationTimeline.length) {
-                           allocationTimeline[q * 3][cost.name] = (allocationTimeline[q * 3][cost.name] || 0) + quarterlyAmount;
-                        }
-                    }
-                }
-                break;
-
-            case 'Allocated According to Sales':
-                const salesWeights = getAggregatedSalesWeights(inputs, timeline, allocationStartMonth, monthlyUnitsSold);
-                allocationTimeline.forEach((month, i) => {
-                    if (salesWeights[i] !== undefined) {
-                        month[cost.name] = (month[cost.name] || 0) + (totalCostAmount * salesWeights[i]);
-                    }
-                });
-                break;
-        }
+        const monthlyAmount = allocationTimeline.length > 0 ? totalCostAmount / allocationTimeline.length : 0;
+        allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + monthlyAmount; });
     });
     return monthlyCostTimeline;
 };
@@ -257,15 +232,10 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
                 if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
             }
 
-            const firstSaleMonthForProduct = timeline.timelineMonths.find(m => (monthlyUnitsSold.find(u => u.month === m) || {})[product.productName] > 0);
-            if (firstSaleMonthForProduct !== undefined) {
-                const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === firstSaleMonthForProduct);
-                if (finalPaymentMonth) {
-                    finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
-                }
-            }
+            const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === 1);
+            if(finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+
         } else if (product.costModel === 'monthly') {
-            // Add JIT costs to the main cost timeline
             monthlyCostTimeline.forEach(month => {
                 const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
                 if (unitsThisMonth > 0) {
@@ -294,7 +264,6 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalFixedCostInPeriod = monthlyCostTimeline.reduce((total, month) => {
         return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
             if (key === 'month' || key === 'Deposits' || key === 'Final Payments') return monthTotal;
-            // Exclude JIT costs from this total as they are COGS
             const isJitCost = inputs.products.some(p => p.productName === key && p.costModel === 'monthly');
             if (isJitCost) return monthTotal;
             return monthTotal + value;
@@ -361,7 +330,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
             profitBreakEvenMonth = month;
         }
 
-        // Calculate weighted average net margin contribution for this month
         if (totalMonthlyRevenue > 0) {
             inputs.products.forEach(p => {
                 const productRevenue = (monthlyRevenue.find(r => r.month === month) || {})[p.productName] || 0;
