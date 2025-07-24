@@ -126,7 +126,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                  <div className="space-y-1 col-span-1">
                     <Label className="text-xs">{t.inputs.fixedCosts.paymentSchedule.title}</Label>
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
-                        <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
+                        <SelectTrigger className="text-sm justify-start"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Paid Up-Front">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
                             <SelectItem value="Allocated Monthly">{t.inputs.fixedCosts.paymentSchedule.monthly}</SelectItem>
@@ -142,7 +142,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             onValueChange={handleSelectChange('startMonth')} 
                             value={startMonth}
                         >
-                            <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.startIn.title} /></SelectTrigger>
+                            <SelectTrigger className="text-sm justify-start"><SelectValue placeholder={t.inputs.fixedCosts.startIn.title} /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Up-front">{t.inputs.fixedCosts.startIn.upFront}</SelectItem>
                                 <SelectItem value="Month 0">{t.inputs.fixedCosts.startIn.month0}</SelectItem>
