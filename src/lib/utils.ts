@@ -39,6 +39,12 @@ const simpleHash = (str: string): number => {
     return Math.abs(hash);
 };
 
+// New semantic color map for products
+const productSemanticColors: Record<string, string[]> = {
+    "gold": ["hsl(45, 74%, 55%)", "hsl(45, 74%, 65%)", "hsl(45, 74%, 45%)"],
+    "silber": ["hsl(220, 13%, 85%)", "hsl(220, 13%, 75%)", "hsl(220, 13%, 65%)"],
+    "silver": ["hsl(220, 13%, 85%)", "hsl(220, 13%, 75%)", "hsl(220, 13%, 65%)"],
+};
 
 /**
  * Assigns a consistent color to a product or fixed cost item.
@@ -60,26 +66,39 @@ export function getProductColor(item: Product | FixedCostItem): string {
     if (assignedColors[id]) {
         return assignedColors[id];
     }
-    
-    // 3. For Fixed Costs, check for semantic matches
-    if (!isProduct) {
-        const lowerName = name.toLowerCase();
-        for (const key in semanticColorMap) {
-            if (lowerName.includes(key.toLowerCase())) {
-                const color = semanticColorMap[key];
-                assignedColors[id] = color;
-                return color;
+
+    const lowerName = name.toLowerCase();
+    const hash = simpleHash(id);
+    let color: string | undefined;
+
+    // 3. New: Check for semantic product keywords
+    if (isProduct) {
+        for (const key in productSemanticColors) {
+            if (lowerName.includes(key)) {
+                const palette = productSemanticColors[key];
+                color = palette[hash % palette.length];
+                break; // Stop after first match
             }
         }
     }
 
-    // 4. Fallback: Assign a deterministic color from the appropriate default palette based on ID hash
-    const hash = simpleHash(id);
-    let color: string;
-    if (isProduct) {
-        color = productColorVars[hash % productColorVars.length];
-    } else {
-        color = chartColorVars[hash % chartColorVars.length];
+    // 4. For Fixed Costs, check for semantic matches
+    if (!isProduct) {
+        for (const key in semanticColorMap) {
+            if (lowerName.includes(key.toLowerCase())) {
+                color = semanticColorMap[key];
+                break;
+            }
+        }
+    }
+
+    // 5. Fallback: Assign a deterministic color from the default palette
+    if (!color) {
+        if (isProduct) {
+            color = productColorVars[hash % productColorVars.length];
+        } else {
+            color = chartColorVars[hash % chartColorVars.length];
+        }
     }
     
     assignedColors[id] = color;
