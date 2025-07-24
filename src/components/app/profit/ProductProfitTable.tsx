@@ -36,12 +36,10 @@ const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: 
 );
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
-    const { costSummary, revenueSummary, profitSummary } = data;
+    const { costSummary, revenueSummary, profitSummary, monthlyRevenue, monthlyProfit } = data;
     const { currency } = inputs.parameters;
 
     const totalRevenue = revenueSummary.totalRevenue;
-    const totalFixedCosts = costSummary.totalFixed;
-    const totalTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
 
     const productData = inputs.products.map((product) => {
         const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
@@ -49,17 +47,33 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         const productRevenue = revenueData?.totalRevenue || 0;
         
         const productCogs = unitsSold * (product.unitCost || 0);
-
         const grossProfit = productRevenue - productCogs;
         const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
         
-        // Allocate shared costs based on revenue contribution
-        const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
-        const allocatedFixedCosts = totalFixedCosts * revenueShare;
-        const allocatedTaxes = totalTaxes * revenueShare;
+        let totalAllocatedFixedCosts = 0;
+        let totalAllocatedTaxes = 0;
+        
+        monthlyProfit.forEach(monthProfit => {
+            const monthRevenueData = monthlyRevenue.find(mr => mr.month === monthProfit.month);
+            if (!monthRevenueData) return;
+            
+            const totalMonthlyRevenue = Object.keys(monthRevenueData)
+                .filter(k => k !== 'month')
+                .reduce((sum, key) => sum + (monthRevenueData[key] || 0), 0);
+            
+            const productMonthlyRevenue = monthRevenueData[product.productName] || 0;
+            const revenueShare = totalMonthlyRevenue > 0 ? productMonthlyRevenue / totalMonthlyRevenue : 0;
 
-        const operatingProfit = grossProfit - allocatedFixedCosts;
-        const netProfit = operatingProfit - allocatedTaxes;
+            const totalMonthlyFixed = profitSummary.totalOperatingProfit - profitSummary.totalGrossProfit + costSummary.totalOperating;
+            const monthlyFixedCosts = (profitSummary.totalGrossProfit - profitSummary.totalOperatingProfit) * -1;
+            totalAllocatedFixedCosts += monthlyFixedCosts * revenueShare;
+            
+            const totalMonthlyTaxes = (monthProfit.operatingProfit > 0) ? (monthProfit.operatingProfit - monthProfit.netProfit) : 0;
+            totalAllocatedTaxes += totalMonthlyTaxes * revenueShare;
+        });
+
+        const operatingProfit = grossProfit + totalAllocatedFixedCosts;
+        const netProfit = operatingProfit - totalAllocatedTaxes;
         
         const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
         const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;

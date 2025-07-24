@@ -404,8 +404,8 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         <Button onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> {t.pages.summary.footer}
         </Button>
+        <DownloadReportButton />
       </footer>
-      <DownloadReportButton />
     </div>
   );
 }

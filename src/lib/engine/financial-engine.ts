@@ -514,7 +514,7 @@ function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHea
     const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
     const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
     const costData = calculateCosts(inputs, timeline, monthlyUnitsTimeline);
-    const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsTimeline);
+    const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
 
     return {
         revenueSummary: revenueData.revenueSummary,
