@@ -119,9 +119,7 @@ export function ProfitInsights({
     if (!text) return { __html: '' };
 
     let processedText = text
-      // Bolding with **text**
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>')
-      // Styling for 'item names'
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>')
       .replace(/'([^']*)'/g, (match, itemName) => {
         const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
         return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
@@ -133,7 +131,7 @@ export function ProfitInsights({
   const renderContent = (content: string | undefined) => {
     if (!content) return <p>No insights generated.</p>;
     
-    // Check if it's the Top Priorities list
+    // Check for Top Priorities list
     if (content.startsWith('🧭 Top Priorities')) {
       const listContent = content.replace('🧭 Top Priorities', '').trim();
        const items = listContent.split('<br><br>').filter(item => item.trim());
@@ -149,7 +147,21 @@ export function ProfitInsights({
       );
     }
     
-    // For all other sections
+    // Check for bullet points (used in explanation)
+    if (content.includes('•')) {
+      return (
+        <ul className="list-none space-y-3">
+          {content.split('•').filter(p => p.trim()).map((p, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-primary">•</span>
+              <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(p)} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    
+    // For all other sections (paragraphs)
     const paragraphs = content.split('\n').filter(p => p.trim());
     return (
         <div className="space-y-2">
