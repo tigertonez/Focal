@@ -27,6 +27,7 @@ export function formatNumber(value: number) {
 
 // --- Centralized Product Color Assignment ---
 const assignedColors: Record<string, string> = {};
+const usedColors = new Set<string>();
 
 // A simple hashing function to get a deterministic index from a string.
 const simpleHash = (str: string): number => {
@@ -86,21 +87,35 @@ export function getProductColor(item: Product | FixedCostItem): string {
     if (!isProduct) {
         for (const key in semanticColorMap) {
             if (lowerName.includes(key.toLowerCase())) {
-                color = semanticColorMap[key];
+                const semanticColor = semanticColorMap[key];
+                if (!usedColors.has(semanticColor)) {
+                    color = semanticColor;
+                }
                 break;
             }
         }
     }
 
-    // 5. Fallback: Assign a deterministic color from the default palette
+    // 5. Fallback: Assign a deterministic color from the default palette, ensuring uniqueness
     if (!color) {
-        if (isProduct) {
-            color = productColorVars[hash % productColorVars.length];
-        } else {
-            color = chartColorVars[hash % chartColorVars.length];
+        const palette = isProduct ? productColorVars : chartColorVars;
+        let attempt = 0;
+        do {
+            const index = (hash + attempt) % palette.length;
+            const potentialColor = palette[index];
+            if (!usedColors.has(potentialColor)) {
+                color = potentialColor;
+            }
+            attempt++;
+        } while (!color && attempt < palette.length);
+
+        // If all colors are used, just cycle through them
+        if (!color) {
+            color = palette[hash % palette.length];
         }
     }
     
+    usedColors.add(color);
     assignedColors[id] = color;
     return color;
 }
