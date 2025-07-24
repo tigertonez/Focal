@@ -23,16 +23,10 @@ const InsightsLoader: React.FC = () => (
       <CardDescription>AI-powered analysis of your revenue is loading...</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      </div>
+       <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Generating your revenue analysis...</p>
+       </div>
     </CardContent>
   </Card>
 );
@@ -60,28 +54,11 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
     }
   }, [revenueSummary, currency]);
 
-  if (!insights && !isLoading && !error) {
-     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Revenue Analysis</CardTitle>
-                <CardDescription>Get AI-powered analysis and recommendations for your revenue.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={getInsights} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Analysis
-                </Button>
-            </CardContent>
-        </Card>
-    );
-  }
-
   if (isLoading) {
     return <InsightsLoader />;
   }
 
-  if (error || !insights) {
+  if (error) {
     return (
       <Card>
         <CardHeader>
@@ -100,6 +77,23 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
           </Alert>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (!insights) {
+     return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Revenue Analysis</CardTitle>
+                <CardDescription>Get AI-powered analysis and recommendations for your revenue.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={getInsights} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Analysis
+                </Button>
+            </CardContent>
+        </Card>
     );
   }
 
@@ -126,8 +120,13 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
                 <Lightbulb className="h-4 w-4 text-amber-500" />
                 Key Insights
             </h3>
-            <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-disc list-inside">
-                {insights.insights.map((item, i) => <li key={i}>{item}</li>)}
+            <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-none">
+                {insights.insights.map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <p className="leading-relaxed flex-1">{item}</p>
+                    </li>
+                ))}
             </ul>
           </div>
            <div className="space-y-3">
@@ -135,8 +134,13 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
                 <ShieldAlert className="h-4 w-4 text-blue-500" />
                 Recommendations
             </h3>
-              <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-disc list-inside">
-                 {insights.recommendations.map((item, i) => <li key={i}>{item}</li>)}
+              <ul className="text-sm text-muted-foreground pl-7 space-y-2 list-none">
+                 {insights.recommendations.map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <p className="leading-relaxed flex-1">{item}</p>
+                    </li>
+                 ))}
               </ul>
           </div>
         </div>

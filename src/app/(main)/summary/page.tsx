@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2, MinusCircle, PlusCircle } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, BadgeCheck, Lightbulb, ShieldAlert, ChevronDown, RefreshCw, Bot, Loader2, MinusCircle, PlusCircle, Sparkles, ListOrdered, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -104,6 +104,17 @@ const HealthBar = ({ label, value, tooltip }: { label: string, value: number, to
     );
 };
 
+const InsightSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+  <div className="space-y-2">
+    <h3 className="font-semibold text-sm flex items-center gap-2">
+      {icon}
+      {title}
+    </h3>
+    <div className="text-sm text-muted-foreground pl-7 space-y-2">{children}</div>
+  </div>
+);
+
+
 const HealthPanel = ({ 
   healthData,
   financialSummaries,
@@ -150,13 +161,44 @@ const HealthPanel = ({
         );
     }
     
-    const { score, kpis, insights, alerts } = healthData;
+    const { score, kpis } = healthData;
 
     const getScoreColor = (s: number) => {
         if (s < 40) return 'bg-destructive text-destructive-foreground';
         if (s < 70) return 'bg-yellow-500 text-yellow-foreground';
         return 'bg-green-500 text-green-foreground';
     };
+    
+    const createMarkup = useCallback((text: string | undefined): { __html: string } => {
+        if (!text) return { __html: '' };
+        return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>') };
+    }, []);
+
+    const renderContent = (content: string | undefined) => {
+        if (!content) return <p>No insights generated.</p>;
+        
+        if (content.includes('•')) {
+            return (
+                <ul className="list-none space-y-3">
+                    {content.split('•').filter(p => p.trim()).map((p, i) => (
+                        <li key={i} className="flex gap-2">
+                            <span className="text-primary">•</span>
+                            <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(p)} />
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+        
+        const paragraphs = content.split('\n').filter(p => p.trim());
+        return (
+            <div className="space-y-2">
+                {paragraphs.map((p, i) => (
+                    <p key={i} className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(p)} />
+                ))}
+            </div>
+        );
+    }
 
     return (
         <Card>
@@ -166,14 +208,10 @@ const HealthPanel = ({
                         <CardTitle>Business Health Score</CardTitle>
                         <CardDescription>A weighted score based on key financial metrics to gauge your plan's viability.</CardDescription>
                     </div>
-                    <Button onClick={handleStrategize} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Strategize with AI
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start mb-6">
                     <div className="flex flex-col items-center justify-center space-y-2 py-4">
                         <div className={cn("text-5xl font-bold font-headline px-6 py-4 rounded-full", getScoreColor(score))}>
                            {score.toFixed(0)}
@@ -188,6 +226,8 @@ const HealthPanel = ({
                     </div>
                 </div>
                 
+                <Separator className="my-6" />
+
                 {error && (
                     <Alert variant="destructive" className="mt-4">
                         <ShieldAlert className="h-4 w-4" />
@@ -196,58 +236,55 @@ const HealthPanel = ({
                     </Alert>
                 )}
                 
-                {aiInsights && (
-                     <Alert className="mt-6">
-                        <Lightbulb className="h-4 w-4" />
-                        <AlertTitle>AI-Powered Strategy</AlertTitle>
-                        <AlertDescription>
-                          <div className="space-y-3 mt-2">
-                             <div>
-                                <h4 className="font-semibold text-foreground">Strategic Summary</h4>
-                                <p className="text-muted-foreground">{aiInsights.summary}</p>
-                            </div>
-                             <div>
-                                <h4 className="font-semibold text-foreground">Top Opportunities</h4>
-                                <ul className="list-disc pl-5 mt-1 space-y-1">
-                                    {aiInsights.opportunities.map((item, i) => <li key={i}>{item}</li>)}
-                                </ul>
-                            </div>
-                             <div>
-                                <h4 className="font-semibold text-foreground">Key Risks to Mitigate</h4>
-                                <ul className="list-disc pl-5 mt-1 space-y-1">
-                                    {aiInsights.risks.map((item, i) => <li key={i}>{item}</li>)}
-                                </ul>
-                            </div>
-                          </div>
-                        </AlertDescription>
-                    </Alert>
+                {!aiInsights && !isLoading && (
+                    <div className="text-center">
+                        <h3 className="text-lg font-semibold mb-2">Get Your Strategic Analysis</h3>
+                        <p className="text-muted-foreground mb-4">Unlock AI-powered insights to improve your business plan.</p>
+                        <Button onClick={handleStrategize} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate Strategic Report
+                        </Button>
+                    </div>
                 )}
+                
+                {isLoading && (
+                   <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Generating your strategic report...</p>
+                   </div>
+                )}
+                
+                {aiInsights && (
+                     <div className="space-y-6">
+                        <div className="flex justify-between items-start">
+                             <div>
+                                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Strategic Health Report</CardTitle>
+                                <CardDescription>
+                                  AI-powered analysis of your business health score.
+                                </CardDescription>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Regenerate
+                            </Button>
+                        </div>
 
-                {(insights.length > 0 || alerts.length > 0) && !aiInsights && (
-                  <div className="mt-6 space-y-4">
-                      {insights.length > 0 && (
-                          <Alert variant="default">
-                              <Lightbulb className="h-4 w-4" />
-                              <AlertTitle>Insights</AlertTitle>
-                              <AlertDescription>
-                                  <ul className="list-disc pl-5 mt-1">
-                                      {insights.map((item, i) => <li key={i}>{item}</li>)}
-                                  </ul>
-                              </AlertDescription>
-                          </Alert>
-                      )}
-                      {alerts.length > 0 && (
-                          <Alert variant="destructive">
-                              <ShieldAlert className="h-4 w-4" />
-                              <AlertTitle>Alerts</AlertTitle>
-                              <AlertDescription>
-                                  <ul className="list-disc pl-5 mt-1">
-                                    {alerts.map((item, i) => <li key={i}>{item}</li>)}
-                                  </ul>
-                              </AlertDescription>
-                          </Alert>
-                      )}
-                  </div>
+                        <InsightSection title="Strategic Summary" icon={<Lightbulb className="text-amber-500" />}>
+                          {renderContent(aiInsights.summary)}
+                        </InsightSection>
+
+                        <InsightSection title="Key Strengths" icon={<CheckCircle className="text-green-500" />}>
+                          {renderContent(aiInsights.strengths)}
+                        </InsightSection>
+                        
+                        <InsightSection title="Top Opportunities" icon={<TrendingUp className="text-blue-500" />}>
+                          {renderContent(aiInsights.opportunities)}
+                        </InsightSection>
+
+                        <InsightSection title="Key Risks to Mitigate" icon={<ShieldAlert className="text-red-500" />}>
+                           {renderContent(aiInsights.risks)}
+                        </InsightSection>
+                     </div>
                 )}
             </CardContent>
         </Card>

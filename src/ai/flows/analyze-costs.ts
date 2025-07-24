@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -23,16 +24,28 @@ const prompt = ai.definePrompt({
     topP: 0.95,
     topK: 40,
   },
-  prompt: `You are a financial analyst specializing in cost optimization for small businesses.
+  prompt: `You are a financial analyst specializing in cost optimization for small businesses. Your tone is professional, objective, and helpful.
 The currency is {{{currency}}}.
 
 Analyze the following cost summary in the context of the revenue summary:
 - Cost Summary: {{{json costSummary}}}
 - Revenue Summary: {{{json revenueSummary}}}
 
-Based on the analysis, generate the following:
-1.  **Insights**: Provide a bulleted list of 2-3 key insights. Focus on the relationship between fixed and variable costs, the significance of major cost drivers, and the cost structure relative to revenue.
-2.  **Recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve cost efficiency. For example, suggest areas for cost reduction, comment on the scalability of the cost structure, or identify potential risks in the cost plan.
+Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendations".
+
+IMPORTANT FORMATTING RULES:
+- Use bullet points (•) for all list items.
+- Do NOT use asterisks (*) for any reason.
+- Do NOT use bolding or any other markdown.
+- Each bullet point should be a concise, single sentence.
+
+Here is the structure you MUST follow:
+
+1.  **insights**: Provide a bulleted list of 2-3 key insights. Focus on the relationship between fixed and variable costs, the significance of major cost drivers, and the cost structure relative to revenue.
+    Example: "• Fixed costs constitute a significant portion of your total operating costs, indicating high initial overhead."
+
+2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve cost efficiency. For example, suggest areas for cost reduction, comment on the scalability of the cost structure, or identify potential risks in the cost plan.
+    Example: "• Explore negotiating with suppliers for 'Steine' to reduce variable costs and improve the gross margin."
 `,
 });
 
@@ -47,6 +60,11 @@ const analyzeCostsFlow = ai.defineFlow(
     if (!output) {
       throw new Error("The AI model did not return a valid cost analysis.");
     }
+
+    // Cleanup to remove the bullet points if the AI includes them
+    output.insights = output.insights.map(item => item.startsWith('• ') ? item.substring(2) : item);
+    output.recommendations = output.recommendations.map(item => item.startsWith('• ') ? item.substring(2) : item);
+
     return output;
   }
 );

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -24,7 +25,13 @@ const prompt = ai.definePrompt({
   name: 'strategizeHealthScorePrompt',
   input: { schema: StrategizeHealthScoreInputSchema },
   output: { schema: StrategizeHealthScoreOutputSchema },
-  prompt: `You are an expert financial strategist and business consultant.
+   config: {
+    maxOutputTokens: 512,
+    temperature: 0.4,
+    topP: 0.95,
+    topK: 40,
+  },
+  prompt: `You are an expert financial strategist and business consultant. Your tone is professional, insightful, and clear.
 You are advising a business owner on their financial forecast.
 
 Analyze the following Business Health Score and financial summaries.
@@ -33,11 +40,26 @@ Analyze the following Business Health Score and financial summaries.
 - Cost Summary: {{{json costSummary}}}
 - Profit Summary: {{{json profitSummary}}}
 
-Your task is to provide a strategic analysis based *only* on the provided data. Do not invent numbers or scenarios.
+Your output MUST be ONLY a JSON object with 4 keys: "summary", "strengths", "opportunities", and "risks".
 
-1.  **Summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability but is constrained by a tight cash flow.")
-2.  **Opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it.
-3.  **Risks**: Based on the health score and financial data, identify the 2-3 most significant risks this business plan faces.
+IMPORTANT FORMATTING RULES:
+- Use bullet points (•) for all list items in "strengths", "opportunities", and "risks".
+- Do NOT use asterisks (*) for any reason.
+- Do NOT use bolding or any other markdown.
+- Each bullet point should be a concise, single sentence.
+
+Here is the structure you MUST follow:
+
+1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability but is constrained by a tight cash flow.")
+
+2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point.
+    Example: "• The high Net Margin score indicates strong pricing and cost control, which is a key strength."
+
+3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point.
+    Example: "• Address the low Cash Runway score by exploring options to increase initial funding or reduce early-stage costs."
+
+4.  **risks**: Based on the health score and financial data, identify the 2-3 most significant risks this business plan faces in a bulleted list.
+    Example: "• A high dependency on a single product line presents a concentration risk if market demand shifts."
 `,
 });
 
@@ -52,6 +74,13 @@ const strategizeHealthScoreFlow = ai.defineFlow(
     if (!output) {
       throw new Error("The AI model did not return a valid strategic analysis.");
     }
+    
+    // Cleanup to remove the bullet points if the AI includes them
+    const cleanList = (list: string[]) => list.map(item => item.startsWith('• ') ? item.substring(2) : item);
+    output.strengths = cleanList(output.strengths);
+    output.opportunities = cleanList(output.opportunities);
+    output.risks = cleanList(output.risks);
+
     return output;
   }
 );

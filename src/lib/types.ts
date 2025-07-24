@@ -167,8 +167,6 @@ export type BusinessHealthScoreKpi = z.infer<typeof BusinessHealthScoreKpiSchema
 
 export const BusinessHealthSchema = z.object({
   score: z.number(),
-  insights: z.array(z.string()),
-  alerts: z.array(z.string()),
   kpis: z.array(BusinessHealthScoreKpiSchema),
 });
 export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
@@ -247,6 +245,7 @@ export type StrategizeHealthScoreInput = z.infer<typeof StrategizeHealthScoreInp
 
 export const StrategizeHealthScoreOutputSchema = z.object({
   summary: z.string().describe("A concise, one-sentence summary of the business's overall financial health based on the score."),
+  strengths: z.array(z.string()).describe("A bulleted list of the top 2-3 strategic strengths based on the highest-scoring KPIs."),
   opportunities: z.array(z.string()).describe("A bulleted list of the top 2-3 strategic opportunities for improvement based on the lowest-scoring KPIs."),
   risks: z.array(z.string()).describe("A bulleted list of the top 2-3 risks the business faces, identified from the health score analysis."),
 });
