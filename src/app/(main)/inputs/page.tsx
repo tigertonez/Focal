@@ -45,6 +45,7 @@ export default function InputsPage() {
     addProduct,
     addFixedCost,
     saveDraft,
+    t
   } = useForecast();
 
   const { getReport, isLoading } = useFinancials();
@@ -66,62 +67,60 @@ export default function InputsPage() {
   };
   
   const isManualMode = inputs.realtime.dataSource === 'Manual';
-  const preOrderTooltip = "Enables a 'Month 0' for pre-launch costs (e.g., deposits) and revenue before the main forecast begins in Month 1.";
-  const preOrderTitle = "Pre-Order Mode";
 
   return (
     <div className="bg-white min-h-screen">
       <main className="p-4 md:p-8">
-        <SectionHeader title="Input Sheet" description="Define your forecast assumptions" />
+        <SectionHeader title={t.inputs.title} description={t.inputs.description} />
 
         <div className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8 items-start">
-             <Section title="Products & Services">
+             <Section title={t.inputs.products.title}>
                 <div className="space-y-4">
                   {inputs.products.map((p, i) => (
                     <ProductForm key={p.id} product={p} index={i} />
                   ))}
                 </div>
                 <Button variant="outline" onClick={addProduct} className="w-full border-dashed">
-                  <PlusCircle className="mr-2" size={16} /> Add Product / Service
+                  <PlusCircle className="mr-2" size={16} /> {t.inputs.products.addProduct}
                 </Button>
             </Section>
             
-            <Section title="Fixed Costs">
+            <Section title={t.inputs.fixedCosts.title}>
               <div className="space-y-3">
                 {inputs.fixedCosts.map((cost, i) => (
                   <FixedCostForm key={cost.id} cost={cost} index={i} />
                 ))}
               </div>
               <Button variant="outline" onClick={addFixedCost} className="w-full border-dashed mt-4">
-                <PlusCircle className="mr-2" size={16} /> Add Fixed Cost
+                <PlusCircle className="mr-2" size={16} /> {t.inputs.fixedCosts.addFixedCost}
               </Button>
             </Section>
           </div>
           
 
-          <Section title="General Parameters">
+          <Section title={t.inputs.parameters.title}>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
                  <InputField 
-                    label="Forecast Months" 
+                    label={t.inputs.parameters.forecastMonths.label}
                     id="forecastMonths" 
                     type="number" 
                     value={inputs.parameters.forecastMonths} 
                     onChange={handleParamChange('parameters')} 
-                    tooltip="How many months into the future to forecast."
+                    tooltip={t.inputs.parameters.forecastMonths.tooltip}
                     layout="vertical"
                 />
                 <InputField 
-                    label="Tax Rate %" 
+                    label={t.inputs.parameters.taxRate.label}
                     id="taxRate" 
                     type="number" 
                     value={inputs.parameters.taxRate} 
                     onChange={handleParamChange('parameters')} 
-                    tooltip="Your estimated corporate tax rate."
+                    tooltip={t.inputs.parameters.taxRate.tooltip}
                     layout="vertical"
                 />
                 <SelectField 
-                    label="Currency" 
+                    label={t.inputs.parameters.currency}
                     id="currency" 
                     value={inputs.parameters.currency} 
                     onValueChange={handleSelectChange('parameters')('currency')}
@@ -132,14 +131,14 @@ export default function InputsPage() {
                 </SelectField>
                 <div className="space-y-2">
                     <Label htmlFor="preOrder" className="font-medium text-sm flex items-center gap-2">
-                        {preOrderTitle}
+                        {t.inputs.parameters.preOrder.title}
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                                 <TooltipContent className="max-w-xs p-3">
                                   <div className="space-y-1 text-left">
-                                      <p className="font-semibold">{preOrderTitle}</p>
-                                      <p className="text-muted-foreground text-xs">{preOrderTooltip}</p>
+                                      <p className="font-semibold">{t.inputs.parameters.preOrder.title}</p>
+                                      <p className="text-muted-foreground text-xs">{t.inputs.parameters.preOrder.tooltip}</p>
                                   </div>
                                 </TooltipContent>
                             </Tooltip>
@@ -147,7 +146,7 @@ export default function InputsPage() {
                     </Label>
                     <div className="flex items-center pt-2 gap-2">
                         <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
-                        {inputs.parameters.preOrder && <Badge variant="secondary">+ Month 0</Badge>}
+                        {inputs.parameters.preOrder && <Badge variant="secondary">{t.inputs.parameters.preOrder.badge}</Badge>}
                     </div>
                 </div>
             </div>
@@ -157,19 +156,19 @@ export default function InputsPage() {
             <CollapsibleTrigger asChild>
                 <div className="flex items-center gap-2 cursor-pointer">
                     <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
-                    <h2 className="text-xl font-semibold">Realtime Settings</h2>
+                    <h2 className="text-xl font-semibold">{t.inputs.realtime.title}</h2>
                 </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-4 pl-6">
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <SelectField label="Data Source" id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
-                      <SelectItem value="Manual">Manual Forecast</SelectItem>
-                      <SelectItem value="Shopify" disabled>Shopify (Coming Soon)</SelectItem>
-                      <SelectItem value="CSV" disabled>CSV Import (Coming Soon)</SelectItem>
+                    <SelectField label={t.inputs.realtime.dataSource} id="dataSource" value={inputs.realtime.dataSource} onValueChange={handleSelectChange('realtime')('dataSource')}>
+                      <SelectItem value="Manual">{t.inputs.realtime.manual}</SelectItem>
+                      <SelectItem value="Shopify" disabled>Shopify ({t.inputs.realtime.comingSoon})</SelectItem>
+                      <SelectItem value="CSV" disabled>CSV Import ({t.inputs.realtime.comingSoon})</SelectItem>
                     </SelectField>
                     {!isManualMode && (
                         <>
-                            <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder="Required for data source" />
+                            <InputField label="API Key" id="apiKey" type="password" value={inputs.realtime.apiKey || ''} onChange={handleParamChange('realtime')} placeholder={t.inputs.realtime.apiKeyPlaceholder} />
                             <InputField label="Timezone" id="timezone" value={inputs.realtime.timezone} onChange={handleParamChange('realtime')} />
                         </>
                     )}
@@ -180,12 +179,12 @@ export default function InputsPage() {
 
         <footer className="flex justify-between items-center mt-8 pt-6 border-t">
           <Button variant="outline" onClick={saveDraft}>
-            Save Draft
+            {t.inputs.footer.saveDraft}
           </Button>
           
            <Button size="lg" className="w-48" onClick={getReport} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Get Report
+                {t.inputs.footer.getReport}
             </Button>
         </footer>
       </main>

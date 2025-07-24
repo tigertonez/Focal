@@ -15,6 +15,7 @@ import {
   Bot,
   Wallet,
   LayoutGrid,
+  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -22,45 +23,44 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { useForecast } from '@/context/ForecastContext';
 
 
-const navItems = [
-  { href: '/inputs', icon: LineChart, label: 'Inputs' },
-  { href: '/revenue', icon: DollarSign, label: 'Revenue' },
-  { href: '/costs', icon: ShoppingCart, label: 'Costs' },
-  { href: '/profit', icon: Landmark, label: 'Profit' },
-  { href: '/cash-flow', icon: Wallet, label: 'Cash Flow' },
-  { href: '/summary', icon: LayoutGrid, label: 'Summary' },
-];
-
-const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
-  const pathname = usePathname();
-  const isActive = pathname === href || (href === '/inputs' && pathname === '/');
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            href={href}
-            className={cn(
-              "flex items-center justify-center p-3 rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
-              { "bg-primary/10 text-primary": isActive }
-            )}
-          >
-            <Icon className="h-5 w-5" />
-            <span className="sr-only">{label}</span>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          <p>{label}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-
 const DesktopNav = () => {
-    const { setIsCopilotOpen } = useForecast();
+    const { setIsCopilotOpen, t, setLocale, locale } = useForecast();
+
+    const navItems = [
+      { href: '/inputs', icon: LineChart, label: t.nav.inputs },
+      { href: '/revenue', icon: DollarSign, label: t.nav.revenue },
+      { href: '/costs', icon: ShoppingCart, label: t.nav.costs },
+      { href: '/profit', icon: Landmark, label: t.nav.profit },
+      { href: '/cash-flow', icon: Wallet, label: t.nav.cashFlow },
+      { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
+    ];
+
+    const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
+      const pathname = usePathname();
+      const isActive = pathname === href || (href === '/inputs' && pathname === '/');
+
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={href}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+                  { "bg-primary/10 text-primary": isActive }
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="sr-only">{label}</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{label}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    };
 
     return (
         <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
@@ -77,13 +77,26 @@ const DesktopNav = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="accent" size="icon" onClick={() => setIsCopilotOpen(true)}>
-                            <Bot />
-                            <span className="sr-only">Ask AI</span>
+                       <Button variant="ghost" size="icon" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
+                            <Languages />
+                            <span className="sr-only">{t.nav.toggleLanguage}</span>
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
-                      <p>Ask AI</p>
+                      <p>{t.nav.toggleLanguage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="accent" size="icon" onClick={() => setIsCopilotOpen(true)}>
+                            <Bot />
+                            <span className="sr-only">{t.nav.askAI}</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{t.nav.askAI}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -93,7 +106,16 @@ const DesktopNav = () => {
 };
 
 const MobileNav = () => {
-    const { setIsCopilotOpen } = useForecast();
+    const { setIsCopilotOpen, t, setLocale, locale } = useForecast();
+
+    const navItems = [
+      { href: '/inputs', icon: LineChart, label: t.nav.inputs },
+      { href: '/revenue', icon: DollarSign, label: t.nav.revenue },
+      { href: '/costs', icon: ShoppingCart, label: t.nav.costs },
+      { href: '/profit', icon: Landmark, label: t.nav.profit },
+      { href: '/cash-flow', icon: Wallet, label: t.nav.cashFlow },
+      { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
+    ];
 
     return (
         <header className="md:hidden flex items-center justify-between p-2 border-b bg-card sticky top-0 z-10">
@@ -119,9 +141,12 @@ const MobileNav = () => {
                             </Link>
                         ))}
                     </nav>
-                    <div className="mt-auto">
+                    <div className="mt-auto space-y-2">
+                        <Button className="w-full" variant="ghost" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
+                            <Languages className="mr-2" /> {t.nav.toggleLanguage}
+                        </Button>
                         <Button className="w-full" variant="accent" onClick={() => setIsCopilotOpen(true)}>
-                            <Bot className="mr-2" /> Ask AI
+                            <Bot className="mr-2" /> {t.nav.askAI}
                         </Button>
                     </div>
                 </SheetContent>

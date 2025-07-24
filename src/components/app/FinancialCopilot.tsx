@@ -20,7 +20,7 @@ export function FinancialCopilot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen } = useForecast();
+  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen, t } = useForecast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +34,7 @@ export function FinancialCopilot() {
 
   useEffect(() => {
     if (isCopilotOpen) {
-        setMessages([{ role: 'bot', text: "Hi! Ask me anything about your forecast." }]);
+        setMessages([{ role: 'bot', text: t.de ? "Hallo! Fragen Sie mich alles über Ihre Prognose." : "Hi! Ask me anything about your forecast." }]);
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
@@ -42,7 +42,7 @@ export function FinancialCopilot() {
             }
         }, 100);
     }
-  }, [isCopilotOpen]);
+  }, [isCopilotOpen, t]);
 
    useEffect(() => {
     if (messages.length > 1) { // Scroll on new messages, but not initial welcome
@@ -153,7 +153,7 @@ export function FinancialCopilot() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question..."
+              placeholder={t.de ? "Stellen Sie eine Frage..." : "Ask a question..."}
               className="pr-12 min-h-[40px] text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

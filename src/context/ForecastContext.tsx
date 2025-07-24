@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 import html2canvas from 'html2canvas';
 import { getFinancials } from '@/lib/get-financials';
+import { translations, type Translations } from '@/lib/translations';
 
 
 interface ForecastContextType {
@@ -25,6 +26,9 @@ interface ForecastContextType {
   setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  locale: 'en' | 'de';
+  setLocale: React.Dispatch<React.SetStateAction<'en' | 'de'>>;
+  t: Translations['en']; // The actual translation object
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -97,7 +101,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; } | null>(null);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [locale, setLocale] = useState<'en' | 'de'>('en');
   const { toast } = useToast();
+  
+  const t = useMemo(() => translations[locale], [locale]);
 
   useEffect(() => {
     try {
@@ -108,8 +115,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             if (result.success) {
                 setInputs(result.data);
                 toast({
-                    title: "Draft loaded",
-                    description: "Your previous session has been restored.",
+                    title: t.toasts.draftLoadedTitle,
+                    description: t.toasts.draftLoadedDescription,
                 });
             } else {
                  console.warn("Could not parse saved draft, starting fresh.", result.error);
@@ -120,7 +127,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to load draft from local storage", e);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
-  }, [toast]);
+  }, [toast, t]);
   
   useEffect(() => {
     setFinancials(getFinancials());
@@ -194,8 +201,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         if (!result.success) {
             toast({
                 variant: "destructive",
-                title: "Cannot save draft",
-                description: "Please fix the errors on the input sheet before saving.",
+                title: t.toasts.saveErrorTitle,
+                description: t.toasts.saveErrorDescription,
             });
             return;
         }
@@ -203,15 +210,15 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         const dataToSave = JSON.stringify(inputs);
         localStorage.setItem(DRAFT_STORAGE_KEY, dataToSave);
         toast({
-            title: "Draft saved!",
-            description: "Your inputs have been saved to this browser.",
+            title: t.toasts.draftSavedTitle,
+            description: t.toasts.draftSavedDescription,
         });
     } catch (e) {
         console.error("Failed to save draft", e);
         toast({
             variant: "destructive",
-            title: "Save failed",
-            description: "Could not save draft to local storage.",
+            title: t.toasts.saveFailedTitle,
+            description: t.toasts.saveFailedDescription,
         });
     }
   };
@@ -237,7 +244,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setProactiveAnalysis,
     isCopilotOpen,
     setIsCopilotOpen,
-  }), [inputs, financials, proactiveAnalysis, isCopilotOpen]);
+    locale,
+    setLocale,
+    t,
+  }), [inputs, financials, proactiveAnalysis, isCopilotOpen, locale, t]);
 
   return (
     <ForecastContext.Provider value={value}>

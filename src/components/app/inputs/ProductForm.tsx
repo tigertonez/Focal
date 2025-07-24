@@ -14,7 +14,7 @@ import { getProductColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export const ProductForm: React.FC<{ product: Product; index: number }> = ({ product, index }) => {
-  const { updateProduct, removeProduct, inputs } = useForecast();
+  const { updateProduct, removeProduct, inputs, t } = useForecast();
   const isManualMode = inputs.realtime.dataSource === 'Manual';
   const currency = inputs.parameters.currency;
   const colorInputRef = React.useRef<HTMLInputElement>(null);
@@ -34,15 +34,6 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
     updateProduct(index, 'color', e.target.value);
   };
 
-  const salesModelTooltip = `How sales are distributed over time. 'Launch' is front-loaded, 'Even' is stable, 'Seasonal' peaks mid-period, and 'Growth' increases steadily.`;
-  const salesModelTitle = "What is a Sales Model?";
-  
-  const sellThroughTooltip = "The percentage of your total planned stock that you expect to sell. A crucial driver for your revenue forecast.";
-  const sellThroughTitle = "What is Sell-Through %?";
-  
-  const depositPaidTooltip = "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery.";
-  const depositPaidTitle = "What is a Deposit?";
-
   const assignedColor = getProductColor(product);
   
   const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
@@ -57,7 +48,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     name="productName"
                     value={product.productName}
                     onChange={handleChange}
-                    placeholder="Product / Service Name"
+                    placeholder={t.inputs.products.productName}
                     className="text-sm px-2"
                 />
             </div>
@@ -83,14 +74,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
       
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">Planned Units</Label>
+                <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">{t.inputs.products.plannedUnits}</Label>
                 <div className="relative">
                     <Input id={`plannedUnits-${index}`} name="plannedUnits" type="number" value={product.plannedUnits || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 5000" />
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{t.inputs.products.units}</span>
                 </div>
             </div>
             <div className="space-y-2">
-                <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">Unit Cost</Label>
+                <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">{t.inputs.products.unitCost}</Label>
                 <div className="relative">
                     <Input id={`unitCost-${index}`} name="unitCost" type="number" value={product.unitCost} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 15.50" />
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
@@ -101,7 +92,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div className="space-y-2">
-                <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">Sales Price</Label>
+                <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">{t.inputs.products.sellPrice}</Label>
                 <div className="relative">
                     <Input id={`sellPrice-${index}`} name="sellPrice" type="number" value={product.sellPrice} onChange={handleChange} className="text-sm pr-10" placeholder="e.g., 49.99" />
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
@@ -109,14 +100,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
              <div className="space-y-2">
                 <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
-                    Deposit %
+                    {t.inputs.products.deposit}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                             <TooltipContent className="max-w-xs p-3">
                                 <div className="space-y-1 text-left">
-                                    <p className="font-semibold">{depositPaidTitle}</p>
-                                    <p className="text-muted-foreground text-xs">{depositPaidTooltip}</p>
+                                    <p className="font-semibold">{t.inputs.products.deposit}</p>
+                                    <p className="text-muted-foreground text-xs">{t.inputs.products.depositTooltip}</p>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
@@ -133,14 +124,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             {isManualMode && isLowVolume && (
                  <>
                     <div className="space-y-2">
-                        <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">Estimated Sales (Units)</Label>
+                        <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">{t.inputs.products.estimatedSales}</Label>
                         <div className="relative">
                             <Input id={`estimatedSales-${index}`} name="estimatedSales" type="number" value={product.estimatedSales || ''} onChange={handleChange} className="text-sm pr-14" placeholder="e.g., 3" />
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">units</span>
+                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{t.inputs.products.units}</span>
                         </div>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor={`saleMonth-${index}`} className="text-sm font-medium">Sale Month</Label>
+                        <Label htmlFor={`saleMonth-${index}`} className="text-sm font-medium">{t.inputs.products.saleMonth}</Label>
                         <Select onValueChange={(v) => handleSelectChange('saleMonth')(parseInt(v))} value={String(product.saleMonth || 1)}>
                             <SelectTrigger id={`saleMonth-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -157,14 +148,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 <>
                     <div className="space-y-2">
                         <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium flex items-center gap-2">
-                        Sell-Through %
+                        {t.inputs.products.sellThrough}
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                                     <TooltipContent className="max-w-xs p-3">
                                         <div className="space-y-1 text-left">
-                                            <p className="font-semibold">{sellThroughTitle}</p>
-                                            <p className="text-muted-foreground text-xs">{sellThroughTooltip}</p>
+                                            <p className="font-semibold">{t.inputs.products.sellThrough}</p>
+                                            <p className="text-muted-foreground text-xs">{t.inputs.products.sellThroughTooltip}</p>
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -177,14 +168,14 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium flex items-center gap-2">
-                            Sales Model
+                            {t.inputs.products.salesModel.title}
                             <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                                 <TooltipContent className="max-w-xs p-3">
                                     <div className="space-y-1 text-left">
-                                        <p className="font-semibold">{salesModelTitle}</p>
-                                        <p className="text-muted-foreground text-xs">{salesModelTooltip}</p>
+                                        <p className="font-semibold">{t.inputs.products.salesModel.title}</p>
+                                        <p className="text-muted-foreground text-xs">{t.inputs.products.salesModel.tooltip}</p>
                                     </div>
                                 </TooltipContent>
                             </Tooltip>
@@ -193,10 +184,10 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                         <Select onValueChange={handleSelectChange('salesModel')} value={product.salesModel || 'launch'}>
                             <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                            <SelectItem value="launch">Launch</SelectItem>
-                            <SelectItem value="even">Even</SelectItem>
-                            <SelectItem value="seasonal">Seasonal</SelectItem>
-                            <SelectItem value="growth">Growth</SelectItem>
+                            <SelectItem value="launch">{t.inputs.products.salesModel.launch}</SelectItem>
+                            <SelectItem value="even">{t.inputs.products.salesModel.even}</SelectItem>
+                            <SelectItem value="seasonal">{t.inputs.products.salesModel.seasonal}</SelectItem>
+                            <SelectItem value="growth">{t.inputs.products.salesModel.growth}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

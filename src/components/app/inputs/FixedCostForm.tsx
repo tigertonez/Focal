@@ -13,7 +13,7 @@ import { getProductColor, cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
-    const { updateFixedCost, removeFixedCost, inputs } = useForecast();
+    const { updateFixedCost, removeFixedCost, inputs, t } = useForecast();
     const currency = inputs.parameters.currency;
     const colorInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -40,11 +40,8 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const startMonth = cost.startMonth || 'Month 1';
     
     const name = cost.name.toLowerCase();
-    const isMarketingCost = name.includes('marketing');
     const isPlanningBuffer = name.includes('planning buffer');
-    const isDynamicCost = isMarketingCost || isPlanningBuffer;
-    const planningBufferTooltip = "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast.";
-    const planningBufferTitle = "What is a Planning Buffer?";
+    const planningBufferTitle = t.inputs.fixedCosts.planningBuffer;
     
     // Determine if "Month 0" is possible based on global settings
     const hasMonthZero = inputs.parameters.preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
@@ -60,7 +57,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             name="name"
                             value={cost.name}
                             onChange={handleChange}
-                            placeholder="Cost Name (e.g., Salaries)"
+                            placeholder={t.inputs.fixedCosts.costName}
                             className="text-sm"
                         />
                          {isPlanningBuffer && (
@@ -72,7 +69,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                     <TooltipContent className="max-w-xs p-3">
                                       <div className="space-y-1 text-left">
                                           <p className="font-semibold">{planningBufferTitle}</p>
-                                          <p className="text-muted-foreground text-xs">{planningBufferTooltip}</p>
+                                          <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.planningBuffer}</p>
                                       </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -104,14 +101,14 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                 "grid grid-cols-2 md:grid-cols-4 gap-4 items-end"
             )}>
                 <div className={cn("space-y-1", hasMonthZero ? "md:col-span-2" : "col-span-1")}>
-                    <Label className="text-xs">Amount</Label>
+                    <Label className="text-xs">{t.inputs.fixedCosts.amount}</Label>
                     <div className="relative">
                         <Input
                             name="amount"
                             type="number"
                             value={cost.amount}
                             onChange={handleChange}
-                            placeholder="Amount"
+                            placeholder={t.inputs.fixedCosts.amount}
                             className="text-sm pr-[140px]"
                         />
                         <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
@@ -120,36 +117,36 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Total for Period">Total</SelectItem>
-                                <SelectItem value="Monthly Cost">/ month</SelectItem>
+                                <SelectItem value="Total for Period">{t.inputs.fixedCosts.total}</SelectItem>
+                                <SelectItem value="Monthly Cost">{t.inputs.fixedCosts.perMonth}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
                  <div className="space-y-1 col-span-1">
-                    <Label className="text-xs">Payment Schedule</Label>
+                    <Label className="text-xs">{t.inputs.fixedCosts.paymentSchedule.title}</Label>
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
-                        <SelectTrigger className="text-sm"><SelectValue placeholder="Payment Schedule" /></SelectTrigger>
+                        <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Paid Up-Front">Paid Up-Front</SelectItem>
-                            <SelectItem value="Allocated Monthly">Allocated Monthly</SelectItem>
-                            <SelectItem value="Allocated Quarterly">Allocated Quarterly</SelectItem>
-                            <SelectItem value="Allocated According to Sales">Allocated According to Sales</SelectItem>
+                            <SelectItem value="Paid Up-Front">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
+                            <SelectItem value="Allocated Monthly">{t.inputs.fixedCosts.paymentSchedule.monthly}</SelectItem>
+                            <SelectItem value="Allocated Quarterly">{t.inputs.fixedCosts.paymentSchedule.quarterly}</SelectItem>
+                            <SelectItem value="Allocated According to Sales">{t.inputs.fixedCosts.paymentSchedule.accordingToSales}</SelectItem>
                         </SelectContent>
                     </Select>
                  </div>
                  {hasMonthZero && (
                     <div className="space-y-1 col-span-1">
-                        <Label className="text-xs">Start In</Label>
+                        <Label className="text-xs">{t.inputs.fixedCosts.startIn.title}</Label>
                         <Select 
                             onValueChange={handleSelectChange('startMonth')} 
                             value={startMonth}
                         >
-                            <SelectTrigger className="text-sm"><SelectValue placeholder="Start Month" /></SelectTrigger>
+                            <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.startIn.title} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Up-front">Up-front (in M0)</SelectItem>
-                                <SelectItem value="Month 0">Month 0 Onward</SelectItem>
-                                <SelectItem value="Month 1">Month 1 Onward</SelectItem>
+                                <SelectItem value="Up-front">{t.inputs.fixedCosts.startIn.upFront}</SelectItem>
+                                <SelectItem value="Month 0">{t.inputs.fixedCosts.startIn.month0}</SelectItem>
+                                <SelectItem value="Month 1">{t.inputs.fixedCosts.startIn.month1}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
