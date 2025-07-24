@@ -13,6 +13,8 @@ import {
   AnalyzeProfitabilityOutputSchema,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
+import { getProductColor } from '@/lib/utils';
+
 
 export async function analyzeProfitability(
   input: AnalyzeProfitabilityInput
@@ -37,20 +39,21 @@ Infer the business type from product names (e.g., 'Goldring' -> jewelry).
 
 Your output MUST be ONLY a JSON object with the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
-When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**. Do not use quotation marks for numbers.
+When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**.
+When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 
 ---
 Here is the structure you MUST follow for each key:
 
-1.  **explanation**: Start with "📖 Your Financial Story". Explain Gross, Operating, and Net Profit in simple terms. Show the user's actual values and explain what they mean for the business. Avoid dense paragraphs.
+1.  **explanation**: Start directly with the text. Do NOT add a numbered list or a "1. Your Financial Story" title. Explain Gross, Operating, and Net Profit in simple terms. Show the user's actual values and explain what they mean for the business. Avoid dense paragraphs.
 
-2.  **whatsWorking**: Start with "✅ What’s Working". Celebrate strengths. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language.
+2.  **whatsWorking**: Start directly with the text. Celebrate strengths. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. Do NOT add a numbered list or title.
 
-3.  **issues**: Start with "❌ Key Issues". Diagnose weak points in plain language. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it.
+3.  **issues**: Start directly with the text. Diagnose weak points in plain language. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it. Do NOT add a numbered list or title.
 
-4.  **opportunities**: Start with "📈 Opportunities". Give 2-3 data-driven, tactical suggestions based on the business type. For jewelry, this might be sourcing materials; for fashion, it could be batch production. Be specific and ethical.
+4.  **opportunities**: Start directly with the text. Give 2-3 data-driven, tactical suggestions based on the business type. For jewelry, this might be sourcing materials; for fashion, it could be batch production. Be specific and ethical. Do NOT add a numbered list or title.
 
-5.  **topPriorities**: Start with "🧭 Top Priorities". Output exactly five, clear, numbered action points. Each point should be a descriptive sentence (1-2 lines). CRITICAL: Add two <br> tags after each priority to create visual spacing.
+5.  **topPriorities**: Start with "🧭 Top Priorities". Output exactly five, clear, numbered action points. Each point should be a descriptive sentence (1-2 lines). CRITICAL: Add two <br> tags after each priority to create visual spacing. Do NOT add a "Top Priorities" title at the start of the content.
 
 Example for 'topPriorities':
 "🧭 Top Priorities<br><br>1. Audit and reduce your fixed costs — especially 'Steine' and monthly fees. Renegotiating just 1–2 of them could save **€300+**.<br><br>2. Lower your unit cost on 'Goldring 2' by sourcing stones with a better €/ct ratio."
@@ -70,6 +73,14 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     if (!output) {
       throw new Error("The AI model did not return a valid response.");
     }
+
+    // Clean up any accidental leading titles from the AI response
+    Object.keys(output).forEach(key => {
+        const k = key as keyof AnalyzeProfitabilityOutput;
+        if (typeof output[k] === 'string') {
+            (output[k] as string) = (output[k] as string).replace(/^\d+\.\s*.*?\n/, '').trim();
+        }
+    });
 
     return output;
   }

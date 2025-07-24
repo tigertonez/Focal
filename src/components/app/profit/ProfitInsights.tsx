@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -12,6 +12,8 @@ import {
 import {
   type EngineOutput,
   type AnalyzeProfitabilityOutput,
+  type Product,
+  type FixedCostItem,
 } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -19,6 +21,8 @@ import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
+import { getProductColor } from '@/lib/utils';
+import { useForecast } from '@/context/ForecastContext';
 
 interface InsightSectionProps {
   title: string;
@@ -64,32 +68,6 @@ const ProfitInsightsLoader: React.FC = () => (
   </Card>
 );
 
-const createMarkup = (text: string | undefined) => {
-    if (!text) return { __html: '' };
-    // Bolding with **text**
-    let processedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>');
-    return { __html: processedText };
-};
-
-
-const renderContent = (content: string | undefined, isPriorityList: boolean = false) => {
-    if (!content) return <p>No insights generated.</p>;
-    
-    // Check if it's a numbered list for Top Priorities
-    if (isPriorityList && content.match(/^\s*\d+\.\s*/m)) {
-      const items = content.split(/\n\s*\d+\.\s*/).map(item => item.replace(/^\d+\.\s*/, '').trim()).filter(item => item);
-      return (
-        <ol className="list-decimal list-outside space-y-3 pl-4">
-          {items.map((item, index) => (
-            <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
-          ))}
-        </ol>
-      );
-    }
-    
-    return <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(content)} />;
-}
-
 export function ProfitInsights({
   data,
   currency,
@@ -97,6 +75,7 @@ export function ProfitInsights({
   data: EngineOutput;
   currency: string;
 }) {
+  const { inputs } = useForecast();
   const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +104,63 @@ export function ProfitInsights({
     getInsights();
   }, [getInsights]);
 
+  const itemColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    [...inputs.products, ...inputs.fixedCosts].forEach(item => {
+      const name = 'productName' in item ? item.productName : item.name;
+      if (name) {
+        map.set(name, getProductColor(item));
+      }
+    });
+    return map;
+  }, [inputs.products, inputs.fixedCosts]);
+  
+  const createMarkup = useCallback((text: string | undefined): { __html: string } => {
+    if (!text) return { __html: '' };
+
+    let processedText = text
+      // Bolding with **text**
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>')
+      // Styling for 'item names'
+      .replace(/'([^']*)'/g, (match, itemName) => {
+        const color = itemColorMap.get(itemName) || 'hsl(var(--muted-foreground))';
+        return `<span class="font-semibold" style="text-shadow: 0 0 1px ${color}, 0 0 3px ${color}; color: hsl(var(--foreground));">${itemName}</span>`;
+      });
+      
+    return { __html: processedText };
+  }, [itemColorMap]);
+
+  const renderContent = (content: string | undefined) => {
+    if (!content) return <p>No insights generated.</p>;
+    
+    // Check if it's the Top Priorities list
+    if (content.startsWith('🧭 Top Priorities')) {
+      const listContent = content.replace('🧭 Top Priorities', '').replace(/<br>/g, '').trim();
+      const items = listContent.split(/\s*\d+\.\s*/).filter(item => item.trim());
+      
+      return (
+        <ol className="list-none space-y-4">
+          {items.map((item, index) => (
+            <li key={index} className="flex gap-3">
+              <div className="flex-shrink-0 text-primary font-semibold">{index + 1}.</div>
+              <div className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(item)} />
+            </li>
+          ))}
+        </ol>
+      );
+    }
+    
+    // For all other sections
+    const paragraphs = content.split('\n').filter(p => p.trim());
+    return (
+        <div className="space-y-2">
+            {paragraphs.map((p, i) => (
+                <p key={i} className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(p)} />
+            ))}
+        </div>
+    );
+  }
+
   if (isLoading) {
     return <ProfitInsightsLoader />;
   }
@@ -141,7 +177,7 @@ export function ProfitInsights({
             <AlertDescription>
               <p>{error || 'Could not load AI insights. Please try again.'}</p>
               <Button variant="outline" size="sm" className="mt-4" onClick={getInsights}>
-                 <RefreshCcw className="mr-2" />
+                 <RefreshCcw className="mr-2 h-4 w-4" />
                  Retry
               </Button>
             </AlertDescription>
@@ -162,7 +198,7 @@ export function ProfitInsights({
                 </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
-                <RefreshCcw className="mr-2" />
+                <RefreshCcw className="mr-2 h-4 w-4" />
                 Regenerate
             </Button>
         </div>
@@ -185,7 +221,7 @@ export function ProfitInsights({
         </InsightSection>
 
         <InsightSection title="Top Priorities" icon={<ListOrdered className="text-primary" />}>
-          {renderContent(insights.topPriorities, true)}
+          {renderContent(insights.topPriorities)}
         </InsightSection>
       </CardContent>
     </Card>
