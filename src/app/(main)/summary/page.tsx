@@ -127,7 +127,7 @@ const HealthPanel = ({
   onRecalculate: () => void,
   t: any
 }) => {
-    const { inputs } = useForecast();
+    const { inputs, locale } = useForecast();
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -143,6 +143,7 @@ const HealthPanel = ({
                 revenueSummary: financialSummaries.revenue,
                 costSummary: financialSummaries.cost,
                 profitSummary: financialSummaries.profit,
+                language: locale,
             });
             setAiInsights(result);
         } catch (e: any) {
@@ -150,7 +151,7 @@ const HealthPanel = ({
         } finally {
             setIsLoading(false);
         }
-    }, [healthData, financialSummaries]);
+    }, [healthData, financialSummaries, locale]);
 
     if (!healthData) {
         return (

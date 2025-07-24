@@ -42,7 +42,7 @@ const InsightsLoader: React.FC<{ t: any }> = ({ t }) => (
 );
 
 export function CashFlowInsights() {
-  const { inputs, financials, t } = useForecast();
+  const { inputs, financials, t, locale } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCashFlowOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,14 +56,14 @@ export function CashFlowInsights() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeCashFlow({ cashFlowSummary, currency });
+      const result = await analyzeCashFlow({ cashFlowSummary, currency, language: locale });
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
-  }, [cashFlowSummary, currency]);
+  }, [cashFlowSummary, currency, locale]);
   
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();

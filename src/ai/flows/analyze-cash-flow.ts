@@ -28,6 +28,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are an expert financial analyst providing advice to a business owner. Your tone is professional, clear, and direct, designed to provide value beyond the visualized data.
 The currency is {{{currency}}}.
+The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
 Analyze the following cash flow summary:
 {{{json cashFlowSummary}}}

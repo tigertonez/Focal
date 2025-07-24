@@ -27,6 +27,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are a business strategist specializing in revenue growth for early-stage companies. Your tone is professional, encouraging, and clear, focusing on providing insights not immediately visible in the charts.
 The currency is {{{currency}}}.
+The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
 Analyze the following revenue summary:
 {{{json revenueSummary}}}

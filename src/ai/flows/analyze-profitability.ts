@@ -33,6 +33,7 @@ const prompt = ai.definePrompt({
     topK: 40,
   },
   prompt: `You are an expert financial analyst AI writing a growth report for an early-stage founder with limited financial background. Your tone must be clear, educational, and confidence-building. Your mission is to help them understand their numbers and know what to do next.
+The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
 You will receive a JSON payload containing the user's profit forecast data.
 - Revenue Summary: {{{json revenueSummary}}}

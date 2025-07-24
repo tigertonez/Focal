@@ -26,6 +26,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are a financial analyst specializing in cost optimization for small businesses. Your tone is professional, objective, and helpful, focusing on providing insights not immediately visible in the charts.
 The currency is {{{currency}}}.
+The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
 Analyze the following cost summary in the context of the revenue summary:
 - Cost Summary: {{{json costSummary}}}

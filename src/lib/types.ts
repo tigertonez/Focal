@@ -180,6 +180,7 @@ export const AnalyzeProfitabilityInputSchema = z.object({
   costSummary: CostSummarySchema,
   profitSummary: ProfitSummarySchema,
   currency: z.string(),
+  language: z.string().optional(),
 });
 export type AnalyzeProfitabilityInput = z.infer<
   typeof AnalyzeProfitabilityInputSchema
@@ -199,6 +200,7 @@ export type AnalyzeProfitabilityOutput = z.infer<
 export const AnalyzeRevenueInputSchema = z.object({
   revenueSummary: RevenueSummarySchema,
   currency: z.string(),
+  language: z.string().optional(),
 });
 export type AnalyzeRevenueInput = z.infer<typeof AnalyzeRevenueInputSchema>;
 
@@ -212,6 +214,7 @@ export const AnalyzeCostsInputSchema = z.object({
   costSummary: CostSummarySchema,
   revenueSummary: RevenueSummarySchema,
   currency: z.string(),
+  language: z.string().optional(),
 });
 export type AnalyzeCostsInput = z.infer<typeof AnalyzeCostsInputSchema>;
 
@@ -224,6 +227,7 @@ export type AnalyzeCostsOutput = z.infer<typeof AnalyzeCostsOutputSchema>;
 export const AnalyzeCashFlowInputSchema = z.object({
   cashFlowSummary: CashFlowSummarySchema,
   currency: z.string(),
+  language: z.string().optional(),
 });
 export type AnalyzeCashFlowInput = z.infer<typeof AnalyzeCashFlowInputSchema>;
 
@@ -241,6 +245,7 @@ export const StrategizeHealthScoreInputSchema = z.object({
   revenueSummary: RevenueSummarySchema,
   costSummary: CostSummarySchema,
   profitSummary: ProfitSummarySchema,
+  language: z.string().optional(),
 });
 export type StrategizeHealthScoreInput = z.infer<typeof StrategizeHealthScoreInputSchema>;
 

@@ -62,7 +62,7 @@ export function ProfitInsights({
   data: EngineOutput;
   currency: string;
 }) {
-  const { inputs, t } = useForecast();
+  const { inputs, t, locale } = useForecast();
   const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +76,7 @@ export function ProfitInsights({
           costSummary: data.costSummary,
           profitSummary: data.profitSummary,
           currency,
+          language: locale,
       });
       setInsights(result);
     } catch (e: any) {
@@ -84,7 +85,7 @@ export function ProfitInsights({
     } finally {
       setIsLoading(false);
     }
-  }, [data, currency]);
+  }, [data, currency, locale]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();

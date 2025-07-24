@@ -33,6 +33,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are an expert financial strategist and business consultant. Your tone is professional, insightful, and clear.
 You are advising a business owner on their financial forecast.
+The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
 Analyze the following Business Health Score and financial summaries.
 - Business Health Score: {{{json businessHealth}}}

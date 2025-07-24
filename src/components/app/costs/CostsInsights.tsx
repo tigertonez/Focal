@@ -49,7 +49,7 @@ interface CostsInsightsProps {
 }
 
 export function CostsInsights({ costSummary, revenueSummary, currency }: CostsInsightsProps) {
-  const { inputs, t } = useForecast();
+  const { inputs, t, locale } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCostsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,14 +58,14 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeCosts({ costSummary, revenueSummary, currency });
+      const result = await analyzeCosts({ costSummary, revenueSummary, currency, language: locale });
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
-  }, [costSummary, revenueSummary, currency]);
+  }, [costSummary, revenueSummary, currency, locale]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
