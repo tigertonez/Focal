@@ -163,8 +163,10 @@ export function CashFlowInsights() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {insights.insights.map((item, i) => (
                   <div key={i} className="text-sm">
-                      <p className="font-semibold text-foreground/90">{item.label}</p>
-                      <p className="text-muted-foreground" dangerouslySetInnerHTML={createMarkup(item.value)} />
+                      <p className="leading-relaxed">
+                        <strong className="font-semibold text-foreground/90">{item.label}: </strong>
+                        <span className="text-muted-foreground" dangerouslySetInnerHTML={createMarkup(item.value)} />
+                      </p>
                   </div>
               ))}
             </div>

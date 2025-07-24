@@ -36,7 +36,7 @@ Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendati
 CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list items.
 - When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
-- When you reference a specific product name (e.g., 'Goldring 2'), you MUST wrap it in single quotes, like 'this', so it can be color-coded.
+- When you reference a specific product name (e.g., 'Goldring 2'), you MUST wrap it in single quotes, like 'this', so it can be color-coded. Do NOT bold these names.
 - Each bullet point should be a concise, single sentence.
 
 Here is the structure you MUST follow:

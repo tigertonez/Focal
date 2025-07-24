@@ -46,7 +46,7 @@ Your output MUST be ONLY a JSON object with the following 5 keys: "explanation",
 
 CRITICAL FORMATTING RULES:
 - When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), you MUST wrap it in single quotes, like 'this'.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), you MUST wrap it in single quotes, like 'this'. Do NOT bold these names.
 - Use bullet points (•) for all list-based sections ('whatsWorking', 'issues', 'opportunities', 'explanation').
 - Do NOT use numbered lists, except for 'topPriorities'.
 
