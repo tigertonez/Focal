@@ -21,7 +21,7 @@ const prompt = ai.definePrompt({
   input: { schema: AnalyzeCashFlowInputSchema },
   output: { schema: AnalyzeCashFlowOutputSchema },
   config: {
-    maxOutputTokens: 512,
+    maxOutputTokens: 768,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,

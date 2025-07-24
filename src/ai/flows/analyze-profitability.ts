@@ -27,7 +27,7 @@ const prompt = ai.definePrompt({
   output: { schema: AnalyzeProfitabilityOutputSchema },
   model: 'googleai/gemini-1.5-pro-latest',
   config: {
-    maxOutputTokens: 1024,
+    maxOutputTokens: 768,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,
