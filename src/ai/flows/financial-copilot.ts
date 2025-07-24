@@ -57,9 +57,8 @@ When the user asks for a review or to find issues, analyze the screenshot for:
 3.  **Clarity**: Assess if the information is presented clearly and is easy to understand.
 
 CRITICAL FORMATTING RULES:
-- When you output a specific calculated value (like a monetary amount, percentage, or unit count), you MUST make it bold using Markdown's double asterisks, like **this**.
 - When you reference a specific user-entered item name (like a product 'Goldring 2' or a cost 'Salaries'), you MUST wrap it in single quotes, like 'this'.
-- Use bullet points (•) for all lists to ensure your response is scannable and easy to read.
+- Use bullet points (•) for all lists. Do NOT use any other symbols like '*' or '#'.
 
 Your tone is professional, helpful, and direct. Base your answers *only* on what is visible in the screenshot and the conversation history. Do not speculate. If you see no issues, state that clearly.`;
 
