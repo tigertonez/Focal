@@ -188,10 +188,11 @@ export type AnalyzeProfitabilityInput = z.infer<
 >;
 
 export const AnalyzeProfitabilityOutputSchema = z.object({
-  keyFacts: z.array(z.string()).describe("A list of the top 3 most critical numbers a shop owner must know."),
-  strengths: z.array(z.string()).describe("A bulleted list of the biggest strengths and positive drivers."),
-  weaknesses: z.array(z.string()).describe("A bulleted list of the 1-2 biggest weaknesses or areas holding back profit."),
-  recommendations: z.array(z.string()).describe("A bulleted list of 2-3 highly specific, actionable recommendations."),
+  explanation: z.string().describe("A brief, beginner-friendly explanation of Gross Profit, Operating Profit, and Net Profit, including their current values and why they matter."),
+  whatsWorking: z.string().describe("A summary of 1-2 healthy metrics (like strong gross margin or sell-through) and the business decisions that likely led to them."),
+  issues: z.string().describe("A summary of 1-2 negative or below-benchmark metrics, tying each issue directly to the numbers that prove it."),
+  opportunities: z.string().describe("A summary of 1-2 concrete, data-driven suggestions for improvement, using product names where relevant."),
+  topPriorities: z.string().describe("A numbered list of 3-5 actionable, founder-friendly next steps, each starting with a verb."),
 });
 export type AnalyzeProfitabilityOutput = z.infer<
   typeof AnalyzeProfitabilityOutputSchema

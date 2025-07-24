@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -16,7 +16,9 @@ import {
 import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { BadgeCheck, Lightbulb, Target, TrendingUp, Sparkles } from 'lucide-react';
+import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
 
 interface InsightSectionProps {
   title: string;
@@ -41,17 +43,14 @@ const InsightSection: React.FC<InsightSectionProps> = ({
 const ProfitInsightsLoader: React.FC = () => (
   <Card>
     <CardHeader>
-      <CardTitle>AI-Powered Insights</CardTitle>
-      <CardDescription>Analyzing your profitability...</CardDescription>
+      <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Your Growth Report</CardTitle>
+      <CardDescription>An AI-powered analysis of your profit forecast is loading...</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="space-y-2">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-4 w-4/5" />
       </div>
       <div className="space-y-2">
         <Skeleton className="h-5 w-32" />
@@ -65,23 +64,28 @@ const ProfitInsightsLoader: React.FC = () => (
   </Card>
 );
 
-const createMarkup = (text: string) => {
+const createMarkup = (text: string | undefined) => {
+    if (!text) return { __html: '' };
     const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>');
     return { __html: boldedText };
 };
 
-const renderContent = (content: string[] | string) => {
+const renderContent = (content: string | undefined) => {
     if (!content) return <p>No insights generated.</p>;
-
-    if (Array.isArray(content)) {
+    
+    // Check if it's a numbered list
+    if (content.match(/^\s*1\./m)) {
+      const items = content.split(/\n\s*\d+\.\s*/).filter(item => item.trim() !== '');
       return (
-          <ul className="list-disc list-outside space-y-1.5 pl-4">
-              {content.map((item, index) => <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />)}
-          </ul>
+        <ul className="list-decimal list-outside space-y-1.5 pl-4">
+          {items.map((item, index) => (
+            <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
+          ))}
+        </ul>
       );
     }
     
-    return <p dangerouslySetInnerHTML={createMarkup(content)} />;
+    return <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(content)} />;
 }
 
 export function ProfitInsights({
@@ -91,33 +95,33 @@ export function ProfitInsights({
   data: EngineOutput;
   currency: string;
 }) {
-  const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(
-    null
-  );
+  const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getInsights = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await analyzeProfitability({
-          revenueSummary: data.revenueSummary,
-          costSummary: data.costSummary,
-          profitSummary: data.profitSummary,
-          currency,
-        });
-        setInsights(result);
-      } catch (e: any) {
-        setError(e.message || 'Failed to generate insights.');
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getInsights();
+  const getInsights = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setInsights(null); // Clear previous insights
+    try {
+      const result = await analyzeProfitability({
+        revenueSummary: data.revenueSummary,
+        costSummary: data.costSummary,
+        profitSummary: data.profitSummary,
+        currency,
+      });
+      setInsights(result);
+    } catch (e: any) {
+      setError(e.message || 'Failed to generate insights.');
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   }, [data, currency]);
+
+  useEffect(() => {
+    getInsights();
+  }, [getInsights]);
 
   if (isLoading) {
     return <ProfitInsightsLoader />;
@@ -131,9 +135,13 @@ export function ProfitInsights({
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Error Generating Insights</AlertTitle>
             <AlertDescription>
-              {error || 'Could not load AI insights. Please try again later.'}
+              <p>{error || 'Could not load AI insights. Please try again.'}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={getInsights}>
+                 <RefreshCcw className="mr-2" />
+                 Retry
+              </Button>
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -144,26 +152,38 @@ export function ProfitInsights({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Your Growth Report</CardTitle>
-        <CardDescription>
-          An AI-powered analysis of your profit forecast.
-        </CardDescription>
+        <div className="flex justify-between items-start">
+            <div>
+                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Your Growth Report</CardTitle>
+                <CardDescription>
+                  An AI-powered analysis of your profit forecast.
+                </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
+                <RefreshCcw className="mr-2" />
+                Regenerate
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <InsightSection title="Key Facts" icon={<Target className="text-primary" />}>
-          {renderContent(insights.keyFacts)}
+        <InsightSection title="Your Financial Story" icon={<Lightbulb className="text-amber-500" />}>
+          {renderContent(insights.explanation)}
         </InsightSection>
 
-        <InsightSection title="What's Working" icon={<BadgeCheck className="text-green-500" />}>
-          {renderContent(insights.strengths)}
+        <InsightSection title="What's Working" icon={<CheckCircle className="text-green-500" />}>
+          {renderContent(insights.whatsWorking)}
+        </InsightSection>
+        
+        <InsightSection title="Key Issues" icon={<TrendingDown className="text-red-500" />}>
+          {renderContent(insights.issues)}
         </InsightSection>
 
-        <InsightSection title="Opportunities for Growth" icon={<Lightbulb className="text-amber-500" />}>
-          {renderContent(insights.weaknesses)}
+        <InsightSection title="Opportunities" icon={<TrendingUp className="text-blue-500" />}>
+          {renderContent(insights.opportunities)}
         </InsightSection>
 
-        <InsightSection title="Top Priorities" icon={<TrendingUp className="text-blue-500" />}>
-          {renderContent(insights.recommendations)}
+        <InsightSection title="Top Priorities" icon={<ListOrdered className="text-primary" />}>
+          {renderContent(insights.topPriorities)}
         </InsightSection>
       </CardContent>
     </Card>
