@@ -57,6 +57,7 @@ When you reference a specific individual number or financial metric from the dat
 5. **topPriorities** (string containing a numbered list, ≤ 5 items, ≤ 20 words each)
    - Create a numbered "to-do" list of actionable next steps.
    - Each bullet point must start with a strong verb (e.g., "Negotiate...", "Raise...", "Analyze...", "Reduce...").
+   - Ensure the priorities are detailed and specific, like in the provided examples.
 
 STRICT RULES:
 - Use plain English, no jargon. Imagine explaining this to a first-time founder.

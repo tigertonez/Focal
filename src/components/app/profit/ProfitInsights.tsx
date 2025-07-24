@@ -13,7 +13,6 @@ import {
   type EngineOutput,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
-import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered } from 'lucide-react';
@@ -70,18 +69,18 @@ const createMarkup = (text: string | undefined) => {
     return { __html: boldedText };
 };
 
-const renderContent = (content: string | undefined) => {
+const renderContent = (content: string | undefined, isPriorityList: boolean = false) => {
     if (!content) return <p>No insights generated.</p>;
     
-    // Check if it's a numbered list
-    if (content.match(/^\s*\d+\.\s*/m)) {
+    // Check if it's a numbered list for Top Priorities
+    if (isPriorityList && content.match(/^\s*\d+\.\s*/m)) {
       const items = content.split(/\n\s*\d+\.\s*/).filter(item => item.trim() !== '');
       return (
-        <ul className="list-decimal list-outside space-y-2.5 pl-4">
+        <ol className="list-decimal list-outside space-y-4 pl-4">
           {items.map((item, index) => (
-            <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
+            <li key={index} dangerouslySetInnerHTML={createMarkup(item.trim())} />
           ))}
-        </ul>
+        </ol>
       );
     }
     
@@ -104,12 +103,24 @@ export function ProfitInsights({
     setError(null);
     setInsights(null); // Clear previous insights
     try {
-      const result = await analyzeProfitability({
-        revenueSummary: data.revenueSummary,
-        costSummary: data.costSummary,
-        profitSummary: data.profitSummary,
-        currency,
+      const response = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'analyze-profitability',
+          revenueSummary: data.revenueSummary,
+          costSummary: data.costSummary,
+          profitSummary: data.profitSummary,
+          currency,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Failed to analyze profitability.');
+      }
+      
+      const result = await response.json();
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
@@ -183,7 +194,7 @@ export function ProfitInsights({
         </InsightSection>
 
         <InsightSection title="Top Priorities" icon={<ListOrdered className="text-primary" />}>
-          {renderContent(insights.topPriorities)}
+          {renderContent(insights.topPriorities, true)}
         </InsightSection>
       </CardContent>
     </Card>
