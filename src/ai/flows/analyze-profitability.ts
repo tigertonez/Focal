@@ -39,24 +39,28 @@ Infer the business type from product names (e.g., 'Goldring' -> jewelry).
 
 Your output MUST be ONLY a JSON object with the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
-When you reference a specific individual number or financial metric from the data, make it bold using Markdown's double asterisks, like **this**.
-When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
+IMPORTANT FORMATTING RULES:
+- Do NOT use any Markdown formatting.
+- Do NOT use asterisks (*) or bolding (**) anywhere.
+- Do NOT use numbered lists, except for 'topPriorities'.
+- Use bullet points (•) for all lists, except for 'topPriorities'.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 
 ---
 Here is the structure you MUST follow for each key:
 
-1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value, and explain what it means. Use short paragraphs. Do NOT add a section title.
+1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value, and explain what it means. Use short paragraphs per bullet. Do NOT add a section title.
 
-2.  **whatsWorking**: Start directly with the text. Celebrate strengths. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. Do NOT add a section title. Use bullet points if listing more than one strength.
+2.  **whatsWorking**: Start directly with the text. Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. Do NOT add a section title.
 
-3.  **issues**: Start directly with the text. Diagnose weak points in plain language. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it. Do NOT add a section title. Use bullet points if listing more than one issue.
+3.  **issues**: Start directly with the text. Diagnose weak points in plain language using bullet points. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it. Do NOT add a section title.
 
-4.  **opportunities**: Start directly with the text. Give 2-3 data-driven, tactical suggestions based on the business type. For jewelry, this might be sourcing materials; for fashion, it could be batch production. Be specific and ethical. Do NOT add a section title.
+4.  **opportunities**: Start directly with the text. Give 2-3 data-driven, tactical suggestions as bullet points based on the business type. For jewelry, this might be sourcing materials; for fashion, it could be batch production. Be specific and ethical. Do NOT add a section title.
 
 5.  **topPriorities**: Start with "🧭 Top Priorities". Output exactly five, clear, numbered action points. Each point should be a descriptive sentence (1-2 lines). CRITICAL: Add two <br> tags after each priority to create visual spacing. Do NOT add a section title at the start of the content.
 
 Example for 'topPriorities':
-"🧭 Top Priorities<br><br>1. Audit and reduce your fixed costs — especially 'Steine' and monthly fees. Renegotiating just 1–2 of them could save **€300+**.<br><br>2. Lower your unit cost on 'Goldring 2' by sourcing stones with a better €/ct ratio."
+"🧭 Top Priorities<br><br>1. Audit and reduce your fixed costs — especially 'Steine' and monthly fees. Renegotiating just 1–2 of them could save €300+.<br><br>2. Lower your unit cost on 'Goldring 2' by sourcing stones with a better €/ct ratio."
 ---
 `,
 });
@@ -85,4 +89,3 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     return output;
   }
 );
-
