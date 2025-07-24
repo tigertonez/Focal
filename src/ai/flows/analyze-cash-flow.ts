@@ -26,7 +26,7 @@ const prompt = ai.definePrompt({
     topP: 0.95,
     topK: 40,
   },
-  prompt: `You are an expert financial analyst providing advice to a business owner. Your tone is professional, clear, and direct.
+  prompt: `You are an expert financial analyst providing advice to a business owner. Your tone is professional, clear, and direct, designed to provide value beyond the visualized data.
 The currency is {{{currency}}}.
 
 Analyze the following cash flow summary:
@@ -36,16 +36,16 @@ Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendati
 
 CRITICAL FORMATTING RULES:
 - When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
-- Use bullet points (•) for all 'recommendations'. Do NOT use bolding in recommendations. Each recommendation should be a concise, single sentence.
-- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
+- Use bullet points (•) for all 'recommendations'. Do NOT use bolding in recommendations. Each recommendation should be a concise, single sentence that offers strategic advice.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this', so it can be color-coded.
 
 Here is the structure you MUST follow:
 
 1.  **insights**: Provide a list of key metrics as an array of objects, each with a "label" and "value".
     - For the "label", use the metric name (e.g., "Peak Funding Need").
-    - For the "value", provide the formatted, bolded KPI (e.g., "**€15,234**" or "**4 Months**"). Follow the KPI value with a one-sentence interpretation, explaining what it means for the business.
+    - For the "value", provide the formatted, bolded KPI (e.g., "**€15,234**" or "**4 Months**"). Follow the KPI value with a one-sentence interpretation that goes beyond the obvious, explaining what this number *means* for the business's strategy or operational planning.
 
-2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Go beyond the obvious; suggest specific strategies.
+2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Go beyond generic advice; suggest specific strategies to improve cash flow based on the provided numbers.
     Example: "• The high funding requirement suggests a need to either raise deposits for products like 'Goldring 1' or delay production to manage cash flow."
 `,
 });

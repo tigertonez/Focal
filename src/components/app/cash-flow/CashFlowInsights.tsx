@@ -9,13 +9,22 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles, Loader2, TrendingUp } from 'lucide-react';
+import { Lightbulb, TrendingUp, Sparkles, Loader2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useForecast } from '@/context/ForecastContext';
 import { analyzeCashFlow, type AnalyzeCashFlowOutput } from '@/ai/flows/analyze-cash-flow';
 import { getProductColor } from '@/lib/utils';
+
+const InsightSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+  <div className="space-y-2">
+    <h3 className="font-semibold text-sm flex items-center gap-2">
+      {icon}
+      {title}
+    </h3>
+    <div className="text-sm text-muted-foreground pl-7 space-y-2">{children}</div>
+  </div>
+);
 
 const InsightsLoader: React.FC = () => (
   <Card>
@@ -71,7 +80,7 @@ export function CashFlowInsights() {
     if (!text) return { __html: '' };
      let processedText = text
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground/90">$1</strong>')
-      .replace(/'([^']*)'/g, (match, itemName) => {
+      .replace(/'([^']*)'/g, (_, itemName) => {
         const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
         return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
       });
@@ -150,27 +159,19 @@ export function CashFlowInsights() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-amber-500" />
-                Key Metrics Analysis
-            </h3>
-            <div className="pl-7 space-y-4">
+        <InsightSection title="Key Metrics Analysis" icon={<Lightbulb className="text-amber-500" />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {insights.insights.map((item, i) => (
-                  <div key={i} className="text-sm text-muted-foreground">
+                  <div key={i} className="text-sm">
                       <p className="font-semibold text-foreground/90">{item.label}</p>
-                      <p dangerouslySetInnerHTML={createMarkup(item.value)} />
+                      <p className="text-muted-foreground" dangerouslySetInnerHTML={createMarkup(item.value)} />
                   </div>
               ))}
             </div>
-        </div>
-        <div className="space-y-2">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-500" />
-                Recommendations
-            </h3>
-            <div className="pl-7">{renderList(insights.recommendations)}</div>
-        </div>
+        </InsightSection>
+        <InsightSection title="Recommendations" icon={<TrendingUp className="text-blue-500" />}>
+          {renderList(insights.recommendations)}
+        </InsightSection>
       </CardContent>
     </Card>
   );
