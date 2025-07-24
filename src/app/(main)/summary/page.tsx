@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { getFinancials } from '@/lib/get-financials';
 import type { EngineOutput, EngineInput, BusinessHealth, BusinessHealthScoreKpi, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { SummaryPageSkeleton } from '@/components/app/summary/SummaryPageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { strategizeHealthScore, type StrategizeHealthScoreOutput } from '@/ai/flows/strategize-health-score';
 import { Separator } from '@/components/ui/separator';
 import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
+import { useForecast } from '@/context/ForecastContext';
 
 
 // =================================================================
@@ -124,6 +125,7 @@ const HealthPanel = ({
   financialSummaries: { revenue: RevenueSummary, cost: CostSummary, profit: ProfitSummary },
   onRecalculate: () => void 
 }) => {
+    const { inputs } = useForecast();
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -169,34 +171,44 @@ const HealthPanel = ({
         return 'bg-green-500 text-green-foreground';
     };
     
-    const createMarkup = useCallback((text: string | undefined): { __html: string } => {
+    const itemColorMap = useMemo(() => {
+        const map = new Map<string, string>();
+        [...inputs.products, ...inputs.fixedCosts].forEach(item => {
+          const name = 'productName' in item ? item.productName : item.name;
+          if (name) {
+            map.set(name, getProductColor(item));
+          }
+        });
+        return map;
+    }, [inputs.products, inputs.fixedCosts]);
+    
+    const createMarkup = useCallback((text: string | undefined | string[]): { __html: string } => {
         if (!text) return { __html: '' };
-        return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>') };
-    }, []);
+        const textToProcess = Array.isArray(text) ? text.join(' ') : text;
+        
+        let processedText = textToProcess
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>')
+            .replace(/'([^']*)'/g, (match, itemName) => {
+                const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
+                return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
+            });
+            
+        return { __html: processedText };
+    }, [itemColorMap]);
 
-    const renderContent = (content: string | undefined) => {
+    const renderContent = (content: string | string[] | undefined) => {
         if (!content) return <p>No insights generated.</p>;
+        const contentArray = Array.isArray(content) ? content : [content];
         
-        if (content.includes('•')) {
-            return (
-                <ul className="list-none space-y-3">
-                    {content.split('•').filter(p => p.trim()).map((p, i) => (
-                        <li key={i} className="flex gap-2">
-                            <span className="text-primary">•</span>
-                            <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(p)} />
-                        </li>
-                    ))}
-                </ul>
-            );
-        }
-        
-        const paragraphs = content.split('\n').filter(p => p.trim());
         return (
-            <div className="space-y-2">
-                {paragraphs.map((p, i) => (
-                    <p key={i} className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(p)} />
+            <ul className="list-none space-y-3">
+                {contentArray.map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
+                    </li>
                 ))}
-            </div>
+            </ul>
         );
     }
 
@@ -268,9 +280,9 @@ const HealthPanel = ({
                                 Regenerate
                             </Button>
                         </div>
-
+                        
                         <InsightSection title="Strategic Summary" icon={<Lightbulb className="text-amber-500" />}>
-                          {renderContent(aiInsights.summary)}
+                           <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(aiInsights.summary)} />
                         </InsightSection>
 
                         <InsightSection title="Key Strengths" icon={<CheckCircle className="text-green-500" />}>

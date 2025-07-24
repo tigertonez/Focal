@@ -37,11 +37,12 @@ IMPORTANT FORMATTING RULES:
 - Use bullet points (•) for all list items.
 - Do NOT use asterisks (*) for any reason.
 - Do NOT use bolding or any other markdown.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 - Each bullet point should be a concise, single sentence.
 
 Here is the structure you MUST follow:
 
-1.  **insights**: Provide a bulleted list of 2-3 key insights. Focus on the relationship between fixed and variable costs, the significance of major cost drivers, and the cost structure relative to revenue.
+1.  **insights**: Provide a bulleted list of 2-3 key insights. Focus on the relationship between fixed and variable costs, the significance of major cost drivers like 'Steine', and the cost structure relative to revenue.
     Example: "• Fixed costs constitute a significant portion of your total operating costs, indicating high initial overhead."
 
 2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve cost efficiency. For example, suggest areas for cost reduction, comment on the scalability of the cost structure, or identify potential risks in the cost plan.

@@ -35,7 +35,8 @@ Analyze the following cash flow summary:
 Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendations".
 
 CRITICAL FORMATTING RULE (for 'insights' only):
-When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
+- When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
+- Use bullet points (•) for all 'recommendations'. Do NOT use bolding or asterisks in recommendations. Each recommendation should be a concise, single sentence.
 
 Here is the structure you MUST follow:
 
@@ -45,7 +46,7 @@ Here is the structure you MUST follow:
     - Final Cash Position
     - Cash Runway (Months)
 
-2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Do NOT use bolding or asterisks. Each recommendation should be a concise, single sentence.
+2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Do NOT use bolding or asterisks.
     Example: "• The high funding requirement suggests a need to either raise deposits or delay production to manage cash flow."
 `,
 });
@@ -62,7 +63,7 @@ const analyzeCashFlowFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid response.");
     }
     
-    // Cleanup to remove the bullet points if the AI includes them
+    // Cleanup to remove the bullet points if the AI includes them by mistake
     output.recommendations = output.recommendations.map(item => item.startsWith('• ') ? item.substring(2) : item);
 
     return output;

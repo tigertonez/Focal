@@ -37,6 +37,7 @@ IMPORTANT FORMATTING RULES:
 - Use bullet points (•) for all list items.
 - Do NOT use asterisks (*) for any reason.
 - Do NOT use bolding or any other markdown.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 - Each bullet point should be a concise, single sentence.
 
 Here is the structure you MUST follow:

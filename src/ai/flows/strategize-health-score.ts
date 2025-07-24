@@ -46,6 +46,7 @@ IMPORTANT FORMATTING RULES:
 - Use bullet points (•) for all list items in "strengths", "opportunities", and "risks".
 - Do NOT use asterisks (*) for any reason.
 - Do NOT use bolding or any other markdown.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 - Each bullet point should be a concise, single sentence.
 
 Here is the structure you MUST follow:
@@ -53,13 +54,13 @@ Here is the structure you MUST follow:
 1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability but is constrained by a tight cash flow.")
 
 2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point.
-    Example: "• The high Net Margin score indicates strong pricing and cost control, which is a key strength."
+    Example: "• The high 'Net Margin' score indicates strong pricing and cost control, which is a key strength."
 
 3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point.
-    Example: "• Address the low Cash Runway score by exploring options to increase initial funding or reduce early-stage costs."
+    Example: "• Address the low 'Cash Runway' score by exploring options to increase initial funding or reduce early-stage costs."
 
-4.  **risks**: Based on the health score and financial data, identify the 2-3 most significant risks this business plan faces in a bulleted list.
-    Example: "• A high dependency on a single product line presents a concentration risk if market demand shifts."
+4.  **risks**: Based on the health score and financial data, identify the top 2 most significant risks this business plan faces in a bulleted list.
+    Example: "• A high dependency on the 'Goldring' product line presents a concentration risk if market demand shifts."
 `,
 });
 

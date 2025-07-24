@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -15,6 +15,8 @@ import { Lightbulb, ShieldAlert, RefreshCcw, Sparkles, Loader2 } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { analyzeRevenue, type AnalyzeRevenueOutput } from '@/ai/flows/analyze-revenue';
 import type { RevenueSummary } from '@/lib/types';
+import { useForecast } from '@/context/ForecastContext';
+import { getProductColor } from '@/lib/utils';
 
 const InsightsLoader: React.FC = () => (
   <Card>
@@ -37,6 +39,7 @@ interface RevenueInsightsProps {
 }
 
 export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsProps) {
+  const { inputs } = useForecast();
   const [insights, setInsights] = useState<AnalyzeRevenueOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +56,27 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
       setIsLoading(false);
     }
   }, [revenueSummary, currency]);
+
+  const itemColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    [...inputs.products, ...inputs.fixedCosts].forEach(item => {
+      const name = 'productName' in item ? item.productName : item.name;
+      if (name) {
+        map.set(name, getProductColor(item));
+      }
+    });
+    return map;
+  }, [inputs.products, inputs.fixedCosts]);
+
+  const createMarkup = (text: string): { __html: string } => {
+    if (!text) return { __html: '' };
+    let processedText = text
+      .replace(/'([^']*)'/g, (match, itemName) => {
+        const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
+        return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
+      });
+    return { __html: processedText };
+  };
 
   if (isLoading) {
     return <InsightsLoader />;
@@ -124,7 +148,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
                 {insights.insights.map((item, i) => (
                     <li key={i} className="flex gap-2">
                         <span className="text-primary">•</span>
-                        <p className="leading-relaxed flex-1">{item}</p>
+                        <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
                     </li>
                 ))}
             </ul>
@@ -138,7 +162,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
                  {insights.recommendations.map((item, i) => (
                     <li key={i} className="flex gap-2">
                         <span className="text-primary">•</span>
-                        <p className="leading-relaxed flex-1">{item}</p>
+                        <p className="leading-relaxed flex-1" dangerouslySetInnerHTML={createMarkup(item)} />
                     </li>
                  ))}
               </ul>

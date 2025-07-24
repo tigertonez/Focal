@@ -7,6 +7,7 @@ import { useForecast } from '@/context/ForecastContext';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 const DATA_STORAGE_KEY = 'financials-report';
 
@@ -14,6 +15,7 @@ export default function LoadingPage() {
     const router = useRouter();
     const { inputs } = useForecast();
     const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
         const runCalculation = async () => {
@@ -38,8 +40,11 @@ export default function LoadingPage() {
                     localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(result));
                 }
                 
-                // Redirect to the first report page on success
-                router.replace('/revenue');
+                // Finalize progress and redirect
+                setProgress(100);
+                setTimeout(() => {
+                    router.replace('/revenue');
+                }, 500);
 
             } catch (e: any) {
                 setError(e.message || 'An unknown error occurred.');
@@ -48,6 +53,23 @@ export default function LoadingPage() {
 
         runCalculation();
     }, [inputs, router]);
+
+    // Effect for animating the progress bar
+    useEffect(() => {
+      if (!error) {
+        const timer = setInterval(() => {
+          setProgress(prev => {
+            if (prev >= 95) {
+              clearInterval(timer);
+              return 95;
+            }
+            return prev + 5;
+          });
+        }, 200);
+
+        return () => clearInterval(timer);
+      }
+    }, [error]);
 
     if (error) {
         return (
@@ -70,11 +92,14 @@ export default function LoadingPage() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center min-h-screen space-y-6 p-4">
             <div className="text-center">
-                <p className="text-lg font-semibold">Generating Your Financial Forecast...</p>
-                <p className="text-muted-foreground">This may take a moment.</p>
+                <p className="text-2xl font-semibold font-headline">Generating Your Financial Forecast...</p>
+                <p className="text-muted-foreground mt-1">This may take a moment. Please don't close this window.</p>
+            </div>
+            <div className="w-full max-w-md">
+              <Progress value={progress} />
+              <div className="text-center text-sm text-muted-foreground mt-2">{progress}%</div>
             </div>
         </div>
     );
