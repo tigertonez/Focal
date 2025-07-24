@@ -8,8 +8,6 @@ import { debounce } from 'lodash-es';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 
-const DATA_STORAGE_KEY = 'financials-report';
-
 export const useFinancials = () => {
     const { inputs } = useForecast();
     const router = useRouter();
@@ -22,48 +20,13 @@ export const useFinancials = () => {
         isLoading: false,
     });
 
-    const runCalculation = useCallback(debounce(async (validatedInputs) => {
-        setState({ isLoading: true, error: null });
-        try {
-            const response = await fetch('/api/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'calculate-financials',
-                    inputs: validatedInputs,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
-            }
-            
-            const result = await response.json();
-            
-            // On success, save data to localStorage and redirect
-            if (typeof window !== 'undefined' && window.localStorage) {
-                localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(result));
-            }
-            
-            router.push('/revenue');
-
-        } catch (e: any) {
-            setState({ error: e.message || 'An unknown error occurred.', isLoading: false });
-            toast({
-                variant: 'destructive',
-                title: 'Calculation Error',
-                description: e.message || 'An unknown error occurred.',
-            });
-        } finally {
-             // Loading state is stopped inside the getReport function
-        }
-    }, 300), [router, toast]);
-
     const getReport = () => {
+        setState({ isLoading: true, error: null });
         const validationResult = EngineInputSchema.safeParse(inputs);
         if (validationResult.success) {
-            runCalculation(validationResult.data);
+            // Instead of calculating here, navigate to the loading page.
+            // The loading page will handle the calculation.
+            router.push('/loading');
         } else {
             const firstError = validationResult.error.errors[0]?.message || 'Invalid input.';
             setState({ error: firstError, isLoading: false });
