@@ -43,12 +43,7 @@ Here is the structure you MUST follow:
 
 1.  **insights**: Provide a list of key metrics as an array of objects, each with a "label" and "value".
     - For the "label", use the metric name (e.g., "Peak Funding Need").
-    - For the "value", provide the formatted, bolded KPI (e.g., "**€15,234**" or "**4 Months**"). Include:
-      - Peak Funding Need
-      - Months to Break-Even
-      - Final Cash Position
-      - Cash Runway (Months)
-    - Follow the KPI value with a one-sentence interpretation, explaining what it means for the business.
+    - For the "value", provide the formatted, bolded KPI (e.g., "**€15,234**" or "**4 Months**"). Follow the KPI value with a one-sentence interpretation, explaining what it means for the business.
 
 2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Go beyond the obvious; suggest specific strategies.
     Example: "• The high funding requirement suggests a need to either raise deposits for products like 'Goldring 1' or delay production to manage cash flow."
