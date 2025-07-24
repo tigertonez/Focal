@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, Lightbulb, TrendingDown, TrendingUp, Sparkles, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
+import { analyzeProfitability } from '@/ai/flows/analyze-profitability';
 
 interface InsightSectionProps {
   title: string;
@@ -65,20 +66,22 @@ const ProfitInsightsLoader: React.FC = () => (
 
 const createMarkup = (text: string | undefined) => {
     if (!text) return { __html: '' };
-    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>');
-    return { __html: boldedText };
+    // Bolding with **text**
+    let processedText = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>');
+    return { __html: processedText };
 };
+
 
 const renderContent = (content: string | undefined, isPriorityList: boolean = false) => {
     if (!content) return <p>No insights generated.</p>;
     
     // Check if it's a numbered list for Top Priorities
     if (isPriorityList && content.match(/^\s*\d+\.\s*/m)) {
-      const items = content.split(/\n\s*\d+\.\s*/).filter(item => item.trim() !== '');
+      const items = content.split(/\n\s*\d+\.\s*/).map(item => item.replace(/^\d+\.\s*/, '').trim()).filter(item => item);
       return (
-        <ol className="list-decimal list-outside space-y-4 pl-4">
+        <ol className="list-decimal list-outside space-y-3 pl-4">
           {items.map((item, index) => (
-            <li key={index} dangerouslySetInnerHTML={createMarkup(item.trim())} />
+            <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
           ))}
         </ol>
       );
@@ -103,24 +106,12 @@ export function ProfitInsights({
     setError(null);
     setInsights(null); // Clear previous insights
     try {
-      const response = await fetch('/api/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'analyze-profitability',
+      const result = await analyzeProfitability({
           revenueSummary: data.revenueSummary,
           costSummary: data.costSummary,
           profitSummary: data.profitSummary,
           currency,
-        }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || errorData.error || 'Failed to analyze profitability.');
-      }
-      
-      const result = await response.json();
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
