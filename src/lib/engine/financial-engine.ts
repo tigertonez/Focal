@@ -11,7 +11,7 @@ import { formatCurrency, formatNumber } from '../utils';
 
 const createTimeline = (inputs: EngineInput) => {
     const { forecastMonths, preOrder } = inputs.parameters;
-    const requiresMonthZero = preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
+    const requiresMonthZero = preOrder;
     const timelineMonths = requiresMonthZero
       ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
@@ -227,13 +227,16 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
             const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
             const remainingCost = totalProductionCost - depositPaid;
             
-            if (timeline.requiresMonthZero && depositPaid > 0) {
-                const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
+            const depositMonthIndex = timeline.requiresMonthZero ? 0 : 1;
+            const finalPaymentMonthIndex = 1;
+            
+            if (depositPaid > 0) {
+                const depositMonth = monthlyCostTimeline.find(t => t.month === depositMonthIndex);
                 if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
             }
 
-            const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-            if(finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+            const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === finalPaymentMonthIndex);
+            if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
 
         } else if (product.costModel === 'monthly') {
             monthlyCostTimeline.forEach(month => {
