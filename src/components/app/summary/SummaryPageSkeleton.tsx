@@ -17,7 +17,7 @@ export function SummaryPageSkeleton({ t }: { t: any }) {
       <Card>
         <CardHeader>
             <CardTitle><Skeleton className="h-6 w-48" /></CardTitle>
-            <CardDescription><Skeleton className="h-4 w-72 mt-1" /></CardDescription>
+            <CardDescription as="div"><Skeleton className="h-4 w-72 mt-1" /></CardDescription>
         </CardHeader>
         <CardContent>
             <div className="grid md:grid-cols-3 gap-8">
