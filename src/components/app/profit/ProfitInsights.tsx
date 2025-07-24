@@ -123,8 +123,8 @@ export function ProfitInsights({
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90 font-semibold">$1</strong>')
       // Styling for 'item names'
       .replace(/'([^']*)'/g, (match, itemName) => {
-        const color = itemColorMap.get(itemName) || 'hsl(var(--muted-foreground))';
-        return `<span class="font-semibold" style="text-shadow: 0 0 1px ${color}, 0 0 3px ${color}; color: hsl(var(--foreground));">${itemName}</span>`;
+        const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
+        return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;
       });
       
     return { __html: processedText };
@@ -135,14 +135,13 @@ export function ProfitInsights({
     
     // Check if it's the Top Priorities list
     if (content.startsWith('🧭 Top Priorities')) {
-      const listContent = content.replace('🧭 Top Priorities', '').replace(/<br>/g, '').trim();
-      const items = listContent.split(/\s*\d+\.\s*/).filter(item => item.trim());
+      const listContent = content.replace('🧭 Top Priorities', '').trim();
+       const items = listContent.split('<br><br>').filter(item => item.trim());
       
       return (
         <ol className="list-none space-y-4">
           {items.map((item, index) => (
             <li key={index} className="flex gap-3">
-              <div className="flex-shrink-0 text-primary font-semibold">{index + 1}.</div>
               <div className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(item)} />
             </li>
           ))}
