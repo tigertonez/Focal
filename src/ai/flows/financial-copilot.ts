@@ -80,7 +80,7 @@ Always be constructive and provide direct, actionable feedback for the developer
     ];
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-pro-latest',
         system: systemPrompt,
         history: genkitHistory,
         prompt: prompt,
