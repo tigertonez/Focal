@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 
 function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
     const router = useRouter();
@@ -138,6 +139,10 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                         </Table>
                     </CardContent>
                 </Card>
+            </section>
+
+            <section className="pt-4">
+              <RevenueInsights revenueSummary={revenueSummary} currency={currency} />
             </section>
 
             <footer className="flex justify-end mt-8 pt-6 border-t">

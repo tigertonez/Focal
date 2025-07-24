@@ -6,11 +6,13 @@ import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, 
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 import html2canvas from 'html2canvas';
+import { getFinancials } from '@/lib/get-financials';
 
 
 interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
+  financials: { data: EngineOutput | null; inputs: EngineInput | null; error: string | null; } | null;
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
   removeProduct: (id: string) => void;
@@ -92,6 +94,7 @@ const DRAFT_STORAGE_KEY = 'forecastDraft';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
+  const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; } | null>(null);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const { toast } = useToast();
@@ -101,7 +104,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
         if (savedDraft) {
             const parsedDraft = JSON.parse(savedDraft);
-            // You might want to validate this with Zod before setting state
             const result = EngineInputSchema.safeParse(parsedDraft);
             if (result.success) {
                 setInputs(result.data);
@@ -118,7 +120,11 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to load draft from local storage", e);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
-  }, []);
+  }, [toast]);
+  
+  useEffect(() => {
+    setFinancials(getFinancials());
+  }, [inputs]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
@@ -218,6 +224,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     inputs,
     setInputs,
+    financials,
     updateProduct,
     addProduct,
     removeProduct,
@@ -230,7 +237,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setProactiveAnalysis,
     isCopilotOpen,
     setIsCopilotOpen,
-  }), [inputs, proactiveAnalysis, isCopilotOpen]);
+  }), [inputs, financials, proactiveAnalysis, isCopilotOpen]);
 
   return (
     <ForecastContext.Provider value={value}>

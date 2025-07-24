@@ -18,6 +18,7 @@ import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
+import { CostsInsights } from '@/components/app/costs/CostsInsights';
 
 
 function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
@@ -26,7 +27,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
     const currency = inputs.parameters.currency;
     const preOrder = inputs.parameters.preOrder;
 
-    const { costSummary, monthlyCosts } = data;
+    const { costSummary, monthlyCosts, revenueSummary } = data;
     
     const depositProgress = costSummary.totalVariable > 0 ? (costSummary.totalDepositsPaid / costSummary.totalVariable) * 100 : 0;
     
@@ -164,6 +165,10 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                         </CardContent>
                     </Card>
                 </div>
+            </section>
+
+            <section className="pt-4">
+              <CostsInsights costSummary={costSummary} revenueSummary={revenueSummary} currency={currency} />
             </section>
 
             <footer className="flex justify-end mt-8 pt-6 border-t">
