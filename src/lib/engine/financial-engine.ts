@@ -209,13 +209,9 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
 
         if (schedule === 'Paid Up-Front') {
             const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount;
-            if (requiresMonthZero) {
-                 const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
-                 if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
-            } else {
-                 const firstMonth = monthlyCostTimeline.find(t => t.month === 1);
-                 if(firstMonth) firstMonth[cost.name] = (firstMonth[cost.name] || 0) + totalCost;
-            }
+            const upFrontMonthIndex = requiresMonthZero ? 0 : 1;
+            const upFrontMonth = monthlyCostTimeline.find(t => t.month === upFrontMonthIndex);
+            if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
             return;
         }
         
@@ -256,33 +252,44 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
 };
 
 const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]) => {
-    let totalPlannedUnits = 0, totalDepositsPaid = 0, totalFinalPayments = 0, totalVariableCost = 0;
+    let totalPlannedUnits = 0, totalVariableCost = 0;
+
+    const monthlyFixedCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
+    
+    let totalDepositsPaid = 0;
+    let totalFinalPayments = 0;
 
     const variableCostBreakdown = inputs.products.map(product => {
         const plannedUnits = product.plannedUnits || 0;
         const totalProductionCost = plannedUnits * (product.unitCost || 0);
         const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
+        const remainingCost = totalProductionCost - depositPaid;
         
         totalPlannedUnits += plannedUnits;
-        totalDepositsPaid += depositPaid;
-        totalFinalPayments += (totalProductionCost - depositPaid);
         totalVariableCost += totalProductionCost;
+        totalDepositsPaid += depositPaid;
+        totalFinalPayments += remainingCost;
 
+        // Schedule the final payment for this product individually
+        const firstSaleMonthForProduct = timeline.timelineMonths.find(m => (monthlyUnitsSold.find(u => u.month === m) || {})[product.productName] > 0);
+        
+        if (firstSaleMonthForProduct !== undefined) {
+            const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === firstSaleMonthForProduct);
+            if (finalPaymentMonth) {
+                finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+            }
+        }
+        
         return {
             name: product.productName, plannedUnits, unitCost: product.unitCost, totalProductionCost,
-            depositPaid, remainingCost: totalProductionCost - depositPaid
+            depositPaid, remainingCost
         };
     });
-
-    const monthlyFixedCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
     
     if (timeline.requiresMonthZero && totalDepositsPaid > 0) {
         const depositMonth = monthlyFixedCostTimeline.find(t => t.month === 0);
         if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + totalDepositsPaid;
     }
-    
-    const finalPaymentMonth = monthlyFixedCostTimeline.find(t => t.month === 1);
-    if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + totalFinalPayments;
     
     const totalFixedCostInPeriod = monthlyFixedCostTimeline.reduce((total, month) => {
         return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
@@ -380,7 +387,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
         const cashOutCosts = Object.values(monthlyCosts.find(c => c.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
         const profitMonth = monthlyProfit.find(p => p.month === month);
-        const cashOutTax = (profitMonth?.netProfit || 0) < (profitMonth?.operatingProfit || 0) ? (profitMonth?.operatingProfit || 0) - (profitMonth?.netProfit || 0) : 0;
+        const cashOutTax = (profitMonth?.operatingProfit || 0) > 0 ? (profitMonth?.operatingProfit || 0) - (profitMonth?.netProfit || 0) : 0;
 
         const netCashFlow = cashIn - cashOutCosts - cashOutTax;
         cumulativeCash += netCashFlow;

@@ -95,7 +95,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
                     <div className="flex flex-1 justify-between">
                         <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Math.abs(Number(value)), currency)}</span>
+                        <span className="ml-4 font-bold">{formatCurrency(Number(value), currency)}</span>
                     </div>
                 </div>
               )
