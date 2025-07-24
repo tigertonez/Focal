@@ -2,7 +2,7 @@
 
 import { KpiCard } from '@/components/app/KpiCard';
 import { SectionHeader } from '@/components/app/SectionHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
 
@@ -54,7 +54,7 @@ export function ProfitPageSkeleton({ t }: {t: any}) {
             <Card>
                 <CardHeader>
                     <CardTitle>{t.insights.profit.title}</CardTitle>
-                    <CardDescription><Skeleton className="h-4 w-72" /></CardDescription>
+                    <CardDescription as="div"><Skeleton className="h-4 w-72" /></CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Skeleton className="h-24 w-full" />
