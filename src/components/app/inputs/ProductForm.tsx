@@ -125,12 +125,25 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
         </div>
         
-         <div className="space-y-3">
-            <Label className="text-sm font-medium">{t.inputs.products.costModel.title}</Label>
+         <div className="space-y-2">
+             <Label className="text-sm font-medium flex items-center gap-2">
+                {t.inputs.products.costModel.title}
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                        <TooltipContent className="max-w-xs p-3">
+                            <div className="space-y-1 text-left">
+                                <p className="font-semibold">{t.inputs.products.costModel.title}</p>
+                                <p className="text-muted-foreground text-xs">{t.inputs.products.costModel.tooltip}</p>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+             </Label>
             <RadioGroup 
                 defaultValue={product.costModel || 'batch'} 
                 onValueChange={handleRadioChange('costModel')}
-                className="flex items-center gap-4"
+                className="flex items-center space-x-4"
             >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />

@@ -300,6 +300,7 @@ export const translations = {
             },
             costModel: {
                 title: "Cost Model",
+                tooltip: "'Production Batch' assumes you pay for all units up front (common for D2C). 'Monthly' assumes costs occur in the same month as the sale (common for services or just-in-time production).",
                 batch: "Production Batch",
                 monthly: "Monthly (JIT)",
             }
@@ -655,6 +656,7 @@ export const translations = {
             },
             costModel: {
                 title: "Kostenmodell",
+                tooltip: "'Produktions-Charge' geht davon aus, dass Sie alle Einheiten im Voraus bezahlen (üblich für D2C). 'Monatlich' geht davon aus, dass die Kosten im selben Monat wie der Verkauf anfallen (üblich für Dienstleistungen oder Just-in-Time-Produktion).",
                 batch: "Produktions-Charge",
                 monthly: "Monatlich (JIT)",
             }
