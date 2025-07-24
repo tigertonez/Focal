@@ -153,13 +153,13 @@ export function CashFlowInsights() {
         <div className="space-y-2">
             <h3 className="font-semibold text-sm flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-amber-500" />
-                Key Metrics
+                Key Metrics Analysis
             </h3>
-            <div className="pl-7 space-y-2">
+            <div className="pl-7 space-y-4">
               {insights.insights.map((item, i) => (
-                  <div key={i} className="text-sm text-muted-foreground flex justify-between items-center">
-                      <span>{item.label}</span>
-                      <span className="font-bold text-foreground" dangerouslySetInnerHTML={createMarkup(item.value)} />
+                  <div key={i} className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-foreground/90">{item.label}</p>
+                      <p dangerouslySetInnerHTML={createMarkup(item.value)} />
                   </div>
               ))}
             </div>

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // --- Section A: Product ---
@@ -186,7 +187,7 @@ export type AnalyzeProfitabilityInput = z.infer<
 
 export const AnalyzeProfitabilityOutputSchema = z.object({
   explanation: z.string().describe("A brief, beginner-friendly explanation of Gross Profit, Operating Profit, and Net Profit, including their current values and why they matter."),
-  whatsWorking: z.string().optional().describe("A summary of 1-2 healthy metrics (like strong gross margin or sell-through) and the business decisions that likely led to them. Omit if no clear strengths exist."),
+  whatsWorking: z.string().optional().describe("A summary of 1-2 healthy metrics (like strong gross margin or sell-through) and the business decisions that likely led to them. If there are no clear strengths, this field should contain the single sentence 'The current plan shows areas for improvement across the board.'"),
   issues: z.string().describe("A summary of 1-2 negative or below-benchmark metrics, tying each issue directly to the numbers that prove it."),
   opportunities: z.string().describe("A summary of 1-2 concrete, data-driven suggestions for improvement, using product names where relevant."),
   topPriorities: z.string().describe("A numbered list of 3-5 actionable, founder-friendly next steps, each starting with a verb."),
@@ -230,7 +231,7 @@ export const AnalyzeCashFlowOutputSchema = z.object({
   insights: z.array(z.object({
     label: z.string(),
     value: z.string(),
-  })).describe("A list of key insight metrics derived from the summary."),
+  })).describe("An array of objects, where each object represents a key metric. The 'label' is the metric's name, and the 'value' is a string containing the bolded metric and a one-sentence interpretation."),
   recommendations: z.array(z.string()).describe("A list of 1-3 strategic recommendations based on the cash flow analysis."),
 });
 export type AnalyzeCashFlowOutput = z.infer<typeof AnalyzeCashFlowOutputSchema>;

@@ -13,7 +13,6 @@ import {
   AnalyzeProfitabilityOutputSchema,
   type AnalyzeProfitabilityOutput,
 } from '@/lib/types';
-import { getProductColor } from '@/lib/utils';
 
 
 export async function analyzeProfitability(
@@ -82,7 +81,6 @@ const analyzeProfitabilityFlow = ai.defineFlow(
     
     const cleanString = (str: string | undefined) => {
       if (!str) return '';
-      // This regex was too aggressive and removed valid content. Removing it.
       return str.trim();
     }
     
