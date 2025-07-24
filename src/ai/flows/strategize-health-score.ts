@@ -42,10 +42,9 @@ Analyze the following Business Health Score and financial summaries.
 
 Your output MUST be ONLY a JSON object with 4 keys: "summary", "strengths", "opportunities", and "risks".
 
-IMPORTANT FORMATTING RULES:
+CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list items in "strengths", "opportunities", and "risks".
-- Do NOT use asterisks (*) for any reason.
-- Do NOT use bolding or any other markdown.
+- Do NOT use asterisks (*) or any other form of bolding.
 - When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
 - Each bullet point should be a concise, single sentence.
 

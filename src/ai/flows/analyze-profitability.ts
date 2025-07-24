@@ -45,25 +45,19 @@ Infer the business type from product names (e.g., 'Goldring' -> jewelry).
 
 Your output MUST be ONLY a JSON object with the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
-IMPORTANT FORMATTING RULES:
+CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list-based sections ('whatsWorking', 'issues', 'opportunities', 'explanation').
 - Do NOT use numbered lists, except for 'topPriorities'.
-- Do NOT use asterisks (*) for any reason.
-
-CRITICAL BOLDING RULES:
-- ONLY bold the final calculated KPI values when you present them in the 'explanation' section. For example: "Your Gross Profit is **€15,234**."
-- Do NOT bold any other text, including product names, cost names, or general phrases.
-- To bold, use Markdown's double asterisks, like **this**.
-
-NAMING RULE:
+- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**.
 - When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
+- Do NOT use asterisks (*) for any other reason.
 
 ---
 Here is the structure you MUST follow for each key:
 
 1.  **explanation**: Explain Gross, Operating, and Net Profit. For each, use a bullet point to define it, show the user's value (which MUST be bolded), and explain what it means. Use short paragraphs per bullet.
 
-2.  **whatsWorking**: Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. CRITICAL: If there are no clear strengths, state "The current plan shows areas for improvement across the board."
+2.  **whatsWorking**: Celebrate strengths in bullet points. Link healthy metrics like gross margin to smart business decisions (e.g., good pricing for 'Goldring 2'). Use positive, encouraging language. CRITICAL: If there are no clear strengths, you MUST output the single sentence "The current plan shows areas for improvement across the board."
 
 3.  **issues**: Diagnose weak points in plain language using bullet points. If a margin is negative, explain it simply (e.g., "For every €100 you sell, you currently lose €4.90."). Always tie issues back to the numbers that prove it.
 
@@ -87,13 +81,11 @@ const analyzeProfitabilityFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid response.");
     }
     
-    // Clean up any accidental leading titles or list markers from the AI response
     const cleanString = (str: string | undefined) => {
       if (!str) return '';
       return str.replace(/^(.*?:\s*)/, '').trim();
     }
     
-    // Ensure 'whatsWorking' has a value to prevent crashes
     if (!output.whatsWorking || output.whatsWorking.trim() === '') {
         output.whatsWorking = "The current plan shows areas for improvement across the board.";
     }

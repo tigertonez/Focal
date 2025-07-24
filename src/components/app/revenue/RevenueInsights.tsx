@@ -71,6 +71,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
   const createMarkup = (text: string): { __html: string } => {
     if (!text) return { __html: '' };
     let processedText = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground/90">$1</strong>')
       .replace(/'([^']*)'/g, (match, itemName) => {
         const color = itemColorMap.get(itemName) || 'hsl(var(--foreground))';
         return `<span class="font-semibold" style="color: ${color};">${itemName}</span>`;

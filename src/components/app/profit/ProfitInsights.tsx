@@ -128,6 +128,7 @@ export function ProfitInsights({
       );
     }
     
+    // Check for bullet points (•)
     if (content.includes('•')) {
       return (
         <ul className="list-none space-y-3">

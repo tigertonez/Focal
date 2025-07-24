@@ -34,9 +34,10 @@ Analyze the following cash flow summary:
 
 Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendations".
 
-CRITICAL FORMATTING RULE (for 'insights' only):
+CRITICAL FORMATTING RULES:
 - When you output a specific calculated KPI value (like a monetary amount or a number of months), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text.
-- Use bullet points (•) for all 'recommendations'. Do NOT use bolding or asterisks in recommendations. Each recommendation should be a concise, single sentence.
+- When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this'.
+- Use bullet points (•) for all 'recommendations'. Do NOT use bolding in recommendations. Each recommendation should be a concise, single sentence.
 
 Here is the structure you MUST follow:
 
@@ -46,7 +47,7 @@ Here is the structure you MUST follow:
     - Final Cash Position
     - Cash Runway (Months)
 
-2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Do NOT use bolding or asterisks.
+2.  **recommendations**: Provide a bulleted list of 1-3 highly specific, actionable recommendations. Frame them as clear directives. Do NOT use bolding.
     Example: "• The high funding requirement suggests a need to either raise deposits or delay production to manage cash flow."
 `,
 });
