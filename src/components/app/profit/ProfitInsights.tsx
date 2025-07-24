@@ -48,18 +48,9 @@ const ProfitInsightsLoader: React.FC = () => (
       <CardDescription>An AI-powered analysis of your profit forecast is loading...</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-4 w-4/5" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-10 w-full" />
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Generating your growth report...</p>
       </div>
     </CardContent>
   </Card>
