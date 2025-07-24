@@ -17,8 +17,9 @@ import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
+import { useForecast } from '@/context/ForecastContext';
 
-function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: EngineInput }) {
+function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: EngineInput, t: any }) {
     const router = useRouter();
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue, monthlyUnitsSold } = data;
@@ -33,43 +34,43 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
 
     return (
         <div className="p-4 md:p-8 space-y-8">
-            <SectionHeader title="Revenue Analysis" description="Breakdown of your revenue projections." />
+            <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
 
             <section>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <KpiCard 
-                        label="Total Revenue" 
+                        label={t.pages.revenue.kpi.totalRevenue}
                         value={formatCurrency(revenueSummary.totalRevenue, currency)} 
                         icon={<TrendingUp />}
-                        helpTitle="Total Revenue"
-                        help="The total income generated from sales before any costs are deducted. It's the top-line figure of your forecast."
+                        helpTitle={t.pages.revenue.kpi.totalRevenue}
+                        help={t.pages.revenue.kpi.totalRevenueHelp}
                     />
                     <KpiCard 
-                        label="Total Units Sold" 
+                        label={t.pages.revenue.kpi.totalUnits}
                         value={formatNumber(revenueSummary.totalSoldUnits)} 
                         icon={<Users />}
-                        helpTitle="Total Units Sold"
-                        help="The sum of all units sold across all your products for the entire forecast period."
+                        helpTitle={t.pages.revenue.kpi.totalUnits}
+                        help={t.pages.revenue.kpi.totalUnitsHelp}
                     />
                     <KpiCard 
-                        label="Avg. Revenue per Unit" 
+                        label={t.pages.revenue.kpi.avgRevenue}
                         value={formatCurrency(revenueSummary.avgRevenuePerUnit, currency)} 
                         icon={<DollarSign />}
-                        helpTitle="Average Revenue per Unit"
-                        help="The average revenue generated per single unit sold (Total Revenue / Total Units Sold). Useful for understanding pricing effectiveness."
+                        helpTitle={t.pages.revenue.kpi.avgRevenue}
+                        help={t.pages.revenue.kpi.avgRevenueHelp}
                     />
                     <KpiCard 
-                        label="Avg. Sell-Through" 
+                        label={t.pages.revenue.kpi.avgSellThrough}
                         value={`${(inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length).toFixed(0)}%`} 
                         icon={<Target />}
-                        helpTitle="Average Sell-Through Rate"
-                        help="The average percentage of your planned stock that is actually sold across all products. This is a key driver of your total revenue."
+                        helpTitle={t.pages.revenue.kpi.avgSellThrough}
+                        help={t.pages.revenue.kpi.avgSellThroughHelp}
                     />
                 </div>
                  {potentialRevenue > 0 && (
                     <div className="mt-4 space-y-2">
                         <div className="flex justify-between items-center text-sm text-muted-foreground">
-                            <span>Forecasted vs. Potential Revenue</span>
+                            <span>{t.pages.revenue.progress}</span>
                              <span className="font-medium text-foreground">
                                 {formatCurrency(revenueSummary.totalRevenue, currency)} of {formatCurrency(potentialRevenue, currency)}
                             </span>
@@ -82,7 +83,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
             <section className="grid md:grid-cols-2 gap-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Monthly Revenue Timeline</CardTitle>
+                        <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
@@ -90,7 +91,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle>Monthly Units Sold</CardTitle>
+                        <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
@@ -101,18 +102,18 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
             <section>
                  <Card>
                     <CardHeader>
-                        <CardTitle>Revenue by Product</CardTitle>
+                        <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Product</TableHead>
-                                    <TableHead className="text-right">Units Sold</TableHead>
-                                    <TableHead className="text-right">Sell-Through</TableHead>
-                                    <TableHead className="text-right">Price</TableHead>
-                                    <TableHead className="text-right">Total Revenue</TableHead>
-                                    <TableHead className="text-right">% of Revenue</TableHead>
+                                    <TableHead>{t.pages.revenue.table.product}</TableHead>
+                                    <TableHead className="text-right">{t.pages.revenue.table.units}</TableHead>
+                                    <TableHead className="text-right">{t.pages.revenue.table.sellThrough}</TableHead>
+                                    <TableHead className="text-right">{t.pages.revenue.table.price}</TableHead>
+                                    <TableHead className="text-right">{t.pages.revenue.table.revenue}</TableHead>
+                                    <TableHead className="text-right">{t.pages.revenue.table.share}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -147,7 +148,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
 
             <footer className="flex justify-end mt-8 pt-6 border-t">
               <Button onClick={() => router.push('/costs')}>
-                Continue to Costs <ArrowRight className="ml-2" />
+                {t.pages.revenue.footer} <ArrowRight className="ml-2" />
               </Button>
             </footer>
         </div>
@@ -155,6 +156,7 @@ function RevenuePageContent({ data, inputs }: { data: EngineOutput; inputs: Engi
 }
 
 export default function RevenuePage() {
+    const { t } = useForecast();
     const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
         data: null,
         inputs: null,
@@ -171,7 +173,7 @@ export default function RevenuePage() {
     const { data, inputs, error, isLoading } = financials;
 
     if (isLoading) {
-        return <RevenuePageSkeleton />;
+        return <RevenuePageSkeleton t={t} />;
     }
 
     if (error) {
@@ -179,9 +181,9 @@ export default function RevenuePage() {
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} Please correct the issues on the Inputs page and try again.
+                        {error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
@@ -189,23 +191,23 @@ export default function RevenuePage() {
     }
     
     if (!data || !inputs) {
-        return <RevenuePageSkeleton />;
+        return <RevenuePageSkeleton t={t} />;
     }
 
     if (data.revenueSummary.totalRevenue === 0) {
         return (
              <div className="p-4 md:p-8">
-                <SectionHeader title="Revenue" description="Detailed revenue projections." />
+                <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
                 <div className="text-center text-muted-foreground mt-16">
-                    <p>No revenue data to display.</p>
-                    <p className="text-sm">Complete the product information on the Inputs page to see your revenue forecast.</p>
+                    <p>{t.errors.noRevenue}</p>
+                    <p className="text-sm">{t.errors.noRevenueDescription}</p>
                      <Button onClick={() => router.push('/costs')} className="mt-4">
-                        Continue to Costs <ArrowRight className="ml-2" />
+                        {t.errors.continueToCosts} <ArrowRight className="ml-2" />
                     </Button>
                 </div>
             </div>
         )
     }
 
-    return <RevenuePageContent data={data} inputs={inputs} />;
+    return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }

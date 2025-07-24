@@ -18,8 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
+import { useForecast } from '@/context/ForecastContext';
 
-function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
+function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
   const { profitSummary, revenueSummary, costSummary } = data;
   const currency = inputs.parameters.currency;
@@ -49,38 +50,38 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
 
   const averageNetMargin = totalRevenueForMargin > 0 ? (totalWeightedMarginSum / totalRevenueForMargin) * 100 : 0;
 
-  const netMarginTitle = "Average Net Margin";
-  const netMarginTooltip = "The weighted average of the net profit margins from each of your products, calculated based on each product's contribution to total revenue.";
+  const netMarginTitle = t.pages.profit.kpi.margin;
+  const netMarginTooltip = t.pages.profit.kpi.marginHelp;
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <SectionHeader title="Profit Analysis" description="Analysis of your gross, operating, and net profit." />
+      <SectionHeader title={t.pages.profit.title} description={t.pages.profit.description} />
       
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KpiCard 
-            label="Total Gross Profit" 
+            label={t.pages.profit.kpi.gross}
             value={formatCurrency(profitSummary.totalGrossProfit, currency)} 
             icon={<TrendingUp />} 
-            helpTitle="What is Gross Profit?"
-            help="Total Revenue minus the direct Cost of Goods Sold (COGS). It measures how efficiently you produce and sell your products before other expenses."
+            helpTitle={t.pages.profit.kpi.gross}
+            help={t.pages.profit.kpi.grossHelp}
           />
           <KpiCard 
-            label="Total Operating Profit" 
+            label={t.pages.profit.kpi.operating}
             value={formatCurrency(profitSummary.totalOperatingProfit, currency)} 
             icon={<Briefcase />}
-            helpTitle="What is Operating Profit?"
-            help="Gross Profit minus all fixed operating costs (like salaries and rent). This shows the profit from core business operations."
+            helpTitle={t.pages.profit.kpi.operating}
+            help={t.pages.profit.kpi.operatingHelp}
           />
           <KpiCard 
-            label="Total Net Profit" 
+            label={t.pages.profit.kpi.net}
             value={formatCurrency(profitSummary.totalNetProfit, currency)} 
             icon={<Landmark />}
-            helpTitle="What is Net Profit?"
-            help="The final 'bottom-line' profit after all expenses, including taxes, have been deducted from revenue. This is your company's actual profit."
+            helpTitle={t.pages.profit.kpi.net}
+            help={t.pages.profit.kpi.netHelp}
           />
           <KpiCard 
-            label="Avg. Net Margin" 
+            label={netMarginTitle}
             value={`${averageNetMargin.toFixed(1)}%`} 
             icon={<Target />} 
             helpTitle={netMarginTitle}
@@ -90,7 +91,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
         {potentialGrossProfit > 0 && (
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span>Achieved vs. Potential Gross Profit</span>
+              <span>{t.pages.profit.progress}</span>
               <span className="font-medium text-foreground">
                  {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
               </span>
@@ -103,7 +104,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
       <section>
          <Card>
             <CardHeader>
-                <CardTitle>Cumulative Operating Profit</CardTitle>
+                <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
                <ProfitBreakdownChart data={data} currency={currency} />
@@ -114,10 +115,10 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
        <section>
           <Card>
             <CardHeader>
-              <CardTitle>Product-Level Profitability</CardTitle>
+              <CardTitle>{t.pages.profit.table.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProductProfitTable data={data} inputs={inputs} />
+              <ProductProfitTable data={data} inputs={inputs} t={t} />
             </CardContent>
           </Card>
         </section>
@@ -128,7 +129,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
 
       <footer className="flex justify-end mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
-          Continue to Cash Flow <ArrowRight className="ml-2" />
+          {t.pages.profit.footer} <ArrowRight className="ml-2" />
         </Button>
       </footer>
     </div>
@@ -136,6 +137,7 @@ function ProfitPageContent({ data, inputs }: { data: EngineOutput, inputs: Engin
 }
 
 export default function ProfitPage() {
+  const { t } = useForecast();
   const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
     data: null,
     inputs: null,
@@ -151,7 +153,7 @@ export default function ProfitPage() {
   const { data, inputs, error, isLoading } = financials;
 
   if (isLoading) {
-    return <ProfitPageSkeleton />;
+    return <ProfitPageSkeleton t={t} />;
   }
 
   if (error) {
@@ -159,9 +161,9 @@ export default function ProfitPage() {
       <div className="p-4 md:p-8">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
-          <AlertTitle>Calculation Error</AlertTitle>
+          <AlertTitle>{t.errors.calculationError}</AlertTitle>
           <AlertDescription>
-            {error} Please correct the issues on the Inputs page and try again.
+            {error} {t.errors.calculationErrorDescription}
           </AlertDescription>
         </Alert>
       </div>
@@ -169,8 +171,8 @@ export default function ProfitPage() {
   }
 
   if (!data || !inputs) {
-    return <ProfitPageSkeleton />;
+    return <ProfitPageSkeleton t={t} />;
   }
 
-  return <ProfitPageContent data={data} inputs={inputs} />;
+  return <ProfitPageContent data={data} inputs={inputs} t={t} />;
 }

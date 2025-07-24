@@ -7,24 +7,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
 
 
-export function ProfitPageSkeleton() {
+export function ProfitPageSkeleton({ t }: {t: any}) {
   return (
     <div className="p-4 md:p-8 space-y-8 animate-pulse">
-      <SectionHeader title="Profit" description="Analysis of your gross, operating, and net profit." />
+      <SectionHeader title={t.pages.profit.title} description={t.pages.profit.description} />
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Total Gross Profit" value={<Skeleton className="h-7 w-24" />} icon={<TrendingUp />} />
-          <KpiCard label="Total Operating Profit" value={<Skeleton className="h-7 w-24" />} icon={<Briefcase />} />
-          <KpiCard label="Total Net Profit" value={<Skeleton className="h-7 w-24" />} icon={<Landmark />} />
-          <KpiCard label="Net Margin" value={<Skeleton className="h-7 w-20" />} icon={<Target />} />
+          <KpiCard label={t.pages.profit.kpi.gross} value={<Skeleton className="h-7 w-24" />} icon={<TrendingUp />} />
+          <KpiCard label={t.pages.profit.kpi.operating} value={<Skeleton className="h-7 w-24" />} icon={<Briefcase />} />
+          <KpiCard label={t.pages.profit.kpi.net} value={<Skeleton className="h-7 w-24" />} icon={<Landmark />} />
+          <KpiCard label={t.pages.profit.kpi.margin} value={<Skeleton className="h-7 w-20" />} icon={<Target />} />
         </div>
       </section>
       
       <section className="grid md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Cumulative Operating Profit</CardTitle>
+            <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[350px] w-full flex items-end gap-2 p-4">
@@ -39,7 +39,7 @@ export function ProfitPageSkeleton() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>How Profit is Calculated</CardTitle>
+            <CardTitle>{t.insights.profit.title}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[350px] w-full p-4 space-y-4">
@@ -54,7 +54,7 @@ export function ProfitPageSkeleton() {
       <section>
          <Card>
             <CardHeader>
-              <CardTitle>Product-Level Profitability</CardTitle>
+              <CardTitle>{t.pages.profit.table.title}</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
                 <Skeleton className="h-40 w-full" />

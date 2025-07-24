@@ -5,24 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Wallet, TrendingDown, CalendarClock, Banknote } from 'lucide-react';
 
-export function CashFlowPageSkeleton() {
+export function CashFlowPageSkeleton({ t }: {t: any}) {
   return (
     <div className="p-4 md:p-8 space-y-8 animate-pulse">
-      <SectionHeader title="Cash Flow Analysis" description="Monthly cash flow, funding needs, and runway." />
+      <SectionHeader title={t.pages.cashFlow.title} description={t.pages.cashFlow.description} />
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Ending Cash Balance" value={<Skeleton className="h-7 w-28" />} icon={<Wallet />} />
-          <KpiCard label="Peak Funding Need" value={<Skeleton className="h-7 w-24" />} icon={<TrendingDown />} />
-          <KpiCard label="Months to Break-Even" value={<Skeleton className="h-7 w-20" />} icon={<CalendarClock />} />
-          <KpiCard label="Cash Runway" value={<Skeleton className="h-7 w-24" />} icon={<Banknote />} />
+          <KpiCard label={t.pages.cashFlow.kpi.ending} value={<Skeleton className="h-7 w-28" />} icon={<Wallet />} />
+          <KpiCard label={t.pages.cashFlow.kpi.peak} value={<Skeleton className="h-7 w-24" />} icon={<TrendingDown />} />
+          <KpiCard label={t.pages.cashFlow.kpi.breakEven} value={<Skeleton className="h-7 w-20" />} icon={<CalendarClock />} />
+          <KpiCard label={t.pages.cashFlow.kpi.runway} value={<Skeleton className="h-7 w-24" />} icon={<Banknote />} />
         </div>
       </section>
       
       <section className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Cumulative Cash Flow</CardTitle>
+            <CardTitle>{t.pages.cashFlow.charts.cumulative}</CardTitle>
           </CardHeader>
           <CardContent className="h-[400px]">
             <div className="h-full w-full flex items-end gap-2 p-4">
@@ -38,7 +38,7 @@ export function CashFlowPageSkeleton() {
         
         <Card>
             <CardHeader>
-              <CardTitle>Monthly Cash Flow</CardTitle>
+              <CardTitle>{t.pages.cashFlow.table.title}</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
                 <Skeleton className="h-60 w-full" />
@@ -47,7 +47,7 @@ export function CashFlowPageSkeleton() {
         
         <Card>
             <CardHeader>
-              <CardTitle>Cash-Flow Health</CardTitle>
+              <CardTitle>{t.insights.cashFlow.title}</CardTitle>
               <div className="text-sm text-muted-foreground pt-1.5">
                 <Skeleton className="h-4 w-48" />
               </div>

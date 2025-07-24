@@ -5,24 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
 
-export function RevenuePageSkeleton() {
+export function RevenuePageSkeleton({ t }: {t: any}) {
   return (
     <div className="p-4 md:p-8 space-y-8 animate-pulse">
-      <SectionHeader title="Revenue" description="Detailed revenue projections." />
+      <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
 
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard label="Total Revenue" value={<Skeleton className="h-7 w-24" />} icon={<TrendingUp />} />
-          <KpiCard label="Total Units Sold" value={<Skeleton className="h-7 w-20" />} icon={<Users />} />
-          <KpiCard label="Avg. Revenue per Unit" value={<Skeleton className="h-7 w-24" />} icon={<DollarSign />} />
-          <KpiCard label="Avg. Sell-Through" value={<Skeleton className="h-7 w-20" />} icon={<Target />} />
+          <KpiCard label={t.pages.revenue.kpi.totalRevenue} value={<Skeleton className="h-7 w-24" />} icon={<TrendingUp />} />
+          <KpiCard label={t.pages.revenue.kpi.totalUnits} value={<Skeleton className="h-7 w-20" />} icon={<Users />} />
+          <KpiCard label={t.pages.revenue.kpi.avgRevenue} value={<Skeleton className="h-7 w-24" />} icon={<DollarSign />} />
+          <KpiCard label={t.pages.revenue.kpi.avgSellThrough} value={<Skeleton className="h-7 w-20" />} icon={<Target />} />
         </div>
       </section>
       
       <section className="grid md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Revenue Timeline</CardTitle>
+            <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-72 w-full flex items-end gap-2">
@@ -37,7 +37,7 @@ export function RevenuePageSkeleton() {
         </Card>
          <Card>
             <CardHeader>
-                <CardTitle>Monthly Units Sold</CardTitle>
+                <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="h-72 w-full flex items-end gap-2">
@@ -53,7 +53,7 @@ export function RevenuePageSkeleton() {
       </section>
       
       <section>
-        <h2 className="text-xl font-semibold mb-4">Revenue by Product</h2>
+        <h2 className="text-xl font-semibold mb-4">{t.pages.revenue.table.title}</h2>
         <Card>
             <CardContent className="p-2">
                 <Skeleton className="h-40 w-full" />

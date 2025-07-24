@@ -19,9 +19,10 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
 import { CostsInsights } from '@/components/app/costs/CostsInsights';
+import { useForecast } from '@/context/ForecastContext';
 
 
-function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
+function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
     const router = useRouter();
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
@@ -47,43 +48,43 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
 
     return (
         <div className="p-4 md:p-8 space-y-8">
-            <SectionHeader title="Cost Analysis" description="Breakdown of your operating costs." />
+            <SectionHeader title={t.pages.costs.title} description={t.pages.costs.description} />
             
             <section>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <KpiCard 
-                        label="Total Fixed Costs" 
+                        label={t.pages.costs.kpi.fixed}
                         value={formatCurrency(costSummary.totalFixed, currency)} 
                         icon={<Building />}
-                        helpTitle="Total Fixed Costs"
-                        help="Recurring, predictable expenses that don't change with sales volume (e.g., salaries, rent). This is your company's baseline cost."
+                        helpTitle={t.pages.costs.kpi.fixed}
+                        help={t.pages.costs.kpi.fixedHelp}
                     />
                     <KpiCard 
-                        label="Total Variable Costs" 
+                        label={t.pages.costs.kpi.variable}
                         value={formatCurrency(costSummary.totalVariable, currency)} 
                         icon={<Package />}
-                        helpTitle="Total Variable Costs"
-                        help="Costs that are directly tied to the number of units you produce (e.g., unit cost, manufacturing deposits). This scales with production."
+                        helpTitle={t.pages.costs.kpi.variable}
+                        help={t.pages.costs.kpi.variableHelp}
                     />
                     <KpiCard 
-                        label="Total Operating Costs" 
+                        label={t.pages.costs.kpi.operating}
                         value={formatCurrency(costSummary.totalOperating, currency)} 
                         icon={<Activity />}
-                        helpTitle="Total Operating Costs"
-                        help="The total of all expenses required to run the business (Fixed Costs + Variable Costs)."
+                        helpTitle={t.pages.costs.kpi.operating}
+                        help={t.pages.costs.kpi.operatingHelp}
                     />
                     <KpiCard 
-                        label="Avg. var. Cost per Unit" 
+                        label={t.pages.costs.kpi.avgCost}
                         value={formatCurrency(costSummary.avgCostPerUnit, currency)} 
                         icon={<Calculator />}
-                        helpTitle="Avg. Variable Cost per Unit"
-                        help="The average variable cost to produce one unit across all your products (Total Variable Costs / Total Planned Units)."
+                        helpTitle={t.pages.costs.kpi.avgCost}
+                        help={t.pages.costs.kpi.avgCostHelp}
                     />
                 </div>
                  {isManualMode && costSummary.totalVariable > 0 && (
                     <div className="mt-4 space-y-2">
                         <div className="flex justify-between items-center text-sm text-muted-foreground">
-                            <span>Production Deposit Paid</span>
+                            <span>{t.pages.costs.progress}</span>
                              <span className="font-medium text-foreground">
                                 {formatCurrency(costSummary.totalDepositsPaid, currency)} of {formatCurrency(costSummary.totalVariable, currency)}
                             </span>
@@ -96,7 +97,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
             <section>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Monthly Cost Timeline</CardTitle>
+                        <CardTitle>{t.pages.costs.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyCosts} currency={currency} />
@@ -107,7 +108,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
              <section className="grid md:grid-cols-2 gap-8 pt-4">
                  <div className="space-y-8">
                     <div className="space-y-2">
-                        <h2 className="text-xl font-semibold">Fixed Cost Breakdown</h2>
+                        <h2 className="text-xl font-semibold">{t.pages.costs.breakdown.fixed}</h2>
                         <Card>
                             <CardContent className="p-4 space-y-3">
                                 {costSummary.fixedCosts.map(cost => (
@@ -119,7 +120,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                                 ))}
                                 <Separator className="my-2" />
                                 <CostRow 
-                                   label="Total Forecasted Fixed"
+                                   label={t.pages.costs.breakdown.totalFixed}
                                    value={formatCurrency(costSummary.totalFixed, currency)}
                                    className="font-bold pt-2"
                                />
@@ -127,12 +128,12 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                         </Card>
                     </div>
                     <div className="space-y-2">
-                        <h2 className="text-xl font-semibold">Investment Breakdown</h2>
+                        <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
                          <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.59L12 15.17l-1.41 1.42L9.17 18l-2.83-2.83 1.41-1.41L9.17 15.17l1.41-1.42L12 15.17l2.83-2.83 1.41 1.41L14.83 18l1.41-1.41.01.01.01-.01zM12 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
-                                    Investment Breakdown
+                                    {t.pages.costs.charts.investment}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="h-[300px] w-full">
@@ -143,22 +144,22 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
                 </div>
 
                 <div className="space-y-2">
-                    <h2 className="text-xl font-semibold">Variable Cost Breakdown (per Product)</h2>
+                    <h2 className="text-xl font-semibold">{t.pages.costs.breakdown.variable}</h2>
                      <Card>
                         <CardContent className="p-4 space-y-4">
                             {costSummary.variableCosts.map(product => (
                                 <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
                                     <h3 className="font-semibold">{product.name}</h3>
-                                    <CostRow label="Planned Units" value={product.plannedUnits.toLocaleString()} />
-                                    <CostRow label="Unit Cost" value={formatCurrency(product.unitCost, currency)} />
-                                    <CostRow label="Total Production Cost" value={formatCurrency(product.totalProductionCost, currency)} />
-                                    <CostRow label={`Deposit Paid (Month ${preOrder ? 0 : '1'})`} value={formatCurrency(product.depositPaid, currency)} />
-                                    <CostRow label={`Final Payment (Month ${preOrder ? 1 : '1'})`} value={formatCurrency(product.remainingCost, currency)} />
+                                    <CostRow label={t.pages.costs.breakdown.plannedUnits} value={product.plannedUnits.toLocaleString()} />
+                                    <CostRow label={t.pages.costs.breakdown.unitCost} value={formatCurrency(product.unitCost, currency)} />
+                                    <CostRow label={t.pages.costs.breakdown.productionCost} value={formatCurrency(product.totalProductionCost, currency)} />
+                                    <CostRow label={t.pages.costs.breakdown.depositPaid.replace('{month}', preOrder ? '0' : '1')} value={formatCurrency(product.depositPaid, currency)} />
+                                    <CostRow label={t.pages.costs.breakdown.finalPayment.replace('{month}', preOrder ? '1' : '1')} value={formatCurrency(product.remainingCost, currency)} />
                                 </div>
                             ))}
                             <Separator className="my-2" />
                             <CostRow 
-                               label="Total Variable Costs"
+                               label={t.pages.costs.breakdown.totalVariable}
                                value={formatCurrency(costSummary.totalVariable, currency)}
                                className="font-bold pt-2"
                            />
@@ -173,7 +174,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
 
             <footer className="flex justify-end mt-8 pt-6 border-t">
               <Button onClick={() => router.push('/profit')}>
-                Continue to Profit <ArrowRight className="ml-2" />
+                {t.pages.costs.footer} <ArrowRight className="ml-2" />
               </Button>
             </footer>
         </div>
@@ -181,6 +182,7 @@ function CostsPageContent({ data, inputs }: { data: EngineOutput, inputs: Engine
 }
 
 export default function CostsPage() {
+    const { t } = useForecast();
     const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
         data: null,
         inputs: null,
@@ -196,7 +198,7 @@ export default function CostsPage() {
     const { data, inputs, error, isLoading } = financials;
 
     if (isLoading) {
-        return <CostsPageSkeleton />;
+        return <CostsPageSkeleton t={t} />;
     }
 
     if (error) {
@@ -204,9 +206,9 @@ export default function CostsPage() {
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} Please correct the issues on the Inputs page and try again.
+                        {error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
@@ -214,8 +216,8 @@ export default function CostsPage() {
     }
 
     if (!data || !inputs) {
-        return <CostsPageSkeleton />;
+        return <CostsPageSkeleton t={t} />;
     }
 
-    return <CostsPageContent data={data} inputs={inputs} />;
+    return <CostsPageContent data={data} inputs={inputs} t={t} />;
 }

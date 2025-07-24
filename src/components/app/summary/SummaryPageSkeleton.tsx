@@ -3,10 +3,10 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function SummaryPageSkeleton() {
+export function SummaryPageSkeleton({ t }: { t: any }) {
   return (
     <div className="p-4 md:p-8 space-y-8 animate-pulse">
-      <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
+      <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (

@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 interface CashFlowTableProps {
     data: EngineOutput;
     currency: string;
+    t: any;
 }
 
-export function CashFlowTable({ data, currency }: CashFlowTableProps) {
+export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
     const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
 
     const tableData = monthlyCashFlow.map((cf) => {
@@ -29,25 +30,25 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
             cashOut: cashOut,
             netCashFlow: cf.netCashFlow,
             cumulativeCash: cf.cumulativeCash,
-            status: cf.cumulativeCash < 0 ? 'Funding Needed' : 'Cash Positive',
+            status: cf.cumulativeCash < 0 ? t.pages.cashFlow.table.fundingNeeded : t.pages.cashFlow.table.cashPositive,
         };
     });
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Monthly Cash Flow</CardTitle>
+                <CardTitle>{t.pages.cashFlow.table.title}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-center w-[80px]">Month</TableHead>
-                            <TableHead className="text-right">Cash In</TableHead>
-                            <TableHead className="text-right">Cash Out</TableHead>
-                            <TableHead className="text-right">Net Flow</TableHead>
-                            <TableHead className="text-right">End Balance</TableHead>
-                            <TableHead className="text-center w-[150px]">Status</TableHead>
+                            <TableHead className="text-center w-[80px]">{t.pages.cashFlow.table.month}</TableHead>
+                            <TableHead className="text-right">{t.pages.cashFlow.table.cashIn}</TableHead>
+                            <TableHead className="text-right">{t.pages.cashFlow.table.cashOut}</TableHead>
+                            <TableHead className="text-right">{t.pages.cashFlow.table.netFlow}</TableHead>
+                            <TableHead className="text-right">{t.pages.cashFlow.table.endBalance}</TableHead>
+                            <TableHead className="text-center w-[150px]">{t.pages.cashFlow.table.status}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -69,7 +70,7 @@ export function CashFlowTable({ data, currency }: CashFlowTableProps) {
                                     {formatCurrency(row.cumulativeCash, currency)}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                    <Badge variant={row.status === 'Cash Positive' ? 'default' : 'destructive'} className="w-[120px] justify-center">
+                                    <Badge variant={row.status === t.pages.cashFlow.table.cashPositive ? 'default' : 'destructive'} className="w-[120px] justify-center">
                                         {row.status}
                                     </Badge>
                                 </TableCell>

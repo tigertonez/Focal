@@ -11,6 +11,7 @@ import React from "react";
 interface ProductProfitTableProps {
     data: EngineOutput;
     inputs: EngineInput;
+    t: any;
 }
 
 const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: string }> = ({ title, tooltip, className }) => (
@@ -34,7 +35,7 @@ const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: 
     </TableHead>
 );
 
-export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
+export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
     const { costSummary, revenueSummary, profitSummary } = data;
     const { currency } = inputs.parameters;
 
@@ -81,14 +82,14 @@ export function ProductProfitTable({ data, inputs }: ProductProfitTableProps) {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Product</TableHead>
-                     <ExplanatoryHeader title="Sell-Through" className="text-right" tooltip="The percentage of your total stock you expect to sell. A higher rate is a key driver of profitability." />
-                    <ExplanatoryHeader title="Gross Profit" className="text-right" tooltip="Sales revenue minus the direct cost to produce the goods (COGS). Shows if your product is profitable before overhead costs." />
-                    <ExplanatoryHeader title="Gross Margin" className="text-right" tooltip="Gross Profit as a percentage of revenue. A high margin means more profit from each dollar of sales." />
-                    <ExplanatoryHeader title="Op. Profit" className="text-right" tooltip="Gross Profit minus a share of fixed operational costs (like salaries). Shows if the product is profitable after day-to-day business expenses." />
-                    <ExplanatoryHeader title="Op. Margin" className="text-right" tooltip="Operating Profit as a percentage of revenue. A measure of how efficiently your core business generates profit." />
-                    <ExplanatoryHeader title="Net Profit" className="text-right" tooltip="The final 'bottom-line' profit for the product after all expenses, including a share of taxes, have been deducted." />
-                    <ExplanatoryHeader title="Net Margin" className="text-right" tooltip="Net Profit as a percentage of revenue. The ultimate measure of a product's profitability." />
+                    <TableHead>{t.pages.profit.table.product}</TableHead>
+                     <ExplanatoryHeader title={t.pages.profit.table.sellThrough} className="text-right" tooltip={t.pages.profit.table.sellThroughHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.grossProfit} className="text-right" tooltip={t.pages.profit.table.grossProfitHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.grossMargin} className="text-right" tooltip={t.pages.profit.table.grossMarginHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.opProfit} className="text-right" tooltip={t.pages.profit.table.opProfitHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.opMargin} className="text-right" tooltip={t.pages.profit.table.opMarginHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.netProfit} className="text-right" tooltip={t.pages.profit.table.netProfitHelp} />
+                    <ExplanatoryHeader title={t.pages.profit.table.netMargin} className="text-right" tooltip={t.pages.profit.table.netMarginHelp} />
                 </TableRow>
             </TableHeader>
             <TableBody>

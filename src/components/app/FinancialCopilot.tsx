@@ -34,7 +34,7 @@ export function FinancialCopilot() {
 
   useEffect(() => {
     if (isCopilotOpen) {
-        setMessages([{ role: 'bot', text: t.de ? "Hallo! Fragen Sie mich alles über Ihre Prognose." : "Hi! Ask me anything about your forecast." }]);
+        setMessages([{ role: 'bot', text: t.copilot.initial }]);
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
@@ -103,7 +103,7 @@ export function FinancialCopilot() {
     } catch (err: any) {
         const errorMessage = err.message || 'An unexpected error occurred.';
         setError(errorMessage);
-        const botMessage: Message = { role: 'bot', text: "Sorry, I ran into an error. Please try again." };
+        const botMessage: Message = { role: 'bot', text: t.copilot.error };
         setMessages(prev => [...prev, botMessage]);
     } finally {
       setIsLoading(false);
@@ -136,7 +136,7 @@ export function FinancialCopilot() {
                 <Bot className="h-5 w-5 text-primary flex-shrink-0" />
                 <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-muted-foreground">Thinking...</span>
+                    <span className="text-muted-foreground">{t.copilot.thinking}</span>
                 </div>
               </div>
             )}
@@ -153,7 +153,7 @@ export function FinancialCopilot() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={t.de ? "Stellen Sie eine Frage..." : "Ask a question..."}
+              placeholder={t.copilot.placeholder}
               className="pr-12 min-h-[40px] text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

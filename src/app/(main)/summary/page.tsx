@@ -27,52 +27,52 @@ import { useForecast } from '@/context/ForecastContext';
 // Child Components
 // =================================================================
 
-const KPISection = ({ data, currency }: { data: EngineOutput, currency: string }) => {
+const KPISection = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
       <KpiCard
-        label="Total Revenue"
+        label={t.pages.summary.kpi.revenue}
         value={formatCurrency(revenueSummary.totalRevenue, currency)}
         icon={<TrendingUp />}
-        helpTitle="Total Revenue"
-        help="The total income generated from sales over the forecast period before any costs are deducted."
+        helpTitle={t.pages.summary.kpi.revenue}
+        help={t.pages.summary.kpi.revenueHelp}
       />
       <KpiCard
-        label="Total Costs"
+        label={t.pages.summary.kpi.costs}
         value={formatCurrency(costSummary.totalOperating, currency)}
         icon={<TrendingDown />}
-        helpTitle="Total Operating Costs"
-        help="The sum of all fixed and variable costs required to run the business."
+        helpTitle={t.pages.summary.kpi.costs}
+        help={t.pages.summary.kpi.costsHelp}
       />
       <KpiCard
-        label="Gross Profit"
+        label={t.pages.summary.kpi.grossProfit}
         value={formatCurrency(profitSummary.totalGrossProfit, currency)}
         icon={<Landmark />}
-        helpTitle="Gross Profit"
-        help="Total Revenue minus the direct cost of goods sold (COGS). It measures how efficiently you produce and sell your products."
+        helpTitle={t.pages.summary.kpi.grossProfit}
+        help={t.pages.summary.kpi.grossProfitHelp}
       />
       <KpiCard
-        label="Ending Cash"
+        label={t.pages.summary.kpi.endingCash}
         value={formatCurrency(cashFlowSummary.endingCashBalance, currency)}
         icon={<PiggyBank />}
-        helpTitle="Ending Cash Balance"
-        help="The total cash your business will have in the bank at the end of the forecast period."
+        helpTitle={t.pages.summary.kpi.endingCash}
+        help={t.pages.summary.kpi.endingCashHelp}
       />
       <KpiCard
-        label="Profit Break-Even"
+        label={t.pages.summary.kpi.breakEven}
         value={profitSummary.breakEvenMonth ? `${profitSummary.breakEvenMonth} Months` : 'N/A'}
         icon={<CalendarCheck2 />}
-        helpTitle="Profit Break-Even"
-        help="The month in which your cumulative operating profit becomes positive."
+        helpTitle={t.pages.summary.kpi.breakEven}
+        help={t.pages.summary.kpi.breakEvenHelp}
       />
       <KpiCard
-        label="Funding Need"
+        label={t.pages.summary.kpi.funding}
         value={formatCurrency(cashFlowSummary.peakFundingNeed, currency)}
         icon={<Target />}
-        helpTitle="Peak Funding Need"
-        help="The lowest point of your cumulative cash balance. This is the minimum capital required to prevent your cash from going below zero."
+        helpTitle={t.pages.summary.kpi.funding}
+        help={t.pages.summary.kpi.fundingHelp}
       />
     </div>
   );
@@ -119,11 +119,13 @@ const InsightSection: React.FC<{ title: string; icon: React.ReactNode; children:
 const HealthPanel = ({ 
   healthData,
   financialSummaries,
-  onRecalculate 
+  onRecalculate,
+  t
 }: { 
   healthData?: BusinessHealth,
   financialSummaries: { revenue: RevenueSummary, cost: CostSummary, profit: ProfitSummary },
-  onRecalculate: () => void 
+  onRecalculate: () => void,
+  t: any
 }) => {
     const { inputs } = useForecast();
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
@@ -153,17 +155,25 @@ const HealthPanel = ({
     if (!healthData) {
         return (
             <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center">
-                 <CardTitle className="mb-2">Business Health Score</CardTitle>
-                 <p className="text-muted-foreground mb-4 text-sm">This feature is new. Please re-run your report to see the analysis.</p>
+                 <CardTitle className="mb-2">{t.insights.summary.title}</CardTitle>
+                 <p className="text-muted-foreground mb-4 text-sm">{t.pages.summary.health.new}</p>
                  <Button onClick={onRecalculate}>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Go to Inputs & Recalculate
+                    {t.pages.summary.health.recalculate}
                  </Button>
             </Card>
         );
     }
     
     const { score, kpis } = healthData;
+    const kpiTooltips: Record<string, string> = {
+        'Net Margin': t.pages.summary.health.netMarginHelp,
+        'Cash Runway': t.pages.summary.health.runwayHelp,
+        'Contribution Margin': t.pages.summary.health.contributionMarginHelp,
+        'Peak Funding': t.pages.summary.health.peakFundingHelp,
+        'Sell-Through': t.pages.summary.health.sellThroughHelp,
+        'Break-Even': t.pages.summary.health.breakEvenHelp,
+    };
 
     const getScoreColor = (s: number) => {
         if (s < 40) return 'bg-destructive text-destructive-foreground';
@@ -217,8 +227,8 @@ const HealthPanel = ({
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Business Health Score</CardTitle>
-                        <CardDescription>A weighted score based on key financial metrics to gauge your plan's viability.</CardDescription>
+                        <CardTitle>{t.insights.summary.title}</CardTitle>
+                        <CardDescription>{t.insights.summary.description}</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -228,12 +238,12 @@ const HealthPanel = ({
                         <div className={cn("text-5xl font-bold font-headline px-6 py-4 rounded-full", getScoreColor(score))}>
                            {score.toFixed(0)}
                         </div>
-                        <p className="text-sm text-muted-foreground">Overall Score</p>
+                        <p className="text-sm text-muted-foreground">{t.insights.summary.overallScore}</p>
                     </div>
 
                     <div className="md:col-span-2 space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                            {kpis.map(kpi => <HealthBar key={kpi.label} {...kpi} />)}
+                            {kpis.map(kpi => <HealthBar key={kpi.label} label={kpi.label} value={kpi.value} tooltip={kpiTooltips[kpi.label] || kpi.tooltip} />)}
                         </div>
                     </div>
                 </div>
@@ -243,18 +253,18 @@ const HealthPanel = ({
                 {error && (
                     <Alert variant="destructive" className="mt-4">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>AI Strategy Error</AlertTitle>
+                        <AlertTitle>{t.insights.summary.strategize.error}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
                 
                 {!aiInsights && !isLoading && (
                     <div className="text-center">
-                        <h3 className="text-lg font-semibold mb-2">Get Your Strategic Analysis</h3>
-                        <p className="text-muted-foreground mb-4">Unlock AI-powered insights to improve your business plan.</p>
+                        <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
+                        <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
                         <Button onClick={handleStrategize} disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            Generate Strategic Report
+                            {t.insights.summary.strategize.button}
                         </Button>
                     </div>
                 )}
@@ -262,7 +272,7 @@ const HealthPanel = ({
                 {isLoading && (
                    <div className="text-center">
                         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                        <p className="text-muted-foreground">Generating your strategic report...</p>
+                        <p className="text-muted-foreground">{t.insights.summary.strategize.loaderText}</p>
                    </div>
                 )}
                 
@@ -270,30 +280,30 @@ const HealthPanel = ({
                      <div className="space-y-6">
                         <div className="flex justify-between items-start">
                              <div>
-                                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Strategic Health Report</CardTitle>
+                                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.summary.strategize.reportTitle}</CardTitle>
                                 <CardDescription>
-                                  AI-powered analysis of your business health score.
+                                  {t.insights.summary.strategize.reportDescription}
                                 </CardDescription>
                             </div>
                             <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
-                                Regenerate
+                                {t.insights.regenerate}
                             </Button>
                         </div>
                         
-                        <InsightSection title="Strategic Summary" icon={<Lightbulb className="text-amber-500" />}>
+                        <InsightSection title={t.insights.summary.strategize.summary} icon={<Lightbulb className="text-amber-500" />}>
                            <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(aiInsights.summary)} />
                         </InsightSection>
 
-                        <InsightSection title="Key Strengths" icon={<CheckCircle className="text-green-500" />}>
+                        <InsightSection title={t.insights.summary.strategize.strengths} icon={<CheckCircle className="text-green-500" />}>
                           {renderContent(aiInsights.strengths)}
                         </InsightSection>
                         
-                        <InsightSection title="Top Opportunities" icon={<TrendingUp className="text-blue-500" />}>
+                        <InsightSection title={t.insights.summary.strategize.opportunities} icon={<TrendingUp className="text-blue-500" />}>
                           {renderContent(aiInsights.opportunities)}
                         </InsightSection>
 
-                        <InsightSection title="Key Risks to Mitigate" icon={<ShieldAlert className="text-red-500" />}>
+                        <InsightSection title={t.insights.summary.strategize.risks} icon={<ShieldAlert className="text-red-500" />}>
                            {renderContent(aiInsights.risks)}
                         </InsightSection>
                      </div>
@@ -314,7 +324,7 @@ const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon 
     </div>
 );
 
-const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }) => {
+const CashBridge = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
     const { profitSummary, costSummary, cashFlowSummary } = data;
 
     const operatingProfit = profitSummary.totalOperatingProfit;
@@ -325,19 +335,19 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Profit to Cash Bridge</CardTitle>
-                <CardDescription>How your operating profit converts to your final cash balance.</CardDescription>
+                <CardTitle>{t.insights.summary.bridge.title}</CardTitle>
+                <CardDescription>{t.insights.summary.bridge.description}</CardDescription>
             </CardHeader>
             <CardContent className="px-6 py-4">
                 <div className="space-y-1">
                     <BridgeRow 
-                        label="Operating Profit" 
+                        label={t.insights.summary.bridge.operatingProfit}
                         value={operatingProfit} 
                         currency={currency} 
                         icon={<PlusCircle className="h-4 w-4 text-green-500" />}
                     />
                     <BridgeRow 
-                        label="Cash Tied in Unsold Inventory" 
+                        label={t.insights.summary.bridge.unsoldInventory}
                         value={-unsoldInventoryValue} 
                         currency={currency} 
                         colorClass="text-red-600"
@@ -345,19 +355,19 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
                     />
                     <div className="space-y-1">
                         <BridgeRow 
-                            label="Estimated Taxes" 
+                            label={t.insights.summary.bridge.taxes}
                             value={-estTaxes} 
                             currency={currency} 
                             colorClass="text-red-600"
                             icon={<MinusCircle className="h-4 w-4 text-red-500" />}
                         />
-                         <p className="pl-8 text-xs text-muted-foreground text-left">*Based on the estimated tax rate provided. Actual taxes may differ.</p>
+                         <p className="pl-8 text-xs text-muted-foreground text-left">{t.insights.summary.bridge.taxNote}</p>
                     </div>
 
                     <Separator className="my-2" />
 
                     <BridgeRow 
-                        label="Ending Cash Balance" 
+                        label={t.insights.summary.bridge.endingCash}
                         value={endingCash} 
                         currency={currency} 
                         colorClass="text-blue-600 font-bold"
@@ -373,16 +383,16 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
 // MAIN PAGE COMPONENT
 // =================================================================
 
-function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
+function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
 
   return (
     <div className="p-4 md:p-8 space-y-8">
       <div className="flex justify-between items-start">
-        <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
+        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
       </div>
       
-      <KPISection data={data} currency={inputs.parameters.currency} />
+      <KPISection data={data} currency={inputs.parameters.currency} t={t} />
       
       <HealthPanel 
         healthData={data.businessHealth}
@@ -392,13 +402,14 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
           profit: data.profitSummary,
         }}
         onRecalculate={() => router.push('/inputs')}
+        t={t}
       />
 
-      <CashBridge data={data} currency={inputs.parameters.currency} />
+      <CashBridge data={data} currency={inputs.parameters.currency} t={t} />
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
-          <ArrowLeft className="mr-2" /> Back to Cash Flow
+          <ArrowLeft className="mr-2" /> {t.pages.summary.footer}
         </Button>
       </footer>
       <DownloadReportButton />
@@ -407,6 +418,7 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
 }
 
 export default function SummaryPage() {
+    const { t } = useForecast();
     const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
         data: null,
         inputs: null,
@@ -422,7 +434,7 @@ export default function SummaryPage() {
     const { data, inputs, error, isLoading } = financials;
 
     if (isLoading) {
-        return <SummaryPageSkeleton />;
+        return <SummaryPageSkeleton t={t} />;
     }
 
     if (error) {
@@ -430,9 +442,9 @@ export default function SummaryPage() {
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} Please correct the issues on the Inputs page and try again.
+                        {error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
@@ -444,14 +456,14 @@ export default function SummaryPage() {
             <div className="p-4 md:p-8 text-center">
                  <Alert>
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>No Data Found</AlertTitle>
+                    <AlertTitle>{t.errors.noData}</AlertTitle>
                     <AlertDescription>
-                        Please run a report from the Inputs page to see the summary.
+                        {t.errors.noDataDescription}
                     </AlertDescription>
                 </Alert>
             </div>
         );
     }
 
-    return <SummaryPageContent data={data} inputs={inputs} />;
+    return <SummaryPageContent data={data} inputs={inputs} t={t} />;
 }

@@ -18,9 +18,10 @@ import { CashFlowChart } from '@/components/app/cash-flow/charts/CashFlowChart';
 import { CashFlowTable } from '@/components/app/cash-flow/CashFlowTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
+import { useForecast } from '@/context/ForecastContext';
 
 
-function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: EngineInput }) {
+function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
   const { cashFlowSummary, profitSummary } = data;
   const currency = inputs.parameters.currency;
@@ -30,43 +31,43 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <SectionHeader title="Cash Flow Analysis" description="Monthly cash flow, funding needs, and runway." />
+      <SectionHeader title={t.pages.cashFlow.title} description={t.pages.cashFlow.description} />
       
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KpiCard 
-            label="Ending Cash Balance" 
+            label={t.pages.cashFlow.kpi.ending} 
             value={formatCurrency(cashFlowSummary.endingCashBalance, currency)} 
             icon={<Wallet />}
-            helpTitle="Ending Cash Balance"
-            help="The total cash your business will have in the bank at the end of the forecast period. It's the final result of all cash inflows and outflows."
+            helpTitle={t.pages.cashFlow.kpi.ending}
+            help={t.pages.cashFlow.kpi.endingHelp}
           />
           <KpiCard 
-            label="Peak Funding Need" 
+            label={t.pages.cashFlow.kpi.peak}
             value={formatCurrency(cashFlowSummary.peakFundingNeed, currency)} 
             icon={<TrendingDown />}
-            helpTitle="Peak Funding Need"
-            help="The lowest point of your cumulative cash balance. This is the minimum amount of capital required to prevent your cash from going below zero during the forecast."
+            helpTitle={t.pages.cashFlow.kpi.peak}
+            help={t.pages.cashFlow.kpi.peakHelp}
           />
           <KpiCard 
-            label="Months to Break-Even" 
+            label={t.pages.cashFlow.kpi.breakEven}
             value={cashFlowSummary.breakEvenMonth !== null ? `${cashFlowSummary.breakEvenMonth} Months` : 'N/A'} 
             icon={<CalendarClock />}
-            helpTitle="Months to Cash Break-Even"
-            help="The first month where your cumulative cash balance becomes positive, indicating the business can self-sustain its cash flow."
+            helpTitle={t.pages.cashFlow.kpi.breakEven}
+            help={t.pages.cashFlow.kpi.breakEvenHelp}
           />
           <KpiCard 
-            label="Cash Runway (Months)" 
+            label={t.pages.cashFlow.kpi.runway}
             value={isFinite(cashFlowSummary.runway) ? `${formatNumber(cashFlowSummary.runway)}` : 'Infinite'}
             icon={<Banknote />}
-            helpTitle="Cash Runway"
-            help="An estimate of how many months your business can operate with its current cash before it runs out. Calculated as (Ending Cash / Average Monthly Fixed Costs)."
+            helpTitle={t.pages.cashFlow.kpi.runway}
+            help={t.pages.cashFlow.kpi.runwayHelp}
           />
         </div>
         {potentialCashPosition > 0 && (
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span>Achieved vs. Potential Cash Position</span>
+              <span>{t.pages.cashFlow.progress}</span>
               <span className="font-medium text-foreground">
                  {formatCurrency(cashFlowSummary.endingCashBalance, currency)} of {formatCurrency(potentialCashPosition, currency)}
               </span>
@@ -79,14 +80,14 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
       <section className="space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>Cumulative Cash Flow</CardTitle>
+                <CardTitle>{t.pages.cashFlow.charts.cumulative}</CardTitle>
             </CardHeader>
             <CardContent className="h-[400px] w-full pl-0">
                <CashFlowChart data={data} currency={currency} />
             </CardContent>
         </Card>
         <div className="overflow-y-auto">
-          <CashFlowTable data={data} currency={currency} />
+          <CashFlowTable data={data} currency={currency} t={t} />
         </div>
         <div className="pt-4">
           <CashFlowInsights />
@@ -96,10 +97,10 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
 
       <footer className="flex justify-between mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/profit')}>
-          <ArrowLeft className="mr-2" /> Back to Profit
+          <ArrowLeft className="mr-2" /> {t.pages.cashFlow.footer.back}
         </Button>
         <Button onClick={() => router.push('/summary')}>
-          Continue to Summary <ArrowRight className="ml-2" />
+          {t.pages.cashFlow.footer.continue} <ArrowRight className="ml-2" />
         </Button>
       </footer>
     </div>
@@ -108,6 +109,7 @@ function CashFlowPageContent({ data, inputs }: { data: EngineOutput, inputs: Eng
 
 
 export default function CashFlowPage() {
+    const { t } = useForecast();
     const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
         data: null,
         inputs: null,
@@ -123,7 +125,7 @@ export default function CashFlowPage() {
     const { data, inputs, error, isLoading } = financials;
 
     if (isLoading) {
-        return <CashFlowPageSkeleton />;
+        return <CashFlowPageSkeleton t={t} />;
     }
 
     if (error) {
@@ -131,9 +133,9 @@ export default function CashFlowPage() {
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} Please correct the issues on the Inputs page and try again.
+                        {error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
@@ -141,8 +143,8 @@ export default function CashFlowPage() {
     }
 
     if (!data || !inputs) {
-        return <CashFlowPageSkeleton />;
+        return <CashFlowPageSkeleton t={t} />;
     }
 
-    return <CashFlowPageContent data={data} inputs={inputs} />;
+    return <CashFlowPageContent data={data} inputs={inputs} t={t} />;
 }
