@@ -272,14 +272,12 @@ const ChartLegendContent = React.forwardRef<
     ref
   ) => {
     const { config } = useChart()
-    const itemNumber = payload?.length || 0;
 
     return (
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-center gap-x-4",
-          itemNumber > 4 ? "flex-wrap gap-y-2" : "flex-nowrap",
+          "flex items-center justify-center flex-wrap gap-x-4 gap-y-1",
           verticalAlign === "top" ? "pb-3" : "pt-3",
           className
         )}
@@ -292,8 +290,7 @@ const ChartLegendContent = React.forwardRef<
             <div
               key={item.value}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
-                 itemNumber > 4 ? "text-[11px]" : "text-xs"
+                "flex items-center gap-1.5 whitespace-nowrap text-xs [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
               )}
             >
               {itemConfig?.icon && !hideIcon ? (
