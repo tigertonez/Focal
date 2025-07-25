@@ -365,15 +365,15 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         const productCOGS = revenueBreakdown.totalSoldUnits * (product.unitCost || 0);
         const productGrossProfit = productRevenue - productCOGS;
         
-        const revenueShare = productRevenue / revenueSummary.totalRevenue;
+        const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
         
         const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
         const productOperatingProfit = productGrossProfit - allocatedFixedCosts;
         
-        const allocatedTaxes = (productOperatingProfit > 0 ? productOperatingProfit * (taxRate / 100) : 0);
-        const productNetProfit = productOperatingProfit - allocatedTaxes;
+        const productTax = productOperatingProfit > 0 ? productOperatingProfit * (taxRate / 100) : 0;
+        const productNetProfit = productOperatingProfit - productTax;
 
-        const netMargin = (productNetProfit / productRevenue) * 100;
+        const netMargin = (productRevenue > 0 && isFinite(productNetProfit / productRevenue)) ? (productNetProfit / productRevenue) * 100 : 0;
         
         return {
             weight: revenueShare,
