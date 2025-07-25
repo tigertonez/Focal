@@ -41,9 +41,11 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
             color: inputProduct ? getProductColor(inputProduct) : 'hsl(var(--muted-foreground))',
         };
     });
+    
+    const isMobile = (typeof window !== 'undefined') && window.innerWidth < 768;
+    const manyItems = data.length > 4;
 
     const legendStyle: React.CSSProperties = {
-      fontSize: '12px',
       lineHeight: '1.5',
       bottom: 0,
       display: 'flex',
@@ -51,6 +53,8 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
       justifyContent: 'center',
       alignItems: 'center',
       width: '100%',
+      gap: manyItems ? '0.25rem 0.5rem' : '0.5rem',
+      fontSize: manyItems && isMobile ? '11px' : '12px',
     };
 
     return (
@@ -83,7 +87,7 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
                     ))}
                 </Pie>
                 <Legend 
-                    iconSize={10} 
+                    iconSize={8}
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
@@ -93,5 +97,3 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
         </ResponsiveContainer>
     );
 }
-
-    

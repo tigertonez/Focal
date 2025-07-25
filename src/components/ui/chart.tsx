@@ -272,10 +272,13 @@ const ChartLegendContent = React.forwardRef<
     ref
   ) => {
     const { config } = useChart()
+    const isMobile = (typeof window !== 'undefined') && window.innerWidth < 768;
+    const manyItems = payload && payload.length > 4;
+    
     const itemStyle: React.CSSProperties = {
       display: 'flex',
       alignItems: 'center',
-      gap: '0.375rem', // gap-1.5
+      gap: '0.375rem',
       whiteSpace: 'nowrap',
     };
     
@@ -284,15 +287,16 @@ const ChartLegendContent = React.forwardRef<
        flexWrap: 'wrap',
        justifyContent: 'center',
        alignItems: 'center',
-       gap: '1rem 0.5rem', // gap-x-4 gap-y-2
-       fontSize: '12px',
-    }
+       gap: manyItems ? '0.5rem 1rem' : '1rem',
+       fontSize: manyItems && isMobile ? '11px' : '12px',
+    };
 
     return (
       <div
         ref={ref}
         style={containerStyle}
         className={cn(
+          "px-2",
           verticalAlign === "top" ? "pb-3" : "pt-3",
           className
         )}
@@ -305,10 +309,10 @@ const ChartLegendContent = React.forwardRef<
             <div
               key={item.value}
               style={itemStyle}
-              className={cn("[&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground")}
+              className={cn("[&>svg]:text-muted-foreground")}
             >
               {itemConfig?.icon && !hideIcon ? (
-                <itemConfig.icon />
+                <itemConfig.icon className="h-3 w-3" />
               ) : (
                 <div
                   className="h-2 w-2 shrink-0 rounded-[2px]"
@@ -374,5 +378,3 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
-
-    

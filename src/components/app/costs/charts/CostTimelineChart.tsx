@@ -106,6 +106,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
           data={chartData}
           margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
           stackOffset="sign"
+          barCategoryGap="20%"
         >
           <CartesianGrid vertical={false} />
           <XAxis
@@ -138,6 +139,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
                     fill={itemConfig?.color}
                     stackId="a"
                     name={itemConfig?.label || key}
+                    barSize={20}
                   />
               )
           })}
