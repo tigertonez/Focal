@@ -44,6 +44,7 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
 
     const legendStyle: React.CSSProperties = {
       fontSize: chartData.length > 4 ? '11px' : '12px',
+      lineHeight: chartData.length > 4 ? '1.2' : '1.5',
       bottom: 0,
       display: 'flex',
       flexWrap: 'wrap',
@@ -92,7 +93,3 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
         </ResponsiveContainer>
     );
 }
-
-    
-
-    

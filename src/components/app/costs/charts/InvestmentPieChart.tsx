@@ -38,6 +38,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
     
     const legendStyle: React.CSSProperties = {
       fontSize: data.length > 4 ? '11px' : '12px',
+      lineHeight: data.length > 4 ? '1.2' : '1.5',
       bottom: 0,
       display: 'flex',
       flexWrap: 'wrap',
@@ -93,7 +94,3 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
         </ResponsiveContainer>
     );
 }
-
-    
-
-    
