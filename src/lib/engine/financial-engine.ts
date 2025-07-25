@@ -196,7 +196,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
         }
 
         if (schedule === 'Paid Up-Front') {
-            const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount;
+            const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount;
             const upFrontMonth = monthlyCostTimeline.find(t => t.month === allocationStartMonth);
             if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
             return;
@@ -266,13 +266,12 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + p.depositPaid, 0);
     const totalFinalPayments = variableCostBreakdown.reduce((sum, p) => sum + p.remainingCost, 0);
     
-    const totalFixedCostInPeriod = monthlyCostTimeline.reduce((total, month) => {
-        return total + Object.entries(month).reduce((monthTotal, [key, value]) => {
-            if (key === 'month' || key === 'Deposits' || key === 'Final Payments') return monthTotal;
-            const isJitCost = inputs.products.some(p => p.productName === key && p.costModel === 'monthly');
-            if (isJitCost) return monthTotal;
-            return monthTotal + value;
-        }, 0);
+    // Correctly calculate total fixed cost by summing up all fixed cost items for the entire period.
+    const totalFixedCostInPeriod = inputs.fixedCosts.reduce((total, cost) => {
+        if (cost.costType === 'Monthly Cost') {
+            return total + (cost.amount * inputs.parameters.forecastMonths);
+        }
+        return total + cost.amount; // 'Total for Period'
     }, 0);
     
     const totalCogsOfSoldGoods = inputs.products.reduce((total, product) => {
@@ -316,9 +315,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     let totalWeightedMarginSum = 0;
-
-    // CORRECTED: Calculate Total Gross Profit based on period totals, per user request.
-    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
 
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
@@ -366,9 +362,11 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
     });
     
-    const totalOperatingProfit = monthlyProfit.reduce((s, p) => s + p.operatingProfit, 0);
-    const totalNetProfit = monthlyProfit.reduce((s, p) => s + p.netProfit, 0);
-    const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalWeightedMarginSum / revenueSummary.totalRevenue) * 100 : 0;
+    // Corrected Summary Calculations
+    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
+    const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
+    const totalNetProfit = totalOperatingProfit - (totalOperatingProfit > 0 ? totalOperatingProfit * (taxRate / 100) : 0);
+    const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalNetProfit / revenueSummary.totalRevenue) * 100 : 0;
 
     const profitSummary = {
         totalGrossProfit,
