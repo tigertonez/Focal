@@ -4,7 +4,7 @@ import { analyzeFinancialData } from '@/ai/flows/analyze-financial-data';
 import { financialCopilot } from '@/ai/flows/financial-copilot';
 import { calculateFinancials } from '@/lib/engine/financial-engine';
 import { z } from 'zod';
-import { EngineInputSchema } from '@/lib/types';
+import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
 
 
 const AnalyzeDataSchema = z.object({
@@ -23,6 +23,10 @@ const CopilotSchema = z.object({
   history: z.array(CopilotMessageSchema),
   screenshotDataUri: z.string(),
   language: z.string().optional(),
+  financials: z.object({
+      inputs: EngineInputSchema,
+      data: EngineOutputSchema,
+  }),
 });
 
 const CalculateFinancialsSchema = z.object({
@@ -54,11 +58,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'copilot') {
-        const { history, screenshotDataUri, language } = validation.data;
+        const { history, screenshotDataUri, language, financials } = validation.data;
         const result = await financialCopilot({
           history: history,
           screenshotDataUri: screenshotDataUri,
           language: language,
+          financials: financials,
         });
         return NextResponse.json(result);
     }

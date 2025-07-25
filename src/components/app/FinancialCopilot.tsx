@@ -9,6 +9,8 @@ import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
+import { getFinancials } from '@/lib/get-financials';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   role: 'user' | 'bot';
@@ -21,6 +23,7 @@ export function FinancialCopilot() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen, t, locale } = useForecast();
+  const { toast } = useToast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +63,17 @@ export function FinancialCopilot() {
     const currentInput = question || input;
     if (currentInput.trim() === '' || isLoading) return;
 
+    // Fetch the full financial data
+    const financials = getFinancials();
+    if (financials.error || !financials.data || !financials.inputs) {
+        toast({
+            variant: "destructive",
+            title: "Cannot start copilot",
+            description: "Please run a report from the Inputs page first to load the data.",
+        });
+        return;
+    }
+
     const userMessage: Message = { role: 'user', text: currentInput };
     const newMessages = isProactive ? [userMessage] : [...messages, userMessage];
     
@@ -88,6 +102,10 @@ export function FinancialCopilot() {
           history: apiHistory,
           screenshotDataUri,
           language: locale,
+          financials: {
+            inputs: financials.inputs,
+            data: financials.data,
+          }
         }),
       });
 
