@@ -317,25 +317,24 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     let totalWeightedMarginSum = 0;
 
-    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
-
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
 
-        const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {}).filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments' && !inputs.products.some(p => p.productName === k)).reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
-        
-        const monthlyVariableCosts = Object.entries(monthlyCosts.find(c => c.month === month) || {}).reduce((total, [key, value]) => {
-            if (key === 'month') return total;
-            const isProductCost = inputs.products.some(p => p.productName === key);
-            const isDepositOrFinalPayment = key === 'Deposits' || key === 'Final Payments';
-            if (isProductCost || isDepositOrFinalPayment) {
-                return total + value;
-            }
-            return total;
+        const monthlyUnitsSoldForMonth = monthlyUnitsSold.find(m => m.month === month) || {};
+        const monthlyCogs = inputs.products.reduce((total, p) => {
+            const unitsSold = monthlyUnitsSoldForMonth[p.productName] || 0;
+            return total + (unitsSold * (p.unitCost || 0));
         }, 0);
         
-        const monthlyGrossProfit = totalMonthlyRevenue - monthlyVariableCosts;
-        const operatingProfit = monthlyGrossProfit - totalMonthlyFixedCosts;
+        const monthlyGrossProfit = totalMonthlyRevenue - monthlyCogs;
+        
+        const costsForMonth = monthlyCosts.find(c => c.month === month) || {};
+        const monthlyFixedCosts = Object.entries(costsForMonth).reduce((total, [key, value]) => {
+            const isFixed = inputs.fixedCosts.some(fc => fc.name === key);
+            return total + (isFixed ? value : 0);
+        }, 0);
+        
+        const operatingProfit = monthlyGrossProfit - monthlyFixedCosts;
         
         const monthlyTaxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
         const netProfit = operatingProfit - monthlyTaxes;
@@ -352,7 +351,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
                     const productCOGS = ((monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0) * (p.unitCost || 0);
                     const productGrossProfit = productRevenue - productCOGS;
                     const revenueShare = productRevenue / totalMonthlyRevenue;
-                    const allocatedFixed = totalMonthlyFixedCosts * revenueShare;
+                    const allocatedFixed = monthlyFixedCosts * revenueShare;
                     const allocatedTax = monthlyTaxes * revenueShare;
                     const productNetProfit = productGrossProfit - allocatedFixed - allocatedTax;
                     const productNetMargin = productNetProfit / productRevenue;
@@ -364,6 +363,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
     });
     
+    const totalGrossProfit = monthlyProfit.reduce((s, p) => s + p.grossProfit, 0);
     const totalOperatingProfit = monthlyProfit.reduce((s, p) => s + p.operatingProfit, 0);
     const totalNetProfit = monthlyProfit.reduce((s, p) => s + p.netProfit, 0);
     const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalWeightedMarginSum / revenueSummary.totalRevenue) * 100 : 0;
