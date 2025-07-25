@@ -7,7 +7,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
