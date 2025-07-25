@@ -128,7 +128,7 @@ export function FinancialCopilot() {
   };
   
   return (
-    <div className="fixed bottom-4 left-4 w-1/2 h-auto max-h-[60vh] z-50">
+    <div className="fixed bottom-4 left-1/4 w-1/2 h-auto max-h-[60vh] z-50 transform -translate-x-1/2">
         <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5">
             <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-md z-10">
                 <X className="h-4 w-4" />
