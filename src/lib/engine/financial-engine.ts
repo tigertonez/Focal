@@ -1,5 +1,6 @@
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, CashFlowSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
@@ -183,7 +184,7 @@ const getAggregatedSalesWeights = (inputs: EngineInput, timeline: Timeline, star
     return monthlyRevenue.map(rev => rev / totalValue);
 };
 
-const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]): Record<string, number>[] => {
+const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record<string, number>[] => {
     const { timelineMonths, requiresMonthZero } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
@@ -197,8 +198,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
 
         if (schedule === 'Paid Up-Front') {
             const totalCost = cost.costType === 'Monthly Cost' ? cost.amount * timeline.forecastMonths : cost.amount;
-            const upFrontMonthIndex = requiresMonthZero ? 0 : 1;
-            const upFrontMonth = monthlyCostTimeline.find(t => t.month === upFrontMonthIndex);
+            const upFrontMonth = monthlyCostTimeline.find(t => t.month === allocationStartMonth);
             if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
             return;
         }
@@ -215,27 +215,39 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline, monthly
 };
 
 const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]) => {
+    const { preOrder } = inputs.parameters;
+    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline);
     let totalPlannedUnits = 0, totalVariableCost = 0;
 
-    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyUnitsSold);
-    
     inputs.products.forEach(product => {
         const plannedUnits = product.plannedUnits || 0;
         const totalProductionCost = plannedUnits * (product.unitCost || 0);
 
-        if (product.costModel === 'batch') {
-            // Simplified logic: All batch costs go to Month 1
-            const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-            if (paymentMonth) {
-                paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + totalProductionCost;
-            }
-        } else if (product.costModel === 'monthly') {
+        if (product.costModel === 'monthly') {
+            // JIT costs are tied to when units are sold
             monthlyCostTimeline.forEach(month => {
                 const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
                 if (unitsThisMonth > 0) {
                     month[product.productName] = (month[product.productName] || 0) + (unitsThisMonth * (product.unitCost || 0));
                 }
             });
+        } else {
+            // Batch costs are paid upfront
+            const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
+            const remainingCost = totalProductionCost - depositPaid;
+            
+            if (preOrder) {
+                // With pre-order, deposits are in M0, final payment in M1
+                const month0 = monthlyCostTimeline.find(t => t.month === 0);
+                if (month0) month0['Deposits'] = (month0['Deposits'] || 0) + depositPaid;
+
+                const month1 = monthlyCostTimeline.find(t => t.month === 1);
+                if (month1) month1['Final Payments'] = (month1['Final Payments'] || 0) + remainingCost;
+            } else {
+                // Without pre-order, all costs hit in M1
+                const month1 = monthlyCostTimeline.find(t => t.month === 1);
+                if (month1) month1['Final Payments'] = (month1['Final Payments'] || 0) + totalProductionCost;
+            }
         }
         
         totalPlannedUnits += plannedUnits;

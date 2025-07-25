@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { getFinancials } from '@/lib/get-financials';
 import { useToast } from '@/hooks/use-toast';
+import { useForecast } from '@/context/ForecastContext';
 
 export function DownloadReportButton() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useForecast();
 
   const handleDownload = async () => {
     setLoading(true);
@@ -57,20 +59,18 @@ export function DownloadReportButton() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <Button
-        size="lg"
-        onClick={handleDownload}
-        disabled={loading}
-        className="shadow-lg"
-      >
-        {loading ? (
-          <Loader2 className="animate-spin mr-2" />
-        ) : (
-          <Download className="mr-2" />
-        )}
-        Download Report
-      </Button>
-    </div>
+    <Button
+      size="lg"
+      onClick={handleDownload}
+      disabled={loading}
+      className="shadow-lg"
+    >
+      {loading ? (
+        <Loader2 className="animate-spin mr-2" />
+      ) : (
+        <Download className="mr-2" />
+      )}
+      {t.insights.download}
+    </Button>
   );
 }
