@@ -42,6 +42,14 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
         };
     });
 
+    const legendStyle = {
+      fontSize: chartData.length > 4 ? '11px' : '12px',
+      bottom: 0,
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    };
+
     return (
         <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -76,7 +84,7 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={{ fontSize: '12px', bottom: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}
+                    wrapperStyle={legendStyle}
                 />
             </PieChart>
         </ResponsiveContainer>

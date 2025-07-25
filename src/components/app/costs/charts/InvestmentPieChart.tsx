@@ -35,6 +35,14 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
     if (!data || data.length === 0) {
         return <div className="h-full w-full flex items-center justify-center text-muted-foreground">No investment data.</div>;
     }
+    
+    const legendStyle = {
+      fontSize: data.length > 4 ? '11px' : '12px',
+      bottom: 0,
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    };
 
     return (
         <ResponsiveContainer width="100%" height="100%">
@@ -77,7 +85,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={{ fontSize: '12px', bottom: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}
+                    wrapperStyle={legendStyle}
                 />
             </PieChart>
         </ResponsiveContainer>
