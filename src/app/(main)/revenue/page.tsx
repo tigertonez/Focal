@@ -91,6 +91,22 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
                     </CardContent>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full pl-0">
+                    <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[350px] w-full pl-0">
+                    <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
@@ -121,7 +137,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                             </TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency, true)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency, true)}</TableCell>
                                             <TableCell className="text-right font-bold pr-2">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
                                         </TableRow>
                                     );
@@ -183,7 +199,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                             </TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
                                             <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
@@ -263,5 +279,3 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
-
-    
