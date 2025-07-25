@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import {
   LineChart,
@@ -125,6 +125,9 @@ const MobileNav = () => {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col">
+                     <SheetHeader>
+                        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                     </SheetHeader>
                      <nav className="grid gap-2 text-lg font-medium">
                         <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
