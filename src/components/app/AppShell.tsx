@@ -24,13 +24,13 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   }, [isPdfMode]);
 
   return (
-      <div className="flex h-screen bg-background">
-        {!isPdfMode && <SideNav />}
-        <main className="flex-1 overflow-auto relative">
-          {children}
-          {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
-        </main>
-      </div>
+    <div className="flex h-screen bg-background">
+      {!isPdfMode && <SideNav />}
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+      {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
+    </div>
   );
 }
 
