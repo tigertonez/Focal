@@ -81,7 +81,8 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 )}
             </section>
             
-            <section className="grid md:grid-cols-2 gap-8">
+            {/* Desktop Layout */}
+            <section className="hidden md:grid md:grid-cols-2 gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
@@ -100,58 +101,98 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 </Card>
             </section>
             
-            <section className="grid grid-cols-1 md:grid-cols-5 gap-8">
-                <div className="md:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Revenue Contribution</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[300px] w-full">
-                            <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="md:col-span-3">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>{t.pages.revenue.table.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-1/3">Product</TableHead>
-                                        <TableHead className="text-right">Units</TableHead>
-                                        <TableHead className="text-right">Sell-Through</TableHead>
-                                        <TableHead className="text-right">Price</TableHead>
-                                        <TableHead className="text-right">Revenue</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {revenueSummary.productBreakdown.map((product) => {
-                                        const inputProduct = inputs.products.find(p => p.productName === product.name);
-                                        if (!inputProduct) return null;
-                                        
-                                        const sellThrough = (inputProduct.sellThrough || 0);
-                                        
-                                        return (
-                                            <TableRow key={product.name}>
-                                                <TableCell className="font-medium flex items-center gap-2">
-                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
-                                                    <span>{product.name}</span>
-                                                </TableCell>
-                                                <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                                <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
-                                                <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
-                                                <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </div>
+            {/* Mobile Layout */}
+            <section className="md:hidden space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Revenue Contribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] w-full">
+                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{t.pages.revenue.table.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-1/3 pl-2">Product</TableHead>
+                                    <TableHead className="text-right">Units</TableHead>
+                                    <TableHead className="text-right">S-T %</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                    <TableHead className="text-right pr-2">Revenue</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {revenueSummary.productBreakdown.map((product) => {
+                                    const inputProduct = inputs.products.find(p => p.productName === product.name);
+                                    if (!inputProduct) return null;
+                                    
+                                    const sellThrough = (inputProduct.sellThrough || 0);
+                                    
+                                    return (
+                                        <TableRow key={product.name}>
+                                            <TableCell className="font-medium flex items-center gap-2 pl-2">
+                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
+                                                <span>{product.name}</span>
+                                            </TableCell>
+                                            <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
+                                            <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency, true)}</TableCell>
+                                            <TableCell className="text-right font-bold pr-2">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </section>
+            
+            {/* Desktop Table */}
+            <section className="hidden md:block">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{t.pages.revenue.table.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-1/3">Product</TableHead>
+                                    <TableHead className="text-right">Units Sold</TableHead>
+                                    <TableHead className="text-right">Sell-Through</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                    <TableHead className="text-right">Total Revenue</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {revenueSummary.productBreakdown.map((product) => {
+                                    const inputProduct = inputs.products.find(p => p.productName === product.name);
+                                    if (!inputProduct) return null;
+                                    
+                                    const sellThrough = (inputProduct.sellThrough || 0);
+                                    
+                                    return (
+                                        <TableRow key={product.name}>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
+                                                <span>{product.name}</span>
+                                            </TableCell>
+                                            <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
+                                            <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
+                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </section>
 
             <section className="pt-4">
@@ -223,3 +264,5 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
+
+    
