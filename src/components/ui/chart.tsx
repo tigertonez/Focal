@@ -285,7 +285,7 @@ const ChartLegendContent = React.forwardRef<
        justifyContent: 'center',
        alignItems: 'center',
        gap: '1rem 0.5rem', // gap-x-4 gap-y-2
-       fontSize: payload && payload.length > 4 ? '11px' : '12px',
+       fontSize: '12px',
     }
 
     return (
@@ -374,3 +374,5 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    

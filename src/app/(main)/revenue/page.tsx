@@ -83,7 +83,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
             
             {/* --- MOBILE VIEW --- */}
             <section className="space-y-8 md:hidden">
-                 <Card>
+                <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                     </CardHeader>
@@ -107,11 +107,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-1/3 pl-2">Product</TableHead>
-                                    <TableHead className="text-right">Units</TableHead>
+                                    <TableHead className="pl-4 w-2/5">Product / Units</TableHead>
                                     <TableHead className="text-right">S-T %</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
-                                    <TableHead className="text-right pr-2">Revenue</TableHead>
+                                    <TableHead className="text-right pr-4">Revenue</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -123,14 +122,18 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     
                                     return (
                                         <TableRow key={product.name}>
-                                            <TableCell className="font-medium flex items-center gap-2 pl-2">
-                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
-                                                <span className="truncate">{product.name}</span>
+                                            <TableCell className="font-medium pl-4 py-2">
+                                                <div className="flex items-center gap-2">
+                                                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
+                                                   <div className="flex flex-col">
+                                                      <span className="font-semibold">{product.name}</span>
+                                                      <span className="text-xs text-muted-foreground">{formatNumber(product.totalSoldUnits)} Units</span>
+                                                   </div>
+                                                </div>
                                             </TableCell>
-                                            <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency, true)}</TableCell>
-                                            <TableCell className="text-right font-bold pr-2">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
+                                            <TableCell className="text-right font-bold pr-4">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
                                         </TableRow>
                                     );
                                 })}
@@ -279,7 +282,5 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
-
-    
 
     
