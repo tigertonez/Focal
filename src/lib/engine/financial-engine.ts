@@ -317,7 +317,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     let totalWeightedMarginSum = 0;
 
-    // Correctly calculate Total Gross Profit for the entire period
+    // CORRECTED: Calculate Total Gross Profit based on period totals, per user request.
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
 
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
