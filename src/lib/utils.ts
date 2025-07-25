@@ -10,16 +10,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number, currency: string = 'USD', compact = false) {
+    const style = {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    };
     if (compact && Math.abs(value) >= 1000) {
         const thousands = value / 1000;
         return `${currency === 'EUR' ? '€' : '$'}${thousands.toFixed(0)}k`;
     }
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency,
-        minimumFractionDigits: compact ? 0 : 2,
-        maximumFractionDigits: compact ? 0 : 2,
-    }).format(value);
+    return new Intl.NumberFormat('en-US', style).format(value);
 }
 
 export function formatNumber(value: number) {

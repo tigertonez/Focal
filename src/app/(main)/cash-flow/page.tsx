@@ -86,9 +86,9 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
                <CashFlowChart data={data} currency={currency} />
             </CardContent>
         </Card>
-        <div className="overflow-y-auto">
-          <CashFlowTable data={data} currency={currency} t={t} />
-        </div>
+        
+        <CashFlowTable data={data} currency={currency} t={t} />
+        
         <div className="pt-4">
           <CashFlowInsights />
         </div>

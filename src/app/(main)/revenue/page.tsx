@@ -105,10 +105,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <Table className="text-xs md:text-sm">
+                        <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[120px]">Product</TableHead>
+                                    <TableHead className="w-[120px] md:w-auto">Product</TableHead>
                                     <TableHead className="text-right">Units</TableHead>
                                     <TableHead className="text-right">Sell-Thru</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
@@ -130,8 +130,8 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency, true)}</TableCell>
+                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
                                             <TableCell className="text-right">{share.toFixed(0)}%</TableCell>
                                         </TableRow>
                                     );
