@@ -282,7 +282,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const costSummary = {
         totalFixed: totalFixedCostInPeriod,
         totalVariable: totalVariableCost,
-        totalOperating: totalFixedCostInPeriod + totalCogsOfSoldGoods,
+        totalOperating: totalFixedCostInPeriod + totalVariableCost, // This now reflects total spend
         avgCostPerUnit: totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0,
         fixedCosts: inputs.fixedCosts,
         variableCosts: variableCostBreakdown,
@@ -350,7 +350,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     });
     
     // --- Summary Level Calculations (DEFINITIVE) ---
-    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
+    const totalGrossProfit = revenueSummary.totalRevenue - costData.costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
 
@@ -370,9 +370,11 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
         const productOperatingProfit = productGrossProfit - allocatedFixedCosts;
         
-        const productTax = productOperatingProfit > 0 ? productOperatingProfit * (taxRate / 100) : 0;
-        const productNetProfit = productOperatingProfit - productTax;
-
+        // Apply tax rule at the product level based on the OVERALL business profitability
+        const productNetProfit = totalOperatingProfit > 0 
+            ? productOperatingProfit * (1 - taxRate / 100)
+            : productOperatingProfit;
+            
         const netMargin = (productRevenue > 0 && isFinite(productNetProfit / productRevenue)) ? (productNetProfit / productRevenue) * 100 : 0;
         
         return {
