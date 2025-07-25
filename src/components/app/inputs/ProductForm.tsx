@@ -147,11 +147,11 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
-                    <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
+                    <Label htmlFor={`costModel-batch-${index}`} className="text-xs font-normal">{t.inputs.products.costModel.batch}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
-                    <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
+                    <Label htmlFor={`costModel-monthly-${index}`} className="text-xs font-normal">{t.inputs.products.costModel.monthly}</Label>
                 </div>
             </RadioGroup>
         </div>
