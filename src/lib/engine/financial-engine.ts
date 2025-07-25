@@ -226,19 +226,22 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         if (product.costModel === 'batch') {
             const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
             const remainingCost = totalProductionCost - depositPaid;
-            
-            const depositMonthIndex = timeline.requiresMonthZero ? 0 : 1;
-            const finalPaymentMonthIndex = 1;
-            
-            if (depositPaid > 0) {
-                const depositMonth = monthlyCostTimeline.find(t => t.month === depositMonthIndex);
-                if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
-            }
 
-            const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === finalPaymentMonthIndex);
-            if (finalPaymentMonth) {
-                 const paymentAmount = timeline.requiresMonthZero ? remainingCost : remainingCost + depositPaid;
-                 finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + paymentAmount;
+            if (timeline.requiresMonthZero) {
+                // Pre-order mode: Deposit in M0, Final in M1
+                if (depositPaid > 0) {
+                    const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
+                    if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
+                }
+                const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === 1);
+                if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+            } else {
+                // No pre-order: Full cost in M1
+                const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
+                if (paymentMonth) {
+                    // Combine both into Final Payments for simplicity in the graph
+                    paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + totalProductionCost;
+                }
             }
 
         } else if (product.costModel === 'monthly') {
@@ -558,5 +561,3 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
