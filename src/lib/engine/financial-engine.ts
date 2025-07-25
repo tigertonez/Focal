@@ -353,7 +353,35 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
-    const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalNetProfit / revenueSummary.totalRevenue) * 100 : 0;
+
+    // Calculate product-level net margins and their weights
+    const productMargins = inputs.products.map(product => {
+        const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
+        if (!revenueBreakdown || revenueBreakdown.totalRevenue === 0) {
+            return { weight: 0, margin: 0 };
+        }
+        
+        const productRevenue = revenueBreakdown.totalRevenue;
+        const productCOGS = revenueBreakdown.totalSoldUnits * (product.unitCost || 0);
+        const productGrossProfit = productRevenue - productCOGS;
+        
+        const revenueShare = productRevenue / revenueSummary.totalRevenue;
+        
+        const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
+        const productOperatingProfit = productGrossProfit - allocatedFixedCosts;
+        
+        const allocatedTaxes = (productOperatingProfit > 0 ? productOperatingProfit * (taxRate / 100) : 0);
+        const productNetProfit = productOperatingProfit - allocatedTaxes;
+
+        const netMargin = (productNetProfit / productRevenue) * 100;
+        
+        return {
+            weight: revenueShare,
+            margin: netMargin,
+        };
+    });
+
+    const weightedAvgNetMargin = productMargins.reduce((acc, curr) => acc + (curr.margin * curr.weight), 0);
 
     const profitSummary = {
         totalGrossProfit,
