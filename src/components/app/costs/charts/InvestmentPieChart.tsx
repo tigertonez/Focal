@@ -36,12 +36,14 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
         return <div className="h-full w-full flex items-center justify-center text-muted-foreground">No investment data.</div>;
     }
     
-    const legendStyle = {
+    const legendStyle: React.CSSProperties = {
       fontSize: data.length > 4 ? '11px' : '12px',
       bottom: 0,
       display: 'flex',
       flexWrap: 'wrap',
       justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
     };
 
     return (
@@ -91,3 +93,5 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
         </ResponsiveContainer>
     );
 }
+
+    

@@ -42,12 +42,14 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
         };
     });
 
-    const legendStyle = {
+    const legendStyle: React.CSSProperties = {
       fontSize: chartData.length > 4 ? '11px' : '12px',
       bottom: 0,
       display: 'flex',
       flexWrap: 'wrap',
       justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
     };
 
     return (
@@ -90,3 +92,5 @@ export function RevenueBreakdownPieChart({ data, currency, inputs }: RevenueBrea
         </ResponsiveContainer>
     );
 }
+
+    

@@ -274,10 +274,6 @@ const ChartLegendContent = React.forwardRef<
     const { config } = useChart()
     const itemNumber = payload?.length || 0;
 
-    if (!itemNumber) {
-      return null
-    }
-
     return (
       <div
         ref={ref}
@@ -367,3 +363,5 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    
