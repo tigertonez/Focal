@@ -224,27 +224,11 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         const totalProductionCost = plannedUnits * (product.unitCost || 0);
 
         if (product.costModel === 'batch') {
-            const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
-            const remainingCost = totalProductionCost - depositPaid;
-            
-            if (inputs.parameters.preOrder) {
-                // Pre-order mode: Deposit in M0, Final in M1
-                const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
-                if (depositMonth && depositPaid > 0) {
-                    depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
-                }
-                const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-                if (finalPaymentMonth && remainingCost > 0) {
-                    finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
-                }
-            } else {
-                // No pre-order: Full cost in M1
-                const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-                 if (paymentMonth) {
-                    paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + totalProductionCost;
-                 }
+            // Simplified logic: All batch costs go to Month 1
+            const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
+            if (paymentMonth) {
+                paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + totalProductionCost;
             }
-
         } else if (product.costModel === 'monthly') {
             monthlyCostTimeline.forEach(month => {
                 const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
