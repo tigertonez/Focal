@@ -36,7 +36,7 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
-    const { revenueSummary, monthlyRevenue, monthlyProfit } = data;
+    const { revenueSummary, monthlyRevenue, monthlyProfit, monthlyUnitsSold } = data;
     const { currency } = inputs.parameters;
 
     const productData = React.useMemo(() => inputs.products.map((product) => {
