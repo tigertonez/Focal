@@ -236,7 +236,10 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
             }
 
             const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === finalPaymentMonthIndex);
-            if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+            if (finalPaymentMonth) {
+                 const paymentAmount = timeline.requiresMonthZero ? remainingCost : remainingCost + depositPaid;
+                 finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + paymentAmount;
+            }
 
         } else if (product.costModel === 'monthly') {
             monthlyCostTimeline.forEach(month => {
@@ -555,3 +558,5 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
+
+    
