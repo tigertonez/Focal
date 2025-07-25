@@ -282,7 +282,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const costSummary = {
         totalFixed: totalFixedCostInPeriod,
         totalVariable: totalVariableCost,
-        totalOperating: totalFixedCostInPeriod + totalVariableCost,
+        totalOperating: totalFixedCostInPeriod + totalCogsOfSoldGoods,
         avgCostPerUnit: totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0,
         fixedCosts: inputs.fixedCosts,
         variableCosts: variableCostBreakdown,
@@ -349,6 +349,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         return { month, grossProfit, operatingProfit, netProfit };
     });
     
+    // --- Summary Level Calculations (DEFINITIVE) ---
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
