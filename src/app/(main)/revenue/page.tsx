@@ -164,7 +164,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                 <TableRow>
                                     <TableHead className="w-1/3">Product</TableHead>
                                     <TableHead className="text-right">Units Sold</TableHead>
-                                    <TableHead className="text-right">Sell-Through</TableHead>
+                                    <TableHead className="text-right">Sell-Through %</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
                                     <TableHead className="text-right">Total Revenue</TableHead>
                                 </TableRow>
@@ -264,5 +264,3 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
-
-    
