@@ -81,8 +81,15 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 )}
             </section>
             
-            {/* Desktop Layout */}
-            <section className="hidden md:grid md:grid-cols-2 gap-8">
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="md:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Revenue Contribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] md:h-[350px] w-full">
+                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
@@ -91,7 +98,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                     </CardHeader>
@@ -101,16 +108,8 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 </Card>
             </section>
             
-            {/* Mobile Layout */}
-            <section className="md:hidden space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Revenue Contribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] w-full">
-                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
-                    </CardContent>
-                </Card>
+            {/* Mobile Table - simplified */}
+            <section className="md:hidden">
                  <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
@@ -137,7 +136,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium flex items-center gap-2 pl-2">
                                                 <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
-                                                <span>{product.name}</span>
+                                                <span className="truncate">{product.name}</span>
                                             </TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
