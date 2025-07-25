@@ -282,11 +282,14 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const cogsOfUnsoldGoods = totalVariableCost - totalCogsOfSoldGoods;
 
     const costSummary = {
-        totalFixed: totalFixedCostInPeriod, totalVariable: totalVariableCost,
-        totalOperating: totalFixedCostInPeriod + totalCogsOfSoldGoods,
+        totalFixed: totalFixedCostInPeriod,
+        totalVariable: totalVariableCost,
+        totalOperating: totalFixedCostInPeriod + totalVariableCost,
         avgCostPerUnit: totalPlannedUnits > 0 ? totalVariableCost / totalPlannedUnits : 0,
-        fixedCosts: inputs.fixedCosts, variableCosts: variableCostBreakdown,
-        totalDepositsPaid, totalFinalPayments,
+        fixedCosts: inputs.fixedCosts,
+        variableCosts: variableCostBreakdown,
+        totalDepositsPaid,
+        totalFinalPayments,
         cogsOfUnsoldGoods,
     };
     

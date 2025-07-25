@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -318,7 +319,6 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
     const { profitSummary, costSummary, cashFlowSummary } = data;
 
     const operatingProfit = profitSummary.totalOperatingProfit;
-    const unsoldInventoryValue = costSummary.cogsOfUnsoldGoods;
     const estTaxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
     const endingCash = cashFlowSummary.endingCashBalance;
 
@@ -335,13 +335,6 @@ const CashBridge = ({ data, currency }: { data: EngineOutput, currency: string }
                         value={operatingProfit} 
                         currency={currency} 
                         icon={<PlusCircle className="h-4 w-4 text-green-500" />}
-                    />
-                    <BridgeRow 
-                        label="Cash Tied in Unsold Inventory" 
-                        value={-unsoldInventoryValue} 
-                        currency={currency} 
-                        colorClass="text-red-600"
-                        icon={<MinusCircle className="h-4 w-4 text-red-500" />}
                     />
                     <div className="space-y-1">
                         <BridgeRow 
