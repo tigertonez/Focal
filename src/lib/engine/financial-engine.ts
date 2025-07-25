@@ -314,7 +314,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const { taxRate } = inputs.parameters;
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
-    let totalWeightedMarginSum = 0;
 
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
@@ -342,22 +341,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
             profitBreakEvenMonth = month;
         }
-
-        if (totalMonthlyRevenue > 0) {
-            inputs.products.forEach(p => {
-                const productRevenue = (monthlyRevenue.find(r => r.month === month) || {})[p.productName] || 0;
-                if (productRevenue > 0) {
-                    const productCOGS = ((monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0) * (p.unitCost || 0);
-                    const productGrossProfit = productRevenue - productCOGS;
-                    const revenueShare = productRevenue / totalMonthlyRevenue;
-                    const allocatedFixed = monthlyFixedCosts * revenueShare;
-                    const allocatedTax = monthlyTaxes * revenueShare;
-                    const productNetProfit = productGrossProfit - allocatedFixed - allocatedTax;
-                    const productNetMargin = productNetProfit / productRevenue;
-                    totalWeightedMarginSum += productNetMargin * productRevenue;
-                }
-            });
-        }
         
         return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
     });
@@ -365,7 +348,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     // Corrected Summary Calculations
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
-    const totalNetProfit = totalOperatingProfit - (totalOperatingProfit > 0 ? totalOperatingProfit * (taxRate / 100) : 0);
+    const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
     const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalNetProfit / revenueSummary.totalRevenue) * 100 : 0;
 
     const profitSummary = {
