@@ -133,35 +133,37 @@ export function FinancialCopilot() {
             <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-md z-10">
                 <X className="h-4 w-4" />
             </Button>
-
-            <ScrollArea className="flex-1" ref={scrollAreaRef}>
-              <div className="space-y-4 p-4 text-sm">
-                {messages.map((msg, index) => (
-                  <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
-                    <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+            
+            <div className="flex-1 overflow-y-auto">
+              <ScrollArea className="h-full" ref={scrollAreaRef}>
+                <div className="space-y-4 p-4 text-sm">
+                  {messages.map((msg, index) => (
+                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                      {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                      <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                       {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
                     </div>
-                     {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
-                  </div>
-                ))}
-                 {isLoading && (
-                  <div className="flex items-start gap-3">
-                    <Bot className="h-5 w-5 text-primary flex-shrink-0" />
-                    <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-muted-foreground">{t.copilot.thinking}</span>
+                  ))}
+                   {isLoading && (
+                    <div className="flex items-start gap-3">
+                      <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-muted-foreground">{t.copilot.thinking}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                 {error && (
-                    <Alert variant="destructive" className="mt-2">
-                        <AlertTitle className="text-sm">Error</AlertTitle>
-                        <AlertDescription className="text-xs">{error}</AlertDescription>
-                    </Alert>
-                 )}
-              </div>
-            </ScrollArea>
+                  )}
+                   {error && (
+                      <Alert variant="destructive" className="mt-2">
+                          <AlertTitle className="text-sm">Error</AlertTitle>
+                          <AlertDescription className="text-xs">{error}</AlertDescription>
+                      </Alert>
+                   )}
+                </div>
+              </ScrollArea>
+            </div>
 
             <div className="p-2 border-t bg-background rounded-b-xl">
               <div className="relative">
