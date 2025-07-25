@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
+import { RevenueBreakdownPieChart } from '@/components/app/revenue/charts/RevenueBreakdownPieChart';
 
 function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: EngineInput, t: any }) {
     const router = useRouter();
@@ -99,7 +100,15 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 </Card>
             </section>
             
-            <section>
+            <section className="grid md:grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Revenue Contribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] w-full">
+                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
+                    </CardContent>
+                </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
@@ -108,12 +117,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[120px] md:w-auto">Product</TableHead>
+                                    <TableHead className="w-1/3">Product</TableHead>
                                     <TableHead className="text-right">Units</TableHead>
-                                    <TableHead className="text-right">Sell-Thru</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
                                     <TableHead className="text-right">Revenue</TableHead>
-                                    <TableHead className="text-right">% Rev</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -121,10 +128,6 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     const inputProduct = inputs.products.find(p => p.productName === product.name);
                                     if (!inputProduct) return null;
                                     
-                                    const share = revenueSummary.totalRevenue > 0
-                                        ? (product.totalRevenue / revenueSummary.totalRevenue) * 100
-                                        : 0;
-
                                     return (
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium flex items-center gap-2">
@@ -132,10 +135,8 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                                 <span>{product.name}</span>
                                             </TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                            <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency, true)}</TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
-                                            <TableCell className="text-right">{share.toFixed(0)}%</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
+                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
                                 })}
