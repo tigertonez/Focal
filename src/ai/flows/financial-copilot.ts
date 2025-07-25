@@ -69,8 +69,8 @@ CRITICAL FORMATTING RULES:
 - When you reference a specific user-entered item name (like a product 'Goldring 2' or a cost 'Salaries'), you MUST wrap it in single quotes, like 'this'.
 
 FULL FINANCIAL DATA:
-- User Inputs: ${JSON.stringify(financials.inputs, null, 2)}
-- Calculated Outputs (Revenue, Costs, Profit, etc.): ${JSON.stringify(financials.data, null, 2)}
+- User Inputs: ${JSON.stringify(financials?.inputs, null, 2) || 'Not available.'}
+- Calculated Outputs (Revenue, Costs, Profit, etc.): ${JSON.stringify(financials?.data, null, 2) || 'Not available.'}
 `;
 
     // Map Zod history to Genkit's Message[] type
