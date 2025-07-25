@@ -1,6 +1,6 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, CashFlowSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 import { formatCurrency, formatNumber } from '../utils';
 
@@ -353,6 +353,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const businessIsProfitable = totalOperatingProfit > 0;
+    
     const totalNetProfit = businessIsProfitable
         ? totalOperatingProfit * (1 - (taxRate / 100))
         : totalOperatingProfit;
