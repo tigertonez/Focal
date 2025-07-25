@@ -85,7 +85,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[350px] pl-0">
+                    <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
                     </CardContent>
                 </Card>
@@ -93,7 +93,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                     </CardHeader>
-                     <CardContent className="h-[350px] pl-0">
+                     <CardContent className="h-[350px] w-full pl-0">
                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
                     </CardContent>
                 </Card>
