@@ -125,7 +125,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
         </div>
         
-         <div className="space-y-2">
+         <div className="flex items-center justify-between">
              <Label className="text-sm font-medium flex items-center gap-2">
                 {t.inputs.products.costModel.title}
                 <TooltipProvider>
