@@ -14,10 +14,11 @@ interface ProductProfitTableProps {
     t: any;
 }
 
-const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: string }> = ({ title, tooltip, className }) => (
+const ExplanatoryHeader: React.FC<{ title: string, tooltip: string; className?: string, isAbbreviated?: boolean }> = ({ title, tooltip, className, isAbbreviated = false }) => (
     <TableHead className={className}>
         <div className="flex items-center justify-end gap-1.5">
-            {title}
+            <span className="hidden md:inline">{title}</span>
+            <span className="inline md:hidden">{isAbbreviated ? title.substring(0, 3) : title}</span>
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -93,17 +94,17 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
     });
 
     return (
-        <Table>
+        <Table className="text-xs md:text-sm">
             <TableHeader>
                 <TableRow>
-                    <TableHead>{t.pages.profit.table.product}</TableHead>
-                     <ExplanatoryHeader title={t.pages.profit.table.sellThrough} className="text-right" tooltip={t.pages.profit.table.sellThroughHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.grossProfit} className="text-right" tooltip={t.pages.profit.table.grossProfitHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.grossMargin} className="text-right" tooltip={t.pages.profit.table.grossMarginHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.opProfit} className="text-right" tooltip={t.pages.profit.table.opProfitHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.opMargin} className="text-right" tooltip={t.pages.profit.table.opMarginHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.netProfit} className="text-right" tooltip={t.pages.profit.table.netProfitHelp} />
-                    <ExplanatoryHeader title={t.pages.profit.table.netMargin} className="text-right" tooltip={t.pages.profit.table.netMarginHelp} />
+                    <TableHead className="w-[100px] md:w-auto">Product</TableHead>
+                    <ExplanatoryHeader title="Sell-Through" className="text-right" tooltip={t.pages.profit.table.sellThroughHelp} />
+                    <ExplanatoryHeader title="Gross Profit" className="text-right" tooltip={t.pages.profit.table.grossProfitHelp} isAbbreviated />
+                    <ExplanatoryHeader title="Gross Margin" className="text-right" tooltip={t.pages.profit.table.grossMarginHelp} isAbbreviated />
+                    <ExplanatoryHeader title="Op. Profit" className="text-right" tooltip={t.pages.profit.table.opProfitHelp} isAbbreviated />
+                    <ExplanatoryHeader title="Op. Margin" className="text-right" tooltip={t.pages.profit.table.opMarginHelp} isAbbreviated />
+                    <ExplanatoryHeader title="Net Profit" className="text-right" tooltip={t.pages.profit.table.netProfitHelp} isAbbreviated />
+                    <ExplanatoryHeader title="Net Margin" className="text-right" tooltip={t.pages.profit.table.netMarginHelp} isAbbreviated />
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,15 +112,15 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                     <TableRow key={p.id}>
                         <TableCell className="font-medium flex items-center gap-2">
                              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }}/>
-                             {p.productName}
+                             <span className="truncate">{p.productName}</span>
                         </TableCell>
                         <TableCell className="text-right">{p.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
-                        <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
-                        <TableCell className="text-right">{p.operatingMargin.toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
-                        <TableCell className="text-right">{p.netMargin.toFixed(1)}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(p.grossProfit, currency, true)}</TableCell>
+                        <TableCell className="text-right">{p.grossMargin.toFixed(0)}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency, true)}</TableCell>
+                        <TableCell className="text-right">{p.operatingMargin.toFixed(0)}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(p.netProfit, currency, true)}</TableCell>
+                        <TableCell className="text-right">{p.netMargin.toFixed(0)}%</TableCell>
                     </TableRow>
                 ))}
             </TableBody>

@@ -105,15 +105,15 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <Table>
+                        <Table className="text-xs md:text-sm">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t.pages.revenue.table.product}</TableHead>
-                                    <TableHead className="text-right">{t.pages.revenue.table.units}</TableHead>
-                                    <TableHead className="text-right">{t.pages.revenue.table.sellThrough}</TableHead>
-                                    <TableHead className="text-right">{t.pages.revenue.table.price}</TableHead>
-                                    <TableHead className="text-right">{t.pages.revenue.table.revenue}</TableHead>
-                                    <TableHead className="text-right">{t.pages.revenue.table.share}</TableHead>
+                                    <TableHead className="w-[120px]">Product</TableHead>
+                                    <TableHead className="text-right">Units</TableHead>
+                                    <TableHead className="text-right">Sell-Thru</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                    <TableHead className="text-right">Revenue</TableHead>
+                                    <TableHead className="text-right">% Rev</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -129,10 +129,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                         <TableRow key={product.name}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                            <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(1) ?? 'N/A'}%</TableCell>
+                                            <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency)}</TableCell>
                                             <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
-                                            <TableCell className="text-right">{share.toFixed(1)}%</TableCell>
+                                            <TableCell className="text-right">{share.toFixed(0)}%</TableCell>
                                         </TableRow>
                                     );
                                 })}

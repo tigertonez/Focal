@@ -39,38 +39,38 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
             <CardHeader>
                 <CardTitle>{t.pages.cashFlow.table.title}</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-                <Table>
+            <CardContent className="p-0 overflow-x-auto">
+                <Table className="text-xs md:text-sm">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-center w-[80px]">{t.pages.cashFlow.table.month}</TableHead>
-                            <TableHead className="text-right">{t.pages.cashFlow.table.cashIn}</TableHead>
-                            <TableHead className="text-right">{t.pages.cashFlow.table.cashOut}</TableHead>
-                            <TableHead className="text-right">{t.pages.cashFlow.table.netFlow}</TableHead>
-                            <TableHead className="text-right">{t.pages.cashFlow.table.endBalance}</TableHead>
-                            <TableHead className="text-center w-[150px]">{t.pages.cashFlow.table.status}</TableHead>
+                            <TableHead className="text-center w-[50px] md:w-[80px]">Mth</TableHead>
+                            <TableHead className="text-right">In</TableHead>
+                            <TableHead className="text-right">Out</TableHead>
+                            <TableHead className="text-right">Net</TableHead>
+                            <TableHead className="text-right">End</TableHead>
+                            <TableHead className="text-center w-[100px] md:w-[150px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {tableData.map((row) => (
                             <TableRow key={row.month}>
                                 <TableCell className="text-center font-medium">{row.month}</TableCell>
-                                <TableCell className="text-right text-green-600">{formatCurrency(row.cashIn, currency)}</TableCell>
-                                <TableCell className="text-right text-red-600">{formatCurrency(row.cashOut, currency)}</TableCell>
+                                <TableCell className="text-right text-green-600">{formatCurrency(row.cashIn, currency, true)}</TableCell>
+                                <TableCell className="text-right text-red-600">{formatCurrency(row.cashOut, currency, true)}</TableCell>
                                 <TableCell className={cn(
                                     "text-right font-semibold",
                                     row.netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
-                                    {formatCurrency(row.netCashFlow, currency)}
+                                    {formatCurrency(row.netCashFlow, currency, true)}
                                 </TableCell>
                                 <TableCell className={cn(
                                     "text-right font-bold",
                                     row.cumulativeCash >= 0 ? 'text-foreground' : 'text-destructive'
                                 )}>
-                                    {formatCurrency(row.cumulativeCash, currency)}
+                                    {formatCurrency(row.cumulativeCash, currency, true)}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                    <Badge variant={row.status === t.pages.cashFlow.table.cashPositive ? 'default' : 'destructive'} className="w-[120px] justify-center">
+                                    <Badge variant={row.status === t.pages.cashFlow.table.cashPositive ? 'default' : 'destructive'} className="w-full justify-center text-xs px-1">
                                         {row.status}
                                     </Badge>
                                 </TableCell>

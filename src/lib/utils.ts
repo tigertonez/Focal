@@ -9,12 +9,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(value: number, currency: string = 'USD') {
+export function formatCurrency(value: number, currency: string = 'USD', compact = false) {
+    if (compact && Math.abs(value) >= 1000) {
+        const thousands = value / 1000;
+        return `${currency === 'EUR' ? '€' : '$'}${thousands.toFixed(0)}k`;
+    }
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: compact ? 0 : 2,
+        maximumFractionDigits: compact ? 0 : 2,
     }).format(value);
 }
 
