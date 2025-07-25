@@ -266,7 +266,6 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + p.depositPaid, 0);
     const totalFinalPayments = variableCostBreakdown.reduce((sum, p) => sum + p.remainingCost, 0);
     
-    // Correctly calculate total fixed cost by summing up all fixed cost items for the entire period.
     const totalFixedCostInPeriod = inputs.fixedCosts.reduce((total, cost) => {
         if (cost.costType === 'Monthly Cost') {
             return total + (cost.amount * inputs.parameters.forecastMonths);
@@ -313,39 +312,43 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const { monthlyCosts, costSummary } = costData;
     const { taxRate } = inputs.parameters;
 
-    let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
+    const monthlyCogs = timelineMonths.map(month => {
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        let cogs = 0;
+        for (const product of inputs.products) {
+            cogs += (unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0);
+        }
+        return { month, cogs };
+    });
 
-    const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
-        const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
-
-        const monthlyUnitsSoldForMonth = monthlyUnitsSold.find(m => m.month === month) || {};
-        const monthlyCogs = inputs.products.reduce((total, p) => {
-            const unitsSold = monthlyUnitsSoldForMonth[p.productName] || 0;
-            return total + (unitsSold * (p.unitCost || 0));
-        }, 0);
-        
-        const monthlyGrossProfit = totalMonthlyRevenue - monthlyCogs;
-        
+    const monthlyFixedCosts = timelineMonths.map(month => {
         const costsForMonth = monthlyCosts.find(c => c.month === month) || {};
-        const monthlyFixedCosts = Object.entries(costsForMonth).reduce((total, [key, value]) => {
-            const isFixed = inputs.fixedCosts.some(fc => fc.name === key);
-            return total + (isFixed ? value : 0);
-        }, 0);
-        
-        const operatingProfit = monthlyGrossProfit - monthlyFixedCosts;
-        
-        const monthlyTaxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
-        const netProfit = operatingProfit - monthlyTaxes;
-        
+        let fixedCost = 0;
+        for (const costItem of inputs.fixedCosts) {
+            fixedCost += costsForMonth[costItem.name] || 0;
+        }
+        return { month, fixedCost };
+    });
+
+    let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
+        const revenueThisMonth = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
+        const cogsThisMonth = monthlyCogs.find(c => c.month === month)?.cogs || 0;
+        const fixedCostsThisMonth = monthlyFixedCosts.find(f => f.month === month)?.fixedCost || 0;
+
+        const grossProfit = revenueThisMonth - cogsThisMonth;
+        const operatingProfit = grossProfit - fixedCostsThisMonth;
+        const tax = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
+        const netProfit = operatingProfit - tax;
+
         cumulativeOperatingProfit += operatingProfit;
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
             profitBreakEvenMonth = month;
         }
-        
-        return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
+
+        return { month, grossProfit, operatingProfit, netProfit };
     });
     
-    // Corrected Summary Calculations
     const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
