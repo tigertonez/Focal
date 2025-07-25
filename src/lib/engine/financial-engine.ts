@@ -317,6 +317,8 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     let totalWeightedMarginSum = 0;
 
+    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
+
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
 
@@ -332,8 +334,8 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
             return total;
         }, 0);
         
-        const grossProfit = totalMonthlyRevenue - monthlyVariableCosts;
-        const operatingProfit = grossProfit - totalMonthlyFixedCosts;
+        const monthlyGrossProfit = totalMonthlyRevenue - monthlyVariableCosts;
+        const operatingProfit = monthlyGrossProfit - totalMonthlyFixedCosts;
         
         const monthlyTaxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
         const netProfit = operatingProfit - monthlyTaxes;
@@ -359,16 +361,17 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
             });
         }
         
-        return { month, grossProfit, operatingProfit, netProfit };
+        return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
     });
     
-    const totalGrossProfit = monthlyProfit.reduce((s, p) => s + p.grossProfit, 0);
     const totalOperatingProfit = monthlyProfit.reduce((s, p) => s + p.operatingProfit, 0);
     const totalNetProfit = monthlyProfit.reduce((s, p) => s + p.netProfit, 0);
     const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalWeightedMarginSum / revenueSummary.totalRevenue) * 100 : 0;
 
     const profitSummary = {
-        totalGrossProfit, totalOperatingProfit, totalNetProfit,
+        totalGrossProfit,
+        totalOperatingProfit,
+        totalNetProfit,
         grossMargin: revenueSummary.totalRevenue > 0 ? (totalGrossProfit / revenueSummary.totalRevenue) * 100 : 0,
         operatingMargin: revenueSummary.totalRevenue > 0 ? (totalOperatingProfit / revenueSummary.totalRevenue) * 100 : 0,
         netMargin: revenueSummary.totalRevenue > 0 ? (totalNetProfit / revenueSummary.totalRevenue) * 100 : 0,
