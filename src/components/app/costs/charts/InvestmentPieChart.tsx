@@ -77,7 +77,7 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={{ fontSize: '12px', bottom: 0 }}
+                    wrapperStyle={{ fontSize: '12px', bottom: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}
                 />
             </PieChart>
         </ResponsiveContainer>
