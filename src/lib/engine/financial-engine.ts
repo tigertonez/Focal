@@ -352,7 +352,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     // --- Summary Level Calculations (DEFINITIVE) ---
     const totalGrossProfit = revenueSummary.totalRevenue - costData.costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
-    const totalNetProfit = totalOperatingProfit > 0 ? totalOperatingProfit * (1 - (taxRate / 100)) : totalOperatingProfit;
+    const businessIsProfitable = totalOperatingProfit > 0;
+    const totalNetProfit = businessIsProfitable
+        ? totalOperatingProfit * (1 - (taxRate / 100))
+        : totalOperatingProfit;
 
     // Calculate product-level net margins and their weights
     const productMargins = inputs.products.map(product => {
@@ -362,16 +365,18 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
         
         const productRevenue = revenueBreakdown.totalRevenue;
+        // Correct COGS for product is based on units SOLD, not planned
         const productCOGS = revenueBreakdown.totalSoldUnits * (product.unitCost || 0);
         const productGrossProfit = productRevenue - productCOGS;
         
+        // Allocate fixed costs based on product's share of total revenue
         const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
-        
         const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
+        
         const productOperatingProfit = productGrossProfit - allocatedFixedCosts;
         
         // Apply tax rule at the product level based on the OVERALL business profitability
-        const productNetProfit = totalOperatingProfit > 0 
+        const productNetProfit = businessIsProfitable 
             ? productOperatingProfit * (1 - taxRate / 100)
             : productOperatingProfit;
             
