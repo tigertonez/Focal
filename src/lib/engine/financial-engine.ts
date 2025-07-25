@@ -317,6 +317,9 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     let totalWeightedMarginSum = 0;
 
+    // Correctly calculate Total Gross Profit for the entire period
+    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
+
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
         const totalMonthlyRevenue = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
 
@@ -363,7 +366,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         return { month, grossProfit: monthlyGrossProfit, operatingProfit, netProfit };
     });
     
-    const totalGrossProfit = monthlyProfit.reduce((s, p) => s + p.grossProfit, 0);
     const totalOperatingProfit = monthlyProfit.reduce((s, p) => s + p.operatingProfit, 0);
     const totalNetProfit = monthlyProfit.reduce((s, p) => s + p.netProfit, 0);
     const weightedAvgNetMargin = revenueSummary.totalRevenue > 0 ? (totalWeightedMarginSum / revenueSummary.totalRevenue) * 100 : 0;
@@ -500,12 +502,15 @@ const calculateBusinessHealth = (
 // Main Financial Engine Orchestrator
 // =================================================================
 
-function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHealth'> {
+function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHealth' | 'profitSummary'> & { profitSummary: Omit<ProfitSummary, 'totalGrossProfit'> & { monthlyGrossProfits: MonthlyProfit[] } } {
     const timeline = createTimeline(inputs);
     const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
     const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
     const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
     const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
+    
+    // We pass up the monthly profits separately to correctly calculate total gross profit at the end
+    const { profitSummary, ...restOfProfitAndCash } = profitAndCashFlowData;
 
     return {
         revenueSummary: revenueData.revenueSummary,
@@ -513,12 +518,13 @@ function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHea
         monthlyUnitsSold,
         costSummary: costData.costSummary,
         monthlyCosts: costData.monthlyCosts,
-        profitSummary: profitAndCashFlowData.profitSummary,
-        monthlyProfit: profitAndCashFlowData.monthlyProfit,
-        cashFlowSummary: profitAndCashFlowData.cashFlowSummary,
-        monthlyCashFlow: profitAndCashFlowData.monthlyCashFlow,
+        profitSummary: {
+          ...profitSummary,
+        },
+        ...restOfProfitAndCash
     };
 }
+
 
 export function calculateFinancials(inputs: EngineInput): EngineOutput {
     try {
