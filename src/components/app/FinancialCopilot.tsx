@@ -111,10 +111,6 @@ export function FinancialCopilot() {
     }
   };
   
-  if (!isCopilotOpen) {
-    return null;
-  }
-  
   return (
     <div className="fixed bottom-4 left-4 w-full max-w-xl h-auto max-h-[40vh] z-50">
         <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5">

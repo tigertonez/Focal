@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ForecastProvider } from '@/context/ForecastContext';
+import { ForecastProvider, useForecast } from '@/context/ForecastContext';
 import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
 import { useSearchParams } from 'next/navigation';
@@ -10,6 +10,7 @@ import { useEffect, Suspense } from 'react';
 function AppShellContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const isPdfMode = searchParams.get('pdf') === '1';
+  const { isCopilotOpen } = useForecast();
 
   // Add data-pdf-ready attribute when the app is ready for PDF rendering
   useEffect(() => {
@@ -23,22 +24,22 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   }, [isPdfMode]);
 
   return (
-    <ForecastProvider>
       <div className="flex h-screen bg-background">
         {!isPdfMode && <SideNav />}
         <main className="flex-1 overflow-auto relative">
           {children}
-          {!isPdfMode && <FinancialCopilot />}
+          {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
         </main>
       </div>
-    </ForecastProvider>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <AppShellContent>{children}</AppShellContent>
+      <ForecastProvider>
+        <AppShellContent>{children}</AppShellContent>
+      </ForecastProvider>
     </Suspense>
   );
 }
