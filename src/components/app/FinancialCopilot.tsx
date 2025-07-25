@@ -109,12 +109,11 @@ export function FinancialCopilot() {
         }),
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || errorData.error || 'Failed to get a response from the copilot.');
+        throw new Error(result.details || result.error || 'Failed to get a response from the copilot.');
       }
 
-      const result = await response.json();
       const botMessage: Message = { role: 'bot', text: result.answer };
       
       setMessages(prev => [...prev, botMessage]);
