@@ -16,6 +16,20 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const { updateFixedCost, removeFixedCost, inputs, t } = useForecast();
     const currency = inputs.parameters.currency;
     const colorInputRef = React.useRef<HTMLInputElement>(null);
+    
+    // State to detect mobile view for currency symbol
+    const [isMobile, setIsMobile] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -111,7 +125,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             placeholder={t.inputs.fixedCosts.amount}
                             className="text-sm pr-[140px]"
                         />
-                        <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+                        <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currencySymbol}</span>
                          <Select onValueChange={handleSelectChange('costType')} value={costType}>
                             <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
                                 <SelectValue />

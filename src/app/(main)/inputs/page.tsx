@@ -76,7 +76,7 @@ export default function InputsPage() {
         <div className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8 items-start">
              <Section title={t.inputs.products.title}>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {inputs.products.map((p, i) => (
                     <ProductForm key={p.id} product={p} index={i} />
                   ))}
