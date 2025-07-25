@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getProductColor } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
@@ -108,11 +108,9 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
              <section className="grid md:grid-cols-2 gap-8 pt-4">
                  <div className="space-y-8">
                     <div className="space-y-2">
-                        <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
                          <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.59L12 15.17l-1.41 1.42L9.17 18l-2.83-2.83 1.41-1.41L9.17 15.17l1.41-1.42L12 15.17l2.83-2.83 1.41 1.41L14.83 18l1.41-1.41.01.01.01-.01zM12 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
                                     {t.pages.costs.charts.investment}
                                 </CardTitle>
                             </CardHeader>
@@ -147,16 +145,24 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                     <h2 className="text-xl font-semibold">{t.pages.costs.breakdown.variable}</h2>
                      <Card>
                         <CardContent className="p-4 space-y-4">
-                            {costSummary.variableCosts.map(product => (
-                                <div key={product.name} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
-                                    <h3 className="font-semibold">{product.name}</h3>
-                                    <CostRow label={t.pages.costs.breakdown.plannedUnits} value={product.plannedUnits.toLocaleString()} />
-                                    <CostRow label={t.pages.costs.breakdown.unitCost} value={formatCurrency(product.unitCost, currency)} />
-                                    <CostRow label={t.pages.costs.breakdown.productionCost} value={formatCurrency(product.totalProductionCost, currency)} />
-                                    <CostRow label={t.pages.costs.breakdown.depositPaid.replace('{month}', preOrder ? '0' : '1')} value={formatCurrency(product.depositPaid, currency)} />
-                                    <CostRow label={t.pages.costs.breakdown.finalPayment.replace('{month}', preOrder ? '1' : '1')} value={formatCurrency(product.remainingCost, currency)} />
-                                </div>
-                            ))}
+                            {inputs.products.map(p => {
+                                const productCost = costSummary.variableCosts.find(vc => vc.name === p.productName);
+                                if (!productCost) return null;
+
+                                return (
+                                    <div key={p.id} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
+                                        <h3 className="font-semibold flex items-center gap-2">
+                                            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(p) }} />
+                                            {p.productName}
+                                        </h3>
+                                        <CostRow label={t.pages.costs.breakdown.plannedUnits} value={productCost.plannedUnits.toLocaleString()} />
+                                        <CostRow label={t.pages.costs.breakdown.unitCost} value={formatCurrency(productCost.unitCost, currency)} />
+                                        <CostRow label={t.pages.costs.breakdown.productionCost} value={formatCurrency(productCost.totalProductionCost, currency)} />
+                                        <CostRow label={t.pages.costs.breakdown.depositPaid.replace('{month}', preOrder ? '0' : '1')} value={formatCurrency(productCost.depositPaid, currency)} />
+                                        <CostRow label={t.pages.costs.breakdown.finalPayment.replace('{month}', preOrder ? '1' : '1')} value={formatCurrency(productCost.remainingCost, currency)} />
+                                    </div>
+                                )
+                            })}
                             <Separator className="my-2" />
                             <CostRow 
                                label={t.pages.costs.breakdown.totalVariable}

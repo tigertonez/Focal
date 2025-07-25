@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
@@ -127,7 +127,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
 
                                     return (
                                         <TableRow key={product.name}>
-                                            <TableCell className="font-medium">{product.name}</TableCell>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
+                                                <span>{product.name}</span>
+                                            </TableCell>
                                             <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{inputProduct?.sellThrough?.toFixed(0) ?? 'N/A'}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice, currency, true)}</TableCell>
