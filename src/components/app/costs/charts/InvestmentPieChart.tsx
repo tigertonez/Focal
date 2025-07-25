@@ -95,3 +95,5 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
 }
 
     
+
+    

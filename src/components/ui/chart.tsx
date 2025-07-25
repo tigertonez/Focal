@@ -272,10 +272,12 @@ const ChartLegendContent = React.forwardRef<
     ref
   ) => {
     const { config } = useChart()
+    const fontSize = payload && payload.length > 4 ? '11px' : '12px';
 
     return (
       <div
         ref={ref}
+        style={{ fontSize }}
         className={cn(
           "flex items-center justify-center flex-wrap gap-x-4 gap-y-1",
           verticalAlign === "top" ? "pb-3" : "pt-3",
@@ -290,7 +292,7 @@ const ChartLegendContent = React.forwardRef<
             <div
               key={item.value}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap text-xs [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+                "flex items-center gap-1.5 whitespace-nowrap [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
               )}
             >
               {itemConfig?.icon && !hideIcon ? (
@@ -360,5 +362,7 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    
 
     
