@@ -128,42 +128,40 @@ export function FinancialCopilot() {
   };
   
   return (
-    <div className="fixed bottom-4 left-1/4 w-1/2 h-auto max-h-[60vh] z-50 transform -translate-x-1/2">
+    <div className="fixed bottom-4 left-1/4 w-1/2 h-[60vh] z-50 transform -translate-x-1/2">
         <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5">
             <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-md z-10">
                 <X className="h-4 w-4" />
             </Button>
             
-            <div className="flex-1 overflow-y-auto">
-              <ScrollArea className="h-full" ref={scrollAreaRef}>
-                <div className="space-y-4 p-4 text-sm">
-                  {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                      {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
-                      <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
-                      </div>
-                       {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+            <ScrollArea className="flex-1 p-4 min-h-0" ref={scrollAreaRef}>
+              <div className="space-y-4 text-sm">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                    {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                    <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
                     </div>
-                  ))}
-                   {isLoading && (
-                    <div className="flex items-start gap-3">
-                      <Bot className="h-5 w-5 text-primary flex-shrink-0" />
-                      <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-muted-foreground">{t.copilot.thinking}</span>
-                      </div>
+                      {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+                  </div>
+                ))}
+                  {isLoading && (
+                  <div className="flex items-start gap-3">
+                    <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div className="p-2.5 rounded-lg bg-muted flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-muted-foreground">{t.copilot.thinking}</span>
                     </div>
+                  </div>
+                )}
+                  {error && (
+                    <Alert variant="destructive" className="mt-2">
+                        <AlertTitle className="text-sm">Error</AlertTitle>
+                        <AlertDescription className="text-xs">{error}</AlertDescription>
+                    </Alert>
                   )}
-                   {error && (
-                      <Alert variant="destructive" className="mt-2">
-                          <AlertTitle className="text-sm">Error</AlertTitle>
-                          <AlertDescription className="text-xs">{error}</AlertDescription>
-                      </Alert>
-                   )}
-                </div>
-              </ScrollArea>
-            </div>
+              </div>
+            </ScrollArea>
 
             <div className="p-2 border-t bg-background rounded-b-xl">
               <div className="relative">
