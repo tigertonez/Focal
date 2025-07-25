@@ -83,14 +83,6 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
             
             {/* --- MOBILE VIEW --- */}
             <section className="space-y-8 md:hidden">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Revenue Contribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] w-full">
-                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
-                    </CardContent>
-                </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
@@ -144,6 +136,14 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                 })}
                             </TableBody>
                         </Table>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Revenue Contribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] w-full">
+                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
                     </CardContent>
                 </Card>
             </section>
@@ -279,3 +279,5 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
+
+    
