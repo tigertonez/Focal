@@ -227,7 +227,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
             const depositPaid = totalProductionCost * ((product.depositPct || 0) / 100);
             const remainingCost = totalProductionCost - depositPaid;
 
-            if (timeline.requiresMonthZero) {
+            if (inputs.parameters.preOrder) {
                 // Pre-order mode: Deposit in M0, Final in M1
                 if (depositPaid > 0) {
                     const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
@@ -239,8 +239,10 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
                 // No pre-order: Full cost in M1
                 const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
                 if (paymentMonth) {
-                    // Combine both into Final Payments for simplicity in the graph
-                    paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + totalProductionCost;
+                    if (depositPaid > 0) {
+                        paymentMonth['Deposits'] = (paymentMonth['Deposits'] || 0) + depositPaid;
+                    }
+                    paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + remainingCost;
                 }
             }
 
