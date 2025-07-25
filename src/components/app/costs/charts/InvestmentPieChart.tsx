@@ -52,10 +52,10 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                 <Pie
                     data={data}
                     cx="50%"
-                    cy="50%"
+                    cy="45%"
                     labelLine={false}
                     label={<CustomLabel />}
-                    outerRadius={120}
+                    outerRadius={100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
@@ -74,10 +74,10 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                 </Pie>
                 <Legend 
                     iconSize={10} 
-                    layout="vertical" 
-                    verticalAlign="middle" 
-                    align="right"
-                    wrapperStyle={{ fontSize: '12px', paddingLeft: '20px' }}
+                    layout="horizontal" 
+                    verticalAlign="bottom" 
+                    align="center"
+                    wrapperStyle={{ fontSize: '12px', bottom: 0 }}
                 />
             </PieChart>
         </ResponsiveContainer>

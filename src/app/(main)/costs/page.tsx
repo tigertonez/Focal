@@ -108,6 +108,20 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
              <section className="grid md:grid-cols-2 gap-8 pt-4">
                  <div className="space-y-8">
                     <div className="space-y-2">
+                        <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.59L12 15.17l-1.41 1.42L9.17 18l-2.83-2.83 1.41-1.41L9.17 15.17l1.41-1.42L12 15.17l2.83-2.83 1.41 1.41L14.83 18l1.41-1.41.01.01.01-.01zM12 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+                                    {t.pages.costs.charts.investment}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[300px] w-full">
+                                <InvestmentPieChart data={investmentData} currency={currency} />
+                            </CardContent>
+                         </Card>
+                    </div>
+                    <div className="space-y-2">
                         <h2 className="text-xl font-semibold">{t.pages.costs.breakdown.fixed}</h2>
                         <Card>
                             <CardContent className="p-4 space-y-3">
@@ -126,20 +140,6 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                                />
                             </CardContent>
                         </Card>
-                    </div>
-                    <div className="space-y-2">
-                        <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-primary"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.59L12 15.17l-1.41 1.42L9.17 18l-2.83-2.83 1.41-1.41L9.17 15.17l1.41-1.42L12 15.17l2.83-2.83 1.41 1.41L14.83 18l1.41-1.41.01.01.01-.01zM12 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
-                                    {t.pages.costs.charts.investment}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="h-[300px] w-full">
-                                <InvestmentPieChart data={investmentData} currency={currency} />
-                            </CardContent>
-                         </Card>
                     </div>
                 </div>
 
