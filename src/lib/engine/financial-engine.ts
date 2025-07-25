@@ -229,20 +229,24 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 
             if (inputs.parameters.preOrder) {
                 // Pre-order mode: Deposit in M0, Final in M1
-                if (depositPaid > 0) {
-                    const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
-                    if (depositMonth) depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
+                const depositMonth = monthlyCostTimeline.find(t => t.month === 0);
+                if (depositMonth && depositPaid > 0) {
+                    depositMonth['Deposits'] = (depositMonth['Deposits'] || 0) + depositPaid;
                 }
                 const finalPaymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-                if (finalPaymentMonth) finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+                if (finalPaymentMonth && remainingCost > 0) {
+                    finalPaymentMonth['Final Payments'] = (finalPaymentMonth['Final Payments'] || 0) + remainingCost;
+                }
             } else {
                 // No pre-order: Full cost in M1
                 const paymentMonth = monthlyCostTimeline.find(t => t.month === 1);
-                if (paymentMonth) {
+                 if (paymentMonth) {
                     if (depositPaid > 0) {
                         paymentMonth['Deposits'] = (paymentMonth['Deposits'] || 0) + depositPaid;
                     }
-                    paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + remainingCost;
+                    if (remainingCost > 0) {
+                        paymentMonth['Final Payments'] = (paymentMonth['Final Payments'] || 0) + remainingCost;
+                    }
                 }
             }
 
