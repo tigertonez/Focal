@@ -81,36 +81,17 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 )}
             </section>
             
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="md:col-span-1">
+            {/* --- MOBILE VIEW --- */}
+            <section className="space-y-8 md:hidden">
+                <Card>
                     <CardHeader>
                         <CardTitle>Revenue Contribution</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px] md:h-[350px] w-full">
+                    <CardContent className="h-[300px] w-full">
                         <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader>
-                        <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full pl-0">
-                       <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
-                    </CardContent>
-                </Card>
-                 <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
-                    </CardHeader>
-                     <CardContent className="h-[350px] w-full pl-0">
-                       <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
-                    </CardContent>
-                </Card>
-            </section>
-            
-            {/* Mobile Table - simplified */}
-            <section className="md:hidden">
-                 <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
@@ -150,9 +131,28 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                     </CardContent>
                 </Card>
             </section>
-            
-            {/* Desktop Table */}
-            <section className="hidden md:block">
+
+            {/* --- DESKTOP VIEW --- */}
+            <section className="hidden md:block space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full pl-0">
+                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full pl-0">
+                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                        </CardContent>
+                    </Card>
+                </div>
+
                  <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
@@ -263,3 +263,5 @@ export default function RevenuePage() {
 
     return <RevenuePageContent data={data} inputs={inputs} t={t} />;
 }
+
+    
