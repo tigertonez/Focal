@@ -322,12 +322,17 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
 
         const totalMonthlyFixedCosts = Object.keys(monthlyCosts.find(c => c.month === month) || {}).filter(k => k !== 'month' && k !== 'Deposits' && k !== 'Final Payments' && !inputs.products.some(p => p.productName === k)).reduce((s, k) => s + ((monthlyCosts.find(c => c.month === month) || {})[k] || 0), 0);
         
-        const monthlyCOGS = inputs.products.reduce((s, p) => {
-            const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
-            return s + (units * (p.unitCost || 0));
+        const monthlyVariableCosts = Object.entries(monthlyCosts.find(c => c.month === month) || {}).reduce((total, [key, value]) => {
+            if (key === 'month') return total;
+            const isProductCost = inputs.products.some(p => p.productName === key);
+            const isDepositOrFinalPayment = key === 'Deposits' || key === 'Final Payments';
+            if (isProductCost || isDepositOrFinalPayment) {
+                return total + value;
+            }
+            return total;
         }, 0);
         
-        const grossProfit = totalMonthlyRevenue - monthlyCOGS;
+        const grossProfit = totalMonthlyRevenue - monthlyVariableCosts;
         const operatingProfit = grossProfit - totalMonthlyFixedCosts;
         
         const monthlyTaxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
