@@ -350,7 +350,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     });
     
     // --- Summary Level Calculations (DEFINITIVE) ---
-    const totalGrossProfit = revenueSummary.totalRevenue - costData.costSummary.totalVariable;
+    const totalGrossProfit = revenueSummary.totalRevenue - costSummary.totalVariable;
     const totalOperatingProfit = totalGrossProfit - costSummary.totalFixed;
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalNetProfit = businessIsProfitable
