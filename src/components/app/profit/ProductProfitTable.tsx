@@ -15,8 +15,8 @@ interface ProductProfitTableProps {
     t: any;
 }
 
-const ProfitLevelSection = ({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) => (
-    <Collapsible defaultOpen>
+const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { title: string, icon: React.ReactNode, children: React.ReactNode, defaultOpen?: boolean }) => (
+    <Collapsible defaultOpen={defaultOpen}>
         <CollapsibleTrigger asChild>
             <div className="flex w-full items-center justify-between rounded-t-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer">
                 <div className="flex items-center gap-3">
@@ -36,7 +36,7 @@ const ProfitLevelSection = ({ title, icon, children }: { title: string, icon: Re
 
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
-    const { costSummary, revenueSummary, profitSummary, monthlyRevenue, monthlyProfit } = data;
+    const { revenueSummary, monthlyRevenue, monthlyProfit } = data;
     const { currency } = inputs.parameters;
 
     const productData = React.useMemo(() => inputs.products.map((product) => {
@@ -88,84 +88,78 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
     }), [data, inputs.products, currency]);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t.pages.profit.table.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <ProfitLevelSection title="Level 1: Gross Profit & Margin" icon={<TrendingUp className="text-primary" />}>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Product</TableHead>
-                                <TableHead className="text-right">Gross Profit</TableHead>
-                                <TableHead className="text-right">Gross Margin</TableHead>
+        <div className="space-y-4">
+            <ProfitLevelSection title="Level 1: Gross Profit & Margin" icon={<TrendingUp className="text-primary" />} defaultOpen={true}>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Gross Profit</TableHead>
+                            <TableHead className="text-right">Gross Margin</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {productData.map(p => (
+                            <TableRow key={`${p.id}-gross`}>
+                                <TableCell className="font-medium flex items-center gap-2">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                    <span>{p.productName}</span>
+                                </TableCell>
+                                <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
+                                <TableCell className="text-right">{p.grossMargin.toFixed(0)}%</TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {productData.map(p => (
-                                <TableRow key={`${p.id}-gross`}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                        <span>{p.productName}</span>
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(p.grossProfit, currency, true)}</TableCell>
-                                    <TableCell className="text-right">{p.grossMargin.toFixed(0)}%</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                     </Table>
-                </ProfitLevelSection>
-                
-                <ProfitLevelSection title="Level 2: Operating Profit & Margin" icon={<Briefcase className="text-primary" />}>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Product</TableHead>
-                                <TableHead className="text-right">Op. Profit</TableHead>
-                                <TableHead className="text-right">Op. Margin</TableHead>
+                        ))}
+                    </TableBody>
+                 </Table>
+            </ProfitLevelSection>
+            
+            <ProfitLevelSection title="Level 2: Operating Profit & Margin" icon={<Briefcase className="text-primary" />}>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Op. Profit</TableHead>
+                            <TableHead className="text-right">Op. Margin</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {productData.map(p => (
+                            <TableRow key={`${p.id}-op`}>
+                                <TableCell className="font-medium flex items-center gap-2">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                    <span>{p.productName}</span>
+                                </TableCell>
+                                <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
+                                <TableCell className="text-right">{p.operatingMargin.toFixed(0)}%</TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {productData.map(p => (
-                                <TableRow key={`${p.id}-op`}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                        <span>{p.productName}</span>
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency, true)}</TableCell>
-                                    <TableCell className="text-right">{p.operatingMargin.toFixed(0)}%</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                     </Table>
-                </ProfitLevelSection>
-                
-                <ProfitLevelSection title="Level 3: Net Profit & Margin" icon={<Landmark className="text-primary" />}>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Product</TableHead>
-                                <TableHead className="text-right">Net Profit</TableHead>
-                                <TableHead className="text-right">Net Margin</TableHead>
+                        ))}
+                    </TableBody>
+                 </Table>
+            </ProfitLevelSection>
+            
+            <ProfitLevelSection title="Level 3: Net Profit & Margin" icon={<Landmark className="text-primary" />}>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Net Profit</TableHead>
+                            <TableHead className="text-right">Net Margin</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {productData.map(p => (
+                            <TableRow key={`${p.id}-net`}>
+                                <TableCell className="font-medium flex items-center gap-2">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                    <span>{p.productName}</span>
+                                </TableCell>
+                                <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
+                                <TableCell className="text-right">{p.netMargin.toFixed(0)}%</TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {productData.map(p => (
-                                <TableRow key={`${p.id}-net`}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                        <span>{p.productName}</span>
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(p.netProfit, currency, true)}</TableCell>
-                                    <TableCell className="text-right">{p.netMargin.toFixed(0)}%</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                     </Table>
-                </ProfitLevelSection>
-
-            </CardContent>
-        </Card>
+                        ))}
+                    </TableBody>
+                 </Table>
+            </ProfitLevelSection>
+        </div>
     )
 }
