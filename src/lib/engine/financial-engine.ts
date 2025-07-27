@@ -1,4 +1,5 @@
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -383,10 +384,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     });
     
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    const totalCogs = monthlyCogs.reduce((acc, curr) => acc + curr.cogs, 0);
+    const totalVariableCostCents = toCents(costSummary.totalVariable);
     const totalFixedCostCents = toCents(costSummary.totalFixed);
 
-    const totalGrossProfit = totalRevenueCents - totalCogs;
+    const totalGrossProfit = totalRevenueCents - totalVariableCostCents;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
     const businessIsProfitable = totalOperatingProfit > 0;
     
