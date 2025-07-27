@@ -8,7 +8,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign } from 'lucide-react';
+import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput, Product } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
 import { getFinancials } from '@/lib/get-financials';
@@ -155,7 +155,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
               <RevenueInsights revenueSummary={revenueSummary} currency={currency} />
             </section>
 
-            <footer className="flex justify-end mt-8 pt-6 border-t">
+            <footer className="flex justify-between mt-8 pt-6 border-t">
+               <Button variant="outline" onClick={() => router.push('/inputs')}>
+                  <ArrowLeft className="mr-2" /> Back to Inputs
+              </Button>
               <Button onClick={() => router.push('/costs')}>
                 {t.pages.revenue.footer} <ArrowRight className="ml-2" />
               </Button>

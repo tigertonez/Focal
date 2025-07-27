@@ -110,8 +110,8 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
         </section>
 
       <footer className="flex justify-between mt-8 pt-6 border-t">
-        <Button onClick={() => router.push('/costs')}>
-            <ArrowLeft className="mr-2" /> {t.pages.costs.footer}
+        <Button variant="outline" onClick={() => router.push('/costs')}>
+            <ArrowLeft className="mr-2" /> Back to Costs
         </Button>
         <Button onClick={() => router.push('/cash-flow')}>
           {t.pages.profit.footer} <ArrowRight className="ml-2" />

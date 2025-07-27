@@ -400,8 +400,8 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
       <FinancialWaterfall data={data} currency={inputs.parameters.currency} t={t} />
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
-        <Button onClick={() => router.push('/cash-flow')}>
-          <ArrowLeft className="mr-2" /> {t.pages.summary.footer}
+        <Button variant="outline" onClick={() => router.push('/cash-flow')}>
+          <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
         <DownloadReportButton />
       </footer>

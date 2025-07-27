@@ -15,7 +15,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { CashFlowChart } from '@/components/app/cash-flow/charts/CashFlowChart';
-import { CashFlowTable } from '@/components/app/cash-flow/CashFlowTable';
+import { CashFlowTable } from '@/app/(main)/cash-flow/CashFlowTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
@@ -96,8 +96,8 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
 
 
       <footer className="flex justify-between mt-8 pt-6 border-t">
-        <Button onClick={() => router.push('/profit')}>
-          <ArrowLeft className="mr-2" /> {t.pages.cashFlow.footer.back}
+        <Button variant="outline" onClick={() => router.push('/profit')}>
+          <ArrowLeft className="mr-2" /> Back to Profit
         </Button>
         <Button onClick={() => router.push('/summary')}>
           {t.pages.cashFlow.footer.continue} <ArrowRight className="ml-2" />

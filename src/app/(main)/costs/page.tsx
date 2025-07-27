@@ -12,7 +12,7 @@ import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineCha
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ArrowRight, Building, Package, Activity, Calculator } from 'lucide-react';
+import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput, Product, FixedCostItem } from '@/lib/types';
 import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
@@ -178,7 +178,10 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
               <CostsInsights costSummary={costSummary} revenueSummary={revenueSummary} currency={currency} />
             </section>
 
-            <footer className="flex justify-end mt-8 pt-6 border-t">
+            <footer className="flex justify-between mt-8 pt-6 border-t">
+              <Button variant="outline" onClick={() => router.push('/revenue')}>
+                  <ArrowLeft className="mr-2" /> Back to Revenue
+              </Button>
               <Button onClick={() => router.push('/profit')}>
                 {t.pages.costs.footer} <ArrowRight className="ml-2" />
               </Button>
