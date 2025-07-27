@@ -13,7 +13,7 @@ const DATA_STORAGE_KEY = 'financials-report';
 
 export default function LoadingPage() {
     const router = useRouter();
-    const { inputs } = useForecast();
+    const { inputs, t } = useForecast();
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
 
@@ -30,8 +30,17 @@ export default function LoadingPage() {
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
+                    const errorText = await response.text();
+                     try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(errorData.details || errorData.error || 'Failed to calculate financials.');
+                    } catch (e) {
+                         // If parsing fails, it's likely an HTML error page or plain text
+                         if (errorText.includes('<html>')) {
+                             throw new Error("The server returned an unexpected error. Please check the server logs.");
+                         }
+                         throw new Error(errorText || 'Failed to calculate financials.');
+                    }
                 }
                 
                 const result = await response.json();
@@ -75,7 +84,7 @@ export default function LoadingPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-4">
                 <Alert variant="destructive" className="max-w-md">
-                    <AlertTitle>Calculation Error</AlertTitle>
+                    <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
                         <p>{error}</p>
                         <Button 
