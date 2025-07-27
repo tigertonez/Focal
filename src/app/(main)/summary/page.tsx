@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -33,7 +32,7 @@ const KPISection = ({ data, currency, t }: { data: EngineOutput, currency: strin
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       <KpiCard
         label={t.pages.summary.kpi.revenue}
         value={formatCurrency(revenueSummary.totalRevenue, currency)}

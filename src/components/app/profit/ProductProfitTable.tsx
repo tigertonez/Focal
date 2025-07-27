@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from "react";
@@ -27,7 +26,7 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
             </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
-            <div className="border-x border-b rounded-b-lg">
+            <div className="border-x border-b rounded-b-lg overflow-x-auto">
                 {children}
             </div>
         </CollapsibleContent>
@@ -84,20 +83,20 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Gross Profit</TableHead>
-                            <TableHead className="text-right">Gross Margin</TableHead>
+                            <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Gross Profit</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Gross Margin</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {productData.map(p => (
                             <TableRow key={`${p.id}-gross`}>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                    <span>{p.productName}</span>
+                                <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
+                                    <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                                    <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -108,20 +107,20 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Op. Profit</TableHead>
-                            <TableHead className="text-right">Op. Margin</TableHead>
+                            <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Op. Profit</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Op. Margin</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {productData.map(p => (
                             <TableRow key={`${p.id}-op`}>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                    <span>{p.productName}</span>
+                                <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
+                                    <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                                    <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.operatingMargin.toFixed(1)}%</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -132,20 +131,20 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Net Profit</TableHead>
-                            <TableHead className="text-right">Net Margin</TableHead>
+                            <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Net Profit</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">Net Margin</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {productData.map(p => (
                             <TableRow key={`${p.id}-net`}>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                    <span>{p.productName}</span>
+                                <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
+                                    <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                                    <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.netMargin.toFixed(1)}%</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -154,4 +153,3 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
-
