@@ -384,10 +384,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     });
     
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    const totalVariableCostCents = toCents(costSummary.totalVariable);
+    const totalCogs = monthlyCogs.reduce((acc, curr) => acc + curr.cogs, 0);
     const totalFixedCostCents = toCents(costSummary.totalFixed);
 
-    const totalGrossProfit = totalRevenueCents - totalVariableCostCents;
+    const totalGrossProfit = totalRevenueCents - totalCogs;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
     const businessIsProfitable = totalOperatingProfit > 0;
     
@@ -402,8 +402,8 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
         
         const productRevenueCents = toCents(revenueBreakdown.totalRevenue);
-        const productVariableCostCents = toCents(variableCostBreakdown.find(v => v.name === product.name)?.totalProductionCost || 0);
-        const productGrossProfitCents = productRevenueCents - productVariableCostCents;
+        const productCogsCents = toCents(variableCostBreakdown.find(v => v.name === product.name)?.totalProductionCost || 0);
+        const productGrossProfitCents = productRevenueCents - productCogsCents;
         
         const revenueShare = totalRevenueCents > 0 ? productRevenueCents / totalRevenueCents : 0;
         const allocatedFixedCostsCents = Math.round(totalFixedCostCents * revenueShare);
@@ -565,8 +565,9 @@ const calculateBusinessHealth = (
 // =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
+let potentialCalculationPromise: Promise<EngineOutput> | null = null;
 
-export function calculateFinancials(inputs: EngineInput): EngineOutput {
+export function calculateFinancials(inputs: EngineInput, isPotentialCalculation = false): EngineOutput {
     try {
         if (!inputs || !inputs.parameters || !inputs.products) throw new Error('Inputs not available.');
         if (inputs.parameters.forecastMonths > 36 || inputs.parameters.forecastMonths < 1) throw new Error('Forecast Months must be between 1 and 36.');
@@ -590,6 +591,13 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             ...profitAndCashFlowData
         };
 
+        if (isPotentialCalculation) {
+            return {
+                ...achievedResult,
+                businessHealth: undefined, 
+            };
+        }
+
         const potentialInputs = JSON.parse(JSON.stringify(inputs));
         potentialInputs.products.forEach((p: Product) => { 
             p.sellThrough = 100; 
@@ -598,7 +606,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             }
         });
         
-        const potentialResult = calculateFinancials(potentialInputs);
+        const potentialResult = calculateFinancials(potentialInputs, true);
         
         const healthScore = calculateBusinessHealth(inputs, {
             revenue: achievedResult.revenueSummary,

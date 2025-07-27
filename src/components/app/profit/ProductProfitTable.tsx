@@ -46,8 +46,10 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
             const productRevenue = revenueBreakdown?.totalRevenue || 0;
             
-            const productVariableCost = (product.plannedUnits || 0) * (product.unitCost || 0);
-            const grossProfit = productRevenue - productVariableCost;
+            const totalUnitsSold = revenueBreakdown?.totalSoldUnits || 0;
+            const productCogs = totalUnitsSold * (product.unitCost || 0);
+
+            const grossProfit = productRevenue - productCogs;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
             const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
