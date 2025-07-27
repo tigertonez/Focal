@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from "react";
@@ -25,10 +24,8 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
                 <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
             </div>
         </CollapsibleTrigger>
-        <CollapsibleContent>
-            <div className="border-x border-b rounded-b-lg overflow-x-auto">
-                {children}
-            </div>
+        <CollapsibleContent className="border-x border-b rounded-b-lg overflow-x-auto">
+            {children}
         </CollapsibleContent>
     </Collapsible>
 );
