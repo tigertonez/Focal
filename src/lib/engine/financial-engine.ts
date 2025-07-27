@@ -251,12 +251,12 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline);
     let totalPlannedUnits = 0, totalVariableCost = 0;
 
-    inputs.products.forEach(product => {
+    const variableCostBreakdown = inputs.products.map(product => {
         const plannedUnits = product.plannedUnits || 0;
         const totalProductionCost = toCents(plannedUnits * (product.unitCost || 0));
+        const depositPaid = Math.round(totalProductionCost * ((product.depositPct || 0) / 100));
 
         if (product.costModel === 'monthly') {
-            // JIT costs are tied to when units are sold
             monthlyCostTimeline.forEach(month => {
                 const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
                 if (unitsThisMonth > 0) {
@@ -264,19 +264,14 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
                 }
             });
         } else {
-            // Batch costs are paid upfront
-            const depositPaid = Math.round(totalProductionCost * ((product.depositPct || 0) / 100));
             const remainingCost = totalProductionCost - depositPaid;
-            
             if (preOrder) {
-                // With pre-order, deposits are in M0, final payment in M1
                 const month0 = monthlyCostTimeline.find(t => t.month === 0);
                 if (month0) month0['Deposits'] = (month0['Deposits'] || 0) + depositPaid;
 
                 const month1 = monthlyCostTimeline.find(t => t.month === 1);
                 if (month1) month1['Final Payments'] = (month1['Final Payments'] || 0) + remainingCost;
             } else {
-                // Without pre-order, all costs hit in M1
                 const month1 = monthlyCostTimeline.find(t => t.month === 1);
                 if (month1) month1['Final Payments'] = (month1['Final Payments'] || 0) + totalProductionCost;
             }
@@ -284,12 +279,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         
         totalPlannedUnits += plannedUnits;
         totalVariableCost += totalProductionCost;
-    });
 
-    const variableCostBreakdown = inputs.products.map(product => {
-        const plannedUnits = product.plannedUnits || 0;
-        const totalProductionCost = toCents(plannedUnits * (product.unitCost || 0));
-        const depositPaid = Math.round(totalProductionCost * ((product.depositPct || 0) / 100));
         return {
             name: product.productName, plannedUnits, unitCost: fromCents(toCents(product.unitCost)), 
             totalProductionCost: fromCents(totalProductionCost),
@@ -337,7 +327,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         return MonthlyCostSchema.parse(completeMonth);
     }).filter(Boolean) as MonthlyCost[];
     
-    return { costSummary, monthlyCosts };
+    return { costSummary, monthlyCosts, variableCostBreakdown };
 };
 
 
@@ -348,7 +338,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, revenueData: ReturnType<typeof calculateRevenue>, costData: ReturnType<typeof calculateCosts>, monthlyUnitsSold: Record<string, number>[]) => {
     const { timelineMonths } = timeline;
     const { monthlyRevenue, revenueSummary } = revenueData;
-    const { monthlyCosts, costSummary } = costData;
+    const { monthlyCosts, costSummary, variableCostBreakdown } = costData;
     const { taxRate } = inputs.parameters;
 
     const monthlyCogs = timelineMonths.map(month => {
@@ -575,7 +565,6 @@ const calculateBusinessHealth = (
 // =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
-const variableCostBreakdown: { name: string; totalProductionCost: number; }[] = [];
 
 export function calculateFinancials(inputs: EngineInput): EngineOutput {
     try {
