@@ -1,9 +1,9 @@
 
 
-"use client"
+'use client';
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -94,12 +94,13 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
           content={<ChartTooltipContent 
             formatter={(value, name) => {
                const itemConfig = chartConfig[name as keyof typeof chartConfig];
+               const displayValue = name === 'costs' ? -value : value;
                return (
                 <div className="flex items-center">
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
                     <div className="flex flex-1 justify-between">
                         <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Number(value), currency)}</span>
+                        <span className="ml-4 font-bold">{formatCurrency(Number(displayValue), currency, false)}</span>
                     </div>
                 </div>
               )
@@ -108,9 +109,11 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
+        <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
+
         <Bar dataKey="costs" fill="hsl(0, 75%, 65%)" stackId="stack" />
         <Bar dataKey="revenue" fill="hsl(var(--primary))" stackId="stack" />
-        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--accent))" strokeWidth={3} dot={false} yAxisId={0} />
+        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} yAxisId={0} />
 
       </ComposedChart>
     </ChartContainer>

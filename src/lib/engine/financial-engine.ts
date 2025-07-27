@@ -2,7 +2,6 @@
 
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
-import { formatCurrency, formatNumber } from '../utils';
 
 
 // =================================================================
@@ -11,10 +10,12 @@ import { formatCurrency, formatNumber } from '../utils';
 
 const toCents = (val: number | undefined | null): number => {
     if (val === undefined || val === null) return 0;
+    // Multiply by 100 and round to the nearest integer to prevent precision errors.
     return Math.round(val * 100);
 }
 
 const fromCents = (val: number): number => {
+    // Simply divide by 100 to get the dollar/euro value.
     return val / 100;
 }
 
@@ -26,10 +27,12 @@ const fromCents = (val: number): number => {
 const createTimeline = (inputs: EngineInput) => {
     const { forecastMonths, preOrder } = inputs.parameters;
     const requiresMonthZero = preOrder;
+    // Timeline for all calculations (costs, cash flow etc.)
     const timelineMonths = requiresMonthZero
       ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
 
+    // Sales can only happen from month 1 onwards, unless pre-order is active
     const salesTimeline = requiresMonthZero
         ? Array.from({ length: forecastMonths + 1 }, (_, i) => i)
         : Array.from({ length: forecastMonths }, (_, i) => i + 1);
@@ -56,7 +59,10 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
         case 'launch':
             if (months > 0) weights[0] = 0.6;
             if (months > 1) weights[1] = 0.3;
-            if (months > 2) weights[2] = 0.1;
+            if (months > 2) {
+                const remainingWeight = 0.1 / (months - 2);
+                for(let i = 2; i < months; i++) weights[i] = remainingWeight;
+            }
             break;
         case 'even':
             weights = Array(months).fill(1 / months);
@@ -93,7 +99,7 @@ const calculateRevenue = (inputs: EngineInput, timeline: Timeline, monthlyUnitsT
         timelineMonths.forEach((month, i) => {
              const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === month);
              if (revenueTimelineMonth) {
-                 revenueTimelineMonth[product.productName] = (revenueTimelineMonth[product.productName] || 0) + toCents(soldUnitsData[i] * (product.sellPrice || 0));
+                 revenueTimelineMonth[product.productName] = toCents(soldUnitsData[i] * (product.sellPrice || 0));
              }
         });
         
@@ -145,7 +151,7 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
         }
         
         if (isManualMode && isLowVolume) {
-            const soldUnits = product.estimatedSales || 0;
+            const soldUnits = Math.round(product.estimatedSales || 0);
             const saleMonth = product.saleMonth === 0 || product.saleMonth ? product.saleMonth : 1; // Default to month 1
             const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === saleMonth);
             if (unitsTimelineMonth) {
@@ -155,13 +161,30 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
             if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                 throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting.`);
             }
-            const soldUnits = (product.plannedUnits || 0) * ((product.sellThrough || 0) / 100);
+            const totalUnitsToSell = Math.round((product.plannedUnits || 0) * ((product.sellThrough || 0) / 100));
             const salesWeights = getSalesWeights(salesTimeline.length, product.salesModel || 'launch');
             
+            // Distribute units using integer logic to avoid floating point issues
+            let distributedUnits = 0;
+            const monthlyUnitDistribution = salesTimeline.map(month => {
+                const unitsForMonth = Math.floor(totalUnitsToSell * salesWeights[salesTimeline.indexOf(month)]);
+                distributedUnits += unitsForMonth;
+                return unitsForMonth;
+            });
+
+            // Handle remainder
+            let remainder = totalUnitsToSell - distributedUnits;
+            let monthIndex = 0;
+            while(remainder > 0) {
+                monthlyUnitDistribution[monthIndex % monthlyUnitDistribution.length]++;
+                remainder--;
+                monthIndex++;
+            }
+
             salesTimeline.forEach((month, i) => {
                 const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === month);
                 if (unitsTimelineMonth) {
-                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + (soldUnits * salesWeights[i]);
+                    unitsTimelineMonth[product.productName] = (unitsTimelineMonth[product.productName] || 0) + monthlyUnitDistribution[i];
                 }
             });
         }
@@ -181,25 +204,6 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
 // =================================================================
 // Cost Calculation Engine
 // =================================================================
-
-const getAggregatedSalesWeights = (inputs: EngineInput, timeline: Timeline, startMonth: number, monthlyUnitsSold: Record<string, number>[]): number[] => {
-    const { salesTimeline } = timeline;
-    const relevantSalesTimeline = salesTimeline.filter(m => m >= startMonth);
-    const aggregatedWeights = Array(relevantSalesTimeline.length).fill(0);
-    let totalValue = 0;
-
-    const monthlyRevenue = relevantSalesTimeline.map(month => {
-        return inputs.products.reduce((sum, p) => {
-            const units = (monthlyUnitsSold.find(u => u.month === month) || {})[p.productName] || 0;
-            return sum + (units * (p.sellPrice || 0));
-        }, 0);
-    });
-    
-    totalValue = monthlyRevenue.reduce((sum, rev) => sum + rev, 0);
-
-    if (totalValue === 0) return Array(relevantSalesTimeline.length).fill(1 / relevantSalesTimeline.length);
-    return monthlyRevenue.map(rev => rev / totalValue);
-};
 
 const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record<string, number>[] => {
     const { timelineMonths, requiresMonthZero } = timeline;
@@ -304,11 +308,11 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         return total + toCents(cost.amount); // 'Total for Period'
     }, 0);
     
-    const totalCogsOfSoldGoods = inputs.products.reduce((total, product) => {
+    const cogsOfSoldGoods = inputs.products.reduce((total, product) => {
         const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[product.productName] || 0), 0);
         return total + toCents(unitsSoldForProduct * (product.unitCost || 0));
     }, 0);
-    const cogsOfUnsoldGoods = totalVariableCost - totalCogsOfSoldGoods;
+    const cogsOfUnsoldGoods = totalVariableCost - cogsOfSoldGoods;
 
     const costSummary = {
         totalFixed: fromCents(totalFixedCostInPeriod),
@@ -389,7 +393,6 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         };
     });
     
-    // --- Summary Level Calculations (DEFINITIVE) ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     const totalVariableCostCents = toCents(costSummary.totalVariable);
     const totalFixedCostCents = toCents(costSummary.totalFixed);
@@ -398,9 +401,8 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
     const businessIsProfitable = totalOperatingProfit > 0;
     
-    const totalNetProfit = businessIsProfitable
-        ? totalOperatingProfit - Math.round(totalOperatingProfit * (taxRate / 100))
-        : totalOperatingProfit;
+    const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
+    const totalNetProfit = totalOperatingProfit - totalTaxAmount;
 
     // Calculate product-level net margins and their weights
     const productMargins = inputs.products.map(product => {
@@ -410,7 +412,7 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
         
         const productRevenueCents = toCents(revenueBreakdown.totalRevenue);
-        const productVariableCostCents = toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+        const productVariableCostCents = toCents(variableCostBreakdown.find(v => v.name === product.name)?.totalProductionCost || 0);
         const productGrossProfitCents = productRevenueCents - productVariableCostCents;
         
         const revenueShare = totalRevenueCents > 0 ? productRevenueCents / totalRevenueCents : 0;
@@ -418,9 +420,11 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         
         const productOperatingProfitCents = productGrossProfitCents - allocatedFixedCostsCents;
         
-        const productNetProfitCents = businessIsProfitable 
-            ? productOperatingProfitCents - Math.round(productOperatingProfitCents * (taxRate / 100))
-            : productOperatingProfitCents;
+        const productTaxCents = businessIsProfitable 
+            ? Math.round(productOperatingProfitCents * (taxRate / 100))
+            : 0;
+            
+        const productNetProfitCents = productOperatingProfitCents - productTaxCents;
             
         const netMargin = (productRevenueCents > 0) ? (productNetProfitCents / productRevenueCents) * 100 : 0;
         
@@ -571,30 +575,7 @@ const calculateBusinessHealth = (
 // =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
-
-function calculateScenario(inputs: EngineInput): Omit<EngineOutput, 'businessHealth' | 'profitSummary'> & { profitSummary: Omit<ProfitSummary, 'totalGrossProfit'> & { monthlyGrossProfits: MonthlyProfit[] } } {
-    const timeline = createTimeline(inputs);
-    const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
-    const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
-    const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
-    const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
-    
-    // We pass up the monthly profits separately to correctly calculate total gross profit at the end
-    const { profitSummary, ...restOfProfitAndCash } = profitAndCashFlowData;
-
-    return {
-        revenueSummary: revenueData.revenueSummary,
-        monthlyRevenue: revenueData.monthlyRevenue,
-        monthlyUnitsSold,
-        costSummary: costData.costSummary,
-        monthlyCosts: costData.monthlyCosts,
-        profitSummary: {
-          ...profitSummary,
-        },
-        ...restOfProfitAndCash
-    };
-}
-
+const variableCostBreakdown: { name: string; totalProductionCost: number; }[] = [];
 
 export function calculateFinancials(inputs: EngineInput): EngineOutput {
     try {
@@ -605,7 +586,20 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
              if (p.unitCost > p.sellPrice && p.productName) console.warn(`Product "${p.productName}" has a Unit Cost higher than its Sales Price.`);
         });
 
-        const achievedResult = calculateScenario(inputs);
+        const timeline = createTimeline(inputs);
+        const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
+        const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
+        const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
+        const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
+    
+        const achievedResult = {
+            revenueSummary: revenueData.revenueSummary,
+            monthlyRevenue: revenueData.monthlyRevenue,
+            monthlyUnitsSold,
+            costSummary: costData.costSummary,
+            monthlyCosts: costData.monthlyCosts,
+            ...profitAndCashFlowData
+        };
 
         const potentialInputs = JSON.parse(JSON.stringify(inputs));
         potentialInputs.products.forEach((p: Product) => { 
@@ -615,7 +609,7 @@ export function calculateFinancials(inputs: EngineInput): EngineOutput {
             }
         });
         
-        const potentialResult = calculateScenario(potentialInputs);
+        const potentialResult = calculateFinancials(potentialInputs);
         
         const healthScore = calculateBusinessHealth(inputs, {
             revenue: achievedResult.revenueSummary,
