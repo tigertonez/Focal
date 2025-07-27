@@ -12,7 +12,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency, formatNumber } from "@/lib/utils"
+import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
 import { generateCssId } from "@/lib/generate-css-id"
 
