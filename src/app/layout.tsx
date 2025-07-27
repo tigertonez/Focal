@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { AppShell } from '@/components/app/AppShell';
+import { Suspense } from 'react';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -36,7 +37,9 @@ export default function RootLayout({
           fontHeadline.variable
         )}
       >
-        <AppShell>{children}</AppShell>
+        <Suspense fallback={<div>Loading...</div>}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
         <Toaster />
       </body>
     </html>
