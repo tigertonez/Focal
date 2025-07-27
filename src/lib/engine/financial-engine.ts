@@ -91,10 +91,9 @@ const calculateRevenue = (inputs: EngineInput, timeline: Timeline, monthlyUnitsT
     const monthlyRevenueTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
     const productBreakdown = products.map(product => {
-        let totalRevenue = 0;
         const soldUnitsData = monthlyUnitsTimeline.map(m => m[product.productName] || 0);
         const totalSoldUnits = soldUnitsData.reduce((sum, units) => sum + units, 0);
-        totalRevenue = toCents(totalSoldUnits * (product.sellPrice || 0));
+        const totalRevenue = toCents(totalSoldUnits * (product.sellPrice || 0));
         
         timelineMonths.forEach((month, i) => {
              const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === month);
@@ -127,9 +126,9 @@ const calculateRevenue = (inputs: EngineInput, timeline: Timeline, monthlyUnitsT
             }
         });
         return MonthlyRevenueSchema.parse(completeMonth);
-    }).filter(Boolean);
+    });
     
-    return { revenueSummary, monthlyRevenue };
+    return { revenueSummary, monthlyRevenue, monthlyRevenueTimeline }; // Return cents-based timeline
 };
 
 const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
@@ -233,7 +232,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
             const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalCostAmount / allocationTimeline.length) : 0;
             let remainder = allocationTimeline.length > 0 ? totalCostAmount % allocationTimeline.length : 0;
             
-            allocationTimeline.forEach(month => { 
+            allocationTimeline.forEach((month, index) => { 
                 let amountThisMonth = monthlyAmount;
                 if(remainder > 0) {
                     amountThisMonth++;
@@ -325,9 +324,9 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
             }
         });
         return MonthlyCostSchema.parse(completeMonth);
-    }).filter(Boolean) as MonthlyCost[];
+    }) as MonthlyCost[];
     
-    return { costSummary, monthlyCosts };
+    return { costSummary, monthlyCosts, monthlyCostTimeline }; // Return cents-based timeline
 };
 
 
@@ -335,10 +334,16 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 // Profit & Cash Flow Calculation Engine
 // =================================================================
 
-const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, revenueData: ReturnType<typeof calculateRevenue>, costData: ReturnType<typeof calculateCosts>, monthlyUnitsSold: Record<string, number>[]) => {
+const calculateProfitAndCashFlow = (
+    inputs: EngineInput, 
+    timeline: Timeline, 
+    revenueData: ReturnType<typeof calculateRevenue>, 
+    costData: ReturnType<typeof calculateCosts>, 
+    monthlyUnitsSold: Record<string, number>[]
+) => {
     const { timelineMonths } = timeline;
-    const { monthlyRevenue, revenueSummary } = revenueData;
-    const { monthlyCosts, costSummary, } = costData;
+    const { revenueSummary, monthlyRevenueTimeline } = revenueData;
+    const { costSummary, monthlyCostTimeline } = costData;
     const { taxRate } = inputs.parameters;
 
     const monthlyCogs = timelineMonths.map(month => {
@@ -351,17 +356,17 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     });
 
     const monthlyFixedCosts = timelineMonths.map(month => {
-        const costsForMonth = monthlyCosts.find(c => c.month === month) || {};
+        const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let fixedCost = 0;
         for (const costItem of inputs.fixedCosts) {
-            fixedCost += toCents(costsForMonth[costItem.name] || 0);
+            fixedCost += (costsForMonth[costItem.name] || 0); // Already in cents
         }
         return { month, fixedCost };
     });
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
-        const revenueThisMonth = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + toCents(v) : s, 0);
+        const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         const cogsThisMonth = monthlyCogs.find(c => c.month === month)?.cogs || 0;
         const fixedCostsThisMonth = monthlyFixedCosts.find(f => f.month === month)?.fixedCost || 0;
 
@@ -443,10 +448,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
     let cumulativeCash = 0, peakFundingNeed = 0, cashBreakEvenMonth: number | null = null;
     
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
-        const cashIn = Object.values(monthlyRevenue.find(r => r.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + toCents(v) : s, 0);
+        const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
-        const costsThisMonth = monthlyCosts.find(c => c.month === month) || {};
-        let cashOutCosts = Object.entries(costsThisMonth).reduce((s, [key, value]) => key !== 'month' ? s + toCents(value) : s, 0);
+        const costsThisMonth = monthlyCostTimeline.find(c => c.month === month) || {};
+        let cashOutCosts = Object.entries(costsThisMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         const profitMonth = monthlyProfit.find(p => p.month === month);
         const operatingProfitThisMonthCents = toCents(profitMonth?.operatingProfit);
@@ -637,5 +642,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    

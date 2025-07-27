@@ -42,15 +42,18 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     return data.monthlyProfit.map(p => {
-        const revenue = Object.values(data.monthlyRevenue.find(r => r.month === p.month) || {}).reduce((acc, val) => typeof val === 'number' && val > 0 ? acc + val : acc, 0);
-        const costs = Object.values(data.monthlyCosts.find(c => c.month === p.month) || {}).reduce((acc, val) => typeof val === 'number' && val > 0 ? acc + val : acc, 0);
+        const revenue = data.monthlyRevenue.find(r => r.month === p.month) || {};
+        const totalRevenue = Object.entries(revenue).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
+
+        const costs = data.monthlyCosts.find(c => c.month === p.month) || {};
+        const totalCosts = Object.entries(costs).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
         
         cumulativeProfit += p.operatingProfit;
         
         return {
             month: `M${p.month}`,
-            revenue,
-            costs: -costs, // Costs are negative for stacking
+            revenue: totalRevenue,
+            costs: -totalCosts, // Costs are negative for stacking
             cumulativeProfit,
         };
     });
@@ -94,7 +97,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
           content={<ChartTooltipContent 
             formatter={(value, name) => {
                const itemConfig = chartConfig[name as keyof typeof chartConfig];
-               const displayValue = name === 'costs' ? -value : value;
+               const displayValue = name === 'costs' ? -(value as number) : value;
                return (
                 <div className="flex items-center">
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
