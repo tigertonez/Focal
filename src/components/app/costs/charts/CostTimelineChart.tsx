@@ -12,7 +12,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
+import { formatCurrency, formatNumber } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
 import { generateCssId } from "@/lib/generate-css-id"
 
@@ -75,7 +75,7 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
     if (Math.abs(value) >= 1000) {
       return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
     }
-    return formatCurrency(Number(value), currency || 'USD').replace(/\.00$/, '');
+    return formatCurrency(Number(value), currency || 'USD', true);
   };
   
   const tooltipFormatter = (value: number, name: string) => {

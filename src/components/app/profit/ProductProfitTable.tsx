@@ -1,13 +1,13 @@
 
+
 'use client';
 
 import React from "react";
 import type { EngineInput, EngineOutput } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils";
+import { formatCurrency, getProductColor } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight, TrendingUp, Briefcase, Landmark } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ProductProfitTableProps {
     data: EngineOutput;
@@ -43,26 +43,24 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
 
         return inputs.products.map((product) => {
-            const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
-            const productRevenue = revenueData?.totalRevenue || 0;
+            const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
+            const productRevenue = revenueBreakdown?.totalRevenue || 0;
             
-            // Gross Profit uses TOTAL variable cost for the product
             const productVariableCost = (product.plannedUnits || 0) * (product.unitCost || 0);
             const grossProfit = productRevenue - productVariableCost;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
-            // Allocate fixed costs based on this product's share of total revenue
             const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
             const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
             
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            // Apply tax rule based on OVERALL business profitability
-            const netProfit = businessIsProfitable
-                ? operatingProfit * (1 - taxRate / 100)
-                : operatingProfit;
-            
+            const productTax = businessIsProfitable
+                ? operatingProfit * (taxRate / 100)
+                : 0;
+
+            const netProfit = operatingProfit - productTax;
             const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;
 
             return {
@@ -97,7 +95,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <span>{p.productName}</span>
                                 </TableCell>
                                 <TableCell className="text-right">{formatCurrency(p.grossProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.grossMargin.toFixed(0)}%</TableCell>
+                                <TableCell className="text-right">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -121,7 +119,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <span>{p.productName}</span>
                                 </TableCell>
                                 <TableCell className="text-right">{formatCurrency(p.operatingProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.operatingMargin.toFixed(0)}%</TableCell>
+                                <TableCell className="text-right">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -145,7 +143,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <span>{p.productName}</span>
                                 </TableCell>
                                 <TableCell className="text-right">{formatCurrency(p.netProfit, currency)}</TableCell>
-                                <TableCell className="text-right">{p.netMargin.toFixed(0)}%</TableCell>
+                                <TableCell className="text-right">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

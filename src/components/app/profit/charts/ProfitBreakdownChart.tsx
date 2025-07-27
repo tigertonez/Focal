@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -64,7 +65,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     if (Math.abs(value) >= 1000) {
       return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
     }
-    return formatCurrency(Number(value), currency).replace(/\.00$/, '');
+    return formatCurrency(Number(value), currency, true);
   };
 
   return (
@@ -115,5 +116,3 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     </ChartContainer>
   )
 }
-
-    
