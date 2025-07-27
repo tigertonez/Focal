@@ -81,34 +81,41 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 )}
             </section>
             
-            {/* --- MOBILE VIEW --- */}
-            <section className="space-y-8 md:hidden">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full pl-0">
-                    <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full pl-0">
-                    <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
-                    </CardContent>
-                </Card>
-                <Card>
+            {/* --- Charts Section --- */}
+            <section className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full pl-0">
+                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-[350px] w-full pl-0">
+                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
+
+             {/* --- Table Section (Mobile & Desktop) --- */}
+            <section>
+                 <Card>
                     <CardHeader>
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="overflow-x-auto p-0">
+                    <CardContent className="overflow-x-auto p-0 md:p-6 md:pt-0">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="pl-4 w-1/3">Product / Units</TableHead>
-                                    <TableHead className="text-right">Sell-Through %</TableHead>
+                                    <TableHead className="pl-4 md:w-1/3">Product</TableHead>
+                                    <TableHead className="text-right hidden md:table-cell">Units Sold</TableHead>
+                                    <TableHead className="text-right">Sell-Through</TableHead>
                                     <TableHead className="text-right">Price</TableHead>
                                     <TableHead className="text-right pr-4">Revenue</TableHead>
                                 </TableRow>
@@ -127,83 +134,14 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
                                                    <div className="flex flex-col">
                                                       <span className="font-semibold">{product.name}</span>
-                                                      <span className="text-xs text-muted-foreground">{formatNumber(product.totalSoldUnits)} Units</span>
+                                                      <span className="text-xs text-muted-foreground md:hidden">{formatNumber(product.totalSoldUnits)} Units</span>
                                                    </div>
                                                 </div>
                                             </TableCell>
+                                            <TableCell className="text-right hidden md:table-cell">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
                                             <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency, true)}</TableCell>
-                                            <TableCell className="text-right font-bold pr-4">{formatCurrency(product.totalRevenue, currency, true)}</TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Revenue Contribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] w-full">
-                        <RevenueBreakdownPieChart data={revenueSummary.productBreakdown} currency={currency} inputs={inputs} />
-                    </CardContent>
-                </Card>
-            </section>
-
-            {/* --- DESKTOP VIEW --- */}
-            <section className="hidden md:block space-y-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px] w-full pl-0">
-                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px] w-full pl-0">
-                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
-                        </CardContent>
-                    </Card>
-                </div>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>{t.pages.revenue.table.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-1/3">Product</TableHead>
-                                    <TableHead className="text-right">Units Sold</TableHead>
-                                    <TableHead className="text-right">Sell-Through %</TableHead>
-                                    <TableHead className="text-right">Price</TableHead>
-                                    <TableHead className="text-right">Total Revenue</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {revenueSummary.productBreakdown.map((product) => {
-                                    const inputProduct = inputs.products.find(p => p.productName === product.name);
-                                    if (!inputProduct) return null;
-                                    
-                                    const sellThrough = (inputProduct.sellThrough || 0);
-                                    
-                                    return (
-                                        <TableRow key={product.name}>
-                                            <TableCell className="font-medium flex items-center gap-2">
-                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
-                                                <span>{product.name}</span>
-                                            </TableCell>
-                                            <TableCell className="text-right">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                            <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                            <TableCell className="text-right font-bold pr-4">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
                                 })}

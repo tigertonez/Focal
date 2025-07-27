@@ -37,9 +37,7 @@ export default function RootLayout({
           fontHeadline.variable
         )}
       >
-        <Suspense fallback={<div>Loading...</div>}>
-          <AppShell>{children}</AppShell>
-        </Suspense>
+        <AppShell>{children}</AppShell>
         <Toaster />
       </body>
     </html>

@@ -6,6 +6,8 @@ import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { BottomNav } from './BottomNav';
+import { Suspense } from 'react';
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -24,11 +26,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   }, [isPdfMode]);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="relative flex min-h-screen w-full bg-background">
       {!isPdfMode && <SideNav />}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+      <div className="flex flex-1 flex-col">
+        <main className="flex-1 pb-16 md:pb-0">
+            {children}
+        </main>
+        {!isPdfMode && <BottomNav />}
+      </div>
       {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
     </div>
   );
@@ -37,7 +42,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ForecastProvider>
-      <AppShellContent>{children}</AppShellContent>
+        <Suspense>
+            <AppShellContent>{children}</AppShellContent>
+        </Suspense>
     </ForecastProvider>
   );
 }
