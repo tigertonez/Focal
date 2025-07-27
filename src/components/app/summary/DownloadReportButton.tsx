@@ -60,10 +60,8 @@ export function DownloadReportButton() {
 
   return (
     <Button
-      size="lg"
       onClick={handleDownload}
       disabled={loading}
-      className="shadow-lg"
     >
       {loading ? (
         <Loader2 className="animate-spin mr-2" />
