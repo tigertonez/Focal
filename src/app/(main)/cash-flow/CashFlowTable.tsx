@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -54,7 +55,7 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                         {tableData.map((row) => (
                             <TableRow key={row.month}>
                                 <TableCell className="text-center font-medium px-1 md:px-3">{row.month}</TableCell>
-                                <TableCell className="text-right text-green-600 px-1 md:px-3">{formatCurrency(row.cashIn, currency, true)}</TableCell>
+                                <TableCell className="text-right text-foreground px-1 md:px-3">{formatCurrency(row.cashIn, currency, true)}</TableCell>
                                 <TableCell className="text-right text-red-600 px-1 md:px-3">{formatCurrency(row.cashOut, currency, true)}</TableCell>
                                 <TableCell className={cn(
                                     "text-right font-semibold px-1 md:px-3",
@@ -64,14 +65,17 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                                 </TableCell>
                                 <TableCell className={cn(
                                     "text-right font-bold px-1 md:px-3",
-                                    row.cumulativeCash >= 0 ? 'text-foreground' : 'text-destructive'
+                                    row.cumulativeCash >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
                                     {formatCurrency(row.cumulativeCash, currency, true)}
                                 </TableCell>
                                 <TableCell className="text-center px-1 md:px-3">
-                                    <Badge variant={row.status === t.pages.cashFlow.table.cashPositive ? 'default' : 'destructive'} className="w-full justify-center text-xs px-1">
+                                     <span className={cn(
+                                        "text-xs font-semibold",
+                                        row.status === t.pages.cashFlow.table.cashPositive ? 'text-green-700' : 'text-red-700'
+                                     )}>
                                         {row.status}
-                                    </Badge>
+                                    </span>
                                 </TableCell>
                             </TableRow>
                         ))}
