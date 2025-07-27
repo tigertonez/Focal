@@ -106,7 +106,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
              {/* --- Table Section (Mobile & Desktop) --- */}
             <section>
                  <Card>
-                    <CardHeader>
+                    <CardHeader className="p-4 md:p-6">
                         <CardTitle>{t.pages.revenue.table.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="overflow-x-auto p-0 md:p-6 md:pt-0">
