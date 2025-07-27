@@ -1,5 +1,4 @@
 
-
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -327,7 +326,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         return MonthlyCostSchema.parse(completeMonth);
     }).filter(Boolean) as MonthlyCost[];
     
-    return { costSummary, monthlyCosts, variableCostBreakdown };
+    return { costSummary, monthlyCosts };
 };
 
 
@@ -338,7 +337,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, revenueData: ReturnType<typeof calculateRevenue>, costData: ReturnType<typeof calculateCosts>, monthlyUnitsSold: Record<string, number>[]) => {
     const { timelineMonths } = timeline;
     const { monthlyRevenue, revenueSummary } = revenueData;
-    const { monthlyCosts, costSummary, variableCostBreakdown } = costData;
+    const { monthlyCosts, costSummary, } = costData;
     const { taxRate } = inputs.parameters;
 
     const monthlyCogs = timelineMonths.map(month => {
@@ -402,7 +401,10 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
         
         const productRevenueCents = toCents(revenueBreakdown.totalRevenue);
-        const productCogsCents = toCents(variableCostBreakdown.find(v => v.name === product.name)?.totalProductionCost || 0);
+        
+        const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[product.productName] || 0), 0);
+        const productCogsCents = toCents(unitsSoldForProduct * (product.unitCost || 0));
+        
         const productGrossProfitCents = productRevenueCents - productCogsCents;
         
         const revenueShare = totalRevenueCents > 0 ? productRevenueCents / totalRevenueCents : 0;
@@ -565,7 +567,6 @@ const calculateBusinessHealth = (
 // =================================================================
 // Main Financial Engine Orchestrator
 // =================================================================
-let potentialCalculationPromise: Promise<EngineOutput> | null = null;
 
 export function calculateFinancials(inputs: EngineInput, isPotentialCalculation = false): EngineOutput {
     try {
@@ -635,3 +636,5 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
+
+    
