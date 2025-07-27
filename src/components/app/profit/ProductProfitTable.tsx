@@ -36,57 +36,47 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
-    const { revenueSummary, monthlyRevenue, monthlyProfit, costSummary, profitSummary } = data;
+    const { revenueSummary, profitSummary, costSummary } = data;
     const { currency, taxRate } = inputs.parameters;
 
-    const productData = React.useMemo(() => inputs.products.map((product) => {
-        const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
-        const unitsSold = revenueData?.totalSoldUnits || 0;
-        const productRevenue = revenueData?.totalRevenue || 0;
-        
-        const productCogs = unitsSold * (product.unitCost || 0);
-        const grossProfit = productRevenue - productCogs;
-        const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
-        
-        let allocatedFixedCosts = 0;
+    const productData = React.useMemo(() => {
+        const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
 
-        monthlyRevenue.forEach(monthRevenue => {
-            const month = monthRevenue.month;
-            const totalMonthlyRevenue = Object.keys(monthRevenue)
-                .filter(k => k !== 'month')
-                .reduce((sum, key) => sum + (monthRevenue[key] || 0), 0);
+        return inputs.products.map((product) => {
+            const revenueData = revenueSummary.productBreakdown.find(p => p.name === product.productName);
+            const productRevenue = revenueData?.totalRevenue || 0;
             
-            const productMonthlyRevenue = monthRevenue[product.productName] || 0;
-            const revenueShare = totalMonthlyRevenue > 0 ? productMonthlyRevenue / totalMonthlyRevenue : 0;
+            // Gross Profit uses TOTAL variable cost for the product
+            const productVariableCost = (product.plannedUnits || 0) * (product.unitCost || 0);
+            const grossProfit = productRevenue - productVariableCost;
+            const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
-            const monthProfitData = monthlyProfit.find(mp => mp.month === month);
-            if(monthProfitData) {
-                const monthlyFixedCosts = monthProfitData.grossProfit - monthProfitData.operatingProfit;
-                allocatedFixedCosts += monthlyFixedCosts * revenueShare;
-            }
+            // Allocate fixed costs based on this product's share of total revenue
+            const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
+            const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
+            
+            const operatingProfit = grossProfit - allocatedFixedCosts;
+            const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
+
+            // Apply tax rule based on OVERALL business profitability
+            const netProfit = businessIsProfitable
+                ? operatingProfit * (1 - taxRate / 100)
+                : operatingProfit;
+            
+            const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;
+
+            return {
+                ...product,
+                color: getProductColor(product),
+                grossProfit,
+                grossMargin,
+                operatingProfit,
+                operatingMargin,
+                netProfit,
+                netMargin,
+            };
         });
-        
-        const operatingProfit = grossProfit - allocatedFixedCosts;
-
-        // Apply tax rule based on OVERALL business profitability
-        const netProfit = profitSummary.totalOperatingProfit > 0
-            ? operatingProfit * (1 - taxRate / 100)
-            : operatingProfit;
-        
-        const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
-        const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;
-
-        return {
-            ...product,
-            color: getProductColor(product),
-            grossProfit,
-            grossMargin,
-            operatingProfit,
-            operatingMargin,
-            netProfit,
-            netMargin,
-        };
-    }), [data, inputs.products, currency]);
+    }, [data, inputs.products, currency, taxRate]);
 
     return (
         <div className="space-y-4">

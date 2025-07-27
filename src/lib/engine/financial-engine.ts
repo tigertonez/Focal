@@ -366,9 +366,9 @@ const calculateProfitAndCashFlow = (inputs: EngineInput, timeline: Timeline, rev
         }
         
         const productRevenue = revenueBreakdown.totalRevenue;
-        // Correct COGS for product is based on units SOLD, not planned
-        const productCOGS = revenueBreakdown.totalSoldUnits * (product.unitCost || 0);
-        const productGrossProfit = productRevenue - productCOGS;
+        // CORRECT: Use TOTAL production cost for the product, not COGS
+        const productVariableCost = (product.plannedUnits || 0) * (product.unitCost || 0);
+        const productGrossProfit = productRevenue - productVariableCost;
         
         // Allocate fixed costs based on product's share of total revenue
         const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
