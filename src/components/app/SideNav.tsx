@@ -60,16 +60,14 @@ const DesktopNav = () => {
         </TooltipProvider>
       );
     };
+    
+    const brandInitials = inputs.company?.brand?.substring(0, 2).toUpperCase() || 'P';
 
     return (
         <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
             <Link href="/" className="p-3 mb-4">
-                 <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-10 w-10">
-                    {inputs.company?.logoDataUri ? (
-                        <img src={inputs.company.logoDataUri} alt="Company Logo" className="h-full w-full object-contain" />
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
-                    )}
+                 <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-10 w-10 font-bold text-lg">
+                    {brandInitials}
                  </div>
             </Link>
             <nav className="flex flex-col items-center space-y-2">
