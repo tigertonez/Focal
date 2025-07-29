@@ -3,6 +3,7 @@
 
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -405,10 +406,12 @@ const calculateProfitAndCashFlow = (
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
         
-        // Correctly apply tax based on overall profitability, not monthly
-        const tax = businessIsProfitable && operatingProfit > 0 
-            ? Math.round(operatingProfit * (taxRate / 100)) 
-            : 0;
+        // Apply taxes based on a proportional share of the total tax amount, relative to monthly op profit
+        let tax = 0;
+        if (businessIsProfitable && totalOperatingProfit > 0 && operatingProfit > 0) {
+            tax = Math.round(totalTaxAmount * (operatingProfit / totalOperatingProfit));
+        }
+
         const netProfit = operatingProfit - tax;
 
         cumulativeOperatingProfit += operatingProfit;
@@ -452,12 +455,13 @@ const calculateProfitAndCashFlow = (
         
         const productOperatingProfitCents = productGrossProfitCents - allocatedFixedCostsCents;
         
-        const productTaxCents = businessIsProfitable
-            ? Math.round(productOperatingProfitCents * (taxRate / 100))
-            : 0;
+        // Tax allocation at product level
+        let productTaxCents = 0;
+        if (businessIsProfitable && totalOperatingProfit > 0 && productOperatingProfitCents > 0) {
+            productTaxCents = Math.round(totalTaxAmount * (productOperatingProfitCents / totalOperatingProfit));
+        }
             
         const productNetProfitCents = productOperatingProfitCents - productTaxCents;
-            
         const netMargin = (productRevenueCents > 0) ? (productNetProfitCents / productRevenueCents) * 100 : 0;
         
         return {
@@ -465,7 +469,8 @@ const calculateProfitAndCashFlow = (
             margin: netMargin,
         };
     });
-
+    
+    // This is the correct weighted average calculation
     const weightedAvgNetMargin = productMargins.reduce((acc, curr) => acc + (curr.margin * curr.weight), 0);
 
     const profitSummary = {
@@ -474,7 +479,7 @@ const calculateProfitAndCashFlow = (
         totalNetProfit: fromCents(totalNetProfit),
         grossMargin: totalRevenueCents > 0 ? (totalGrossProfit / totalRevenueCents) * 100 : 0,
         operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
-        netMargin: weightedAvgNetMargin,
+        netMargin: weightedAvgNetMargin, // Use the correct weighted average
         breakEvenMonth: profitBreakEvenMonth,
     };
 
@@ -485,14 +490,15 @@ const calculateProfitAndCashFlow = (
         
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-
-        const profitMonth = monthlyProfit.find(p => p.month === month);
-        const operatingProfitThisMonthCents = toCents(profitMonth?.operatingProfit);
-        const netProfitThisMonthCents = toCents(profitMonth?.netProfit);
         
-        // Use the centrally calculated total tax amount and distribute it for cash flow purposes
-        // This is a simplification; a more complex model might time the tax payments differently
-        const cashOutTax = businessIsProfitable && operatingProfitThisMonthCents > 0 ? Math.round(operatingProfitThisMonthCents * (taxRate / 100)) : 0;
+        const profitMonth = monthlyProfit.find(p => p.month === month);
+        const opProfitThisMonth = toCents(profitMonth?.operatingProfit);
+
+        // Distribute the total tax bill for cash flow purposes based on when op profit occurs
+        let cashOutTax = 0;
+        if (businessIsProfitable && totalOperatingProfit > 0 && opProfitThisMonth > 0) {
+            cashOutTax = Math.round(totalTaxAmount * (opProfitThisMonth / totalOperatingProfit));
+        }
 
         const netCashFlow = cashIn - cashOutCosts - cashOutTax;
         cumulativeCash += netCashFlow;
