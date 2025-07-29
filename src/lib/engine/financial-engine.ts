@@ -363,6 +363,14 @@ const calculateProfitAndCashFlow = (
         }
         return { month, fixedCost };
     });
+    
+    // First pass to determine overall profitability
+    const totalRevenueCents = toCents(revenueSummary.totalRevenue);
+    const cogsOfSoldGoods = monthlyCogs.reduce((acc, month) => acc + month.cogs, 0);
+    const totalFixedCostCents = monthlyFixedCosts.reduce((acc, month) => acc + month.fixedCost, 0);
+    const totalGrossProfit = totalRevenueCents - cogsOfSoldGoods;
+    const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
+    const businessIsProfitable = totalOperatingProfit > 0;
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
@@ -372,7 +380,10 @@ const calculateProfitAndCashFlow = (
 
         const grossProfit = revenueThisMonth - cogsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
-        const tax = operatingProfit > 0 ? Math.round(operatingProfit * (taxRate / 100)) : 0;
+        
+        // ** CORRECTED TAX LOGIC **
+        // Only apply tax if the business is profitable OVERALL for the period
+        const tax = (businessIsProfitable && operatingProfit > 0) ? Math.round(operatingProfit * (taxRate / 100)) : 0;
         const netProfit = operatingProfit - tax;
 
         cumulativeOperatingProfit += operatingProfit;
@@ -387,14 +398,6 @@ const calculateProfitAndCashFlow = (
             netProfit: fromCents(netProfit) 
         };
     });
-    
-    const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    const cogsOfSoldGoods = monthlyCogs.reduce((acc, month) => acc + month.cogs, 0);
-    const totalFixedCostCents = monthlyFixedCosts.reduce((acc, month) => acc + month.fixedCost, 0);
-
-    const totalGrossProfit = totalRevenueCents - cogsOfSoldGoods;
-    const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
-    const businessIsProfitable = totalOperatingProfit > 0;
     
     const totalTaxAmount = monthlyProfit.reduce((acc, month) => {
         const operatingProfitCents = toCents(month.operatingProfit);
@@ -422,7 +425,8 @@ const calculateProfitAndCashFlow = (
         
         const productOperatingProfitCents = productGrossProfitCents - allocatedFixedCostsCents;
         
-        const productTaxCents = businessIsProfitable 
+        // ** CORRECTED TAX LOGIC for products **
+        const productTaxCents = (businessIsProfitable && productOperatingProfitCents > 0)
             ? Math.round(productOperatingProfitCents * (taxRate / 100))
             : 0;
             
@@ -460,7 +464,7 @@ const calculateProfitAndCashFlow = (
         const profitMonth = monthlyProfit.find(p => p.month === month);
         const operatingProfitThisMonthCents = toCents(profitMonth?.operatingProfit);
         const netProfitThisMonthCents = toCents(profitMonth?.netProfit);
-        const cashOutTax = (operatingProfitThisMonthCents > 0) ? operatingProfitThisMonthCents - netProfitThisMonthCents : 0;
+        const cashOutTax = operatingProfitThisMonthCents - netProfitThisMonthCents; // Already correctly calculated based on businessIsProfitable
 
         const netCashFlow = cashIn - cashOutCosts - cashOutTax;
         cumulativeCash += netCashFlow;
