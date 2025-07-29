@@ -140,7 +140,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                             </TableCell>
                                             <TableCell className="text-right hidden md:table-cell">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-right">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency, true)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(inputProduct.sellPrice || 0, currency, false)}</TableCell>
                                             <TableCell className="text-right font-bold pr-4">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
