@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/googleai';
 import { Message, Part } from 'genkit/content';
-import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
+import { CompanyContextSchema, EngineInputSchema, EngineOutputSchema } from '@/lib/types';
 
 
 const MessageSchema = z.object({
@@ -74,7 +74,8 @@ CRITICAL FORMATTING RULES:
 - When you reference a specific user-entered item name (like a product 'Goldring 2' or a cost 'Salaries'), you MUST wrap it in single quotes, like 'this'.
 
 FULL FINANCIAL DATA:
-- User Inputs: ${JSON.stringify(financials?.inputs, null, 2) || 'Not available.'}
+- Company Context: ${JSON.stringify(financials?.inputs?.company, null, 2) || 'Not available.'}
+- User Inputs (Products, Costs, Parameters): ${JSON.stringify(financials?.inputs, null, 2) || 'Not available.'}
 - Calculated Outputs (Revenue, Costs, Profit, etc.): ${JSON.stringify(financials?.data, null, 2) || 'Not available.'}
 `;
 

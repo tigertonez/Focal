@@ -27,7 +27,7 @@ const prompt = ai.definePrompt({
   output: { schema: AnalyzeProfitabilityOutputSchema },
   model: 'googleai/gemini-1.5-pro-latest',
   config: {
-    maxOutputTokens: 768,
+    maxOutputTokens: 1024,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,
@@ -35,13 +35,14 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert financial analyst AI writing a growth report for an early-stage founder with limited financial background. Your tone must be clear, educational, and confidence-building. Your mission is to help them understand their numbers and know what to do next.
 The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
-You will receive a JSON payload containing the user's profit forecast data.
+You will receive a JSON payload containing the user's forecast data. Use the company context to tailor your advice.
+- Company Context: {{{json companyContext}}}
 - Revenue Summary: {{{json revenueSummary}}}
 - Cost Summary: {{{json costSummary}}}
 - Profit Summary: {{{json profitSummary}}}
 - Currency: {{{currency}}}
 
-Infer the business type from product names (e.g., 'Goldring' -> jewelry).
+Infer the business type from product names and the 'industry' field.
 
 Your output MUST be ONLY a JSON object with the following 5 keys: "explanation", "whatsWorking", "issues", "opportunities", "topPriorities".
 
@@ -60,7 +61,7 @@ Here is the structure you MUST follow for each key:
 
 3.  **issues**: Diagnose 1-2 key weak points in plain language using bullet points. Go beyond the numbers on the screen. For example, if operating profit is negative, calculate the operating loss per €100 of revenue to make it more tangible. Always tie issues back to the specific numbers that prove it.
 
-4.  **opportunities**: Give 2-3 data-driven, tactical suggestions as bullet points based on the business type. These should be concrete actions like "Explore cost-saving opportunities for materials like 'Steine'..." or "Consider a price adjustment for the 'Goldring' product line...".
+4.  **opportunities**: Give 2-3 data-driven, tactical suggestions as bullet points based on the business type and company context (e.g., suggest exploring different 'production' models if cash flow is tight). These should be concrete actions like "Explore cost-saving opportunities for materials like 'Steine'..." or "Consider a price adjustment for the 'Goldring' product line...".
 
 5.  **topPriorities**: Output exactly five, clear, numbered action points. Each point should be a descriptive sentence (1-2 lines). CRITICAL: Add two <br> tags after each priority to create visual spacing. Start with "🧭 Top Priorities".
 ---

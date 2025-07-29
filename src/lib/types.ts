@@ -193,6 +193,7 @@ export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
 // --- AI-related Schemas ---
 
 export const AnalyzeProfitabilityInputSchema = z.object({
+  companyContext: CompanyContextSchema.optional(),
   revenueSummary: RevenueSummarySchema,
   costSummary: CostSummarySchema,
   profitSummary: ProfitSummarySchema,
@@ -215,6 +216,8 @@ export type AnalyzeProfitabilityOutput = z.infer<
 >;
 
 export const AnalyzeRevenueInputSchema = z.object({
+  companyContext: CompanyContextSchema.optional(),
+  products: z.array(ProductSchema),
   revenueSummary: RevenueSummarySchema,
   currency: z.string(),
   language: z.string().optional(),
@@ -228,6 +231,7 @@ export const AnalyzeRevenueOutputSchema = z.object({
 export type AnalyzeRevenueOutput = z.infer<typeof AnalyzeRevenueOutputSchema>;
 
 export const AnalyzeCostsInputSchema = z.object({
+  companyContext: CompanyContextSchema.optional(),
   costSummary: CostSummarySchema,
   revenueSummary: RevenueSummarySchema,
   currency: z.string(),
@@ -242,6 +246,7 @@ export const AnalyzeCostsOutputSchema = z.object({
 export type AnalyzeCostsOutput = z.infer<typeof AnalyzeCostsOutputSchema>;
 
 export const AnalyzeCashFlowInputSchema = z.object({
+  companyContext: CompanyContextSchema.optional(),
   cashFlowSummary: CashFlowSummarySchema,
   currency: z.string(),
   language: z.string().optional(),
@@ -258,6 +263,8 @@ export const AnalyzeCashFlowOutputSchema = z.object({
 export type AnalyzeCashFlowOutput = z.infer<typeof AnalyzeCashFlowOutputSchema>;
 
 export const StrategizeHealthScoreInputSchema = z.object({
+  companyContext: CompanyContextSchema.optional(),
+  products: z.array(ProductSchema),
   businessHealth: BusinessHealthSchema,
   revenueSummary: RevenueSummarySchema,
   costSummary: CostSummarySchema,

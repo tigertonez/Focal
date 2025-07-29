@@ -28,7 +28,8 @@ const prompt = ai.definePrompt({
 The currency is {{{currency}}}.
 The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
-Analyze the following cost summary in the context of the revenue summary:
+Analyze the following cost summary in the context of the company and revenue summary.
+- Company Context: {{{json companyContext}}}
 - Cost Summary: {{{json costSummary}}}
 - Revenue Summary: {{{json revenueSummary}}}
 
@@ -42,11 +43,11 @@ CRITICAL FORMATTING RULES:
 
 Here is the structure you MUST follow:
 
-1.  **insights**: Provide a bulleted list of 2-3 key insights. Go beyond the numbers on the screen. Focus on the *implications* of the relationship between fixed and variable costs, the significance of major cost drivers like 'Steine', and the cost structure's impact on scalability and profitability relative to revenue.
-    Example: "• Fixed costs of **€10,240** constitute a significant portion of your total operating costs, indicating high initial overhead that requires substantial revenue to cover."
+1.  **insights**: Provide a bulleted list of 2-3 key insights. Go beyond the numbers on the screen. Focus on the *implications* of the relationship between fixed and variable costs, the significance of major cost drivers, and the cost structure's impact on scalability. Consider the company's 'teamSize' - if it's large but no 'Salaries' cost exists, that is a key insight.
+    Example: "• With a 'teamSize' of '2-5', the fixed costs of **€10,240** seem low if they do not include salaries, suggesting a potential underestimation of overhead."
 
-2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve cost efficiency. For example, suggest specific areas for cost reduction, comment on the scalability of the cost structure, or identify potential risks in the cost plan.
-    Example: "• Explore negotiating with suppliers for 'Steine' to reduce variable costs and improve the gross margin on associated products."
+2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve cost efficiency. For example, suggest specific areas for cost reduction, comment on the scalability of the cost structure, or identify potential risks in the cost plan based on the company's 'production' model.
+    Example: "• Given the 'preorder' model, explore negotiating bulk discounts with suppliers for materials like 'Steine' to reduce variable costs and improve gross margin."
 `,
 });
 

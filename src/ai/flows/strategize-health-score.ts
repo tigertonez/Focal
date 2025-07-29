@@ -26,7 +26,7 @@ const prompt = ai.definePrompt({
   input: { schema: StrategizeHealthScoreInputSchema },
   output: { schema: StrategizeHealthScoreOutputSchema },
    config: {
-    maxOutputTokens: 768,
+    maxOutputTokens: 1024,
     temperature: 0.4,
     topP: 0.95,
     topK: 40,
@@ -35,11 +35,13 @@ const prompt = ai.definePrompt({
 You are advising a business owner on their financial forecast.
 The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
-Analyze the following Business Health Score and financial summaries.
+Analyze the following Business Health Score and financial summaries, using the Company Context to tailor your advice.
+- Company Context: {{{json companyContext}}}
 - Business Health Score: {{{json businessHealth}}}
 - Revenue Summary: {{{json revenueSummary}}}
 - Cost Summary: {{{json costSummary}}}
 - Profit Summary: {{{json profitSummary}}}
+- All Products: {{{json products}}}
 
 Your output MUST be ONLY a JSON object with 4 keys: "summary", "strengths", "opportunities", and "risks".
 
@@ -51,13 +53,13 @@ CRITICAL FORMATTING RULES:
 
 Here is the structure you MUST follow:
 
-1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score. (e.g., "The plan shows strong profitability potential with a score of **78/100**, but is constrained by a tight cash flow.")
+1.  **summary**: Write a one-sentence summary that captures the essence of the overall health score, mentioning the company stage if available. (e.g., "For a business at the 'launch' stage, the plan shows strong profitability potential with a score of **78/100**, but is constrained by a tight cash flow.")
 
-2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point, providing context.
-    Example: "• The high 'Net Margin' score of **85/100** indicates strong pricing and cost control, which is a key strength for long-term profitability."
+2.  **strengths**: Identify the 2-3 KPIs with the highest scores from the 'businessHealth.kpis' array. For each, describe what it means in a bullet point, providing context based on the industry or business model.
+    Example: "• The high 'Net Margin' score of **85/100** indicates strong pricing and cost control, a key strength for long-term profitability in the competitive 'fashion' industry."
 
-3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point. Be specific.
-    Example: "• Address the low 'Cash Runway' score of **25/100** by exploring options to increase initial funding or reduce early-stage costs on items like 'Marketing'."
+3.  **opportunities**: Identify the 2-3 KPIs with the lowest scores from the 'businessHealth.kpis' array. For each, suggest a specific, actionable strategy to improve it in a bullet point. Be specific and reference the company context.
+    Example: "• Address the low 'Cash Runway' score of **25/100** by exploring options to increase initial funding or, for a 'preorder' business, increasing the deposit percentage on products like 'Goldring'."
 
 4.  **risks**: Based on the health score and financial data, identify the top 2 most significant risks this business plan faces in a bulleted list. Explain the implication.
     Example: "• A high dependency on the 'Goldring' product line, which accounts for **70%** of revenue, presents a concentration risk if market demand shifts."

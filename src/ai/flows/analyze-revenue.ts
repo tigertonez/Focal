@@ -29,8 +29,10 @@ const prompt = ai.definePrompt({
 The currency is {{{currency}}}.
 The user-specified language for the output is: {{{language}}}. You MUST generate your entire response in this language.
 
-Analyze the following revenue summary:
-{{{json revenueSummary}}}
+Analyze the following revenue summary and product list. Use the company context to tailor your advice.
+- Company Context: {{{json companyContext}}}
+- Revenue Summary: {{{json revenueSummary}}}
+- Products: {{{json products}}}
 
 Your output MUST be ONLY a JSON object with 2 keys: "insights" and "recommendations".
 
@@ -42,11 +44,11 @@ CRITICAL FORMATTING RULES:
 
 Here is the structure you MUST follow:
 
-1.  **insights**: Provide a bulleted list of 2-3 key insights. Go beyond the numbers on the screen. Focus on revenue concentration (e.g., dependency on one product), the relationship between units sold and revenue per unit, and overall sales performance. Frame insights constructively by explaining the *implication* of the numbers.
-    Example: "• The 'Goldring' product line is the primary driver of revenue, contributing **65%** of the total. This shows strong market demand but also creates a concentration risk if market preferences shift."
+1.  **insights**: Provide a bulleted list of 2-3 key insights. Go beyond the numbers on the screen. Focus on revenue concentration (e.g., dependency on one product), the relationship between units sold and revenue per unit, and overall sales performance. Frame insights constructively by explaining the *implication* of the numbers, referencing the company stage or industry.
+    Example: "• For a 'fashion' brand at the 'launch' stage, the 'Goldring' product line is the primary driver of revenue, contributing **65%** of the total. This shows strong initial market demand but also creates a concentration risk if market preferences shift."
 
-2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve revenue. For example, suggest pricing strategies, diversification opportunities, or ways to improve sell-through rate on specific products.
-    Example: "• Consider a small price increase for 'Goldring' to capitalize on its popularity, which could improve margins without significantly impacting demand."
+2.  **recommendations**: Provide a bulleted list of 1-3 actionable recommendations to improve revenue. For example, suggest pricing strategies, diversification opportunities, or ways to improve sell-through rate on specific products based on their sales models or the 'production' context.
+    Example: "• Given the 'preorder' model, consider a small price increase for 'Goldring' to capitalize on its popularity, which could improve margins without significantly impacting demand."
 `,
 });
 
