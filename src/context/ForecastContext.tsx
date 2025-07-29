@@ -39,26 +39,38 @@ const initialInputs: EngineInput = {
     {
       id: 'prod_hoodie',
       productName: 'Hoodie',
-      plannedUnits: 99,
+      plannedUnits: 100,
       unitCost: 45,
-      sellPrice: 180,
+      sellPrice: 120,
       sellThrough: 90,
       depositPct: 25,
       salesModel: 'launch',
       costModel: 'batch',
-      color: '#60A5FA', // Muted Blue
+      color: '#a3a3a3', // Muted Gray
     },
     {
       id: 'prod_shorts',
       productName: 'Shorts',
-      plannedUnits: 149,
+      plannedUnits: 150,
       unitCost: 30,
       sellPrice: 80,
       sellThrough: 75,
       depositPct: 25,
       salesModel: 'seasonal',
       costModel: 'batch',
-      color: '#FBBF24', // Muted Yellow/Ochre
+      color: '#f8b44e', // Muted Ochre
+    },
+     {
+      id: 'prod_shirts',
+      productName: 'Shirts',
+      plannedUnits: 100,
+      unitCost: 15,
+      sellPrice: 40,
+      sellThrough: 85,
+      depositPct: 25,
+      salesModel: 'even',
+      costModel: 'batch',
+      color: '#818cf8', // Muted Indigo
     },
   ],
   fixedCosts: [
