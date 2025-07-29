@@ -101,7 +101,7 @@ export default function InputsPage() {
           
 
           <Section title={t.inputs.parameters.title}>
-             <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+             <div className="grid grid-cols-1 md:grid-cols-6 gap-8 items-end">
                 <div className="md:col-span-2 grid grid-cols-2 gap-4">
                     <InputField 
                         label={t.inputs.parameters.forecastMonths.label}
@@ -136,7 +136,7 @@ export default function InputsPage() {
                   <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
                 </SelectField>
 
-                <div className="md:col-span-1 grid grid-cols-2 gap-4">
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
                   <SelectField 
                       label={t.inputs.parameters.currency}
                       id="currency" 
