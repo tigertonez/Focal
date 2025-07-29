@@ -164,10 +164,13 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
             if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                 throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting.`);
             }
+            
+            // --- AXIOM ENFORCEMENT & ROBUST DISTRIBUTION ---
+            // 1. Calculate the EXACT total units to sell. This is the source of truth.
             const totalUnitsToSell = Math.round((product.plannedUnits || 0) * ((product.sellThrough || 0) / 100));
             const salesWeights = getSalesWeights(salesTimeline.length, product.salesModel || 'launch');
             
-            // Distribute units using integer logic to avoid floating point issues
+            // 2. Calculate the initial distribution with flooring, and track the error.
             let distributedUnits = 0;
             const monthlyUnitDistribution = salesWeights.map(weight => {
                 const unitsForMonth = Math.floor(totalUnitsToSell * weight);
@@ -175,18 +178,22 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
                 return unitsForMonth;
             });
 
-            // Handle remainder due to flooring by distributing it one by one
+            // 3. Calculate the remainder and distribute it intelligently.
             let remainder = totalUnitsToSell - distributedUnits;
-            let monthIndex = 0;
-            while(remainder > 0) {
-                // Only add remainder to months that have a weight to avoid adding to all months
-                if (salesWeights[monthIndex % salesWeights.length] > 0) {
-                    monthlyUnitDistribution[monthIndex % monthlyUnitDistribution.length]++;
-                    remainder--;
+            if (remainder > 0) {
+                // Create an array of month indices, sorted by their weight, to distribute remainder to most significant months first.
+                const sortedMonthIndices = salesWeights
+                    .map((weight, index) => ({ weight, index }))
+                    .sort((a, b) => b.weight - a.weight)
+                    .map(item => item.index);
+
+                // Distribute the remainder one by one to the months with the highest weights.
+                for (let i = 0; i < remainder; i++) {
+                    const monthIndexToIncrement = sortedMonthIndices[i % sortedMonthIndices.length];
+                    monthlyUnitDistribution[monthIndexToIncrement]++;
                 }
-                monthIndex++;
-                if (monthIndex > salesWeights.length * 2) break; // safety break
             }
+            // --- END OF NEW LOGIC ---
 
             salesTimeline.forEach((month, i) => {
                 const unitsTimelineMonth = monthlyUnitsTimeline.find(m => m.month === month);
@@ -308,7 +315,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         return {
             ...cost,
             amount: totalAmount, // This now represents the total over the period
-            paymentSchedule: cost.paymentSchedule // Keep original for display
+            costType: cost.costType, // Keep original for display
         };
     });
 
