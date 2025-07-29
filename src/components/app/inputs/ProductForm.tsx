@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Info } from 'lucide-react';
+import { Trash2, HelpCircle } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProductColor } from '@/lib/utils';
@@ -108,7 +108,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     {t.inputs.products.deposit}
                     <TooltipProvider>
                         <Tooltip>
-                            <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                            <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                             <TooltipContent className="max-w-xs p-3">
                                 <div className="space-y-1 text-left">
                                     <p className="font-semibold">{t.inputs.products.deposit}</p>
@@ -130,7 +130,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                 {t.inputs.products.costModel.title}
                 <TooltipProvider>
                     <Tooltip>
-                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                        <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                             <div className="space-y-1 text-left">
                                 <p className="font-semibold">{t.inputs.products.costModel.title}</p>
@@ -187,7 +187,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     {t.inputs.products.sellThrough}
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                        <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                           <div className="space-y-1 text-left">
                             <p className="font-semibold">{t.inputs.products.sellThrough}</p>
@@ -207,7 +207,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
                     {t.inputs.products.salesModel.title}
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                        <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                           <div className="space-y-1 text-left">
                             <p className="font-semibold">{t.inputs.products.salesModel.title}</p>

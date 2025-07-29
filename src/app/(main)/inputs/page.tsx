@@ -5,7 +5,7 @@ import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info, Bot, Loader2 } from 'lucide-react';
+import { PlusCircle, HelpCircle, Bot, Loader2 } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
@@ -134,7 +134,7 @@ export default function InputsPage() {
                         {t.inputs.parameters.preOrder.title}
                         <TooltipProvider>
                             <Tooltip>
-                                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                                 <TooltipContent className="max-w-xs p-3">
                                   <div className="space-y-1 text-left">
                                       <p className="font-semibold">{t.inputs.parameters.preOrder.title}</p>

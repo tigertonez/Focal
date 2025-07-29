@@ -5,7 +5,7 @@ import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Info } from 'lucide-react';
+import { Trash2, HelpCircle } from 'lucide-react';
 import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -78,7 +78,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
+                                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent className="max-w-xs p-3">
                                       <div className="space-y-1 text-left">

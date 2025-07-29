@@ -5,7 +5,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ export const InputField: React.FC<{
           {tooltip && (
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                 <TooltipContent><p>{tooltip}</p></TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -58,7 +58,7 @@ export const InputField: React.FC<{
         {tooltip && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+              <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
               <TooltipContent><p>{tooltip}</p></TooltipContent>
             </Tooltip>
           </TooltipProvider>
