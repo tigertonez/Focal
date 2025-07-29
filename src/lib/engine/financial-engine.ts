@@ -427,21 +427,26 @@ const calculateProfitAndCashFlow = (
     }
     // --- END: Accurate Monthly Fixed Cost Distribution ---
 
-    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month, index) => {
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
         let variableCostsThisMonth = 0;
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         
-        // Monthly variable costs for profit are only from JIT products or COGS method
         for (const product of inputs.products) {
             const units = unitsSoldThisMonth[product.productName] || 0;
-            if (product.costModel === 'monthly' || accountingMethod === 'cogs') {
+            if (product.costModel === 'monthly') {
+                 // JIT costs are always incurred in the month of sale
                  variableCostsThisMonth += toCents(units * (product.unitCost || 0));
+            } else if (accountingMethod === 'cogs') {
+                 // Batch costs under COGS are also tied to month of sale
+                 variableCostsThisMonth += toCents(units * (product.unitCost || 0));
+            } else if (accountingMethod === 'total_costs' && month === 1) {
+                 // Batch costs under Conservative method are incurred fully in Month 1
+                 variableCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
             }
         }
         
-        // Use the accurately distributed fixed cost for this month
         const fixedCostsThisMonth = (month > 0) ? (monthlyFixedCostAllocation[month - 1] || 0) : 0;
 
         const grossProfit = revenueThisMonth - variableCostsThisMonth;

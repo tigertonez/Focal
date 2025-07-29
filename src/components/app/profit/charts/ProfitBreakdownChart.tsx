@@ -45,15 +45,10 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         const revenueForMonth = data.monthlyRevenue.find(r => r.month === p.month) || {};
         const totalRevenue = Object.entries(revenueForMonth).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
 
-        // --- CORRECTED LOGIC ---
-        // Use the pre-calculated total costs for the month from the engine's output.
-        // This is the single source of truth and avoids recalculation errors.
         const costsForMonth = data.monthlyCosts.find(c => c.month === p.month) || {};
         const totalCosts = Object.entries(costsForMonth).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
         
-        // The monthly operating profit is simply the difference.
-        const monthlyOperatingProfit = totalRevenue - totalCosts;
-        cumulativeProfit += monthlyOperatingProfit;
+        cumulativeProfit += p.operatingProfit;
         
         return {
             month: `M${p.month}`,
