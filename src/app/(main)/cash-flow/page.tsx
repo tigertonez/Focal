@@ -58,7 +58,7 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
           />
           <KpiCard 
             label={t.pages.cashFlow.kpi.runway}
-            value={isFinite(cashFlowSummary.runway) ? `${formatNumber(cashFlowSummary.runway)}` : 'Infinite'}
+            value={isFinite(cashFlowSummary.runway) ? `${formatNumber(cashFlowSummary.runway)} Months` : 'Infinite'}
             icon={<Banknote />}
             helpTitle={t.pages.cashFlow.kpi.runway}
             help={t.pages.cashFlow.kpi.runwayHelp}
@@ -97,7 +97,7 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
 
       <footer className="flex justify-between mt-8 pt-6 border-t">
         <Button variant="outline" onClick={() => router.push('/profit')}>
-          <ArrowLeft className="mr-2" /> Back to Profit
+          <ArrowLeft className="mr-2" /> {t.pages.cashFlow.footer.back}
         </Button>
         <Button onClick={() => router.push('/summary')}>
           {t.pages.cashFlow.footer.continue} <ArrowRight className="ml-2" />
