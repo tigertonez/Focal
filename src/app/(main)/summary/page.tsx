@@ -144,6 +144,7 @@ const HealthPanel = ({
                 revenueSummary: financialSummaries.revenue,
                 costSummary: financialSummaries.cost,
                 profitSummary: financialSummaries.profit,
+                products: inputs.products,
                 language: locale,
             });
             setAiInsights(result);
@@ -152,7 +153,7 @@ const HealthPanel = ({
         } finally {
             setIsLoading(false);
         }
-    }, [healthData, financialSummaries, locale]);
+    }, [healthData, financialSummaries, inputs, locale]);
 
     if (!healthData) {
         return (
@@ -465,3 +466,5 @@ export default function SummaryPage() {
 
     return <SummaryPageContent data={data} inputs={inputs} t={t} />;
 }
+
+    
