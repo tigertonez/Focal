@@ -113,11 +113,11 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-left">Product</TableHead>
-                                    <TableHead className="text-left hidden md:table-cell">Units Sold</TableHead>
-                                    <TableHead className="text-left">Sell-Through</TableHead>
+                                    <TableHead className="text-left w-1/3 pl-2 md:pl-4">Product</TableHead>
+                                    <TableHead className="text-center">Units Sold</TableHead>
+                                    <TableHead className="text-center">Sell-Through</TableHead>
                                     <TableHead className="text-left">Price</TableHead>
-                                    <TableHead className="text-right">Revenue</TableHead>
+                                    <TableHead className="text-right pr-2 md:pr-4">Revenue</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -129,19 +129,16 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     
                                     return (
                                         <TableRow key={product.name}>
-                                            <TableCell className="font-medium text-left">
+                                            <TableCell className="font-medium text-left pl-2 md:pl-4">
                                                 <div className="flex items-center justify-start gap-2">
                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
-                                                   <div className="flex flex-col">
-                                                      <span className="font-semibold">{product.name}</span>
-                                                      <span className="text-xs text-muted-foreground md:hidden">{formatNumber(product.totalSoldUnits)} Units</span>
-                                                   </div>
+                                                   <span className="font-semibold">{product.name}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left hidden md:table-cell">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                            <TableCell className="text-left">{sellThrough.toFixed(0)}%</TableCell>
+                                            <TableCell className="text-center">{formatNumber(product.totalSoldUnits)}</TableCell>
+                                            <TableCell className="text-center">{sellThrough.toFixed(0)}%</TableCell>
                                             <TableCell className="text-left">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                            <TableCell className="text-right font-bold pr-2 md:pr-4">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
                                 })}
