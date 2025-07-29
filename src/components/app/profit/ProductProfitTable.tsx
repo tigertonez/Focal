@@ -43,7 +43,13 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         const totalRevenue = revenueSummary.totalRevenue;
         const totalFixedCosts = costSummary.totalFixed;
         const businessIsProfitable = totalOperatingProfit > 0;
-        const totalTaxAmount = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
+        
+        let totalProfitToTax = 0;
+        if(businessIsProfitable) {
+            totalProfitToTax = totalOperatingProfit;
+        }
+        
+        const totalTaxAmount = totalProfitToTax * (taxRate / 100);
         
         return inputs.products.map((product) => {
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
@@ -53,10 +59,10 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             let productVariableCosts = 0;
             if (accountingMethod === 'cogs') {
                 productVariableCosts = soldUnits * (product.unitCost || 0);
-            } else {
+            } else { // Conservative
                 if (product.costModel === 'monthly') {
                     productVariableCosts = soldUnits * (product.unitCost || 0);
-                } else {
+                } else { // Batch
                     productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
                 }
             }
@@ -71,9 +77,10 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
             let productTax = 0;
-            if (businessIsProfitable) {
-                // Tax is allocated based on the product's share of *revenue*, as it's a stable, predictable driver
-                productTax = totalTaxAmount * revenueShare;
+            if (businessIsProfitable && operatingProfit > 0) {
+                 // Tax is allocated based on the product's share of positive operating profit
+                 const productOpProfitShare = totalOperatingProfit > 0 ? operatingProfit / totalOperatingProfit : 0;
+                 productTax = totalTaxAmount * productOpProfitShare;
             }
 
             const netProfit = operatingProfit - productTax;
@@ -168,5 +175,3 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
-
-    

@@ -1,6 +1,6 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 
@@ -479,6 +479,10 @@ const calculateProfitAndCashFlow = (
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
+        const monthProfit = monthlyProfit.find(p => p.month === month);
+        const taxForMonth = (monthProfit?.operatingProfit ?? 0) > 0 ? (monthProfit?.operatingProfit ?? 0) - (monthProfit?.netProfit ?? 0) : 0;
+        cashOutCosts += toCents(taxForMonth);
+        
         const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
 
@@ -664,5 +668,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    

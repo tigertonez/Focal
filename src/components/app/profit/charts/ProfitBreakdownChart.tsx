@@ -42,7 +42,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     
-    const { monthlyRevenue, monthlyProfit } = data;
+    const { monthlyRevenue, monthlyProfit, monthlyCosts } = data;
     const allMonths = Array.from(new Set([...monthlyRevenue.map(m => m.month), ...monthlyProfit.map(m => m.month)]));
 
     return allMonths.sort((a, b) => a - b).map(month => {
@@ -54,14 +54,13 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         }, 0);
         
         const operatingProfit = profitMonth.operatingProfit || 0;
-        const costsForMonth = revenueForMonth - operatingProfit;
         
         cumulativeProfit += operatingProfit;
         
         return {
             month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -costsForMonth, 
+            costs: -(revenueForMonth - operatingProfit), 
             cumulativeProfit,
         };
     });
@@ -130,5 +129,3 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     </ChartContainer>
   )
 }
-
-    
