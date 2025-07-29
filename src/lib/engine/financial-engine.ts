@@ -491,7 +491,7 @@ const calculateProfitAndCashFlow = (
 
 
     // --- START: CASH FLOW CALCULATION ---
-    let cumulativeCash = 0, peakFundingNeed = 0, cashBreakEvenMonth: number | null = null;
+    let cumulativeCash = 0, peakFundingNeed = 0, cashPositiveMonth: number | null = null;
     
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -503,7 +503,7 @@ const calculateProfitAndCashFlow = (
         cumulativeCash += netCashFlow;
 
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
-        if (cashBreakEvenMonth === null && cumulativeCash > 0 && month >= 1) cashBreakEvenMonth = month;
+        if (cashPositiveMonth === null && cumulativeCash > 0 && month >= 1) cashPositiveMonth = month;
 
         return { 
             month, 
@@ -524,7 +524,7 @@ const calculateProfitAndCashFlow = (
         potentialCashBalance: 0,
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
-        breakEvenMonth: cashBreakEvenMonth,
+        cashPositiveMonth: cashPositiveMonth,
         estimatedTaxes: fromCents(totalTaxAmount),
     };
     
@@ -691,5 +691,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    

@@ -162,7 +162,7 @@ export const CashFlowSummarySchema = z.object({
     potentialCashBalance: z.number(),
     peakFundingNeed: z.number(),
     runway: z.number(),
-    breakEvenMonth: z.number().nullable(),
+    cashPositiveMonth: z.number().nullable(),
     estimatedTaxes: z.number(),
 });
 export type CashFlowSummary = z.infer<typeof CashFlowSummarySchema>;

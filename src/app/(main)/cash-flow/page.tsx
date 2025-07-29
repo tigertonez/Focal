@@ -50,11 +50,11 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
             help={t.pages.cashFlow.kpi.peakHelp}
           />
           <KpiCard 
-            label={t.pages.cashFlow.kpi.breakEven}
-            value={cashFlowSummary.breakEvenMonth !== null ? `${cashFlowSummary.breakEvenMonth} Months` : 'N/A'} 
+            label={t.pages.cashFlow.kpi.cashPositive}
+            value={cashFlowSummary.cashPositiveMonth !== null ? `${cashFlowSummary.cashPositiveMonth} Months` : 'N/A'} 
             icon={<CalendarClock />}
-            helpTitle={t.pages.cashFlow.kpi.breakEven}
-            help={t.pages.cashFlow.kpi.breakEvenHelp}
+            helpTitle={t.pages.cashFlow.kpi.cashPositive}
+            help={t.pages.cashFlow.kpi.cashPositiveHelp}
           />
           <KpiCard 
             label={t.pages.cashFlow.kpi.runway}
