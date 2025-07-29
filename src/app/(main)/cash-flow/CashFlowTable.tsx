@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -23,7 +24,6 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
         
         // Calculate cash-out from monthly costs (fixed and variable)
-        // Note: Taxes are now excluded from this table for clarity and are shown on the summary page.
         const cashOut = Object.entries(monthlyCosts.find(c => c.month === cf.month) || {})
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
         
@@ -90,3 +90,5 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         </Card>
     );
 }
+
+    

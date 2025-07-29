@@ -42,7 +42,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
 
   const chartData = React.useMemo(() => {
     let runningCumulativeCash = 0;
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts } = data;
     
     return monthlyCashFlow.map(cf => {
         const revenueData = monthlyRevenue.find(r => r.month === cf.month) || {};
@@ -51,16 +51,10 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
         }, 0);
 
         const costData = monthlyCosts.find(c => c.month === cf.month) || {};
-        const totalCosts = Object.entries(costData).reduce((sum, [key, val]) => {
+        const cashOut = -Object.entries(costData).reduce((sum, [key, val]) => {
             return key !== 'month' ? sum + val : sum;
         }, 0);
 
-        const profitData = monthlyProfit.find(p => p.month === cf.month);
-        const operatingProfit = profitData?.operatingProfit || 0;
-        const netProfit = profitData?.netProfit || 0;
-        const taxes = operatingProfit > 0 ? operatingProfit - netProfit : 0;
-        
-        const cashOut = -(totalCosts + taxes);
         const netCashFlow = cashIn + cashOut;
         runningCumulativeCash += netCashFlow;
 
@@ -68,7 +62,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
             month: `M${cf.month}`,
             cashIn,
             cashOut,
-            cumulativeCash: runningCumulativeCash,
+            cumulativeCash: cf.cumulativeCash,
         };
     });
   }, [data]);
@@ -131,3 +125,5 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
     </ChartContainer>
   )
 }
+
+    

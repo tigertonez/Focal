@@ -408,8 +408,8 @@ const calculateProfitAndCashFlow = (
         
         // 1. Fixed costs are recognized from M1 onwards in P&L
         inputs.fixedCosts.forEach(fc => {
-            const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
-            const duration = timeline.timelineMonths.filter(m => m >= startMonth).length;
+            const startMonthForPL = fc.paymentSchedule.endsWith('_m0') ? 1 : 1;
+            const duration = timeline.timelineMonths.filter(m => m >= startMonthForPL).length;
              
             if (month >= 1) { // P&L recognition starts M1
                  if (fc.costType === 'Total for Period') {
@@ -417,7 +417,7 @@ const calculateProfitAndCashFlow = (
                         operatingCostsThisMonth += toCents(fc.amount / duration);
                     }
                  } else if (fc.costType === 'Monthly Cost') {
-                     if (month >= startMonth) {
+                     if (month >= startMonthForPL) {
                         operatingCostsThisMonth += toCents(fc.amount);
                      }
                  }
@@ -497,11 +497,7 @@ const calculateProfitAndCashFlow = (
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
-        let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-        
-        const monthProfit = monthlyProfit.find(p => p.month === month);
-        const taxForMonth = (monthProfit?.operatingProfit ?? 0) > 0 ? (monthProfit?.operatingProfit ?? 0) - (monthProfit?.netProfit ?? 0) : 0;
-        cashOutCosts += toCents(taxForMonth);
+        const cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
         const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
@@ -516,11 +512,9 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    // CORRECTED: Runway should be based on fixed costs, not total operating costs
     const avgMonthlyBurnRate = fromCents(toCents(costSummary.totalFixed)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
     
-    // Only calculate runway if there's a positive cash balance and a burn rate
     const runway = finalEndingCash > 0 && avgMonthlyBurnRate > 0 
         ? finalEndingCash / avgMonthlyBurnRate 
         : (finalEndingCash > 0 ? Infinity : 0);
@@ -697,3 +691,5 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
+
+    
