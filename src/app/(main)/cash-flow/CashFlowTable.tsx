@@ -58,7 +58,7 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                                 <TableCell className="text-center text-foreground">{formatCurrency(row.cashIn, currency, true)}</TableCell>
                                 <TableCell className="text-center text-red-600">{formatCurrency(row.cashOut, currency, true)}</TableCell>
                                 <TableCell className={cn(
-                                    "text-center font-semibold",
+                                    "text-center",
                                     row.netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
                                     {formatCurrency(row.netCashFlow, currency, true)}
