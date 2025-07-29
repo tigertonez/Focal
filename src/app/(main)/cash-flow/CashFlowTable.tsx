@@ -19,13 +19,17 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
     const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
 
     const tableData = monthlyCashFlow.map((cf) => {
-        const revenueData = monthlyRevenue.find(r => r.month === cf.month) || {};
-        const revenue = Object.entries(revenueData).reduce((sum, [key, val]) => {
-            return key !== 'month' && typeof val === 'number' ? sum + val : sum;
-        }, 0);
+        const revenue = Object.entries(monthlyRevenue.find(r => r.month === cf.month) || {})
+            .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
+        
+        const costs = Object.entries(monthlyCosts.find(c => c.month === cf.month) || {})
+            .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
+        
+        const profitMonth = monthlyProfit.find(p => p.month === cf.month);
+        const operatingProfit = profitMonth?.operatingProfit || 0;
+        const netProfit = profitMonth?.netProfit || 0;
+        const taxes = operatingProfit > 0 ? operatingProfit - netProfit : 0;
 
-        const costs = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
-        const taxes = (monthlyProfit.find(p => p.month === cf.month)?.operatingProfit || 0) - (monthlyProfit.find(p => p.month)?.netProfit || 0);
         const cashOut = costs + taxes;
         
         return {

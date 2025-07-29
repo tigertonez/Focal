@@ -16,11 +16,9 @@ export function formatCurrency(value: number, currency: string = 'USD', compact 
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     };
-    if (compact) {
-        if (Math.abs(value) >= 1000) {
-            const thousands = value / 1000;
-            return `${currency === 'EUR' ? '€' : '$'}${thousands.toFixed(0)}k`;
-        }
+    if (compact && Math.abs(value) >= 1000) {
+        const thousands = value / 1000;
+        return `${currency === 'EUR' ? '€' : '$'}${thousands.toFixed(0)}k`;
     }
     return new Intl.NumberFormat('de-DE', style).format(value);
 }

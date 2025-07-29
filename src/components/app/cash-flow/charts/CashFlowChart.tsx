@@ -47,16 +47,18 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
     return monthlyCashFlow.map(cf => {
         const revenueData = monthlyRevenue.find(r => r.month === cf.month) || {};
         const cashIn = Object.entries(revenueData).reduce((sum, [key, val]) => {
-            return key !== 'month' && typeof val === 'number' ? sum + val : sum;
+            return key !== 'month' ? sum + val : sum;
         }, 0);
 
         const costData = monthlyCosts.find(c => c.month === cf.month) || {};
         const totalCosts = Object.entries(costData).reduce((sum, [key, val]) => {
-            return key !== 'month' && typeof val === 'number' ? sum + val : sum;
+            return key !== 'month' ? sum + val : sum;
         }, 0);
 
         const profitData = monthlyProfit.find(p => p.month === cf.month);
-        const taxes = profitData ? (profitData.operatingProfit - profitData.netProfit) : 0;
+        const operatingProfit = profitData?.operatingProfit || 0;
+        const netProfit = profitData?.netProfit || 0;
+        const taxes = operatingProfit > 0 ? operatingProfit - netProfit : 0;
         
         const cashOut = -(totalCosts + taxes);
         const netCashFlow = cashIn + cashOut;
@@ -98,7 +100,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={10}
-          tickFormatter={(value) => valueFormatter(Number(value))}
+          tickFormatter={(value) => formatCurrency(Number(value), currency)}
         />
         <ChartTooltip
           cursor={true}

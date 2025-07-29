@@ -389,14 +389,18 @@ const calculateProfitAndCashFlow = (
     });
     
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    const totalVariableCostCents = toCents(costSummary.totalVariable);
-    const totalFixedCostCents = toCents(costSummary.totalFixed);
+    const cogsOfSoldGoods = monthlyCogs.reduce((acc, month) => acc + month.cogs, 0);
+    const totalFixedCostCents = monthlyFixedCosts.reduce((acc, month) => acc + month.fixedCost, 0);
 
-    const totalGrossProfit = totalRevenueCents - totalVariableCostCents;
+    const totalGrossProfit = totalRevenueCents - cogsOfSoldGoods;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
     const businessIsProfitable = totalOperatingProfit > 0;
     
-    const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
+    const totalTaxAmount = monthlyProfit.reduce((acc, month) => {
+        const operatingProfitCents = toCents(month.operatingProfit);
+        const netProfitCents = toCents(month.netProfit);
+        return acc + (operatingProfitCents - netProfitCents);
+    }, 0);
     const totalNetProfit = totalOperatingProfit - totalTaxAmount;
 
     // Calculate product-level net margins and their weights
@@ -438,9 +442,9 @@ const calculateProfitAndCashFlow = (
         totalGrossProfit: fromCents(totalGrossProfit),
         totalOperatingProfit: fromCents(totalOperatingProfit),
         totalNetProfit: fromCents(totalNetProfit),
-        grossMargin: revenueSummary.totalRevenue > 0 ? (fromCents(totalGrossProfit) / revenueSummary.totalRevenue) * 100 : 0,
-        operatingMargin: revenueSummary.totalRevenue > 0 ? (fromCents(totalOperatingProfit) / revenueSummary.totalRevenue) * 100 : 0,
-        netMargin: revenueSummary.totalRevenue > 0 ? (fromCents(totalNetProfit) / revenueSummary.totalRevenue) * 100 : 0,
+        grossMargin: totalRevenueCents > 0 ? (totalGrossProfit / totalRevenueCents) * 100 : 0,
+        operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
+        netMargin: totalRevenueCents > 0 ? (totalNetProfit / totalRevenueCents) * 100 : 0,
         breakEvenMonth: profitBreakEvenMonth,
         weightedAvgNetMargin,
     };
