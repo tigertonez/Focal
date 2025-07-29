@@ -400,16 +400,21 @@ const calculateProfitAndCashFlow = (
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
+        // P&L recognition only starts from Month 1
+        if (month === 0) {
+            return { month, grossProfit: 0, operatingProfit: 0, netProfit: 0 };
+        }
+        
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         // Calculate Operating Costs for this month for profit calculation
         let operatingCostsThisMonth = 0;
         
-        // 1. Amortize one-time fixed costs over the forecast period
+        // 1. Amortize fixed costs over the forecast period (M1 to M12)
         inputs.fixedCosts.forEach(fc => {
             if (fc.costType === 'Total for Period') {
                 operatingCostsThisMonth += toCents(fc.amount / timeline.forecastMonths);
-            } else if (fc.costType === 'Monthly Cost' && month >= 1) { // Monthly costs start from M1
+            } else if (fc.costType === 'Monthly Cost') {
                  operatingCostsThisMonth += toCents(fc.amount);
             }
         });
