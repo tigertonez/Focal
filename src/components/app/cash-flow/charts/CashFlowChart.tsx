@@ -48,8 +48,13 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
             return key !== 'month' && typeof val === 'number' ? sum + val : sum;
         }, 0);
 
-        const totalCosts = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => typeof val === 'number' ? sum + val : sum, 0);
-        const taxes = (monthlyProfit.find(p => p.month === cf.month)?.operatingProfit || 0) - (monthlyProfit.find(p => p.month === cf.month)?.netProfit || 0);
+        const costData = monthlyCosts.find(c => c.month === cf.month) || {};
+        const totalCosts = Object.entries(costData).reduce((sum, [key, val]) => {
+            return key !== 'month' && typeof val === 'number' ? sum + val : sum;
+        }, 0);
+
+        const profitData = monthlyProfit.find(p => p.month === cf.month);
+        const taxes = profitData ? (profitData.operatingProfit - profitData.netProfit) : 0;
         const cashOut = -(totalCosts + taxes);
 
         return {
