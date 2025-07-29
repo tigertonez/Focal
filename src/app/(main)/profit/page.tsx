@@ -34,31 +34,47 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   // CORRECTED WEIGHTED AVERAGE NET MARGIN CALCULATION
   // =================================================================
   const weightedNetMargin = React.useMemo(() => {
-    const { productBreakdown } = revenueSummary;
-    const { totalOperatingProfit, totalNetProfit } = profitSummary;
-    const { totalFixed, cogsOfSoldGoods } = costSummary;
+    const { revenueSummary, profitSummary, costSummary } = data;
+    const { taxRate, accountingMethod } = inputs.parameters;
 
     const totalRevenue = revenueSummary.totalRevenue;
     if (totalRevenue === 0) return 0;
     
-    const totalTaxAmount = totalOperatingProfit > 0 ? totalOperatingProfit - totalNetProfit : 0;
+    // Use the final, correct totalOperatingProfit from the engine
+    const totalOperatingProfit = profitSummary.totalOperatingProfit;
+    const businessIsProfitable = totalOperatingProfit > 0;
+    const totalTaxAmount = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
 
-    const totalWeightedMargin = productBreakdown.reduce((acc, productRev) => {
+    const totalWeightedMargin = revenueSummary.productBreakdown.reduce((acc, productRev) => {
         const productInput = inputs.products.find(p => p.productName === productRev.name);
         if (!productInput) return acc;
         
-        const soldUnits = productRev.totalSoldUnits;
-        const cogs = soldUnits * (productInput.unitCost || 0);
-        const grossProfit = productRev.totalRevenue - cogs;
+        // Calculate Product-level Gross Profit
+        let productVariableCosts = 0;
+        if (accountingMethod === 'cogs') {
+            productVariableCosts = productRev.totalSoldUnits * (productInput.unitCost || 0);
+        } else { // Conservative
+            if (productInput.costModel === 'monthly') {
+                productVariableCosts = productRev.totalSoldUnits * (productInput.unitCost || 0);
+            } else { // Batch
+                productVariableCosts = (productInput.plannedUnits || 0) * (productInput.unitCost || 0);
+            }
+        }
+        const grossProfit = productRev.totalRevenue - productVariableCosts;
         
+        // Allocate fixed costs based on revenue share
         const revenueShare = productRev.totalRevenue / totalRevenue;
-        const allocatedFixed = totalFixed * revenueShare;
+        const allocatedFixed = costSummary.totalFixed * revenueShare;
         
+        // Calculate Product-level Operating Profit
         const operatingProfit = grossProfit - allocatedFixed;
         
+        // Allocate taxes based on this product's share of POSITIVE operating profit
         let productTax = 0;
-        if (totalOperatingProfit > 0 && operatingProfit > 0) {
-            productTax = totalTaxAmount * (operatingProfit / totalOperatingProfit);
+        if (businessIsProfitable && operatingProfit > 0) {
+            // This ensures tax is only allocated to profitable products and proportionally
+            const positiveOpProfitShare = totalOperatingProfit > 0 ? operatingProfit / totalOperatingProfit : 0;
+            productTax = totalTaxAmount * positiveOpProfitShare;
         }
         
         const netProfit = operatingProfit - productTax;
@@ -129,7 +145,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} currency={currency} />
+               <ProfitBreakdownChart data={data} inputs={inputs} currency={currency} />
             </CardContent>
         </Card>
       </section>
