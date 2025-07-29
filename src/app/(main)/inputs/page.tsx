@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SelectField } from '@/components/app/inputs/SelectField';
 import { SelectItem } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import {
   Collapsible,
   CollapsibleContent,
