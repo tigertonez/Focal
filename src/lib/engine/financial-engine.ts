@@ -25,7 +25,8 @@ const fromCents = (val: number): number => {
 // =================================================================
 
 const createTimeline = (inputs: EngineInput) => {
-    const { forecastMonths, preOrder } = inputs.parameters;
+    const { forecastMonths } = inputs.parameters;
+    const preOrder = inputs.company?.production === 'preorder';
     const requiresMonthZero = preOrder;
     // Timeline for all calculations (costs, cash flow etc.)
     const timelineMonths = requiresMonthZero
@@ -252,7 +253,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
 };
 
 const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]) => {
-    const { preOrder } = inputs.parameters;
+    const preOrder = inputs.company?.production === 'preorder';
     const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline);
     let totalPlannedUnits = 0, totalVariableCost = 0;
 
@@ -652,3 +653,5 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
+
+    

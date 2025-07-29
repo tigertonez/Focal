@@ -211,28 +211,6 @@ export default function InputsPage() {
                       <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
                     </SelectField>
                 </div>
-                <div className="grid grid-cols-1 items-start pt-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="preOrder" className="font-medium text-sm flex items-center gap-2">
-                            {t.inputs.parameters.preOrder.title}
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                                    <TooltipContent className="max-w-xs p-3">
-                                      <div className="space-y-1 text-left">
-                                          <p className="font-semibold">{t.inputs.parameters.preOrder.title}</p>
-                                          <p className="text-muted-foreground text-xs">{t.inputs.parameters.preOrder.tooltip}</p>
-                                      </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </Label>
-                        <div className="flex items-center pt-2 gap-2">
-                            <Switch id="preOrder" checked={inputs.parameters.preOrder} onCheckedChange={(checked) => setInputs(prev => ({ ...prev, parameters: { ...prev.parameters, preOrder: checked } }))} />
-                            {inputs.parameters.preOrder && <Badge variant="secondary">{t.inputs.parameters.preOrder.badge}</Badge>}
-                        </div>
-                    </div>
-                </div>
             </Section>
           </div>
           
@@ -276,3 +254,5 @@ export default function InputsPage() {
     </div>
   );
 }
+
+    
