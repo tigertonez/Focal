@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -354,8 +349,7 @@ const calculateProfitAndCashFlow = (
     
     // --- START: PROFIT CALCULATION ---
 
-    // Determine Total Variable Costs based on the selected accounting method.
-    // This is the CRITICAL distinction.
+    // This is the CRITICAL distinction based on accounting method.
     let totalVariableCostsForProfit: number;
     if (accountingMethod === 'cogs') {
         // COGS Method: Cost is based on SOLD goods only.
@@ -368,8 +362,17 @@ const calculateProfitAndCashFlow = (
             return total + monthCost;
         }, 0);
     } else {
-        // Conservative (Total Costs) Method: Cost is based on ALL PRODUCED goods.
-        totalVariableCostsForProfit = toCents(costSummary.totalVariable);
+        // Conservative (Total Costs) Method: Cost is based on ALL PRODUCED goods for batch items.
+        totalVariableCostsForProfit = inputs.products.reduce((total, p) => {
+             if (p.costModel === 'monthly') {
+                // For JIT items, cost is still based on sales
+                const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[p.productName] || 0), 0);
+                return total + toCents(unitsSoldForProduct * (p.unitCost || 0));
+            } else {
+                // For Batch items, use the total production cost
+                return total + toCents((p.plannedUnits || 0) * (p.unitCost || 0));
+            }
+        }, 0);
     }
     
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
@@ -388,30 +391,26 @@ const calculateProfitAndCashFlow = (
         let variableCostsThisMonth = 0;
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         const fixedCostsThisMonth = Object.entries(monthlyCostTimeline.find(c => c.month === month) || {}).reduce((s, [key, value]) => {
-             // Check if it's a fixed cost before adding
-             if (inputs.fixedCosts.some(fc => fc.name === key)) {
+             const isFixedCost = inputs.fixedCosts.some(fc => fc.name === key);
+             const isBatchCost = !isFixedCost && !inputs.products.some(p => p.productName === key && p.costModel === 'monthly');
+             if (isFixedCost || isBatchCost) {
                 return s + value;
              }
              return s;
         }, 0);
         
-        if (accountingMethod === 'cogs') {
-            for (const product of inputs.products) {
+        // Monthly variable costs for profit are only from JIT products
+        for (const product of inputs.products) {
+            if (product.costModel === 'monthly') {
                 variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
             }
-        } else { // Conservative method
-             for (const product of inputs.products) {
-                if(product.costModel === 'monthly') {
-                   variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                }
-             }
-             // For batch products, the cost is not recognized monthly, but as a total.
-             // We'll calculate gross profit on the total, then distribute op profit.
         }
-
-        // Monthly profit logic needs to be consistent. Let's allocate total profit/loss.
+        
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
-        const operatingProfit = grossProfit - fixedCostsThisMonth;
+        
+        // Allocate total op profit/loss based on revenue share
+        const revenueShare = totalRevenueCents > 0 ? revenueThisMonth / totalRevenueCents : 0;
+        const operatingProfit = Math.round(totalOperatingProfit * revenueShare);
         
         let tax = 0;
         if (businessIsProfitable && totalOperatingProfit > 0 && operatingProfit > 0) {
@@ -455,12 +454,10 @@ const calculateProfitAndCashFlow = (
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
-        const profitMonth = monthlyProfit.find(p => p.month === month);
-        const opProfitThisMonth = toCents(profitMonth?.operatingProfit);
-
+        // Taxes for cash flow are based on the total tax amount, paid at the end
         let cashOutTax = 0;
-        if (businessIsProfitable && totalOperatingProfit > 0 && opProfitThisMonth > 0) {
-            cashOutTax = Math.round(totalTaxAmount * (opProfitThisMonth / totalOperatingProfit));
+        if (month === timeline.forecastMonths) {
+            cashOutTax = totalTaxAmount;
         }
 
         const netCashFlow = cashIn - cashOutCosts - cashOutTax;
@@ -648,3 +645,4 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
     }
 }
 
+    

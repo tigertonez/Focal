@@ -39,47 +39,41 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
     const { locale } = useForecast();
 
     const productData = React.useMemo(() => {
-        const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
+        const totalOperatingProfit = profitSummary.totalOperatingProfit;
         const totalRevenue = revenueSummary.totalRevenue;
         const totalFixedCosts = costSummary.totalFixed;
-        const totalOperatingProfit = profitSummary.totalOperatingProfit;
-
+        const businessIsProfitable = totalOperatingProfit > 0;
+        const totalTaxAmount = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
+        
         return inputs.products.map((product) => {
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
             const productRevenue = revenueBreakdown?.totalRevenue || 0;
             const soldUnits = revenueBreakdown?.totalSoldUnits || 0;
-            
+
             let productVariableCosts = 0;
             if (accountingMethod === 'cogs') {
-                // Use COGS method: cost is recognized when goods are sold
                 productVariableCosts = soldUnits * (product.unitCost || 0);
-            } else { // Conservative "total_costs" method
-                 if (product.costModel === 'monthly') {
-                    // For monthly (JIT) costs, the variable cost IS the cost of goods sold, as costs only incur on sale.
+            } else {
+                if (product.costModel === 'monthly') {
                     productVariableCosts = soldUnits * (product.unitCost || 0);
                 } else {
-                    // For batch production, the variable cost is the entire production run.
                     productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
                 }
             }
-
+            
             const grossProfit = productRevenue - productVariableCosts;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
-            
-            // Allocate fixed costs based on the product's share of total revenue
+
             const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
             const allocatedFixedCosts = totalFixedCosts * revenueShare;
-            
+
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            // Corrected Tax Logic: Allocate company-wide tax based on this product's contribution to total op profit
             let productTax = 0;
-            if (businessIsProfitable && totalOperatingProfit > 0) {
-                // The product's share of the total tax is based on its share of the total operating profit
-                const operatingProfitShare = operatingProfit / totalOperatingProfit;
-                const totalTax = profitSummary.totalOperatingProfit * (taxRate / 100);
-                productTax = totalTax * operatingProfitShare;
+            if (businessIsProfitable) {
+                // Tax is allocated based on the product's share of *revenue*, as it's a stable, predictable driver
+                productTax = totalTaxAmount * revenueShare;
             }
 
             const netProfit = operatingProfit - productTax;
@@ -96,7 +90,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                 netMargin,
             };
         });
-    }, [data, inputs, locale]); // dependency array ensures recalculation when data or inputs change
+    }, [data, inputs, locale, accountingMethod, taxRate]); // Ensure recalculation when dependencies change
 
     return (
         <div className="space-y-4">
@@ -174,3 +168,5 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
+
+    
