@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -146,6 +147,7 @@ const HealthPanel = ({
                 profitSummary: financialSummaries.profit,
                 products: inputs.products,
                 language: locale,
+                companyContext: inputs.company,
             });
             setAiInsights(result);
         } catch (e: any) {
@@ -329,25 +331,27 @@ const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon,
 
 const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
     const { revenueSummary, costSummary, profitSummary } = data;
+    const { accountingMethod } = data.businessHealth ? { accountingMethod: 'cogs' } : inputs.parameters;
 
     const totalRevenue = revenueSummary.totalRevenue;
+    
     let cogs;
-    if (data.businessHealth) { // Check if health score is calculated (i.e. 'cogs' mode was used if applicable)
+    if (accountingMethod === 'cogs') {
         cogs = revenueSummary.totalRevenue - profitSummary.totalGrossProfit;
-    } else {
-        cogs = costSummary.totalVariable; // Fallback for conservative accounting
+    } else { // Conservative 'total_costs'
+        cogs = costSummary.totalVariable;
     }
 
-    const grossProfit = profitSummary.totalGrossProfit;
+    const grossProfit = totalRevenue - cogs;
     const opex = profitSummary.totalGrossProfit - profitSummary.totalOperatingProfit;
     const operatingProfit = profitSummary.totalOperatingProfit;
     const taxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
     const netProfit = profitSummary.totalNetProfit;
 
     return (
-        <Collapsible>
+        <Collapsible defaultOpen={true}>
             <CollapsibleTrigger asChild>
-                 <div className="flex w-full items-center justify-between rounded-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80">
+                 <div className="flex w-full items-center justify-between rounded-t-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer">
                      <div className="flex items-center gap-3">
                          <BarChart className="h-5 w-5 text-primary" />
                          <span>{t.insights.summary.waterfall.title}</span>
@@ -417,7 +421,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 }
 
 export default function SummaryPage() {
-    const { t } = useForecast();
+    const { t, inputs: contextInputs } = useForecast();
     const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
         data: null,
         inputs: null,
@@ -466,5 +470,3 @@ export default function SummaryPage() {
 
     return <SummaryPageContent data={data} inputs={inputs} t={t} />;
 }
-
-    
