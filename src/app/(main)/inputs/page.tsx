@@ -77,11 +77,6 @@ export default function InputsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024) { // 50KB limit
-        alert('Logo file size should not exceed 50KB.');
-        return;
-    }
-
     const reader = new FileReader();
     reader.onload = (event) => {
         const dataUri = event.target?.result as string;
@@ -280,5 +275,3 @@ export default function InputsPage() {
     </div>
   );
 }
-
-    
