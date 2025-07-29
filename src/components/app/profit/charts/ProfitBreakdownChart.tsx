@@ -30,7 +30,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     },
     costs: {
       label: "Operating Costs",
-      color: "hsl(0, 75%, 65%)",
+      color: "hsl(var(--destructive) / 0.8)",
     },
     cumulativeProfit: {
       label: t.insights.charts.cumulativeProfit,
@@ -41,17 +41,18 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     
-    const { monthlyRevenue, monthlyOperatingCosts } = data;
+    const { monthlyRevenue, monthlyCosts, monthlyProfit, profitSummary } = data;
     
-    // Create a set of all months from both revenue and costs
+    // Create a set of all months from all sources to be safe
     const allMonths = Array.from(new Set([
         ...monthlyRevenue.map(m => m.month),
-        ...monthlyOperatingCosts.map(m => m.month)
+        ...monthlyCosts.map(m => m.month),
     ])).sort((a,b) => a - b);
 
     return allMonths.map(month => {
-        const revMonth = monthlyRevenue.find(r => r.month === month) || {};
-        const costMonth = monthlyOperatingCosts.find(c => c.month === month) || {};
+        const revMonth = monthlyRevenue.find(r => r.month === month) || { month };
+        const costMonth = monthlyCosts.find(c => c.month === month) || { month };
+        const profitMonth = monthlyProfit.find(p => p.month === month) || { month, operatingProfit: 0, netProfit: 0 };
         
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
@@ -60,15 +61,20 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
-        
-        const operatingProfit = revenueForMonth - costsForMonth;
+
+        // To ensure the graph matches the Operating Profit KPI, we must derive the period-appropriate operating costs.
+        // We do this by taking the cash-based costs and removing the period's taxes from it.
+        const taxesForMonth = (profitMonth.operatingProfit > 0) ? profitMonth.operatingProfit - profitMonth.netProfit : 0;
+        const operatingCostsForMonth = costsForMonth - taxesForMonth;
+
+        const operatingProfit = revenueForMonth - operatingCostsForMonth;
         
         cumulativeProfit += operatingProfit;
         
         return {
             month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -costsForMonth, 
+            costs: -operatingCostsForMonth, 
             cumulativeProfit,
         };
     });
@@ -129,7 +135,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
 
-        <Bar dataKey="costs" fill="hsl(0, 75%, 65%)" stackId="stack" />
+        <Bar dataKey="costs" fill={"hsl(var(--destructive) / 0.8)"} stackId="stack" />
         <Bar dataKey="revenue" fill="hsl(var(--primary))" stackId="stack" />
         <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} yAxisId={0} />
 

@@ -222,6 +222,17 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
 const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record<string, number>[] => {
     const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
+    
+    const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
+    if (planningBufferCost) {
+      // Find other costs to calculate the buffer from
+      const otherCosts = inputs.fixedCosts.filter(fc => !fc.name.toLowerCase().includes('planning buffer'));
+      const totalOtherCosts = otherCosts.reduce((total, cost) => {
+        const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / timeline.forecastMonths;
+        return total + (monthlyAmount * timeline.forecastMonths);
+      }, 0);
+      planningBufferCost.amount = totalOtherCosts * 0.1; // Assuming 10% buffer
+    }
 
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
@@ -377,16 +388,12 @@ const calculateProfitAndCashFlow = (
     // --- START: PROFIT CALCULATION ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
-    // In conservative mode, ALL variable costs are expensed. In COGS mode, only sold goods are.
-    const totalVariableExpense = accountingMethod === 'cogs'
-        ? toCents(costSummary.totalVariable) - toCents(costSummary.cogsOfUnsoldGoods)
-        : toCents(costSummary.totalVariable);
+    const cogsCents = toCents(costSummary.totalVariable) - toCents(costSummary.cogsOfUnsoldGoods);
 
-    const totalGrossProfit = totalRevenueCents - totalVariableExpense;
+    const totalGrossProfit = totalRevenueCents - cogsCents;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
-
-    const businessIsProfitable = totalOperatingProfit > 0;
     
+    const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
     const totalNetProfit = totalOperatingProfit - totalTaxAmount;
 
@@ -395,34 +402,37 @@ const calculateProfitAndCashFlow = (
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        // --- Operating Cost Calculation for Profit ---
+        // Calculate Operating Costs for this month for profit calculation
         let operatingCostsThisMonth = 0;
-        // 1. Fixed Costs are always allocated monthly for profit calculation
-        const monthsForAllocation = timeline.requiresMonthZero ? timeline.forecastMonths + 1 : timeline.forecastMonths;
-        if (monthsForAllocation > 0) {
-            const baseMonthlyFixed = Math.floor(totalFixedCostCents / monthsForAllocation);
-            const remainder = totalFixedCostCents % monthsForAllocation;
-            operatingCostsThisMonth += baseMonthlyFixed + (month < remainder ? 1 : 0);
-        }
         
-        // 2. Variable Costs depend on accounting method
-        const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month) || {};
-        for (const product of inputs.products) {
-            if (accountingMethod === 'cogs') {
-                operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
-            } else { // Conservative ("total_costs")
+        // 1. Amortize one-time fixed costs over the forecast period
+        inputs.fixedCosts.forEach(fc => {
+            if (fc.costType === 'Total for Period') {
+                operatingCostsThisMonth += toCents(fc.amount / timeline.forecastMonths);
+            } else if (fc.costType === 'Monthly Cost' && month >= 1) { // Monthly costs start from M1
+                 operatingCostsThisMonth += toCents(fc.amount);
+            }
+        });
+
+        // 2. Add variable costs based on accounting method
+        if (accountingMethod === 'cogs') {
+            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+            for (const product of inputs.products) {
+                 operatingCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
+            }
+        } else { // Conservative ("total_costs")
+             for (const product of inputs.products) {
                 if (product.costModel === 'monthly') {
-                    // For 'monthly' cost models, the expense is always the cost of units sold in that month.
-                    operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
-                } else { // For 'batch' cost models, the entire production cost is expensed in Month 1.
+                    const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+                    operatingCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
+                } else { // Batch costs are fully expensed in Month 1
                     if (month === 1) {
                          operatingCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
                 }
             }
         }
-        // --- End Operating Cost Calculation ---
-
+        
         const operatingProfit = revenueThisMonth - operatingCostsThisMonth;
         
         let tax = 0;
@@ -433,15 +443,15 @@ const calculateProfitAndCashFlow = (
 
         const netProfit = operatingProfit - tax;
 
-        // This calculation is just for display and doesn't affect main logic
-        let grossProfit = 0;
-        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-        const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
+        // Gross profit is always Revenue - COGS
+        const unitsSoldForMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        const cogsThisMonth = Object.keys(unitsSoldForMonth).reduce((sum, productName) => {
+            if (productName === 'month') return sum;
             const product = inputs.products.find(p => p.productName === productName);
-            const productCost = toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
+            const productCost = toCents((unitsSoldForMonth[productName as keyof typeof unitsSoldForMonth] || 0) * (product?.unitCost || 0));
             return sum + productCost;
         }, 0);
-        grossProfit = revenueThisMonth - cogsThisMonth;
+        const grossProfit = revenueThisMonth - cogsThisMonth;
 
 
         cumulativeOperatingProfit += operatingProfit;
@@ -496,7 +506,7 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    const avgMonthlyOperatingCost = fromCents(totalOperatingProfit > 0 ? (toCents(totalVariableExpense) + totalFixedCostCents) : (totalFixedCostCents)) / timeline.forecastMonths;
+    const avgMonthlyOperatingCost = fromCents(totalOperatingProfit > 0 ? (cogsCents + totalFixedCostCents) : (totalFixedCostCents)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
     const runway = finalEndingCash > 0 && avgMonthlyOperatingCost > 0 ? finalEndingCash / avgMonthlyOperatingCost : (finalEndingCash > 0 ? Infinity : 0);
 

@@ -9,6 +9,7 @@ export const CompanyContextSchema = z.object({
   stage: z.enum(['idea', 'launch', 'growth', 'scale']).optional(),
   production: z.enum(['preorder', 'stock', 'ondemand']).optional(),
   industry: z.enum(['fashion', 'jewelry', 'cosmetics', 'food', 'digital', 'other']).optional(),
+  logoDataUri: z.string().optional(),
 });
 export type CompanyContext = z.infer<typeof CompanyContextSchema>;
 
