@@ -116,7 +116,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     <TableHead className="text-left pl-2 md:pl-4 pr-0 w-[200px]">Product</TableHead>
                                     <TableHead className="text-center">Units Sold</TableHead>
                                     <TableHead className="text-center">Sell-Through</TableHead>
-                                    <TableHead className="text-left">Price</TableHead>
+                                    <TableHead className="text-center">Price</TableHead>
                                     <TableHead className="text-right pr-2 md:pr-4">Revenue</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -137,7 +137,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                             </TableCell>
                                             <TableCell className="text-center">{formatNumber(product.totalSoldUnits)}</TableCell>
                                             <TableCell className="text-center">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-left">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
+                                            <TableCell className="text-center">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
                                             <TableCell className="text-right font-bold pr-2 md:pr-4">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
