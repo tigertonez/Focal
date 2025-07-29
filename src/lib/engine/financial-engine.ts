@@ -1,6 +1,6 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 
@@ -59,9 +59,13 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
         case 'launch':
              if (months > 0) weights[0] = 0.6;
              if (months > 1) weights[1] = 0.3;
-             if (months > 2) weights[2] = 0.1;
-             else if (months === 2) weights[1] += 0.1;
-             else if (months === 1) weights[0] += 0.4;
+             if (months > 2) {
+                weights[2] = 0.1;
+             } else if (months === 2) {
+                weights[1] += 0.1; // Add the remainder to the last available month
+             } else if (months === 1) {
+                weights[0] += 0.4; // Add all to the first month
+             }
              break;
         case 'even':
             weights = Array(months).fill(1 / months);
@@ -292,11 +296,23 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + toCents(p.depositPaid), 0);
     const totalFinalPayments = variableCostBreakdown.reduce((sum, p) => sum + toCents(p.remainingCost), 0);
     
-    const totalFixedCostInPeriod = inputs.fixedCosts.reduce((total, cost) => {
+    // Calculate total fixed cost for each item for the entire period
+    const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
+        let totalAmount = 0;
         if (cost.costType === 'Monthly Cost') {
-            return total + toCents(cost.amount * inputs.parameters.forecastMonths);
+            totalAmount = cost.amount * inputs.parameters.forecastMonths;
+        } else { // 'Total for Period'
+            totalAmount = cost.amount;
         }
-        return total + toCents(cost.amount); // 'Total for Period'
+        return {
+            ...cost,
+            amount: totalAmount, // This now represents the total over the period
+            paymentSchedule: cost.paymentSchedule // Keep original for display
+        };
+    });
+
+    const totalFixedCostInPeriod = calculatedFixedCosts.reduce((total, cost) => {
+        return total + toCents(cost.amount);
     }, 0);
     
     const cogsOfSoldGoods = inputs.products.reduce((total, product) => {
@@ -310,7 +326,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         totalVariable: fromCents(totalVariableCost),
         totalOperating: fromCents(totalFixedCostInPeriod + totalVariableCost),
         avgCostPerUnit: totalPlannedUnits > 0 ? fromCents(totalVariableCost / totalPlannedUnits) : 0,
-        fixedCosts: inputs.fixedCosts,
+        fixedCosts: calculatedFixedCosts,
         variableCosts: variableCostBreakdown,
         totalDepositsPaid: fromCents(totalDepositsPaid),
         totalFinalPayments: fromCents(totalFinalPayments),

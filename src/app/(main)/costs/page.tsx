@@ -126,7 +126,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                                 {costSummary.fixedCosts.map(cost => (
                                    <CostRow 
                                        key={cost.id}
-                                       label={`${cost.name} (${cost.paymentSchedule})`}
+                                       label={`${cost.name} (${cost.costType === 'Monthly Cost' ? 'monthly' : 'one-time'})`}
                                        value={formatCurrency(cost.amount, currency)}
                                    />
                                 ))}
