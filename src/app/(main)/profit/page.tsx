@@ -13,7 +13,7 @@ import { getFinancials } from '@/lib/get-financials';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
@@ -30,7 +30,47 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const netMargin = profitSummary.netMargin ?? 0;
+  // =================================================================
+  // CORRECTED WEIGHTED AVERAGE NET MARGIN CALCULATION
+  // =================================================================
+  const weightedNetMargin = React.useMemo(() => {
+    const { productBreakdown } = revenueSummary;
+    const { totalOperatingProfit, totalNetProfit } = profitSummary;
+    const { totalFixed, cogsOfSoldGoods } = costSummary;
+
+    const totalRevenue = revenueSummary.totalRevenue;
+    if (totalRevenue === 0) return 0;
+    
+    const totalTaxAmount = totalOperatingProfit > 0 ? totalOperatingProfit - totalNetProfit : 0;
+
+    const totalWeightedMargin = productBreakdown.reduce((acc, productRev) => {
+        const productInput = inputs.products.find(p => p.productName === productRev.name);
+        if (!productInput) return acc;
+        
+        const soldUnits = productRev.totalSoldUnits;
+        const cogs = soldUnits * (productInput.unitCost || 0);
+        const grossProfit = productRev.totalRevenue - cogs;
+        
+        const revenueShare = productRev.totalRevenue / totalRevenue;
+        const allocatedFixed = totalFixed * revenueShare;
+        
+        const operatingProfit = grossProfit - allocatedFixed;
+        
+        let productTax = 0;
+        if (totalOperatingProfit > 0 && operatingProfit > 0) {
+            productTax = totalTaxAmount * (operatingProfit / totalOperatingProfit);
+        }
+        
+        const netProfit = operatingProfit - productTax;
+        const netMargin = productRev.totalRevenue > 0 ? (netProfit / productRev.totalRevenue) : 0;
+        
+        // Weight the product's net margin by its share of total revenue
+        return acc + (netMargin * revenueShare);
+    }, 0);
+
+    return totalWeightedMargin * 100;
+  }, [data, inputs]);
+  // =================================================================
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
@@ -64,7 +104,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
           />
           <KpiCard 
             label={netMarginTitle}
-            value={`${netMargin.toFixed(1)}%`} 
+            value={`${weightedNetMargin.toFixed(1)}%`} 
             icon={<Target />} 
             helpTitle={netMarginTitle}
             help={netMarginTooltip} 
