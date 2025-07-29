@@ -45,6 +45,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     return data.monthlyRevenue.map((revMonth, index) => {
         const costMonth = data.monthlyOperatingCosts.find(c => c.month === revMonth.month);
         const revenueForMonth = Object.values(revMonth).reduce((acc, val) => typeof val === 'number' ? acc + val : acc, 0) as number;
+        // Use the correctly calculated monthlyOperatingCosts
         const costsForMonth = costMonth ? (costMonth.total || 0) : 0;
         
         const operatingProfit = revenueForMonth - costsForMonth;

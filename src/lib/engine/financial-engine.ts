@@ -376,21 +376,17 @@ const calculateProfitAndCashFlow = (
     
     // --- START: PROFIT CALCULATION ---
 
-    // This is the CRITICAL distinction based on accounting method.
-    // Cost of Goods SOLD. This is always based on sold goods.
-    const cogs = monthlyUnitsSold.reduce((total, monthData) => {
-        let monthCost = 0;
-        for (const product of inputs.products) {
-            const unitsSoldThisMonth = monthData[product.productName] || 0;
-            monthCost += toCents(unitsSoldThisMonth * (product.unitCost || 0));
-        }
-        return total + monthCost;
-    }, 0);
-    
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    const totalGrossProfit = totalRevenueCents - cogs;
+    
+    // This is the CRITICAL distinction based on accounting method.
+    // In conservative mode, ALL variable costs are expensed. In COGS mode, only sold goods are.
+    const totalVariableExpense = accountingMethod === 'cogs'
+        ? costSummary.totalVariable - costSummary.cogsOfUnsoldGoods
+        : costSummary.totalVariable;
 
+    const totalGrossProfit = totalRevenueCents - toCents(totalVariableExpense);
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
+
     const businessIsProfitable = totalOperatingProfit > 0;
     
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
@@ -398,34 +394,33 @@ const calculateProfitAndCashFlow = (
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     
-    const monthlyFixedCostAllocation = Array(timeline.forecastMonths + 1).fill(0);
-    if (timeline.forecastMonths > 0) {
-        const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
-        let remainder = totalFixedCostCents % timeline.forecastMonths;
-        for (let i = 1; i <= timeline.forecastMonths; i++) {
-            monthlyFixedCostAllocation[i] = baseMonthlyFixed;
-            if (remainder > 0) {
-                monthlyFixedCostAllocation[i]++;
-                remainder--;
-            }
-        }
-    }
-    
-    // --- New: Create a separate monthly timeline for operating costs (for profit chart) ---
+    // --- Create monthly operating costs timeline for the chart ---
     const monthlyOperatingCostsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     monthlyOperatingCostsTimeline.forEach((monthData) => {
         const month = monthData.month;
         let totalOpCostThisMonth = 0;
 
-        // 1. Add allocated fixed costs
-        totalOpCostThisMonth += monthlyFixedCostAllocation[month] || 0;
+        // 1. Add allocated fixed costs (always accrued monthly for profit calc)
+        if (timeline.forecastMonths > 0) {
+            const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
+            let remainder = totalFixedCostCents % timeline.forecastMonths;
+            let fixedForThisMonth = baseMonthlyFixed + (month > 0 && month <= remainder ? 1 : 0);
+            if (month >= 1) { // Fixed costs are only for M1 onwards
+               totalOpCostThisMonth += fixedForThisMonth;
+            }
+        }
 
-        // 2. Add variable costs (COGS) for that month
+        // 2. Add variable costs based on accounting method
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-        
         for (const product of inputs.products) {
-            const units = unitsSoldThisMonth[product.productName] || 0;
-            totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
+            if (accountingMethod === 'cogs' || product.costModel === 'monthly') {
+                const units = unitsSoldThisMonth[product.productName] || 0;
+                totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
+            } else { // Conservative 'batch' cost model
+                if (month === 1) { // All batch costs are incurred in M1
+                    totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+                }
+            }
         }
         monthData['total'] = totalOpCostThisMonth;
     });
@@ -440,7 +435,7 @@ const calculateProfitAndCashFlow = (
         });
         return MonthlyCostSchema.parse(completeMonth);
     });
-    // --- End of new op cost timeline ---
+    // --- End of op cost timeline ---
 
 
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
@@ -449,19 +444,22 @@ const calculateProfitAndCashFlow = (
         
         const operatingProfit = revenueThisMonth - operatingCostsThisMonth;
         
-        // This is a simplified tax model. A real one would be much more complex.
         let tax = 0;
         if (businessIsProfitable && operatingProfit > 0) {
-            // Prorate tax based on monthly profit's contribution to total profit.
             const totalOpProfitForTax = totalOperatingProfit > 0 ? totalOperatingProfit : 1;
             tax = Math.round(totalTaxAmount * (operatingProfit / totalOpProfitForTax));
         }
 
         const netProfit = operatingProfit - tax;
 
-        // This is a simple COGS-based gross profit, as it's the most common definition.
-        const cogsThisMonth = operatingCostsThisMonth - (monthlyFixedCostAllocation[month] || 0);
-        const grossProfit = revenueThisMonth - cogsThisMonth;
+        // This calculation is just for display and doesn't affect main logic
+        let grossProfit = 0;
+        const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
+            const product = inputs.products.find(p => p.productName === productName);
+            return sum + toCents((unitsSoldThisMonth[productName] || 0) * (product?.unitCost || 0));
+        }, 0);
+        grossProfit = revenueThisMonth - cogsThisMonth;
+
 
         cumulativeOperatingProfit += operatingProfit;
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
@@ -511,7 +509,7 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    const avgMonthlyOperatingCost = fromCents(totalOperatingProfit > 0 ? (cogs + totalFixedCostCents) : (totalFixedCostCents)) / timeline.forecastMonths;
+    const avgMonthlyOperatingCost = fromCents(totalOperatingProfit > 0 ? (toCents(totalVariableExpense) + totalFixedCostCents) : (totalFixedCostCents)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
     const runway = finalEndingCash > 0 && avgMonthlyOperatingCost > 0 ? finalEndingCash / avgMonthlyOperatingCost : (finalEndingCash > 0 ? Infinity : 0);
 
@@ -684,5 +682,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
