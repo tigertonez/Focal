@@ -113,11 +113,11 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-center">Product</TableHead>
-                                    <TableHead className="text-center hidden md:table-cell">Units Sold</TableHead>
-                                    <TableHead className="text-center">Sell-Through</TableHead>
-                                    <TableHead className="text-center">Price</TableHead>
-                                    <TableHead className="text-center">Revenue</TableHead>
+                                    <TableHead className="text-left">Product</TableHead>
+                                    <TableHead className="text-left hidden md:table-cell">Units Sold</TableHead>
+                                    <TableHead className="text-left">Sell-Through</TableHead>
+                                    <TableHead className="text-left">Price</TableHead>
+                                    <TableHead className="text-left">Revenue</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -129,8 +129,8 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     
                                     return (
                                         <TableRow key={product.name}>
-                                            <TableCell className="font-medium text-center">
-                                                <div className="flex items-center justify-center gap-2">
+                                            <TableCell className="font-medium text-left">
+                                                <div className="flex items-center justify-start gap-2">
                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
                                                    <div className="flex flex-col">
                                                       <span className="font-semibold">{product.name}</span>
@@ -138,10 +138,10 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                                    </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-center hidden md:table-cell">{formatNumber(product.totalSoldUnits)}</TableCell>
-                                            <TableCell className="text-center">{sellThrough.toFixed(0)}%</TableCell>
-                                            <TableCell className="text-center">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
-                                            <TableCell className="text-center font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
+                                            <TableCell className="text-left hidden md:table-cell">{formatNumber(product.totalSoldUnits)}</TableCell>
+                                            <TableCell className="text-left">{sellThrough.toFixed(0)}%</TableCell>
+                                            <TableCell className="text-left">{formatCurrency(inputProduct.sellPrice || 0, currency)}</TableCell>
+                                            <TableCell className="text-left font-bold">{formatCurrency(product.totalRevenue, currency)}</TableCell>
                                         </TableRow>
                                     );
                                 })}
