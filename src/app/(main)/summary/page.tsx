@@ -171,15 +171,7 @@ const HealthPanel = ({
     }
     
     const { score, kpis } = healthData;
-    const kpiTooltips: Record<string, string> = {
-        'Net Margin': t.pages.summary.health.netMarginHelp,
-        'Cash Runway': t.pages.summary.health.runwayHelp,
-        'Contribution Margin': t.pages.summary.health.contributionMarginHelp,
-        'Peak Funding': t.pages.summary.health.peakFundingHelp,
-        'Sell-Through': t.pages.summary.health.sellThroughHelp,
-        'Break-Even': t.pages.summary.health.breakEvenHelp,
-    };
-
+    
     const getScoreColor = (s: number) => {
         if (s < 40) return 'bg-destructive text-destructive-foreground';
         if (s < 70) return 'bg-yellow-500 text-yellow-foreground';
@@ -248,7 +240,7 @@ const HealthPanel = ({
 
                     <div className="md:col-span-2 space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                            {kpis.map(kpi => <HealthBar key={kpi.label} label={kpi.label} value={kpi.value} tooltip={kpiTooltips[kpi.label] || kpi.tooltip} />)}
+                            {kpis.map(kpi => <HealthBar key={kpi.label} label={kpi.label} value={kpi.value} tooltip={kpi.tooltip} />)}
                         </div>
                     </div>
                 </div>
@@ -364,7 +356,7 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
                     <CardContent className="px-6 py-4">
                         <div className="space-y-1">
                             <BridgeRow label={t.insights.summary.waterfall.revenue} value={totalRevenue} currency={currency} />
-                            <BridgeRow label="Total Variable Costs" value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <BridgeRow label={t.insights.summary.waterfall.cogs} value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.grossProfit} value={grossProfit} currency={currency} />
                             <BridgeRow label={t.insights.summary.waterfall.opex} value={-opex} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />

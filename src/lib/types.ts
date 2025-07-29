@@ -97,6 +97,7 @@ export const CostSummarySchema = z.object({
     totalDepositsPaid: z.number(),
     totalFinalPayments: z.number(),
     cogsOfUnsoldGoods: z.number(),
+    cogsOfSoldGoods: z.number(),
 });
 export type CostSummary = z.infer<typeof CostSummarySchema>;
 

@@ -353,6 +353,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         totalDepositsPaid: fromCents(totalDepositsPaid),
         totalFinalPayments: fromCents(totalFinalPayments),
         cogsOfUnsoldGoods: fromCents(cogsOfUnsoldGoods),
+        cogsOfSoldGoods: fromCents(cogsOfSoldGoods),
     };
     
     const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name), ...inputs.products.filter(p => p.costModel === 'monthly').map(p => p.productName)]);
@@ -389,7 +390,7 @@ const calculateProfitAndCashFlow = (
     // --- START: PROFIT CALCULATION ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
-    const cogsCents = toCents(revenueSummary.totalSoldUnits * costSummary.avgCostPerUnit);
+    const cogsCents = toCents(costSummary.cogsOfSoldGoods);
 
     const totalGrossProfit = totalRevenueCents - cogsCents;
 
@@ -420,8 +421,10 @@ const calculateProfitAndCashFlow = (
         const operationalMonths = timeline.timelineMonths.filter(m => m >= 1).length;
         inputs.fixedCosts.forEach(fc => {
             if (fc.costType === 'Total for Period') {
-                 if (fc.paymentSchedule !== 'up_front_m0') { // Up front is a cash event, not P&L
-                    operatingCostsThisMonth += toCents(fc.amount / operationalMonths);
+                const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
+                const duration = timeline.timelineMonths.filter(m => m >= startMonth).length;
+                 if (fc.paymentSchedule !== 'up_front_m0') { 
+                    operatingCostsThisMonth += toCents(fc.amount / duration);
                  }
             } else if (fc.costType === 'Monthly Cost') {
                  const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
@@ -567,8 +570,7 @@ const calculateBusinessHealth = (
 
     const netMargin = summaries.profit.netMargin;
     const cashRunway = summaries.cash.runway;
-    const totalCogs = summaries.revenue.totalRevenue - summaries.profit.totalGrossProfit; // Correctly derive COGS from profit summary
-    const contributionMargin = summaries.revenue.totalRevenue > 0 ? ((summaries.revenue.totalRevenue - totalCogs) / summaries.revenue.totalRevenue) * 100 : 0;
+    const contributionMargin = summaries.revenue.totalRevenue > 0 ? ((summaries.revenue.totalRevenue - summaries.cost.cogsOfSoldGoods) / summaries.revenue.totalRevenue) * 100 : 0;
     const peakFundingNeed = summaries.cash.peakFundingNeed;
     const avgSellThrough = inputs.products.length > 0
         ? inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length
