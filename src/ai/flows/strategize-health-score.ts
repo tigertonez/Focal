@@ -47,7 +47,7 @@ Your output MUST be ONLY a JSON object with 4 keys: "summary", "strengths", "opp
 
 CRITICAL FORMATTING RULES:
 - Use bullet points (•) for all list items in "strengths", "opportunities", and "risks".
-- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold entire sentences or labels.
+- When you output a specific calculated KPI value (like a monetary amount or a percentage), you MUST make it bold using Markdown's double asterisks, like **this**. Do NOT bold any other text, especially not descriptive sentences, labels, or parts of sentences.
 - When you reference a specific product or fixed cost name (e.g., 'Goldring 2' or 'Steine'), wrap it in single quotes, like 'this', so it can be color-coded. Do NOT bold these names.
 - Each bullet point should be a concise, single sentence that explains the 'why' behind the number.
 
