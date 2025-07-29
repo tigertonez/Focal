@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, getProductColor } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight, TrendingUp, Briefcase, Landmark } from "lucide-react";
+import { useForecast } from "@/context/ForecastContext";
 
 interface ProductProfitTableProps {
     data: EngineOutput;
@@ -35,6 +36,7 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
     const { revenueSummary, profitSummary, costSummary } = data;
     const { currency, taxRate, accountingMethod } = inputs.parameters;
+    const { locale } = useForecast();
 
     const productData = React.useMemo(() => {
         const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
@@ -48,17 +50,20 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             
             let productVariableCosts = 0;
             if (accountingMethod === 'cogs') {
-                 // Accrual (COGS): Cost is based on units sold
                 productVariableCosts = soldUnits * (product.unitCost || 0);
             } else {
-                 // Conservative (Total Costs): Cost is based on all units planned
-                productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
+                 if (product.costModel === 'monthly') {
+                    // For monthly (JIT) costs, the variable cost IS the cost of goods sold.
+                    productVariableCosts = soldUnits * (product.unitCost || 0);
+                } else {
+                    // For batch production, the variable cost is the entire production run.
+                    productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
+                }
             }
 
             const grossProfit = productRevenue - productVariableCosts;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
-            // Allocate fixed costs based on revenue share
             const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
             const allocatedFixedCosts = totalFixedCosts * revenueShare;
             
@@ -83,17 +88,17 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                 netMargin,
             };
         });
-    }, [data, inputs]);
+    }, [data, inputs, locale]);
 
     return (
         <div className="space-y-4">
-            <ProfitLevelSection title="Level 1: Gross Profit & Margin" icon={<TrendingUp className="text-primary" />} defaultOpen={true}>
+            <ProfitLevelSection title={t.pages.profit.table.grossProfit} icon={<TrendingUp className="text-primary" />} defaultOpen={true}>
                  <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Gross Profit</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Gross Margin</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.grossProfit}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.grossMargin}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -103,7 +108,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -111,13 +116,13 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  </Table>
             </ProfitLevelSection>
             
-            <ProfitLevelSection title="Level 2: Operating Profit & Margin" icon={<Briefcase className="text-primary" />}>
+            <ProfitLevelSection title={t.pages.profit.table.opProfit} icon={<Briefcase className="text-primary" />}>
                  <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Op. Profit</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Op. Margin</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.opProfit}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.opMargin}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -127,7 +132,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -135,13 +140,13 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  </Table>
             </ProfitLevelSection>
             
-            <ProfitLevelSection title="Level 3: Net Profit & Margin" icon={<Landmark className="text-primary" />}>
+            <ProfitLevelSection title={t.pages.profit.table.netProfit} icon={<Landmark className="text-primary" />}>
                  <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Net Profit</TableHead>
-                            <TableHead className="text-right px-2 md:px-4">Net Margin</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.netProfit}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.netMargin}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -151,7 +156,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -161,5 +166,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
+
+    
 
     

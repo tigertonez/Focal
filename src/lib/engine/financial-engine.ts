@@ -1,5 +1,6 @@
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -348,21 +349,23 @@ const calculateProfitAndCashFlow = (
 
     const monthlyVariableCosts = timelineMonths.map(month => {
         let variableCosts = 0;
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
+
         if (accountingMethod === 'cogs') {
              // Use COGS method: cost is recognized when goods are sold
-            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
             for (const product of inputs.products) {
                 variableCosts += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
             }
         } else {
-             // Use Total Costs method: all production costs are recognized based on their payment schedule
-            const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
+            // Use Total Costs method: all production costs are recognized based on their payment schedule
             for (const product of inputs.products) {
-                if (product.costModel === 'monthly') {
-                    variableCosts += (costsForMonth[product.productName] || 0);
+                 if (product.costModel === 'monthly') {
+                    // For JIT, variable cost is tied to sales
+                    variableCosts += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
                 }
             }
-             // Add batch costs (Deposits & Final Payments)
+            // For batch production, costs are paid at specific times, not tied to sales month
             variableCosts += (costsForMonth['Deposits'] || 0);
             variableCosts += (costsForMonth['Final Payments'] || 0);
         }
