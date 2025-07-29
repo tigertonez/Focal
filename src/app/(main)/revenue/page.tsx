@@ -113,7 +113,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-left pl-2 md:pl-4 w-[200px]">Product</TableHead>
+                                    <TableHead className="text-left pl-2 md:pl-4 pr-0 w-[200px]">Product</TableHead>
                                     <TableHead className="text-center">Units Sold</TableHead>
                                     <TableHead className="text-center">Sell-Through</TableHead>
                                     <TableHead className="text-left">Price</TableHead>
@@ -129,7 +129,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                                     
                                     return (
                                         <TableRow key={product.name}>
-                                            <TableCell className="font-medium text-left pl-2 md:pl-4">
+                                            <TableCell className="font-medium text-left pl-2 md:pl-4 pr-0">
                                                 <div className="flex items-center justify-start gap-2">
                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getProductColor(inputProduct) }} />
                                                    <span className="font-semibold">{product.name}</span>
