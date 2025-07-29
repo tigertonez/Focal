@@ -45,6 +45,7 @@ const initialInputs: EngineInput = {
       sellThrough: 90,
       depositPct: 25,
       salesModel: 'launch',
+      color: '#778A9B',
     },
     {
       id: 'prod_shorts',
@@ -55,6 +56,7 @@ const initialInputs: EngineInput = {
       sellThrough: 75,
       depositPct: 25,
       salesModel: 'seasonal',
+      color: '#C4B7A1',
     },
     {
       id: 'prod_tee',
@@ -65,6 +67,7 @@ const initialInputs: EngineInput = {
       sellThrough: 95,
       depositPct: 25,
       salesModel: 'even',
+      color: '#D1CFC7',
     },
     {
       id: 'prod_sweater',
@@ -75,6 +78,7 @@ const initialInputs: EngineInput = {
       sellThrough: 85,
       depositPct: 25,
       salesModel: 'launch',
+      color: '#5A6E59',
     },
     {
       id: 'prod_jacket',
@@ -85,6 +89,7 @@ const initialInputs: EngineInput = {
       sellThrough: 70,
       depositPct: 25,
       salesModel: 'seasonal',
+      color: '#4A4A4A',
     },
     {
       id: 'prod_hat',
@@ -95,6 +100,7 @@ const initialInputs: EngineInput = {
       sellThrough: 80,
       depositPct: 25,
       salesModel: 'even',
+      color: '#8A8A6A',
     },
   ],
   fixedCosts: [
