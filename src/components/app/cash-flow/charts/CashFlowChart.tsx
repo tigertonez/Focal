@@ -43,7 +43,11 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
   const chartData = React.useMemo(() => {
     const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
     return monthlyCashFlow.map(cf => {
-        const cashIn = Object.values(monthlyRevenue.find(r => r.month === cf.month) || {}).reduce((sum, val) => typeof val === 'number' ? sum + val : sum, 0);
+        const revenueData = monthlyRevenue.find(r => r.month === cf.month) || {};
+        const cashIn = Object.entries(revenueData).reduce((sum, [key, val]) => {
+            return key !== 'month' && typeof val === 'number' ? sum + val : sum;
+        }, 0);
+
         const totalCosts = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => typeof val === 'number' ? sum + val : sum, 0);
         const taxes = (monthlyProfit.find(p => p.month === cf.month)?.operatingProfit || 0) - (monthlyProfit.find(p => p.month === cf.month)?.netProfit || 0);
         const cashOut = -(totalCosts + taxes);
