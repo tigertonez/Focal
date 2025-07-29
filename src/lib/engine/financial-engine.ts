@@ -491,7 +491,7 @@ const calculateProfitAndCashFlow = (
 
 
     // --- START: CASH FLOW CALCULATION ---
-    let cumulativeCash = 0, peakFundingNeed = 0, cashPositiveMonth: number | null = null;
+    let cumulativeCash = 0, peakFundingNeed = 0;
     
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -503,14 +503,24 @@ const calculateProfitAndCashFlow = (
         cumulativeCash += netCashFlow;
 
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
-        if (cashPositiveMonth === null && cumulativeCash > 0 && month >= 1) cashPositiveMonth = month;
-
+        
         return { 
             month, 
             netCashFlow: fromCents(netCashFlow), 
             cumulativeCash: fromCents(cumulativeCash) 
         };
     });
+    
+    const firstPositiveMonthIndex = monthlyCashFlow.findIndex(cf => cf.cumulativeCash > 0);
+    let cashPositiveMonth: number | null = null;
+    
+    if (firstPositiveMonthIndex !== -1) {
+        // Check if all subsequent months are also positive
+        const remainsPositive = monthlyCashFlow.slice(firstPositiveMonthIndex).every(cf => cf.cumulativeCash > 0);
+        if (remainsPositive) {
+            cashPositiveMonth = monthlyCashFlow[firstPositiveMonthIndex].month;
+        }
+    }
     
     const avgMonthlyBurnRate = fromCents(toCents(costSummary.totalFixed)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
