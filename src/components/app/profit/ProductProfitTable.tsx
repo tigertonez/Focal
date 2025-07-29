@@ -4,7 +4,7 @@
 import React from "react";
 import type { EngineInput, EngineOutput } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency, getProductColor } from "@/lib/utils";
+import { formatCurrency, getProductColor, formatNumber } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight, TrendingUp, Briefcase, Landmark } from "lucide-react";
 import { useForecast } from "@/context/ForecastContext";
@@ -88,6 +88,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
 
             return {
                 ...product,
+                soldUnits,
                 color: getProductColor(product),
                 grossProfit,
                 grossMargin,
@@ -106,6 +107,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.units}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.sellThrough}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.grossProfit}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.grossMargin}</TableHead>
                         </TableRow>
@@ -117,6 +120,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatNumber(p.soldUnits)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.sellThrough?.toFixed(0) ?? 0}%</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
@@ -130,6 +135,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.units}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.sellThrough}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.opProfit}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.opMargin}</TableHead>
                         </TableRow>
@@ -141,6 +148,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatNumber(p.soldUnits)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.sellThrough?.toFixed(0) ?? 0}%</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
@@ -154,6 +163,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                     <TableHeader>
                         <TableRow>
                             <TableHead className="pl-2 md:pl-4">Product</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.units}</TableHead>
+                            <TableHead className="text-right px-2 md:px-4">{t.pages.revenue.table.sellThrough}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.netProfit}</TableHead>
                             <TableHead className="text-right px-2 md:px-4">{t.pages.profit.table.netMargin}</TableHead>
                         </TableRow>
@@ -165,6 +176,8 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatNumber(p.soldUnits)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{p.sellThrough?.toFixed(0) ?? 0}%</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
