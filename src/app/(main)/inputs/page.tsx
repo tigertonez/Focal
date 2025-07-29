@@ -86,7 +86,7 @@ export default function InputsPage() {
 
         <div className="space-y-6">
           <div className="grid md:grid-cols-2 gap-8 items-start">
-             <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={true}>
+             <Section title={t.inputs.products.title} icon={<Briefcase />}>
                 <div className="space-y-6">
                   {inputs.products.map((p, i) => (
                     <ProductForm key={p.id} product={p} index={i} />
@@ -97,7 +97,7 @@ export default function InputsPage() {
                 </Button>
             </Section>
             
-            <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={true}>
+            <Section title={t.inputs.fixedCosts.title} icon={<Building />}>
               <div className="space-y-3">
                 {inputs.fixedCosts.map((cost, i) => (
                   <FixedCostForm key={cost.id} cost={cost} index={i} />
@@ -108,7 +108,7 @@ export default function InputsPage() {
               </Button>
             </Section>
             
-            <Section title="Company Context" icon={<Wrench />} defaultOpen={true}>
+            <Section title="Company Context" icon={<Wrench />}>
                  <InputField 
                     label="Brand Name"
                     id="brand" 
@@ -163,7 +163,7 @@ export default function InputsPage() {
                  </SelectField>
             </Section>
             
-            <Section title={t.inputs.parameters.title} icon={<Settings />} defaultOpen={true}>
+            <Section title={t.inputs.parameters.title} icon={<Settings />}>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                     <InputField 
                         label={t.inputs.parameters.forecastMonths.label}
