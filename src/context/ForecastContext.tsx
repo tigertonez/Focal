@@ -46,7 +46,7 @@ const initialInputs: EngineInput = {
       depositPct: 25,
       salesModel: 'launch',
       costModel: 'batch',
-      color: '#a3a3a3', // Muted Gray
+      color: '#6b7280', // Muted Gray
     },
     {
       id: 'prod_shorts',
@@ -57,7 +57,7 @@ const initialInputs: EngineInput = {
       sellThrough: 75,
       salesModel: 'seasonal',
       costModel: 'batch',
-      color: '#f8b44e', // Muted Ochre
+      color: '#a1a1aa', // Muted Stone
     },
      {
       id: 'prod_shirts',
@@ -69,7 +69,7 @@ const initialInputs: EngineInput = {
       depositPct: 25,
       salesModel: 'even',
       costModel: 'batch',
-      color: '#818cf8', // Muted Indigo
+      color: '#d4d4d8', // Muted Zinc
     },
   ],
   fixedCosts: [

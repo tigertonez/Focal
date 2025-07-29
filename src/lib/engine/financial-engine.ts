@@ -60,8 +60,9 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
             if (months > 0) weights[0] = 0.6;
             if (months > 1) weights[1] = 0.3;
             if (months > 2) weights[2] = 0.1;
-            else if (months > 1) weights[1] += 0.1; // If only 2 months, add remainder to M2
-            else if (months > 0) weights[0] += 0.1; // If only 1 month, add remainder to M1
+            // If forecast is shorter than 3 months, allocate remainder to last available month
+            else if (months === 2) weights[1] += 0.1;
+            else if (months === 1) weights[0] += 0.4;
             break;
         case 'even':
             weights = Array(months).fill(1 / months);
@@ -174,9 +175,13 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
             let remainder = totalUnitsToSell - distributedUnits;
             let monthIndex = 0;
             while(remainder > 0) {
-                monthlyUnitDistribution[monthIndex % monthlyUnitDistribution.length]++;
-                remainder--;
+                // Only add remainder to months that have a weight to avoid adding to all months
+                if (salesWeights[monthIndex % salesWeights.length] > 0) {
+                    monthlyUnitDistribution[monthIndex % monthlyUnitDistribution.length]++;
+                    remainder--;
+                }
                 monthIndex++;
+                if (monthIndex > salesWeights.length * 2) break; // safety break
             }
 
             salesTimeline.forEach((month, i) => {
@@ -446,6 +451,11 @@ const calculateProfitAndCashFlow = (
         
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
+        
+        // Add total tax as a cash-out in the final month of the forecast
+        if (month === timeline.forecastMonths) {
+            cashOutCosts += totalTaxAmount;
+        }
         
         const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
