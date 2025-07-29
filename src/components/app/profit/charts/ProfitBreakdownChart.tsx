@@ -42,22 +42,31 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     
-    return data.monthlyRevenue.map((revMonth, index) => {
-        const costMonth = data.monthlyCosts.find(c => c.month === revMonth.month);
+    // Get all months from the revenue timeline as the basis
+    const allMonths = data.monthlyRevenue.map(m => m.month);
+
+    return allMonths.map(month => {
+        // Find the revenue and cost objects for the current month
+        const revMonth = data.monthlyRevenue.find(r => r.month === month) || {};
+        const costMonth = data.monthlyCosts.find(c => c.month === month) || {};
+
+        // Calculate total revenue for the month by summing up all product revenues
+        const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
+            return key !== 'month' ? acc + (val as number) : acc;
+        }, 0);
         
-        const revenueForMonth = Object.values(revMonth).reduce((acc, val) => typeof val === 'number' ? acc + val : acc, 0) as number;
-        
-        const costsForMonth = costMonth 
-            ? Object.values(costMonth).reduce((acc, val) => typeof val === 'number' ? acc + val : acc, 0) as number
-            : 0;
+        // Calculate total costs for the month by summing up all cost items
+        const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
+            return key !== 'month' ? acc + (val as number) : acc;
+        }, 0);
         
         const operatingProfit = revenueForMonth - costsForMonth;
         cumulativeProfit += operatingProfit;
         
         return {
-            month: `M${revMonth.month}`,
+            month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -costsForMonth,
+            costs: -costsForMonth, // Make costs negative for stacking below zero
             cumulativeProfit,
         };
     });
