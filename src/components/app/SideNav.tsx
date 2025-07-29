@@ -64,7 +64,7 @@ const DesktopNav = () => {
     return (
         <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
             <Link href="/" className="p-3 mb-4">
-                 <div className="bg-primary/20 text-primary p-2 rounded-lg" style={{ backgroundColor: 'var(--brand-logo-bg)', color: 'var(--brand-logo-fg)'}}>
+                 <div className="bg-primary/20 text-primary p-2 rounded-lg flex items-center justify-center h-10 w-10">
                     {inputs.company?.logoDataUri ? (
                         <img src={inputs.company.logoDataUri} alt="Company Logo" className="h-6 w-6 object-contain" />
                     ) : (

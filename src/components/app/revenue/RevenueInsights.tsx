@@ -57,14 +57,20 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeRevenue({ revenueSummary, currency, language: locale });
+      const result = await analyzeRevenue({
+        revenueSummary,
+        products: inputs.products,
+        currency,
+        language: locale,
+        companyContext: inputs.company,
+      });
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
-  }, [revenueSummary, currency, locale]);
+  }, [revenueSummary, currency, locale, inputs]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
