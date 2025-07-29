@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
@@ -40,7 +41,7 @@ const initialInputs: EngineInput = {
       productName: 'Goldring 1',
       plannedUnits: 3,
       unitCost: 220,
-      sellPrice: 1800,
+      sellPrice: 3000,
       depositPct: 0,
       estimatedSales: 2,
       saleMonth: 2,

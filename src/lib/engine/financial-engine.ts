@@ -1,6 +1,7 @@
 
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -436,8 +437,11 @@ const calculateProfitAndCashFlow = (
         if (accountingMethod === 'cogs') {
             productVariableCostsCents = toCents(unitsSoldForProduct * (product.unitCost || 0));
         } else {
-             // In 'total_costs' mode, variable costs are the full production costs
-            productVariableCostsCents = toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+             if (product.costModel === 'monthly') {
+                productVariableCostsCents = toCents(unitsSoldForProduct * (product.unitCost || 0));
+             } else {
+                productVariableCostsCents = toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+             }
         }
 
         const productGrossProfitCents = productRevenueCents - productVariableCostsCents;
@@ -469,9 +473,8 @@ const calculateProfitAndCashFlow = (
         totalNetProfit: fromCents(totalNetProfit),
         grossMargin: totalRevenueCents > 0 ? (totalGrossProfit / totalRevenueCents) * 100 : 0,
         operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
-        netMargin: totalRevenueCents > 0 ? (totalNetProfit / totalRevenueCents) * 100 : 0,
+        netMargin: weightedAvgNetMargin,
         breakEvenMonth: profitBreakEvenMonth,
-        weightedAvgNetMargin,
     };
 
     let cumulativeCash = 0, peakFundingNeed = 0, cashBreakEvenMonth: number | null = null;
@@ -673,5 +676,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
