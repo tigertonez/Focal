@@ -92,7 +92,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -116,7 +116,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -140,7 +140,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, true)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
