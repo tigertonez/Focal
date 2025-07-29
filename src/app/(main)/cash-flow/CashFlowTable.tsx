@@ -16,7 +16,8 @@ interface CashFlowTableProps {
 }
 
 export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit, profitSummary } = data;
+    const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
 
     const tableData = monthlyCashFlow.map((cf) => {
         const revenue = Object.entries(monthlyRevenue.find(r => r.month === cf.month) || {})
@@ -27,8 +28,12 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         
         const profitMonth = monthlyProfit.find(p => p.month === cf.month);
         const operatingProfit = profitMonth?.operatingProfit || 0;
-        const netProfit = profitMonth?.netProfit || 0;
-        const taxes = operatingProfit > 0 ? operatingProfit - netProfit : 0;
+        
+        // ** CORRECTED TAX LOGIC **
+        // Only apply tax if the business is profitable OVERALL for the period
+        const taxes = (businessIsProfitable && operatingProfit > 0) 
+            ? operatingProfit * (data.profitSummary.netMargin / 100)
+            : 0;
 
         const cashOut = costs + taxes;
         
