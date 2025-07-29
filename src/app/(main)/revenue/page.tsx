@@ -113,7 +113,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-left pl-2 md:pl-4 w-[250px]">Product</TableHead>
+                                    <TableHead className="text-left pl-2 md:pl-4 w-[200px]">Product</TableHead>
                                     <TableHead className="text-center">Units Sold</TableHead>
                                     <TableHead className="text-center">Sell-Through</TableHead>
                                     <TableHead className="text-left">Price</TableHead>
