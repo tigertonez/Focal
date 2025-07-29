@@ -387,24 +387,26 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <div className="flex justify-between items-start">
-        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
-      </div>
-      
-      <KPISection data={data} currency={inputs.parameters.currency} t={t} />
-      
-      <HealthPanel 
-        healthData={data.businessHealth}
-        financialSummaries={{
-          revenue: data.revenueSummary,
-          cost: data.costSummary,
-          profit: data.profitSummary,
-        }}
-        onRecalculate={() => router.push('/inputs')}
-        t={t}
-      />
+      <div id="report-content" className="space-y-8">
+        <div className="flex justify-between items-start">
+            <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
+        </div>
+        
+        <KPISection data={data} currency={inputs.parameters.currency} t={t} />
+        
+        <HealthPanel 
+            healthData={data.businessHealth}
+            financialSummaries={{
+            revenue: data.revenueSummary,
+            cost: data.costSummary,
+            profit: data.profitSummary,
+            }}
+            onRecalculate={() => router.push('/inputs')}
+            t={t}
+        />
 
-      <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
+        <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
+      </div>
 
       <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4">
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>

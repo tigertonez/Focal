@@ -13,20 +13,20 @@ export function DownloadReportButton() {
 
   const handleDownload = async () => {
     setLoading(true);
-    const mainContent = document.querySelector('main');
+    const reportContent = document.getElementById('report-content');
     
-    if (!mainContent) {
+    if (!reportContent) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not find main content to capture.",
+            description: "Could not find content to capture.",
         });
         setLoading(false);
         return;
     }
 
     try {
-      const canvas = await html2canvas(mainContent, { 
+      const canvas = await html2canvas(reportContent, { 
         logging: false,
         useCORS: true, 
         scale: 2 // Higher resolution
@@ -41,7 +41,7 @@ export function DownloadReportButton() {
       
       if (!res.ok) {
         const errorBody = await res.json();
-        throw new Error(errorBody.error || 'Failed to generate PDF from server.');
+        throw new Error(errorBody.details || errorBody.error || 'Failed to generate PDF from server.');
       }
 
       const blob = await res.blob();
