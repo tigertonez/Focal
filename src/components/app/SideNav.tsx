@@ -23,7 +23,7 @@ import { useForecast } from '@/context/ForecastContext';
 
 
 const DesktopNav = () => {
-    const { setIsCopilotOpen, t, setLocale, locale } = useForecast();
+    const { setIsCopilotOpen, t, setLocale, locale, inputs } = useForecast();
 
     const navItems = [
       { href: '/inputs', icon: LineChart, label: t.nav.inputs },
@@ -64,7 +64,7 @@ const DesktopNav = () => {
     return (
         <aside className="hidden md:flex flex-col items-center p-3 bg-card border-r h-screen sticky top-0">
             <Link href="/" className="p-3 mb-4">
-                 <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+                 <div className="bg-primary/20 text-primary p-2 rounded-lg" style={{ backgroundColor: 'var(--brand-logo-bg)', color: 'var(--brand-logo-fg)'}}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
                  </div>
             </Link>

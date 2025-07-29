@@ -37,6 +37,10 @@
     --chart-4: 220 5% 59%;   /* #81868F - Deposits */
     --chart-5: 268 28% 57%;  /* #9073B0 - Final Payments */
     --chart-6: 326 31% 58%;  /* #B17793 - Admin & Tools */
+    
+    /* Dynamic Brand Colors */
+    --brand-logo-bg: hsl(var(--primary) / 0.2);
+    --brand-logo-fg: hsl(var(--primary));
   }
  
   .dark {
@@ -67,6 +71,10 @@
     --chart-4: 220 5% 59%;   /* #81868F - Deposits */
     --chart-5: 268 28% 57%;  /* #9073B0 - Final Payments */
     --chart-6: 326 31% 58%;  /* #B17793 - Admin & Tools */
+    
+    /* Dynamic Brand Colors */
+    --brand-logo-bg: hsl(var(--primary) / 0.2);
+    --brand-logo-fg: hsl(var(--primary));
   }
 }
 

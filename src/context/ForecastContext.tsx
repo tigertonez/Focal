@@ -138,6 +138,13 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setFinancials(getFinancials());
   }, [inputs]);
+  
+  // Set brand color CSS variables
+  useEffect(() => {
+    const brandColor = inputs.company?.brandColor || '#6750A4';
+    document.documentElement.style.setProperty('--brand-logo-bg', `${brandColor}20`); // 20% opacity
+    document.documentElement.style.setProperty('--brand-logo-fg', brandColor);
+  }, [inputs.company?.brandColor]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {

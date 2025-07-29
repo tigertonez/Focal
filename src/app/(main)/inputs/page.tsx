@@ -170,7 +170,7 @@ export default function InputsPage() {
             </Section>
             
             <Section title={t.inputs.parameters.title} icon={<Settings />}>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                     <InputField 
                         label={t.inputs.parameters.forecastMonths.label}
                         id="forecastMonths" 
@@ -178,6 +178,7 @@ export default function InputsPage() {
                         value={inputs.parameters.forecastMonths} 
                         onChange={handleParamChange('parameters')} 
                         tooltip={t.inputs.parameters.forecastMonths.tooltip}
+                        layout="vertical"
                     />
                     <InputField 
                         label={t.inputs.parameters.taxRate.label}
@@ -186,29 +187,32 @@ export default function InputsPage() {
                         value={inputs.parameters.taxRate} 
                         onChange={handleParamChange('parameters')} 
                         tooltip={t.inputs.parameters.taxRate.tooltip}
+                        layout="vertical"
                     />
                     <SelectField 
                         label={t.inputs.parameters.currency}
                         id="currency" 
                         value={inputs.parameters.currency} 
                         onValueChange={handleSelectChange('parameters')('currency')}
+                        layout="vertical"
                     >
                         <SelectItem value="EUR">EUR</SelectItem>
                         <SelectItem value="USD">USD</SelectItem>
                     </SelectField>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start pt-4">
                      <SelectField 
                         label={t.inputs.parameters.accountingMethod.label}
                         id="accountingMethod"
                         value={inputs.parameters.accountingMethod || 'total_costs'} 
                         onValueChange={handleSelectChange('parameters')('accountingMethod')}
                         tooltip={t.inputs.parameters.accountingMethod.tooltip}
+                        layout="vertical"
                     >
                       <SelectItem value="total_costs">{t.inputs.parameters.accountingMethod.total_costs}</SelectItem>
                       <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
                     </SelectField>
-                    <div className="space-y-2">
+                </div>
+                <div className="grid grid-cols-1 items-start pt-4">
+                     <div className="space-y-2">
                         <Label htmlFor="preOrder" className="font-medium text-sm flex items-center gap-2">
                             {t.inputs.parameters.preOrder.title}
                             <TooltipProvider>
