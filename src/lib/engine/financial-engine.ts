@@ -375,7 +375,6 @@ const calculateProfitAndCashFlow = (
     const totalFixedCostCents = toCents(costSummary.totalFixed);
     
     // --- START: PROFIT CALCULATION ---
-
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
     // In conservative mode, ALL variable costs are expensed. In COGS mode, only sold goods are.
@@ -411,10 +410,11 @@ const calculateProfitAndCashFlow = (
         for (const product of inputs.products) {
             if (accountingMethod === 'cogs') {
                 operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
-            } else { // Conservative
+            } else { // Conservative ("total_costs")
                 if (product.costModel === 'monthly') {
+                    // For 'monthly' cost models, the expense is always the cost of units sold in that month.
                     operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
-                } else { // Batch cost is fully expensed in Month 1 for profit purposes
+                } else { // For 'batch' cost models, the entire production cost is expensed in Month 1.
                     if (month === 1) {
                          operatingCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
@@ -435,9 +435,10 @@ const calculateProfitAndCashFlow = (
 
         // This calculation is just for display and doesn't affect main logic
         let grossProfit = 0;
-        const cogsThisMonth = Object.keys(currentUnitsSold).reduce((sum, productName) => {
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
             const product = inputs.products.find(p => p.productName === productName);
-            const productCost = toCents((currentUnitsSold[productName as keyof typeof currentUnitsSold] || 0) * (product?.unitCost || 0));
+            const productCost = toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
             return sum + productCost;
         }, 0);
         grossProfit = revenueThisMonth - cogsThisMonth;
@@ -663,3 +664,5 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
+
+    
