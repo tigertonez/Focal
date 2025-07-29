@@ -51,6 +51,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             
             let productVariableCosts = 0;
             if (accountingMethod === 'cogs') {
+                // Use COGS method: cost is recognized when goods are sold
                 productVariableCosts = soldUnits * (product.unitCost || 0);
             } else { // Conservative "total_costs" method
                  if (product.costModel === 'monthly') {
@@ -72,11 +73,11 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            // Corrected Tax Logic: Allocate company-wide tax based on this product's contribution to op profit
+            // Corrected Tax Logic: Allocate company-wide tax based on this product's contribution to total op profit
             let productTax = 0;
-            if (businessIsProfitable) {
+            if (businessIsProfitable && totalOperatingProfit > 0) {
                 // The product's share of the total tax is based on its share of the total operating profit
-                const operatingProfitShare = totalOperatingProfit > 0 ? operatingProfit / totalOperatingProfit : 0;
+                const operatingProfitShare = operatingProfit / totalOperatingProfit;
                 const totalTax = profitSummary.totalOperatingProfit * (taxRate / 100);
                 productTax = totalTax * operatingProfitShare;
             }
