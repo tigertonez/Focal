@@ -378,13 +378,12 @@ const calculateProfitAndCashFlow = (
 
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
-    // This is the CRITICAL distinction based on accounting method.
     // In conservative mode, ALL variable costs are expensed. In COGS mode, only sold goods are.
     const totalVariableExpense = accountingMethod === 'cogs'
-        ? costSummary.totalVariable - costSummary.cogsOfUnsoldGoods
-        : costSummary.totalVariable;
+        ? toCents(costSummary.totalVariable) - toCents(costSummary.cogsOfUnsoldGoods)
+        : toCents(costSummary.totalVariable);
 
-    const totalGrossProfit = totalRevenueCents - toCents(totalVariableExpense);
+    const totalGrossProfit = totalRevenueCents - totalVariableExpense;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
 
     const businessIsProfitable = totalOperatingProfit > 0;
@@ -395,30 +394,33 @@ const calculateProfitAndCashFlow = (
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     
     // --- Create monthly operating costs timeline for the chart ---
-    const monthlyOperatingCostsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
+    const monthlyOperatingCostsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m, total: 0 }));
     monthlyOperatingCostsTimeline.forEach((monthData) => {
         const month = monthData.month;
         let totalOpCostThisMonth = 0;
 
         // 1. Add allocated fixed costs (always accrued monthly for profit calc)
-        if (timeline.forecastMonths > 0) {
+        if (timeline.forecastMonths > 0 && month >= 1) {
             const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
-            let remainder = totalFixedCostCents % timeline.forecastMonths;
-            let fixedForThisMonth = baseMonthlyFixed + (month > 0 && month <= remainder ? 1 : 0);
-            if (month >= 1) { // Fixed costs are only for M1 onwards
-               totalOpCostThisMonth += fixedForThisMonth;
-            }
+            const remainder = totalFixedCostCents % timeline.forecastMonths;
+            let fixedForThisMonth = baseMonthlyFixed + (month <= remainder ? 1 : 0);
+            totalOpCostThisMonth += fixedForThisMonth;
         }
 
         // 2. Add variable costs based on accounting method
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         for (const product of inputs.products) {
-            if (accountingMethod === 'cogs' || product.costModel === 'monthly') {
+            if (accountingMethod === 'cogs') {
                 const units = unitsSoldThisMonth[product.productName] || 0;
                 totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
-            } else { // Conservative 'batch' cost model
-                if (month === 1) { // All batch costs are incurred in M1
-                    totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+            } else { // Conservative 'total_costs' mode
+                if (product.costModel === 'monthly') {
+                    const units = unitsSoldThisMonth[product.productName] || 0;
+                    totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
+                } else { // 'batch' model
+                    if (month === 1) { // All batch costs are incurred in M1
+                         totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+                    }
                 }
             }
         }
@@ -454,9 +456,10 @@ const calculateProfitAndCashFlow = (
 
         // This calculation is just for display and doesn't affect main logic
         let grossProfit = 0;
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
             const product = inputs.products.find(p => p.productName === productName);
-            return sum + toCents((unitsSoldThisMonth[productName] || 0) * (product?.unitCost || 0));
+            return sum + toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
         }, 0);
         grossProfit = revenueThisMonth - cogsThisMonth;
 
