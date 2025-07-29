@@ -51,9 +51,9 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             let productVariableCosts = 0;
             if (accountingMethod === 'cogs') {
                 productVariableCosts = soldUnits * (product.unitCost || 0);
-            } else {
+            } else { // Conservative "total_costs" method
                  if (product.costModel === 'monthly') {
-                    // For monthly (JIT) costs, the variable cost IS the cost of goods sold.
+                    // For monthly (JIT) costs, the variable cost IS the cost of goods sold, as costs only incur on sale.
                     productVariableCosts = soldUnits * (product.unitCost || 0);
                 } else {
                     // For batch production, the variable cost is the entire production run.
@@ -64,12 +64,14 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const grossProfit = productRevenue - productVariableCosts;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
+            // Allocate fixed costs based on the product's share of total revenue
             const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
             const allocatedFixedCosts = totalFixedCosts * revenueShare;
             
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
+            // Apply tax only if the overall business is profitable AND the specific product's operating profit is positive
             const productTax = (businessIsProfitable && operatingProfit > 0)
                 ? operatingProfit * (taxRate / 100)
                 : 0;
@@ -88,7 +90,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                 netMargin,
             };
         });
-    }, [data, inputs, locale]);
+    }, [data, inputs, locale]); // dependency array ensures recalculation when data or inputs change
 
     return (
         <div className="space-y-4">
@@ -166,7 +168,3 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
-
-    
-
-    
