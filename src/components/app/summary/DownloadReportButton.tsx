@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
-import { getFinancials } from '@/lib/get-financials';
 import { useToast } from '@/hooks/use-toast';
 import { useForecast } from '@/context/ForecastContext';
+import html2canvas from 'html2canvas';
 
 export function DownloadReportButton() {
   const [loading, setLoading] = useState(false);
@@ -13,24 +13,30 @@ export function DownloadReportButton() {
 
   const handleDownload = async () => {
     setLoading(true);
-
-    const financials = getFinancials();
-    if (financials.error || !financials.data || !financials.inputs) {
+    const mainContent = document.querySelector('main');
+    
+    if (!mainContent) {
         toast({
             variant: "destructive",
-            title: "Cannot generate report",
-            description: "Please run a report from the Inputs page first.",
+            title: "Error",
+            description: "Could not find main content to capture.",
         });
         setLoading(false);
         return;
     }
-    
+
     try {
-      // Pass the live data directly in the request body
+      const canvas = await html2canvas(mainContent, { 
+        logging: false,
+        useCORS: true, 
+        scale: 2 // Higher resolution
+      });
+      const imageDataUri = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG for smaller file size
+
       const res = await fetch('/api/report', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputs: financials.inputs, data: financials.data }),
+        body: JSON.stringify({ imageDataUri }),
       });
       
       if (!res.ok) {
@@ -39,14 +45,13 @@ export function DownloadReportButton() {
       }
 
       const blob = await res.blob();
-
-      if (blob.size > 2 * 1024 * 1024) { // 2MB limit
-        throw new Error("Report too large to download. Please refine your forecast range.");
-      }
-
       const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement('a'), { href: url, download: `ForecastReport-${Date.now()}.pdf` });
-      document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      document.body.append(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
     } catch (e: any) { 
       console.error(e);
       toast({
