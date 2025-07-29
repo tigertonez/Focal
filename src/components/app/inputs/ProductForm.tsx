@@ -125,7 +125,7 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             </div>
         </div>
         
-         <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between pt-2">
              <Label className="text-sm font-medium flex items-center gap-2">
                 {t.inputs.products.costModel.title}
                 <TooltipProvider>
@@ -147,18 +147,18 @@ export const ProductForm: React.FC<{ product: Product; index: number }> = ({ pro
             >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
-                    <Label htmlFor={`costModel-batch-${index}`} className="text-xs font-normal">{t.inputs.products.costModel.batch}</Label>
+                    <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
-                    <Label htmlFor={`costModel-monthly-${index}`} className="text-xs font-normal">{t.inputs.products.costModel.monthly}</Label>
+                    <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
                 </div>
             </RadioGroup>
         </div>
 
 
         {isManualMode && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {isLowVolume ? (
               <>
                 <div className="space-y-2">
