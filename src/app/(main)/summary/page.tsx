@@ -327,14 +327,18 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
 
     const totalRevenue = revenueSummary.totalRevenue;
     
-    let cogs;
+    let costsToSubtract;
+    let costLabel;
+    
     if (accountingMethod === 'cogs') {
-        cogs = revenueSummary.totalRevenue - profitSummary.totalGrossProfit;
+        costsToSubtract = costSummary.cogsOfSoldGoods;
+        costLabel = t.insights.summary.waterfall.cogs;
     } else { // Conservative 'total_costs'
-        cogs = costSummary.totalVariable;
+        costsToSubtract = costSummary.totalVariable;
+        costLabel = t.insights.summary.waterfall.variableCosts;
     }
 
-    const grossProfit = totalRevenue - cogs;
+    const grossProfit = totalRevenue - costsToSubtract;
     const opex = profitSummary.totalGrossProfit - profitSummary.totalOperatingProfit;
     const operatingProfit = profitSummary.totalOperatingProfit;
     const taxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
@@ -356,7 +360,7 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
                     <CardContent className="px-6 py-4">
                         <div className="space-y-1">
                             <BridgeRow label={t.insights.summary.waterfall.revenue} value={totalRevenue} currency={currency} />
-                            <BridgeRow label={t.insights.summary.waterfall.cogs} value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <BridgeRow label={costLabel} value={-costsToSubtract} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.grossProfit} value={grossProfit} currency={currency} />
                             <BridgeRow label={t.insights.summary.waterfall.opex} value={-opex} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />

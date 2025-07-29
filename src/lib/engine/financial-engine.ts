@@ -1,6 +1,6 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema, CashFlowSummarySchema } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
 
@@ -223,17 +223,6 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
     const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     
-    const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
-    if (planningBufferCost) {
-      // Find other costs to calculate the buffer from
-      const otherCosts = inputs.fixedCosts.filter(fc => !fc.name.toLowerCase().includes('planning buffer'));
-      const totalOtherCosts = otherCosts.reduce((total, cost) => {
-        const monthlyAmount = cost.costType === 'Monthly Cost' ? cost.amount : cost.amount / timeline.forecastMonths;
-        return total + (monthlyAmount * timeline.forecastMonths);
-      }, 0);
-      planningBufferCost.amount = totalOtherCosts * 0.1; // Assuming 10% buffer
-    }
-
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
         
@@ -417,19 +406,20 @@ const calculateProfitAndCashFlow = (
 
         let operatingCostsThisMonth = 0;
         
-        // 1. Amortize fixed costs over the operational forecast period (M1 onwards)
-        const operationalMonths = timeline.timelineMonths.filter(m => m >= 1).length;
+        // 1. Fixed costs are recognized from M1 onwards in P&L
         inputs.fixedCosts.forEach(fc => {
-            if (fc.costType === 'Total for Period') {
-                const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
-                const duration = timeline.timelineMonths.filter(m => m >= startMonth).length;
-                 if (fc.paymentSchedule !== 'up_front_m0') { 
-                    operatingCostsThisMonth += toCents(fc.amount / duration);
-                 }
-            } else if (fc.costType === 'Monthly Cost') {
-                 const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
-                 if (month >= startMonth) {
-                    operatingCostsThisMonth += toCents(fc.amount);
+            const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
+            const duration = timeline.timelineMonths.filter(m => m >= startMonth).length;
+             
+            if (month >= 1) { // P&L recognition starts M1
+                 if (fc.costType === 'Total for Period') {
+                    if (duration > 0) {
+                        operatingCostsThisMonth += toCents(fc.amount / duration);
+                    }
+                 } else if (fc.costType === 'Monthly Cost') {
+                     if (month >= startMonth) {
+                        operatingCostsThisMonth += toCents(fc.amount);
+                     }
                  }
             }
         });
@@ -445,7 +435,7 @@ const calculateProfitAndCashFlow = (
                 if (product.costModel === 'monthly') {
                     const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
                     operatingCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                } else { // Batch costs are fully expensed in Month 1
+                } else { // Batch costs are fully expensed in Month 1 for P&L
                     if (month === 1) {
                          operatingCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
@@ -526,9 +516,14 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    const avgMonthlyOperatingCost = fromCents(toCents(costSummary.totalOperating)) / timeline.forecastMonths;
+    // CORRECTED: Runway should be based on fixed costs, not total operating costs
+    const avgMonthlyBurnRate = fromCents(toCents(costSummary.totalFixed)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
-    const runway = finalEndingCash > 0 && avgMonthlyOperatingCost > 0 ? finalEndingCash / avgMonthlyOperatingCost : (finalEndingCash > 0 ? Infinity : 0);
+    
+    // Only calculate runway if there's a positive cash balance and a burn rate
+    const runway = finalEndingCash > 0 && avgMonthlyBurnRate > 0 
+        ? finalEndingCash / avgMonthlyBurnRate 
+        : (finalEndingCash > 0 ? Infinity : 0);
 
     const cashFlowSummary = {
         endingCashBalance: finalEndingCash, 
@@ -570,7 +565,12 @@ const calculateBusinessHealth = (
 
     const netMargin = summaries.profit.netMargin;
     const cashRunway = summaries.cash.runway;
-    const contributionMargin = summaries.revenue.totalRevenue > 0 ? ((summaries.revenue.totalRevenue - summaries.cost.cogsOfSoldGoods) / summaries.revenue.totalRevenue) * 100 : 0;
+    
+    // Contribution Margin is Revenue minus the COGS of *sold* items.
+    const contributionMargin = summaries.revenue.totalRevenue > 0 ? 
+      ((summaries.revenue.totalRevenue - summaries.cost.cogsOfSoldGoods) / summaries.revenue.totalRevenue) * 100 
+      : 0;
+      
     const peakFundingNeed = summaries.cash.peakFundingNeed;
     const avgSellThrough = inputs.products.length > 0
         ? inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length
@@ -588,13 +588,13 @@ const calculateBusinessHealth = (
             label: 'Cash Runway', 
             value: normalize(cashRunway, 0, 12), 
             weight: weights.cashRunway,
-            tooltip: 'Months of operation your cash reserves can cover. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).'
+            tooltip: 'Months of operation your cash reserves can cover based on your fixed costs. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).'
         },
         { 
             label: 'Contribution Margin', 
             value: normalize(contributionMargin, 10, 60), 
             weight: weights.contributionMargin,
-            tooltip: 'Measures per-unit profitability before fixed costs. Scored on a scale from 10% (score: 0) to 60%+ (score: 100).'
+            tooltip: 'Measures per-unit profitability (Revenue - COGS). Scored on a scale from 10% (score: 0) to 60%+ (score: 100).'
         },
         { 
             label: 'Peak Funding', 
