@@ -2,7 +2,19 @@
 
 import { z } from 'zod';
 
-// --- Section A: Product ---
+// --- Section A: Company Context ---
+export const CompanyContextSchema = z.object({
+  brand: z.string().optional(),
+  brandColor: z.string().optional(),
+  teamSize: z.enum(['solo', '2-5', '6-20', '>20']).optional(),
+  stage: z.enum(['idea', 'launch', 'growth', 'scale']).optional(),
+  production: z.enum(['preorder', 'stock', 'ondemand']).optional(),
+  industry: z.enum(['fashion', 'jewelry', 'cosmetics', 'food', 'digital', 'other']).optional(),
+});
+export type CompanyContext = z.infer<typeof CompanyContextSchema>;
+
+
+// --- Section B: Product ---
 export const ProductSchema = z.object({
   id: z.string(), 
   productName: z.string({ required_error: 'Product name is required.' }).min(1, 'Product name is required.'),
@@ -14,7 +26,7 @@ export const ProductSchema = z.object({
   depositPct: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
     z.number().min(0, "Deposit must be positive.").max(100, "Deposit can't exceed 100%.")
-  ),
+  ).optional(),
   costModel: z.enum(['batch', 'monthly']).default('batch').optional(),
   color: z.string().optional(),
   estimatedSales: z.number().optional(),
@@ -22,7 +34,7 @@ export const ProductSchema = z.object({
 });
 export type Product = z.infer<typeof ProductSchema>;
 
-// --- Section B: Fixed Costs ---
+// --- Section C: Fixed Costs ---
 export const FixedCostItemSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'Cost name is required.'),
@@ -34,7 +46,7 @@ export const FixedCostItemSchema = z.object({
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
 
 
-// --- Section C: General Parameters ---
+// --- Section D: General Parameters ---
 export const ParametersSchema = z.object({
   forecastMonths: z.number().min(1).max(36),
   taxRate: z.number().min(0).max(100),
@@ -44,7 +56,7 @@ export const ParametersSchema = z.object({
 });
 export type Parameters = z.infer<typeof ParametersSchema>;
 
-// --- Section D: Realtime Settings ---
+// --- Section E: Realtime Settings ---
 export const RealtimeSettingsSchema = z.object({
   dataSource: z.enum(['Manual', 'Shopify', 'CSV']),
   apiKey: z.string().optional(),
@@ -55,6 +67,7 @@ export type RealtimeSettings = z.infer<typeof RealtimeSettingsSchema>;
 
 // --- Main Input Schema for Validation ---
 export const EngineInputSchema = z.object({
+  company: CompanyContextSchema.optional(),
   products: z.array(ProductSchema).min(1, { message: 'At least one product is required.' }),
   fixedCosts: z.array(FixedCostItemSchema),
   parameters: ParametersSchema,

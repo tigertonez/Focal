@@ -35,6 +35,14 @@ interface ForecastContextType {
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
 
 const initialInputs: EngineInput = {
+  company: {
+    brand: 'Plaza',
+    brandColor: '#6750A4',
+    teamSize: '2-5',
+    stage: 'launch',
+    production: 'preorder',
+    industry: 'fashion',
+  },
   products: [
     {
       id: 'prod_hoodie',
@@ -46,7 +54,7 @@ const initialInputs: EngineInput = {
       depositPct: 25,
       salesModel: 'launch',
       costModel: 'batch',
-      color: '#6b7280', // Muted Gray
+      color: '#6b7280',
     },
     {
       id: 'prod_shorts',
@@ -55,9 +63,10 @@ const initialInputs: EngineInput = {
       unitCost: 30,
       sellPrice: 80,
       sellThrough: 75,
+      depositPct: 25,
       salesModel: 'seasonal',
       costModel: 'batch',
-      color: '#a1a1aa', // Muted Stone
+      color: '#a1a1aa',
     },
      {
       id: 'prod_shirts',
@@ -69,7 +78,7 @@ const initialInputs: EngineInput = {
       depositPct: 25,
       salesModel: 'even',
       costModel: 'batch',
-      color: '#d4d4d8', // Muted Zinc
+      color: '#d4d4d8',
     },
   ],
   fixedCosts: [
