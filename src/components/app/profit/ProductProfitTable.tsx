@@ -42,6 +42,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
         const totalRevenue = revenueSummary.totalRevenue;
         const totalFixedCosts = costSummary.totalFixed;
+        const totalOperatingProfit = profitSummary.totalOperatingProfit;
 
         return inputs.products.map((product) => {
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
@@ -71,10 +72,14 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            // Apply tax only if the overall business is profitable AND the specific product's operating profit is positive
-            const productTax = (businessIsProfitable && operatingProfit > 0)
-                ? operatingProfit * (taxRate / 100)
-                : 0;
+            // Corrected Tax Logic: Allocate company-wide tax based on this product's contribution to op profit
+            let productTax = 0;
+            if (businessIsProfitable) {
+                // The product's share of the total tax is based on its share of the total operating profit
+                const operatingProfitShare = totalOperatingProfit > 0 ? operatingProfit / totalOperatingProfit : 0;
+                const totalTax = profitSummary.totalOperatingProfit * (taxRate / 100);
+                productTax = totalTax * operatingProfitShare;
+            }
 
             const netProfit = operatingProfit - productTax;
             const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;

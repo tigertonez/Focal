@@ -2,6 +2,7 @@
 
 
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -364,7 +365,7 @@ const calculateProfitAndCashFlow = (
                  if (product.costModel === 'monthly') {
                     // For JIT, variable cost is tied to sales
                     variableCosts += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                }
+                 }
             }
             // For batch production, costs are paid at specific times, not tied to sales month
             variableCosts += (costsForMonth['Deposits'] || 0);
@@ -390,6 +391,10 @@ const calculateProfitAndCashFlow = (
     const totalGrossProfit = totalRevenueCents - totalVariableCostsForProfit;
     const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
     const businessIsProfitable = totalOperatingProfit > 0;
+    
+    const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
+    const totalNetProfit = totalOperatingProfit - totalTaxAmount;
+
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
@@ -400,7 +405,10 @@ const calculateProfitAndCashFlow = (
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
         
-        const tax = (businessIsProfitable && operatingProfit > 0) ? Math.round(operatingProfit * (taxRate / 100)) : 0;
+        // Correctly apply tax based on overall profitability, not monthly
+        const tax = businessIsProfitable && operatingProfit > 0 
+            ? Math.round(operatingProfit * (taxRate / 100)) 
+            : 0;
         const netProfit = operatingProfit - tax;
 
         cumulativeOperatingProfit += operatingProfit;
@@ -416,13 +424,6 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    const totalTaxAmount = monthlyProfit.reduce((acc, month) => {
-        const operatingProfitCents = toCents(month.operatingProfit);
-        const netProfitCents = toCents(month.netProfit);
-        return acc + (operatingProfitCents - netProfitCents);
-    }, 0);
-    const totalNetProfit = totalOperatingProfit - totalTaxAmount;
-
     // Calculate product-level net margins and their weights
     const productMargins = inputs.products.map(product => {
         const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
@@ -451,7 +452,7 @@ const calculateProfitAndCashFlow = (
         
         const productOperatingProfitCents = productGrossProfitCents - allocatedFixedCostsCents;
         
-        const productTaxCents = (businessIsProfitable && productOperatingProfitCents > 0)
+        const productTaxCents = businessIsProfitable
             ? Math.round(productOperatingProfitCents * (taxRate / 100))
             : 0;
             
@@ -488,9 +489,10 @@ const calculateProfitAndCashFlow = (
         const profitMonth = monthlyProfit.find(p => p.month === month);
         const operatingProfitThisMonthCents = toCents(profitMonth?.operatingProfit);
         const netProfitThisMonthCents = toCents(profitMonth?.netProfit);
-        const cashOutTax = (businessIsProfitable && operatingProfitThisMonthCents > 0) 
-            ? operatingProfitThisMonthCents - netProfitThisMonthCents 
-            : 0;
+        
+        // Use the centrally calculated total tax amount and distribute it for cash flow purposes
+        // This is a simplification; a more complex model might time the tax payments differently
+        const cashOutTax = businessIsProfitable && operatingProfitThisMonthCents > 0 ? Math.round(operatingProfitThisMonthCents * (taxRate / 100)) : 0;
 
         const netCashFlow = cashIn - cashOutCosts - cashOutTax;
         cumulativeCash += netCashFlow;
