@@ -41,19 +41,17 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
 
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
-    return data.monthlyProfit.map(p => {
-        const revenueForMonth = data.monthlyRevenue.find(r => r.month === p.month) || {};
-        const totalRevenue = Object.entries(revenueForMonth).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
-
-        const costsForMonth = data.monthlyCosts.find(c => c.month === p.month) || {};
-        const totalCosts = Object.entries(costsForMonth).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
+    return data.monthlyProfit.map((p, index) => {
+        const revenueForMonth = Object.entries(data.monthlyRevenue.find(r => r.month === p.month) || {}).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
+        const costsForMonth = Object.entries(data.monthlyCosts.find(c => c.month === p.month) || {}).reduce((acc, [key, val]) => key !== 'month' ? acc + (val as number) : acc, 0);
         
-        cumulativeProfit += p.operatingProfit;
+        const operatingProfit = revenueForMonth - costsForMonth;
+        cumulativeProfit += operatingProfit;
         
         return {
             month: `M${p.month}`,
-            revenue: totalRevenue,
-            costs: -totalCosts, // Costs are negative for stacking in the bar chart
+            revenue: revenueForMonth,
+            costs: -costsForMonth, // Costs are negative for stacking in the bar chart
             cumulativeProfit,
         };
     });

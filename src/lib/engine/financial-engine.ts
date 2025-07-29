@@ -412,12 +412,11 @@ const calculateProfitAndCashFlow = (
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     
-    // --- START: Accurate Monthly Fixed Cost Distribution ---
-    const monthlyFixedCostAllocation = Array(timeline.forecastMonths).fill(0);
+    const monthlyFixedCostAllocation = Array(timeline.forecastMonths + 1).fill(0);
     if (timeline.forecastMonths > 0) {
         const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
         let remainder = totalFixedCostCents % timeline.forecastMonths;
-        for (let i = 0; i < timeline.forecastMonths; i++) {
+        for (let i = 1; i <= timeline.forecastMonths; i++) {
             monthlyFixedCostAllocation[i] = baseMonthlyFixed;
             if (remainder > 0) {
                 monthlyFixedCostAllocation[i]++;
@@ -425,7 +424,6 @@ const calculateProfitAndCashFlow = (
             }
         }
     }
-    // --- END: Accurate Monthly Fixed Cost Distribution ---
 
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -435,19 +433,10 @@ const calculateProfitAndCashFlow = (
         
         for (const product of inputs.products) {
             const units = unitsSoldThisMonth[product.productName] || 0;
-            if (product.costModel === 'monthly') {
-                 // JIT costs are always incurred in the month of sale
-                 variableCostsThisMonth += toCents(units * (product.unitCost || 0));
-            } else if (accountingMethod === 'cogs') {
-                 // Batch costs under COGS are also tied to month of sale
-                 variableCostsThisMonth += toCents(units * (product.unitCost || 0));
-            } else if (accountingMethod === 'total_costs' && month === 1) {
-                 // Batch costs under Conservative method are incurred fully in Month 1
-                 variableCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
-            }
+            variableCostsThisMonth += toCents(units * (product.unitCost || 0));
         }
         
-        const fixedCostsThisMonth = (month > 0) ? (monthlyFixedCostAllocation[month - 1] || 0) : 0;
+        const fixedCostsThisMonth = monthlyFixedCostAllocation[month] || 0;
 
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
