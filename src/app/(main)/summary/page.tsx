@@ -320,18 +320,18 @@ const HealthPanel = ({
 
 
 const BridgeRow = ({ label, value, currency, colorClass, isSubtle = false, icon, indent = false }: { label: string, value: number, currency: string, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode, indent?: boolean }) => (
-    <div className={cn("flex items-center justify-between py-1.5", isSubtle ? 'text-sm' : 'text-base', indent && 'pl-6')}>
+    <div className={cn("flex items-center justify-between py-1.5 text-sm", indent && 'pl-6')}>
         <div className="flex items-center gap-2">
             {icon}
-            <span className={cn(isSubtle ? 'text-muted-foreground' : 'font-medium')}>{label}</span>
+            <span className={cn('text-muted-foreground')}>{label}</span>
         </div>
-        <span className={cn(colorClass, 'font-bold')}>{formatCurrency(value, currency)}</span>
+        <span className={cn(colorClass, 'font-medium')}>{formatCurrency(value, currency)}</span>
     </div>
 );
 
-const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
+const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput, inputs: EngineInput, currency: string, t: any }) => {
     const { revenueSummary, costSummary, profitSummary } = data;
-    const { accountingMethod } = data.businessHealth ? { accountingMethod: 'cogs' } : inputs.parameters;
+    const { accountingMethod } = inputs.parameters;
 
     const totalRevenue = revenueSummary.totalRevenue;
     
@@ -364,7 +364,7 @@ const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currenc
                     <CardContent className="px-6 py-4">
                         <div className="space-y-1">
                             <BridgeRow label={t.insights.summary.waterfall.revenue} value={totalRevenue} currency={currency} />
-                            <BridgeRow label={t.insights.summary.waterfall.cogs} value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
+                            <BridgeRow label="Total Variable Costs" value={-cogs} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.grossProfit} value={grossProfit} currency={currency} />
                             <BridgeRow label={t.insights.summary.waterfall.opex} value={-opex} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
@@ -372,7 +372,7 @@ const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currenc
                             <BridgeRow label={t.insights.summary.waterfall.operatingProfit} value={operatingProfit} currency={currency} />
                             <BridgeRow label={t.insights.summary.waterfall.taxes} value={-taxes} currency={currency} colorClass="text-red-600" indent icon={<MinusCircle className="h-3.5 w-3.5 text-red-500/80" />} />
                             <Separator className="my-1" />
-                            <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} currency={currency} colorClass="text-blue-600 font-bold" />
+                            <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} currency={currency} colorClass="text-blue-600" />
                         </div>
                     </CardContent>
                 </Card>
@@ -408,7 +408,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         t={t}
       />
 
-      <FinancialWaterfall data={data} currency={inputs.parameters.currency} t={t} />
+      <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
 
       <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4">
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>
