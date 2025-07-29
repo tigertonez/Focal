@@ -5,7 +5,7 @@ import { z } from 'zod';
 // --- Section A: Company Context ---
 export const CompanyContextSchema = z.object({
   brand: z.string().optional(),
-  brandColor: z.string().optional(),
+  logoDataUri: z.string().optional(),
   teamSize: z.enum(['solo', '2-5', '6-20', '>20']).optional(),
   stage: z.enum(['idea', 'launch', 'growth', 'scale']).optional(),
   production: z.enum(['preorder', 'stock', 'ondemand']).optional(),

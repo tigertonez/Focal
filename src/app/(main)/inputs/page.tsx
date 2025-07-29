@@ -6,7 +6,7 @@ import React from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, HelpCircle, Bot, Loader2, ChevronRight, Briefcase, Building, Wrench, Settings, Palette } from 'lucide-react';
+import { PlusCircle, HelpCircle, Bot, Loader2, ChevronRight, Briefcase, Building, Wrench, Settings, Palette, Upload } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
@@ -71,6 +71,29 @@ export default function InputsPage() {
       if (isNaN(finalValue as number)) return;
     }
     setInputs(prev => ({ ...prev, [section]: { ...prev[section], [id]: finalValue } }));
+  };
+  
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024) { // 50KB limit
+        alert('Logo file size should not exceed 50KB.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const dataUri = event.target?.result as string;
+        setInputs(prev => ({
+            ...prev,
+            company: {
+                ...prev.company,
+                logoDataUri: dataUri,
+            }
+        }))
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSelectChange = (section: 'parameters' | 'realtime' | 'company') => (id: string) => (value: string) => {
@@ -162,9 +185,12 @@ export default function InputsPage() {
                     <SelectItem value=">20">20+ Employees</SelectItem>
                  </SelectField>
                  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                    <Label htmlFor="brandColor" className="font-medium text-sm">Brand Color</Label>
-                    <div className="md:col-span-2">
-                        <Input id="brandColor" type="color" value={inputs.company?.brandColor || '#6750A4'} onChange={handleParamChange('company')} className="h-10 p-1" />
+                    <Label htmlFor="logo" className="font-medium text-sm">Company Logo</Label>
+                    <div className="md:col-span-2 flex items-center gap-4">
+                        {inputs.company?.logoDataUri && (
+                            <img src={inputs.company.logoDataUri} alt="Logo Preview" className="h-10 w-10 object-contain rounded-md border p-1" />
+                        )}
+                        <Input id="logo" type="file" onChange={handleLogoChange} accept="image/svg+xml, image/png" className="text-xs file:mr-2 file:text-xs file:font-medium file:text-primary file:bg-primary/10 file:border-0 file:rounded-md file:px-2 file:py-1 hover:file:bg-primary/20" />
                     </div>
                 </div>
             </Section>

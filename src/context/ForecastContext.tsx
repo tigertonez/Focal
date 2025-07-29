@@ -37,7 +37,7 @@ const ForecastContext = createContext<ForecastContextType | undefined>(undefined
 const initialInputs: EngineInput = {
   company: {
     brand: 'Plaza',
-    brandColor: '#6750A4',
+    logoDataUri: '',
     teamSize: '2-5',
     stage: 'launch',
     production: 'preorder',
@@ -90,7 +90,6 @@ const initialInputs: EngineInput = {
     forecastMonths: 12,
     taxRate: 20,
     currency: 'EUR',
-    preOrder: true,
     accountingMethod: 'total_costs',
   },
   realtime: {
@@ -138,13 +137,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setFinancials(getFinancials());
   }, [inputs]);
-  
-  // Set brand color CSS variables
-  useEffect(() => {
-    const brandColor = inputs.company?.brandColor || '#6750A4';
-    document.documentElement.style.setProperty('--brand-logo-bg', `${brandColor}20`); // 20% opacity
-    document.documentElement.style.setProperty('--brand-logo-fg', brandColor);
-  }, [inputs.company?.brandColor]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
