@@ -41,11 +41,13 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         return inputs.products.map((product) => {
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
             const productRevenue = revenueBreakdown?.totalRevenue || 0;
+            const soldUnits = revenueBreakdown?.totalSoldUnits || 0;
             
-            const totalPlannedUnits = product.plannedUnits || 0;
-            const productTotalVariableCost = totalPlannedUnits * (product.unitCost || 0);
+            // ** CORRECTED COGS CALCULATION **
+            // Use cost of goods *sold*, not total planned units cost.
+            const productCogs = soldUnits * (product.unitCost || 0);
 
-            const grossProfit = productRevenue - productTotalVariableCost;
+            const grossProfit = productRevenue - productCogs;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
             const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
@@ -54,7 +56,9 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            const productTax = businessIsProfitable
+            // ** CORRECTED TAX LOGIC **
+            // Only apply tax if the business is profitable overall AND the product's operating profit is positive.
+            const productTax = (businessIsProfitable && operatingProfit > 0)
                 ? operatingProfit * (taxRate / 100)
                 : 0;
 
@@ -92,7 +96,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -116,7 +120,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -140,7 +144,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, false)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
