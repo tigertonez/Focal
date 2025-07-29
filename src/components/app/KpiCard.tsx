@@ -42,8 +42,8 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
 
   return (
     <Card className={cn("flex-1", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-4 pt-3">
+        <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
           {label}
         </CardTitle>
         <div className="flex items-center gap-2">
