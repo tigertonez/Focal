@@ -63,10 +63,7 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                                 )}>
                                     {formatCurrency(row.netCashFlow, currency, true)}
                                 </TableCell>
-                                <TableCell className={cn(
-                                    "text-center font-bold",
-                                    row.cumulativeCash >= 0 ? 'text-green-700' : 'text-red-700'
-                                )}>
+                                <TableCell className="text-center font-bold">
                                     {formatCurrency(row.cumulativeCash, currency, true)}
                                 </TableCell>
                                 <TableCell className="text-center">
