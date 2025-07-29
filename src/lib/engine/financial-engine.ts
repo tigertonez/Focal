@@ -27,20 +27,20 @@ const fromCents = (val: number): number => {
 const createTimeline = (inputs: EngineInput) => {
     const { forecastMonths } = inputs.parameters;
     const preOrder = inputs.company?.production === 'preorder';
-    const requiresMonthZero = preOrder;
+
     // Timeline for all calculations (costs, cash flow etc.)
-    const timelineMonths = requiresMonthZero
+    const timelineMonths = preOrder
       ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
 
-    // Sales can only happen from month 1 onwards, unless pre-order is active
-    const salesTimeline = requiresMonthZero
-        ? Array.from({ length: forecastMonths }, (_, i) => i + 1)
+    // Sales can happen from M0 in pre-order, otherwise start from M1.
+    const salesTimeline = preOrder
+        ? Array.from({ length: forecastMonths + 1 }, (_, i) => i)
         : Array.from({ length: forecastMonths }, (_, i) => i + 1);
     
     return {
         forecastMonths,
-        requiresMonthZero,
+        requiresMonthZero: preOrder,
         timelineMonths,
         salesTimeline,
     };
@@ -653,5 +653,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
