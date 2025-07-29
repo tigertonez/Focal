@@ -40,41 +40,37 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
 
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
+    const { monthlyRevenue, monthlyCosts } = data;
     
-    const { monthlyRevenue, monthlyCosts, monthlyProfit, profitSummary } = data;
-    
-    // Create a set of all months from all sources to be safe
+    // Get all unique months from both revenue and costs, and sort them.
     const allMonths = Array.from(new Set([
         ...monthlyRevenue.map(m => m.month),
         ...monthlyCosts.map(m => m.month),
     ])).sort((a,b) => a - b);
 
     return allMonths.map(month => {
-        const revMonth = monthlyRevenue.find(r => r.month === month) || { month };
-        const costMonth = monthlyCosts.find(c => c.month === month) || { month };
-        const profitMonth = monthlyProfit.find(p => p.month === month) || { month, operatingProfit: 0, netProfit: 0 };
-        
+        // Find the revenue object for the current month.
+        const revMonth = monthlyRevenue.find(r => r.month === month) || {};
+        // Sum all revenue values for that month, excluding the 'month' key.
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
         
+        // Find the cost object for the current month.
+        const costMonth = monthlyCosts.find(c => c.month === month) || {};
+        // Sum all cost values for that month, excluding the 'month' key.
         const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
 
-        // To ensure the graph matches the Operating Profit KPI, we must derive the period-appropriate operating costs.
-        // We do this by taking the cash-based costs and removing the period's taxes from it.
-        const taxesForMonth = (profitMonth.operatingProfit > 0) ? profitMonth.operatingProfit - profitMonth.netProfit : 0;
-        const operatingCostsForMonth = costsForMonth - taxesForMonth;
-
-        const operatingProfit = revenueForMonth - operatingCostsForMonth;
-        
+        // Calculate the profit for this month.
+        const operatingProfit = revenueForMonth - costsForMonth;
         cumulativeProfit += operatingProfit;
         
         return {
             month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -operatingCostsForMonth, 
+            costs: -costsForMonth, // Make costs negative for the stacked bar chart
             cumulativeProfit,
         };
     });
