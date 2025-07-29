@@ -343,6 +343,12 @@ export const translations = {
                 tooltip: "Enables a 'Month 0' for pre-launch costs (e.g., deposits) and revenue before the main forecast begins in Month 1.",
                 badge: "+ Month 0",
             },
+            accountingMethod: {
+                label: "Accounting Method",
+                tooltip: "'Conservative' treats all production costs as an immediate expense, which is safer for cash flow planning. 'Accrual (COGS)' only expenses the costs of goods when they are actually sold.",
+                cogs: "Accrual (COGS-based)",
+                total_costs: "Conservative (Total Costs)",
+            }
         },
         realtime: {
             title: "Realtime Settings",
@@ -699,6 +705,12 @@ export const translations = {
                 tooltip: "Aktiviert einen 'Monat 0' für Kosten (z.B. Anzahlungen) und Einnahmen vor Beginn der Hauptprognose in Monat 1.",
                 badge: "+ Monat 0",
             },
+            accountingMethod: {
+                label: "Buchhaltungsmethode",
+                tooltip: "'Konservativ' behandelt alle Produktionskosten als sofortigen Aufwand, was für die Cashflow-Planung sicherer ist. 'Periodengerecht (COGS)' verbucht die Kosten der Waren erst, wenn sie tatsächlich verkauft werden.",
+                cogs: "Periodengerecht (COGS)",
+                total_costs: "Konservativ (Gesamtkosten)",
+            },
         },
         realtime: {
             title: "Echtzeit-Einstellungen",
@@ -716,3 +728,5 @@ export const translations = {
 };
 
 export type Translations = typeof translations;
+
+    

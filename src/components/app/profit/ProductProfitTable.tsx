@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from "react";
@@ -33,31 +34,37 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
     const { revenueSummary, profitSummary, costSummary } = data;
-    const { currency, taxRate } = inputs.parameters;
+    const { currency, taxRate, accountingMethod } = inputs.parameters;
 
     const productData = React.useMemo(() => {
         const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
+        const totalRevenue = revenueSummary.totalRevenue;
+        const totalFixedCosts = costSummary.totalFixed;
 
         return inputs.products.map((product) => {
             const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
             const productRevenue = revenueBreakdown?.totalRevenue || 0;
             const soldUnits = revenueBreakdown?.totalSoldUnits || 0;
             
-            // ** CORRECTED COGS CALCULATION **
-            // Use cost of goods *sold*, not total planned units cost.
-            const productCogs = soldUnits * (product.unitCost || 0);
+            let productVariableCosts = 0;
+            if (accountingMethod === 'cogs') {
+                 // Accrual (COGS): Cost is based on units sold
+                productVariableCosts = soldUnits * (product.unitCost || 0);
+            } else {
+                 // Conservative (Total Costs): Cost is based on all units planned
+                productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
+            }
 
-            const grossProfit = productRevenue - productCogs;
+            const grossProfit = productRevenue - productVariableCosts;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
             
-            const revenueShare = revenueSummary.totalRevenue > 0 ? productRevenue / revenueSummary.totalRevenue : 0;
-            const allocatedFixedCosts = costSummary.totalFixed * revenueShare;
+            // Allocate fixed costs based on revenue share
+            const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
+            const allocatedFixedCosts = totalFixedCosts * revenueShare;
             
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
 
-            // ** CORRECTED TAX LOGIC **
-            // Only apply tax if the business is profitable overall AND the product's operating profit is positive.
             const productTax = (businessIsProfitable && operatingProfit > 0)
                 ? operatingProfit * (taxRate / 100)
                 : 0;
@@ -76,7 +83,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                 netMargin,
             };
         });
-    }, [data, inputs.products, currency, taxRate]);
+    }, [data, inputs]);
 
     return (
         <div className="space-y-4">
@@ -96,7 +103,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency, false)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.grossProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.grossMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -120,7 +127,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency, false)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.operatingProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.operatingMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -144,7 +151,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                                     <span className="truncate">{p.productName}</span>
                                 </TableCell>
-                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency, false)}</TableCell>
+                                <TableCell className="text-right px-2 md:px-4">{formatCurrency(p.netProfit, currency)}</TableCell>
                                 <TableCell className="text-right px-2 md:px-4">{p.netMargin.toFixed(1)}%</TableCell>
                             </TableRow>
                         ))}
@@ -154,3 +161,5 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
         </div>
     )
 }
+
+    

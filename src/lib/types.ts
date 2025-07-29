@@ -38,6 +38,7 @@ export const ParametersSchema = z.object({
   taxRate: z.number().min(0).max(100),
   currency: z.enum(['EUR', 'USD']),
   preOrder: z.boolean(),
+  accountingMethod: z.enum(['cogs', 'total_costs']).default('total_costs'),
 });
 export type Parameters = z.infer<typeof ParametersSchema>;
 
@@ -275,3 +276,5 @@ export const EngineOutputSchema = z.object({
     businessHealth: BusinessHealthSchema.optional(),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;
+
+    

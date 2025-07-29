@@ -1,10 +1,10 @@
 
+
 'use client';
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import type { EngineOutput } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         // ** CORRECTED TAX LOGIC **
         // Only apply tax if the business is profitable OVERALL for the period
         const taxes = (businessIsProfitable && operatingProfit > 0) 
-            ? operatingProfit * (data.profitSummary.netMargin / 100)
+            ? operatingProfit - (profitMonth?.netProfit || 0)
             : 0;
 
         const cashOut = costs + taxes;
@@ -95,3 +95,5 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         </Card>
     );
 }
+
+    
