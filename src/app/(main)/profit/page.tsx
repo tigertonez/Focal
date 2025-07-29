@@ -30,7 +30,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const averageNetMargin = profitSummary.weightedAvgNetMargin ?? 0;
+  const netMargin = profitSummary.netMargin ?? 0;
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
@@ -64,7 +64,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
           />
           <KpiCard 
             label={netMarginTitle}
-            value={`${averageNetMargin.toFixed(1)}%`} 
+            value={`${netMargin.toFixed(1)}%`} 
             icon={<Target />} 
             helpTitle={netMarginTitle}
             help={netMarginTooltip} 

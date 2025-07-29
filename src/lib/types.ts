@@ -129,7 +129,6 @@ export const ProfitSummarySchema = z.object({
     grossMargin: z.number(),
     operatingMargin: z.number(),
     netMargin: z.number(),
-    weightedAvgNetMargin: z.number().optional(), // New field
     breakEvenMonth: z.number().nullable(),
 });
 export type ProfitSummary = z.infer<typeof ProfitSummarySchema>;
@@ -276,5 +275,3 @@ export const EngineOutputSchema = z.object({
     businessHealth: BusinessHealthSchema.optional(),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;
-
-    
