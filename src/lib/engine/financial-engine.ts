@@ -242,7 +242,7 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
 
         // Handle one-time, up-front payments
         if (schedule === 'up_front_m0') {
-             const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * inputs.parameters.forecastMonths) : toCents(cost.amount);
+             const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * timeline.timelineMonths.length) : toCents(cost.amount);
              const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
              if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
              return;
@@ -318,8 +318,11 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     // Calculate total fixed cost for each item for the entire period
     const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
         let totalAmount = 0;
+        const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
+        const durationMonths = timeline.timelineMonths.filter(m => m >= startMonth).length;
+
         if (cost.costType === 'Monthly Cost') {
-            totalAmount = cost.amount * inputs.parameters.forecastMonths;
+            totalAmount = cost.amount * durationMonths;
         } else { // 'Total for Period'
             totalAmount = cost.amount;
         }
@@ -382,16 +385,20 @@ const calculateProfitAndCashFlow = (
     const { revenueSummary, monthlyRevenueTimeline } = revenueData;
     const { costSummary, monthlyCostTimeline } = costData;
     const { taxRate, accountingMethod } = inputs.parameters;
-
-    const totalFixedCostCents = toCents(costSummary.totalFixed);
     
     // --- START: PROFIT CALCULATION ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
-    const cogsCents = toCents(costSummary.totalVariable) - toCents(costSummary.cogsOfUnsoldGoods);
+    const cogsCents = toCents(revenueSummary.totalSoldUnits * costSummary.avgCostPerUnit);
 
     const totalGrossProfit = totalRevenueCents - cogsCents;
-    const totalOperatingProfit = totalGrossProfit - totalFixedCostCents;
+
+    let totalOperatingProfit = 0;
+    if (accountingMethod === 'cogs') {
+        totalOperatingProfit = totalGrossProfit - toCents(costSummary.totalFixed);
+    } else {
+        totalOperatingProfit = totalRevenueCents - toCents(costSummary.totalOperating);
+    }
     
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
@@ -407,15 +414,20 @@ const calculateProfitAndCashFlow = (
         
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        // Calculate Operating Costs for this month for profit calculation
         let operatingCostsThisMonth = 0;
         
-        // 1. Amortize fixed costs over the forecast period (M1 to M12)
+        // 1. Amortize fixed costs over the operational forecast period (M1 onwards)
+        const operationalMonths = timeline.timelineMonths.filter(m => m >= 1).length;
         inputs.fixedCosts.forEach(fc => {
             if (fc.costType === 'Total for Period') {
-                operatingCostsThisMonth += toCents(fc.amount / timeline.forecastMonths);
+                 if (fc.paymentSchedule !== 'up_front_m0') { // Up front is a cash event, not P&L
+                    operatingCostsThisMonth += toCents(fc.amount / operationalMonths);
+                 }
             } else if (fc.costType === 'Monthly Cost') {
-                 operatingCostsThisMonth += toCents(fc.amount);
+                 const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
+                 if (month >= startMonth) {
+                    operatingCostsThisMonth += toCents(fc.amount);
+                 }
             }
         });
 
@@ -511,7 +523,7 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    const avgMonthlyOperatingCost = fromCents(totalOperatingProfit > 0 ? (cogsCents + totalFixedCostCents) : (totalFixedCostCents)) / timeline.forecastMonths;
+    const avgMonthlyOperatingCost = fromCents(toCents(costSummary.totalOperating)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
     const runway = finalEndingCash > 0 && avgMonthlyOperatingCost > 0 ? finalEndingCash / avgMonthlyOperatingCost : (finalEndingCash > 0 ? Infinity : 0);
 
