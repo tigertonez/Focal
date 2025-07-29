@@ -400,11 +400,17 @@ const calculateProfitAndCashFlow = (
         let totalOpCostThisMonth = 0;
 
         // 1. Add allocated fixed costs (always accrued monthly for profit calc)
-        if (timeline.forecastMonths > 0 && month >= 1) {
-            const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
-            const remainder = totalFixedCostCents % timeline.forecastMonths;
-            let fixedForThisMonth = baseMonthlyFixed + (month <= remainder ? 1 : 0);
-            totalOpCostThisMonth += fixedForThisMonth;
+        if (timeline.forecastMonths > 0) {
+            const monthsForAllocation = timeline.requiresMonthZero ? timeline.forecastMonths + 1 : timeline.forecastMonths;
+            const baseMonthlyFixed = Math.floor(totalFixedCostCents / monthsForAllocation);
+            const remainder = totalFixedCostCents % monthsForAllocation;
+            
+            // Distribute remainder across the first few months
+            let fixedForThisMonth = baseMonthlyFixed;
+            if (month < remainder) {
+                fixedForThisMonth++;
+            }
+             totalOpCostThisMonth += fixedForThisMonth;
         }
 
         // 2. Add variable costs based on accounting method
@@ -418,7 +424,7 @@ const calculateProfitAndCashFlow = (
                     const units = unitsSoldThisMonth[product.productName] || 0;
                     totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
                 } else { // 'batch' model
-                    if (month === 1) { // All batch costs are incurred in M1 in conservative mode
+                    if (month === 1) { // All batch costs are expensed in M1 in conservative mode
                          totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
                 }
@@ -456,10 +462,10 @@ const calculateProfitAndCashFlow = (
 
         // This calculation is just for display and doesn't affect main logic
         let grossProfit = 0;
-        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-        const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
+        const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month) || {};
+        const cogsThisMonth = Object.keys(currentUnitsSold).reduce((sum, productName) => {
             const product = inputs.products.find(p => p.productName === productName);
-            const productCost = toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
+            const productCost = toCents((currentUnitsSold[productName as keyof typeof currentUnitsSold] || 0) * (product?.unitCost || 0));
             return sum + productCost;
         }, 0);
         grossProfit = revenueThisMonth - cogsThisMonth;
