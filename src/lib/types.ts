@@ -286,6 +286,7 @@ export type StrategizeHealthScoreOutput = z.infer<typeof StrategizeHealthScoreOu
 export const EngineOutputSchema = z.object({
     costSummary: CostSummarySchema,
     monthlyCosts: z.array(MonthlyCostSchema),
+    monthlyOperatingCosts: z.array(MonthlyCostSchema), // New field for profit calculation
     revenueSummary: RevenueSummarySchema,
     monthlyRevenue: z.array(MonthlyRevenueSchema),
     monthlyUnitsSold: z.array(MonthlyUnitsSoldSchema),
