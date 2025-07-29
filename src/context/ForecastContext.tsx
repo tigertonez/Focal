@@ -104,9 +104,9 @@ const initialInputs: EngineInput = {
     },
   ],
   fixedCosts: [
-      { id: 'fc_0', name: 'Marketing', amount: 1500, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
-      { id: 'fc_1', name: 'Salaries', amount: 5000, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
-      { id: 'fc_2', name: 'Overheads', amount: 1000, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
+      { id: 'fc_0', name: 'Marketing & Content', amount: 500, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
+      { id: 'fc_1', name: 'Website & Tools', amount: 150, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
+      { id: 'fc_2', name: 'Packaging & Supplies', amount: 200, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 1' },
   ],
   parameters: {
     forecastMonths: 12,
