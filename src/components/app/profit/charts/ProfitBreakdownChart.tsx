@@ -42,20 +42,17 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     
-    // Get all months from the revenue timeline as the basis
-    const allMonths = data.monthlyRevenue.map(m => m.month);
+    const { monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    const allMonths = monthlyRevenue.map(m => m.month);
 
     return allMonths.map(month => {
-        // Find the revenue and cost objects for the current month
-        const revMonth = data.monthlyRevenue.find(r => r.month === month) || {};
-        const costMonth = data.monthlyCosts.find(c => c.month === month) || {};
-
-        // Calculate total revenue for the month by summing up all product revenues
+        const revMonth = monthlyRevenue.find(r => r.month === month) || {};
+        const costMonth = monthlyCosts.find(c => c.month === month) || {};
+        
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
         
-        // Calculate total costs for the month by summing up all cost items
         const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
@@ -66,7 +63,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         return {
             month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -costsForMonth, // Make costs negative for stacking below zero
+            costs: -costsForMonth, 
             cumulativeProfit,
         };
     });
