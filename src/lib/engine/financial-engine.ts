@@ -1,4 +1,5 @@
 
+
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, ProfitSummarySchema, type BusinessHealthScoreKpi } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -58,10 +59,9 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
         case 'launch':
             if (months > 0) weights[0] = 0.6;
             if (months > 1) weights[1] = 0.3;
-            if (months > 2) {
-                const remainingWeight = 0.1 / (months - 2);
-                for(let i = 2; i < months; i++) weights[i] = remainingWeight;
-            }
+            if (months > 2) weights[2] = 0.1;
+            else if (months > 1) weights[1] += 0.1; // If only 2 months, add remainder to M2
+            else if (months > 0) weights[0] += 0.1; // If only 1 month, add remainder to M1
             break;
         case 'even':
             weights = Array(months).fill(1 / months);

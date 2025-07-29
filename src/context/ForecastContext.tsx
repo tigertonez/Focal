@@ -55,7 +55,6 @@ const initialInputs: EngineInput = {
       unitCost: 30,
       sellPrice: 80,
       sellThrough: 75,
-      depositPct: 25,
       salesModel: 'seasonal',
       costModel: 'batch',
       color: '#f8b44e', // Muted Ochre
