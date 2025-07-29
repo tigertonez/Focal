@@ -43,33 +43,33 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                 <Table className="text-xs md:text-sm">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-center w-[40px] md:w-[80px] px-1 md:px-3">Mth</TableHead>
-                            <TableHead className="text-right px-1 md:px-3">In</TableHead>
-                            <TableHead className="text-right px-1 md:px-3">Out</TableHead>
-                            <TableHead className="text-right px-1 md:px-3">Net</TableHead>
-                            <TableHead className="text-right px-1 md:px-3">End</TableHead>
-                            <TableHead className="text-center w-[90px] md:w-[150px] px-1 md:px-3">Status</TableHead>
+                            <TableHead className="text-center w-[60px] md:w-[80px]">Month</TableHead>
+                            <TableHead className="text-center">In</TableHead>
+                            <TableHead className="text-center">Out</TableHead>
+                            <TableHead className="text-center">Net</TableHead>
+                            <TableHead className="text-center">End</TableHead>
+                            <TableHead className="text-center w-[90px] md:w-[150px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {tableData.map((row) => (
                             <TableRow key={row.month}>
-                                <TableCell className="text-center font-medium px-1 md:px-3">{row.month}</TableCell>
-                                <TableCell className="text-right text-foreground px-1 md:px-3">{formatCurrency(row.cashIn, currency, true)}</TableCell>
-                                <TableCell className="text-right text-red-600 px-1 md:px-3">{formatCurrency(row.cashOut, currency, true)}</TableCell>
+                                <TableCell className="text-center font-medium">{row.month}</TableCell>
+                                <TableCell className="text-center text-foreground">{formatCurrency(row.cashIn, currency, true)}</TableCell>
+                                <TableCell className="text-center text-red-600">{formatCurrency(row.cashOut, currency, true)}</TableCell>
                                 <TableCell className={cn(
-                                    "text-right font-semibold px-1 md:px-3",
+                                    "text-center font-semibold",
                                     row.netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
                                     {formatCurrency(row.netCashFlow, currency, true)}
                                 </TableCell>
                                 <TableCell className={cn(
-                                    "text-right font-bold px-1 md:px-3",
+                                    "text-center font-bold",
                                     row.cumulativeCash >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
                                     {formatCurrency(row.cumulativeCash, currency, true)}
                                 </TableCell>
-                                <TableCell className="text-center px-1 md:px-3">
+                                <TableCell className="text-center">
                                      <span className={cn(
                                         "text-xs font-semibold",
                                         row.status === t.pages.cashFlow.table.cashPositive ? 'text-green-700' : 'text-red-700'
