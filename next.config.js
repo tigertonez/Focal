@@ -17,6 +17,22 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [
+        ...config.externals,
+        /@opentelemetry\/instrumentation/,
+        /opentelemetry-sdk-trace-base/,
+        /@opentelemetry\/resources/,
+        /@opentelemetry\/sdk-trace-base/,
+        /@opentelemetry\/sdk-trace-node/,
+        /require-in-the-middle/,
+        /semver/,
+        /cls-hooked/,
+      ];
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
