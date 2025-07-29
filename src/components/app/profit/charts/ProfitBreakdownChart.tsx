@@ -41,12 +41,15 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
 
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
-    // Use monthlyOperatingCosts for profit calculation, not monthlyCosts (which is for cash flow)
+    
     return data.monthlyRevenue.map((revMonth, index) => {
-        const costMonth = data.monthlyOperatingCosts.find(c => c.month === revMonth.month);
+        const costMonth = data.monthlyCosts.find(c => c.month === revMonth.month);
+        
         const revenueForMonth = Object.values(revMonth).reduce((acc, val) => typeof val === 'number' ? acc + val : acc, 0) as number;
-        // Use the correctly calculated monthlyOperatingCosts
-        const costsForMonth = costMonth ? (costMonth.total || 0) : 0;
+        
+        const costsForMonth = costMonth 
+            ? Object.values(costMonth).reduce((acc, val) => typeof val === 'number' ? acc + val : acc, 0) as number
+            : 0;
         
         const operatingProfit = revenueForMonth - costsForMonth;
         cumulativeProfit += operatingProfit;
@@ -54,7 +57,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         return {
             month: `M${revMonth.month}`,
             revenue: revenueForMonth,
-            costs: -costsForMonth, // Costs are negative for stacking in the bar chart
+            costs: -costsForMonth,
             cumulativeProfit,
         };
     });

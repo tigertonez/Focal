@@ -393,63 +393,36 @@ const calculateProfitAndCashFlow = (
 
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
     
-    // --- Create monthly operating costs timeline for the chart ---
-    const monthlyOperatingCostsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m, total: 0 }));
-    monthlyOperatingCostsTimeline.forEach((monthData) => {
-        const month = monthData.month;
-        let totalOpCostThisMonth = 0;
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
+        const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        // 1. Add allocated fixed costs (always accrued monthly for profit calc)
-        if (timeline.forecastMonths > 0) {
-            const monthsForAllocation = timeline.requiresMonthZero ? timeline.forecastMonths + 1 : timeline.forecastMonths;
+        // --- Operating Cost Calculation for Profit ---
+        let operatingCostsThisMonth = 0;
+        // 1. Fixed Costs are always allocated monthly for profit calculation
+        const monthsForAllocation = timeline.requiresMonthZero ? timeline.forecastMonths + 1 : timeline.forecastMonths;
+        if (monthsForAllocation > 0) {
             const baseMonthlyFixed = Math.floor(totalFixedCostCents / monthsForAllocation);
             const remainder = totalFixedCostCents % monthsForAllocation;
-            
-            // Distribute remainder across the first few months
-            let fixedForThisMonth = baseMonthlyFixed;
-            if (month < remainder) {
-                fixedForThisMonth++;
-            }
-             totalOpCostThisMonth += fixedForThisMonth;
+            operatingCostsThisMonth += baseMonthlyFixed + (month < remainder ? 1 : 0);
         }
-
-        // 2. Add variable costs based on accounting method
-        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        
+        // 2. Variable Costs depend on accounting method
+        const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month) || {};
         for (const product of inputs.products) {
             if (accountingMethod === 'cogs') {
-                const units = unitsSoldThisMonth[product.productName] || 0;
-                totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
-            } else { // Conservative 'total_costs' mode
+                operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
+            } else { // Conservative
                 if (product.costModel === 'monthly') {
-                    const units = unitsSoldThisMonth[product.productName] || 0;
-                    totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
-                } else { // 'batch' model
-                    if (month === 1) { // All batch costs are expensed in M1 in conservative mode
-                         totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+                    operatingCostsThisMonth += toCents((currentUnitsSold[product.productName] || 0) * (product.unitCost || 0));
+                } else { // Batch cost is fully expensed in Month 1 for profit purposes
+                    if (month === 1) {
+                         operatingCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
                 }
             }
         }
-        monthData['total'] = totalOpCostThisMonth;
-    });
+        // --- End Operating Cost Calculation ---
 
-    const allOpCostKeys = new Set<string>(['month', 'total']);
-    const monthlyOperatingCosts = monthlyOperatingCostsTimeline.map(monthData => {
-        const completeMonth: Record<string, any> = { month: monthData.month };
-        allOpCostKeys.forEach(key => { 
-            if (key !== 'month') {
-                completeMonth[key] = fromCents(monthData[key] || 0);
-            }
-        });
-        return MonthlyCostSchema.parse(completeMonth);
-    });
-    // --- End of op cost timeline ---
-
-
-    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
-        const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-        const operatingCostsThisMonth = (monthlyOperatingCostsTimeline.find(oc => oc.month === month) || {}).total || 0;
-        
         const operatingProfit = revenueThisMonth - operatingCostsThisMonth;
         
         let tax = 0;
@@ -462,7 +435,6 @@ const calculateProfitAndCashFlow = (
 
         // This calculation is just for display and doesn't affect main logic
         let grossProfit = 0;
-        const currentUnitsSold = monthlyUnitsSold.find(u => u.month === month) || {};
         const cogsThisMonth = Object.keys(currentUnitsSold).reduce((sum, productName) => {
             const product = inputs.products.find(p => p.productName === productName);
             const productCost = toCents((currentUnitsSold[productName as keyof typeof currentUnitsSold] || 0) * (product?.unitCost || 0));
@@ -532,7 +504,7 @@ const calculateProfitAndCashFlow = (
         estimatedTaxes: fromCents(totalTaxAmount),
     };
     
-    return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow, monthlyOperatingCosts };
+    return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
 };
 
 
@@ -644,7 +616,6 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
             monthlyUnitsSold,
             costSummary: costData.costSummary,
             monthlyCosts: costData.monthlyCosts,
-            monthlyOperatingCosts: profitAndCashFlowData.monthlyOperatingCosts,
             ...profitAndCashFlowData
         };
 
