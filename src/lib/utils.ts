@@ -13,12 +13,10 @@ export function formatCurrency(value: number, currency: string = 'USD', compact 
     const style: Intl.NumberFormatOptions = {
         style: 'currency',
         currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     };
     if (compact) {
-        style.minimumFractionDigits = 0;
-        style.maximumFractionDigits = 0;
         if (Math.abs(value) >= 1000) {
             const thousands = value / 1000;
             return `${currency === 'EUR' ? '€' : '$'}${thousands.toFixed(0)}k`;

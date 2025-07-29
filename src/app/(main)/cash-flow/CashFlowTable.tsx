@@ -59,16 +59,16 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                         {tableData.map((row) => (
                             <TableRow key={row.month}>
                                 <TableCell className="text-center font-medium text-muted-foreground">{row.month}</TableCell>
-                                <TableCell className="text-center text-blue-600">{formatCurrency(row.cashIn, currency, true)}</TableCell>
-                                <TableCell className="text-center text-red-600">{formatCurrency(row.cashOut, currency, true)}</TableCell>
+                                <TableCell className="text-center text-blue-600">{formatCurrency(row.cashIn, currency)}</TableCell>
+                                <TableCell className="text-center text-red-600">{formatCurrency(row.cashOut, currency)}</TableCell>
                                 <TableCell className={cn(
                                     "text-center",
                                     row.netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
-                                    {formatCurrency(row.netCashFlow, currency, true)}
+                                    {formatCurrency(row.netCashFlow, currency)}
                                 </TableCell>
                                 <TableCell className="text-center font-bold">
-                                    {formatCurrency(row.cumulativeCash, currency, true)}
+                                    {formatCurrency(row.cumulativeCash, currency)}
                                 </TableCell>
                                 <TableCell className="text-center">
                                      <span className={cn(
