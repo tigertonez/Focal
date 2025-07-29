@@ -15,29 +15,17 @@ interface CashFlowTableProps {
 }
 
 export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, profitSummary } = data;
-
-    // The business is considered profitable if the total operating profit over the period is > 0.
-    const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts } = data;
     
-    // The total tax amount is calculated from the summary, as it's an end-of-period value.
-    const totalTaxAmount = businessIsProfitable 
-        ? profitSummary.totalOperatingProfit - profitSummary.totalNetProfit 
-        : 0;
-
     const tableData = monthlyCashFlow.map((cf) => {
         // Calculate cash-in (revenue) for the month
         const revenue = Object.entries(monthlyRevenue.find(r => r.month === cf.month) || {})
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
         
         // Calculate cash-out from monthly costs (fixed and variable)
-        const costs = Object.entries(monthlyCosts.find(c => c.month === cf.month) || {})
+        // Note: Taxes are now excluded from this table for clarity and are shown on the summary page.
+        const cashOut = Object.entries(monthlyCosts.find(c => c.month === cf.month) || {})
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
-        
-        // Taxes are only paid in the final month of the forecast period.
-        const taxesForThisMonth = (cf.month === data.monthlyCashFlow.length - 1) ? totalTaxAmount : 0;
-        
-        const cashOut = costs + taxesForThisMonth;
         
         return {
             month: cf.month,

@@ -330,7 +330,13 @@ const FinancialWaterfall = ({ data, currency, t }: { data: EngineOutput, currenc
     const { revenueSummary, costSummary, profitSummary } = data;
 
     const totalRevenue = revenueSummary.totalRevenue;
-    const cogs = revenueSummary.totalRevenue - profitSummary.totalGrossProfit;
+    let cogs;
+    if (data.businessHealth) { // Check if health score is calculated (i.e. 'cogs' mode was used if applicable)
+        cogs = revenueSummary.totalRevenue - profitSummary.totalGrossProfit;
+    } else {
+        cogs = costSummary.totalVariable; // Fallback for conservative accounting
+    }
+
     const grossProfit = profitSummary.totalGrossProfit;
     const opex = profitSummary.totalGrossProfit - profitSummary.totalOperatingProfit;
     const operatingProfit = profitSummary.totalOperatingProfit;
