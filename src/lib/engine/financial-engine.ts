@@ -34,7 +34,7 @@ const createTimeline = (inputs: EngineInput) => {
 
     // Sales can only happen from month 1 onwards, unless pre-order is active
     const salesTimeline = requiresMonthZero
-        ? Array.from({ length: forecastMonths + 1 }, (_, i) => i)
+        ? Array.from({ length: forecastMonths }, (_, i) => i + 1)
         : Array.from({ length: forecastMonths }, (_, i) => i + 1);
     
     return {
@@ -57,13 +57,12 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
 
     switch (salesModel) {
         case 'launch':
-            if (months > 0) weights[0] = 0.6;
-            if (months > 1) weights[1] = 0.3;
-            if (months > 2) weights[2] = 0.1;
-            // If forecast is shorter than 3 months, allocate remainder to last available month
-            else if (months === 2) weights[1] += 0.1;
-            else if (months === 1) weights[0] += 0.4;
-            break;
+             if (months > 0) weights[0] = 0.6;
+             if (months > 1) weights[1] = 0.3;
+             if (months > 2) weights[2] = 0.1;
+             else if (months === 2) weights[1] += 0.1;
+             else if (months === 1) weights[0] += 0.4;
+             break;
         case 'even':
             weights = Array(months).fill(1 / months);
             break;
@@ -451,11 +450,6 @@ const calculateProfitAndCashFlow = (
         
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-        
-        // Add total tax as a cash-out in the final month of the forecast
-        if (month === timeline.forecastMonths) {
-            cashOutCosts += totalTaxAmount;
-        }
         
         const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
