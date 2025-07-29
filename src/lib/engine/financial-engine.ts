@@ -410,26 +410,40 @@ const calculateProfitAndCashFlow = (
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
     const totalNetProfit = totalOperatingProfit - totalTaxAmount;
 
-
     let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
-    const monthlyProfit: MonthlyProfit[] = timelineMonths.map(month => {
+    
+    // --- START: Accurate Monthly Fixed Cost Distribution ---
+    const monthlyFixedCostAllocation = Array(timeline.forecastMonths).fill(0);
+    if (timeline.forecastMonths > 0) {
+        const baseMonthlyFixed = Math.floor(totalFixedCostCents / timeline.forecastMonths);
+        let remainder = totalFixedCostCents % timeline.forecastMonths;
+        for (let i = 0; i < timeline.forecastMonths; i++) {
+            monthlyFixedCostAllocation[i] = baseMonthlyFixed;
+            if (remainder > 0) {
+                monthlyFixedCostAllocation[i]++;
+                remainder--;
+            }
+        }
+    }
+    // --- END: Accurate Monthly Fixed Cost Distribution ---
+
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month, index) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
         let variableCostsThisMonth = 0;
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         
-        // Monthly variable costs for profit are only from JIT products
+        // Monthly variable costs for profit are only from JIT products or COGS method
         for (const product of inputs.products) {
-            if (product.costModel === 'monthly') {
-                variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-            } else if (accountingMethod === 'cogs') {
-                 variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
+            const units = unitsSoldThisMonth[product.productName] || 0;
+            if (product.costModel === 'monthly' || accountingMethod === 'cogs') {
+                 variableCostsThisMonth += toCents(units * (product.unitCost || 0));
             }
         }
         
-        // Allocate total fixed costs evenly for monthly profit calculation
-        const fixedCostsThisMonth = totalFixedCostCents / timeline.forecastMonths;
-        
+        // Use the accurately distributed fixed cost for this month
+        const fixedCostsThisMonth = (month > 0) ? (monthlyFixedCostAllocation[month - 1] || 0) : 0;
+
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
         
