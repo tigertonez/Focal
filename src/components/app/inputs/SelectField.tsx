@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const SelectField: React.FC<{
   label: string;
@@ -16,10 +17,11 @@ export const SelectField: React.FC<{
   children: React.ReactNode;
   layout?: 'horizontal' | 'vertical';
   tooltip?: string;
-}> = ({ label, id, value, onValueChange, children, layout = 'horizontal', tooltip }) => {
+  className?: string;
+}> = ({ label, id, value, onValueChange, children, layout = 'horizontal', tooltip, className }) => {
   if (layout === 'vertical') {
     return (
-      <div className="space-y-2">
+      <div className={cn("space-y-2", className)}>
         <Label htmlFor={id} className="font-medium text-sm flex items-center gap-2">
           {label}
            {tooltip && (
@@ -42,7 +44,7 @@ export const SelectField: React.FC<{
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+    <div className={cn("grid grid-cols-1 md:grid-cols-3 items-center gap-4", className)}>
       <Label htmlFor={id} className="font-medium text-sm">
         {label}{' '}
          {tooltip && (

@@ -101,38 +101,42 @@ export default function InputsPage() {
           
 
           <Section title={t.inputs.parameters.title}>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
-                 <InputField 
-                    label={t.inputs.parameters.forecastMonths.label}
-                    id="forecastMonths" 
-                    type="number" 
-                    value={inputs.parameters.forecastMonths} 
-                    onChange={handleParamChange('parameters')} 
-                    tooltip={t.inputs.parameters.forecastMonths.tooltip}
-                    layout="vertical"
-                />
-                <InputField 
-                    label={t.inputs.parameters.taxRate.label}
-                    id="taxRate" 
-                    type="number" 
-                    value={inputs.parameters.taxRate} 
-                    onChange={handleParamChange('parameters')} 
-                    tooltip={t.inputs.parameters.taxRate.tooltip}
-                    layout="vertical"
-                />
-                 <SelectField 
+             <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                    <InputField 
+                        label={t.inputs.parameters.forecastMonths.label}
+                        id="forecastMonths" 
+                        type="number" 
+                        value={inputs.parameters.forecastMonths} 
+                        onChange={handleParamChange('parameters')} 
+                        tooltip={t.inputs.parameters.forecastMonths.tooltip}
+                        layout="vertical"
+                    />
+                    <InputField 
+                        label={t.inputs.parameters.taxRate.label}
+                        id="taxRate" 
+                        type="number" 
+                        value={inputs.parameters.taxRate} 
+                        onChange={handleParamChange('parameters')} 
+                        tooltip={t.inputs.parameters.taxRate.tooltip}
+                        layout="vertical"
+                    />
+                </div>
+
+                <SelectField 
                     label={t.inputs.parameters.accountingMethod.label}
                     id="accountingMethod"
                     value={inputs.parameters.accountingMethod || 'total_costs'} 
                     onValueChange={handleSelectChange('parameters')('accountingMethod')}
                     tooltip={t.inputs.parameters.accountingMethod.tooltip}
                     layout="vertical"
+                    className="md:col-span-2"
                 >
                   <SelectItem value="total_costs">{t.inputs.parameters.accountingMethod.total_costs}</SelectItem>
                   <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
                 </SelectField>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="md:col-span-1 grid grid-cols-2 gap-4">
                   <SelectField 
                       label={t.inputs.parameters.currency}
                       id="currency" 
