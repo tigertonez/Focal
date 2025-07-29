@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react"
@@ -30,8 +29,8 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
       color: "hsl(var(--primary))",
     },
     costs: {
-      label: t.insights.charts.totalCosts,
-      color: "hsl(0, 75%, 65%)", // Subtle Red
+      label: "Operating Costs",
+      color: "hsl(0, 75%, 65%)",
     },
     cumulativeProfit: {
       label: t.insights.charts.cumulativeProfit,
@@ -42,25 +41,34 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   const chartData = React.useMemo(() => {
     let cumulativeProfit = 0;
     
-    const { monthlyRevenue, monthlyProfit, monthlyCosts } = data;
-    const allMonths = Array.from(new Set([...monthlyRevenue.map(m => m.month), ...monthlyProfit.map(m => m.month)]));
+    const { monthlyRevenue, monthlyOperatingCosts } = data;
+    
+    // Create a set of all months from both revenue and costs
+    const allMonths = Array.from(new Set([
+        ...monthlyRevenue.map(m => m.month),
+        ...monthlyOperatingCosts.map(m => m.month)
+    ])).sort((a,b) => a - b);
 
-    return allMonths.sort((a, b) => a - b).map(month => {
+    return allMonths.map(month => {
         const revMonth = monthlyRevenue.find(r => r.month === month) || {};
-        const profitMonth = monthlyProfit.find(p => p.month === month) || {};
+        const costMonth = monthlyOperatingCosts.find(c => c.month === month) || {};
         
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
         
-        const operatingProfit = profitMonth.operatingProfit || 0;
+        const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
+            return key !== 'month' ? acc + (val as number) : acc;
+        }, 0);
+        
+        const operatingProfit = revenueForMonth - costsForMonth;
         
         cumulativeProfit += operatingProfit;
         
         return {
             month: `M${month}`,
             revenue: revenueForMonth,
-            costs: -(revenueForMonth - operatingProfit), 
+            costs: -costsForMonth, 
             cumulativeProfit,
         };
     });
