@@ -45,8 +45,8 @@ const initialInputs: EngineInput = {
       sellThrough: 90,
       depositPct: 25,
       salesModel: 'launch',
-      costModel: 'Production Batch',
-      color: '#F472B6', // Muted Pink/Red
+      costModel: 'batch',
+      color: '#60A5FA', // Muted Blue
     },
     {
       id: 'prod_shorts',
@@ -57,14 +57,14 @@ const initialInputs: EngineInput = {
       sellThrough: 75,
       depositPct: 25,
       salesModel: 'seasonal',
-      costModel: 'Production Batch',
+      costModel: 'batch',
       color: '#FBBF24', // Muted Yellow/Ochre
     },
   ],
   fixedCosts: [
-      { id: 'fc_0', name: 'Marketing', amount: 2000, paymentSchedule: 'Allocated Monthly', costType: 'Total for Period', startMonth: 'Month 0 Onward', color: '#4ADE80' },
-      { id: 'fc_1', name: 'Equip', amount: 600, paymentSchedule: 'Paid Up-Front', costType: 'Monthly Cost', startMonth: 'Up-front (in M0)', color: '#F59E0B' },
-      { id: 'fc_2', name: 'Overhead + Software', amount: 100, paymentSchedule: 'Allocated Monthly', costType: 'Monthly Cost', startMonth: 'Month 0 Onward', color: '#A78BFA' },
+      { id: 'fc_0', name: 'Marketing', amount: 2000, paymentSchedule: 'monthly_from_m0', costType: 'Total for Period', color: '#4ADE80' },
+      { id: 'fc_1', name: 'Equip', amount: 600, paymentSchedule: 'up_front_m0', costType: 'Monthly Cost', color: '#F59E0B' },
+      { id: 'fc_2', name: 'Overhead + Software', amount: 100, paymentSchedule: 'monthly_from_m0', costType: 'Monthly Cost', color: '#A78BFA' },
   ],
   parameters: {
     forecastMonths: 12,
@@ -164,9 +164,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       id: `fc_${crypto.randomUUID()}`,
       name: '',
       amount: 0,
-      paymentSchedule: 'Allocated Monthly',
+      paymentSchedule: 'monthly_from_m0',
       costType: 'Monthly Cost',
-      startMonth: 'Month 1',
     };
     setInputs(prev => ({
       ...prev,

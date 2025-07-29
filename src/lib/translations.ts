@@ -314,16 +314,9 @@ export const translations = {
             perMonth: "/ month",
             paymentSchedule: {
                 title: "Payment Schedule",
-                upFront: "Paid Up-Front",
-                monthly: "Allocated Monthly",
-                quarterly: "Allocated Quarterly",
-                accordingToSales: "Allocated According to Sales",
-            },
-            startIn: {
-                title: "Start In",
-                upFront: "Up-front (in M0)",
-                month0: "Month 0 Onward",
-                month1: "Month 1 Onward",
+                upFront: "Paid Up-Front (in M0)",
+                monthly_from_m0: "Monthly (from M0)",
+                monthly_from_m1: "Monthly (from M1)",
             },
             planningBuffer: "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast."
         },
@@ -675,17 +668,10 @@ export const translations = {
             total: "Gesamt",
             perMonth: "/ Monat",
             paymentSchedule: {
-                title: "Zahlungsplan",
-                upFront: "Vorauszahlung",
-                monthly: "Monatlich zugewiesen",
-                quarterly: "Quartalsweise zugewiesen",
-                accordingToSales: "Umsatzabhängig zugewiesen",
-            },
-            startIn: {
-                title: "Beginnt in",
+                title: "Zahlungsweise",
                 upFront: "Vorauszahlung (in M0)",
-                month0: "Ab Monat 0",
-                month1: "Ab Monat 1",
+                monthly_from_m0: "Monatlich (ab M0)",
+                monthly_from_m1: "Monatlich (ab M1)",
             },
             planningBuffer: "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen."
         },
@@ -728,5 +714,3 @@ export const translations = {
 };
 
 export type Translations = typeof translations;
-
-    

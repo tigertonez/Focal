@@ -24,9 +24,8 @@ export const FixedCostItemSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'Cost name is required.'),
     amount: z.number().min(0, 'Amount must be positive.'),
-    paymentSchedule: z.enum(['Allocated Monthly', 'Paid Up-Front']),
+    paymentSchedule: z.enum(['up_front_m0', 'monthly_from_m0', 'monthly_from_m1']),
     costType: z.enum(['Total for Period', 'Monthly Cost']).default('Total for Period'),
-    startMonth: z.enum(['Up-front', 'Month 0', 'Month 1']).default('Month 1'),
     color: z.string().optional(),
 });
 export type FixedCostItem = z.infer<typeof FixedCostItemSchema>;
@@ -148,6 +147,7 @@ export const CashFlowSummarySchema = z.object({
     peakFundingNeed: z.number(),
     runway: z.number(),
     breakEvenMonth: z.number().nullable(),
+    estimatedTaxes: z.number(),
 });
 export type CashFlowSummary = z.infer<typeof CashFlowSummarySchema>;
 

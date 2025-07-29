@@ -48,17 +48,13 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
     const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         updateFixedCost(index, 'color', e.target.value);
     };
-
-    const schedule = cost.paymentSchedule || 'Paid Up-Front';
+    
+    const schedule = cost.paymentSchedule || 'monthly_from_m0';
     const costType = cost.costType || 'Total for Period';
-    const startMonth = cost.startMonth || 'Month 1';
     
     const name = cost.name.toLowerCase();
     const isPlanningBuffer = name.includes('planning buffer');
     const planningBufferTitle = t.inputs.fixedCosts.planningBuffer;
-    
-    // Determine if "Month 0" is possible based on global settings
-    const hasMonthZero = inputs.parameters.preOrder || inputs.products.some(p => (p.depositPct || 0) > 0);
 
     const assignedColor = React.useMemo(() => getProductColor(cost), [cost.id, cost.color, cost.name]);
 
@@ -112,7 +108,7 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                <div className="space-y-1 col-span-full">
+                <div className="space-y-1">
                     <Label className="text-xs">{t.inputs.fixedCosts.amount}</Label>
                     <div className="relative">
                         <Input
@@ -141,28 +137,12 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
                         <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Paid Up-Front">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
-                            <SelectItem value="Allocated Monthly">{t.inputs.fixedCosts.paymentSchedule.monthly}</SelectItem>
+                            <SelectItem value="up_front_m0">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
+                            <SelectItem value="monthly_from_m0">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m0}</SelectItem>
+                            <SelectItem value="monthly_from_m1">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m1}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
-
-                 {hasMonthZero && (
-                    <div className="space-y-1">
-                        <Label className="text-xs">{t.inputs.fixedCosts.startIn.title}</Label>
-                        <Select 
-                            onValueChange={handleSelectChange('startMonth')} 
-                            value={startMonth}
-                        >
-                            <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.startIn.title} /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Up-front">{t.inputs.fixedCosts.startIn.upFront}</SelectItem>
-                                <SelectItem value="Month 0">{t.inputs.fixedCosts.startIn.month0}</SelectItem>
-                                <SelectItem value="Month 1">{t.inputs.fixedCosts.startIn.month1}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                 )}
             </div>
         </div>
     );
