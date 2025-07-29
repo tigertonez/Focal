@@ -492,7 +492,6 @@ const calculateProfitAndCashFlow = (
 
     // --- START: CASH FLOW CALCULATION ---
     let cumulativeCash = 0, peakFundingNeed = 0;
-    let cashPositiveMonth: number | null = null;
     
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -512,16 +511,19 @@ const calculateProfitAndCashFlow = (
         };
     });
     
-    // Find the first month where cash becomes positive and STAYS positive
-    const firstPositiveIndex = monthlyCashFlow.findIndex(cf => cf.cumulativeCash > 0);
-
-    if (firstPositiveIndex !== -1) {
-      const remainingMonths = monthlyCashFlow.slice(firstPositiveIndex);
-      const staysPositive = remainingMonths.every(cf => cf.cumulativeCash > 0);
-      if (staysPositive) {
-        cashPositiveMonth = monthlyCashFlow[firstPositiveIndex].month;
-      }
+    let cashPositiveMonth: number | null = null;
+    // Find the last month the cumulative cash was negative.
+    const lastNegativeMonthIndex = monthlyCashFlow.map(cf => cf.cumulativeCash).findLastIndex(c => c < 0);
+    
+    // If no month was ever negative, and the first month is positive, we are cash positive from the start.
+    if (lastNegativeMonthIndex === -1 && monthlyCashFlow[0] && monthlyCashFlow[0].cumulativeCash >= 0) {
+        cashPositiveMonth = monthlyCashFlow[0].month;
+    } 
+    // If there was a negative month, the month to become permanently positive is the one *after* the last negative one.
+    else if (lastNegativeMonthIndex < monthlyCashFlow.length - 1) {
+         cashPositiveMonth = monthlyCashFlow[lastNegativeMonthIndex + 1].month;
     }
+    // Otherwise, the company never becomes sustainably cash positive in the forecast period.
     
     const avgMonthlyBurnRate = fromCents(toCents(costSummary.totalFixed)) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
