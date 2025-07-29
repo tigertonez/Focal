@@ -108,7 +108,7 @@ export default function InputsPage() {
               </Button>
             </Section>
             
-            <Section title="Company Context" icon={<Wrench />}>
+            <Section title="Company Context" icon={<Wrench />} defaultOpen={true}>
                  <InputField 
                     label="Brand Name"
                     id="brand" 
@@ -163,7 +163,7 @@ export default function InputsPage() {
                  </SelectField>
             </Section>
             
-            <Section title={t.inputs.parameters.title} icon={<Settings />}>
+            <Section title={t.inputs.parameters.title} icon={<Settings />} defaultOpen={true}>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                     <InputField 
                         label={t.inputs.parameters.forecastMonths.label}

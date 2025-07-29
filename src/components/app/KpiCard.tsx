@@ -45,39 +45,41 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
           {label}
-          {help && (
-            isMobile ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  {helpTrigger}
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{helpTitle || label}</DialogTitle>
-                    <DialogDescription as="div" className="pt-2">
-                      {help}
-                    </DialogDescription>
-                  </DialogHeader>
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                      {helpTrigger}
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs p-3">
-                      {helpContent}
-                    </TooltipContent>
-                </Tooltip>
-             </TooltipProvider>
-            )
-          )}
         </CardTitle>
-        {icon}
+        <div className="flex items-center gap-2">
+            {help && (
+                isMobile ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      {helpTrigger}
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{helpTitle || label}</DialogTitle>
+                        <DialogDescription as="div" className="pt-2">
+                          {help}
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                          {helpTrigger}
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs p-3">
+                          {helpContent}
+                        </TooltipContent>
+                    </Tooltip>
+                 </TooltipProvider>
+                )
+            )}
+            {icon}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-xl font-bold font-headline">
+        <div className="text-2xl font-bold font-headline">
           {value}
         </div>
       </CardContent>
