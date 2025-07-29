@@ -169,13 +169,13 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
             
             // Distribute units using integer logic to avoid floating point issues
             let distributedUnits = 0;
-            const monthlyUnitDistribution = salesTimeline.map(month => {
-                const unitsForMonth = Math.floor(totalUnitsToSell * salesWeights[salesTimeline.indexOf(month)]);
+            const monthlyUnitDistribution = salesWeights.map(weight => {
+                const unitsForMonth = Math.floor(totalUnitsToSell * weight);
                 distributedUnits += unitsForMonth;
                 return unitsForMonth;
             });
 
-            // Handle remainder
+            // Handle remainder due to flooring by distributing it one by one
             let remainder = totalUnitsToSell - distributedUnits;
             let monthIndex = 0;
             while(remainder > 0) {
