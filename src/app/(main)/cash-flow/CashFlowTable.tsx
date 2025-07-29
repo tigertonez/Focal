@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -16,26 +15,29 @@ interface CashFlowTableProps {
 }
 
 export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit, profitSummary } = data;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, profitSummary } = data;
+
+    // The business is considered profitable if the total operating profit over the period is > 0.
     const businessIsProfitable = profitSummary.totalOperatingProfit > 0;
+    
+    // The total tax amount is calculated from the summary, as it's an end-of-period value.
+    const totalTaxAmount = businessIsProfitable 
+        ? profitSummary.totalOperatingProfit - profitSummary.totalNetProfit 
+        : 0;
 
     const tableData = monthlyCashFlow.map((cf) => {
+        // Calculate cash-in (revenue) for the month
         const revenue = Object.entries(monthlyRevenue.find(r => r.month === cf.month) || {})
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
         
+        // Calculate cash-out from monthly costs (fixed and variable)
         const costs = Object.entries(monthlyCosts.find(c => c.month === cf.month) || {})
             .reduce((sum, [key, val]) => (key !== 'month' ? sum + val : sum), 0);
         
-        const profitMonth = monthlyProfit.find(p => p.month === cf.month);
-        const operatingProfit = profitMonth?.operatingProfit || 0;
+        // Taxes are only paid in the final month of the forecast period.
+        const taxesForThisMonth = (cf.month === data.monthlyCashFlow.length - 1) ? totalTaxAmount : 0;
         
-        // ** CORRECTED TAX LOGIC **
-        // Only apply tax if the business is profitable OVERALL for the period
-        const taxes = (businessIsProfitable && operatingProfit > 0) 
-            ? operatingProfit - (profitMonth?.netProfit || 0)
-            : 0;
-
-        const cashOut = costs + taxes;
+        const cashOut = costs + taxesForThisMonth;
         
         return {
             month: cf.month,
@@ -68,21 +70,26 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
                         {tableData.map((row) => (
                             <TableRow key={row.month}>
                                 <TableCell className="text-center font-medium text-muted-foreground">{row.month}</TableCell>
-                                <TableCell className="text-center text-blue-600">{formatCurrency(row.cashIn, currency)}</TableCell>
+                                <TableCell className="text-center text-green-600">{formatCurrency(row.cashIn, currency)}</TableCell>
                                 <TableCell className="text-center text-red-600">{formatCurrency(row.cashOut, currency)}</TableCell>
                                 <TableCell className={cn(
-                                    "text-center",
+                                    "text-center font-semibold",
                                     row.netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'
                                 )}>
                                     {formatCurrency(row.netCashFlow, currency)}
                                 </TableCell>
-                                <TableCell className="text-center font-bold">
+                                <TableCell className={cn(
+                                    "text-center font-bold",
+                                     row.cumulativeCash < 0 ? 'text-destructive' : 'text-foreground'
+                                )}>
                                     {formatCurrency(row.cumulativeCash, currency)}
                                 </TableCell>
                                 <TableCell className="text-center">
                                      <span className={cn(
-                                        "text-xs font-semibold",
-                                        row.status === t.pages.cashFlow.table.cashPositive ? 'text-green-700' : 'text-red-700'
+                                        "text-xs font-semibold px-2 py-1 rounded-full",
+                                        row.status === t.pages.cashFlow.table.cashPositive 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-red-100 text-red-800'
                                      )}>
                                         {row.status}
                                     </span>
@@ -95,5 +102,3 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         </Card>
     );
 }
-
-    
