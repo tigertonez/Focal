@@ -11,7 +11,10 @@ export const ProductSchema = z.object({
   sellPrice: z.number({ required_error: 'Sales price is required.' }).min(0),
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }).optional(),
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).optional(),
-  depositPct: z.number({ required_error: 'Deposit % is required.' }).min(0).max(100),
+  depositPct: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
+    z.number().min(0, "Deposit must be positive.").max(100, "Deposit can't exceed 100%.")
+  ),
   costModel: z.enum(['batch', 'monthly']).default('batch').optional(),
   color: z.string().optional(),
   estimatedSales: z.number().optional(),
