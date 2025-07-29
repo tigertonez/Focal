@@ -418,7 +418,7 @@ const calculateProfitAndCashFlow = (
                     const units = unitsSoldThisMonth[product.productName] || 0;
                     totalOpCostThisMonth += toCents(units * (product.unitCost || 0));
                 } else { // 'batch' model
-                    if (month === 1) { // All batch costs are incurred in M1
+                    if (month === 1) { // All batch costs are incurred in M1 in conservative mode
                          totalOpCostThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
                 }
@@ -459,7 +459,8 @@ const calculateProfitAndCashFlow = (
         const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
         const cogsThisMonth = Object.keys(unitsSoldThisMonth).reduce((sum, productName) => {
             const product = inputs.products.find(p => p.productName === productName);
-            return sum + toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
+            const productCost = toCents((unitsSoldThisMonth[productName as keyof typeof unitsSoldThisMonth] || 0) * (product?.unitCost || 0));
+            return sum + productCost;
         }, 0);
         grossProfit = revenueThisMonth - cogsThisMonth;
 
