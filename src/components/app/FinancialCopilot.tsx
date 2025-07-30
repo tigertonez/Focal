@@ -34,7 +34,7 @@ export function FinancialCopilot() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // State for resizable window
-  const [size, setSize] = useState({ width: 550, height: 400 });
+  const [size, setSize] = useState({ width: 550, height: 200 });
   const [isResizing, setIsResizing] = useState<{ right?: boolean, top?: boolean, left?: boolean }>({});
   const chatRef = useRef<HTMLDivElement>(null);
 
