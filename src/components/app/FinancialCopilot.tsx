@@ -11,18 +11,23 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
 import { getFinancials } from '@/lib/get-financials';
 import { useToast } from '@/hooks/use-toast';
+import type { Message } from '@/lib/types';
 
-interface Message {
-  role: 'user' | 'bot';
-  text: string;
-}
 
 export function FinancialCopilot() {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { proactiveAnalysis, setProactiveAnalysis, isCopilotOpen, setIsCopilotOpen, t, locale } = useForecast();
+  const { 
+    proactiveAnalysis, 
+    setProactiveAnalysis, 
+    isCopilotOpen, 
+    setIsCopilotOpen, 
+    t, 
+    locale,
+    messages,
+    setMessages,
+  } = useForecast();
   const { toast } = useToast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -33,22 +38,12 @@ export function FinancialCopilot() {
         handleSendMessage(proactiveAnalysis, true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis]);
+  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis, setMessages]);
 
-  useEffect(() => {
-    if (isCopilotOpen) {
-        setMessages([{ role: 'bot', text: t.copilot.initial }]);
-        setTimeout(() => {
-            const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
-            if (scrollViewport) {
-                scrollViewport.scrollTo({ top: scrollViewport.scrollHeight, behavior: 'smooth' });
-            }
-        }, 100);
-    }
-  }, [isCopilotOpen, t]);
 
    useEffect(() => {
-    if (messages.length > 1) { // Scroll on new messages, but not initial welcome
+    // Scroll to bottom whenever messages update
+    if (messages.length > 0) { 
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
             if (scrollViewport) {

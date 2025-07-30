@@ -190,6 +190,13 @@ export const BusinessHealthSchema = z.object({
 });
 export type BusinessHealth = z.infer<typeof BusinessHealthSchema>;
 
+// Copilot Message Schema
+export const MessageSchema = z.object({
+  role: z.enum(['user', 'bot']),
+  text: z.string(),
+});
+export type Message = z.infer<typeof MessageSchema>;
+
 
 // --- AI-related Schemas ---
 

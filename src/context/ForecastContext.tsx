@@ -3,7 +3,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, type Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ZodError } from 'zod';
 import html2canvas from 'html2canvas';
@@ -27,6 +27,8 @@ interface ForecastContextType {
   setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   locale: 'en' | 'de';
   setLocale: React.Dispatch<React.SetStateAction<'en' | 'de'>>;
   t: Translations['en']; // The actual translation object
@@ -108,6 +110,20 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   
   const t = useMemo(() => translations[locale], [locale]);
+  
+  const [messages, setMessages] = useState<Message[]>([
+      { role: 'bot', text: t.copilot.initial }
+  ]);
+  
+  // Update initial message when language changes
+  useEffect(() => {
+    setMessages(currentMessages => {
+        if (currentMessages.length === 1 && currentMessages[0].role === 'bot') {
+            return [{ role: 'bot', text: t.copilot.initial }];
+        }
+        return currentMessages;
+    });
+  }, [t]);
 
   useEffect(() => {
     try {
@@ -246,10 +262,12 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setProactiveAnalysis,
     isCopilotOpen,
     setIsCopilotOpen,
+    messages,
+    setMessages,
     locale,
     setLocale,
     t,
-  }), [inputs, financials, proactiveAnalysis, isCopilotOpen, locale, t]);
+  }), [inputs, financials, proactiveAnalysis, isCopilotOpen, messages, locale, t]);
 
   return (
     <ForecastContext.Provider value={value}>
