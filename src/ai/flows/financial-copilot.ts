@@ -114,7 +114,7 @@ FULL FINANCIAL DATA:
     ];
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-preview',
+        model: 'googleai/gemini-1.5-flash-latest',
         system: systemPrompt,
         history: genkitHistory,
         prompt: prompt,
@@ -130,5 +130,7 @@ FULL FINANCIAL DATA:
     return output;
   }
 );
+
+    
 
     
