@@ -34,11 +34,10 @@ export function FinancialCopilot() {
 
   useEffect(() => {
     if (proactiveAnalysis && isCopilotOpen) {
-        setMessages([]); 
         handleSendMessage(proactiveAnalysis, true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis, setMessages]);
+  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis]);
 
 
    useEffect(() => {
@@ -69,6 +68,8 @@ export function FinancialCopilot() {
     }
 
     const userMessage: Message = { role: 'user', text: currentInput };
+    
+    // If it's a proactive message, it should start a new chat. Otherwise, continue the existing one.
     const newMessages = isProactive ? [userMessage] : [...messages, userMessage];
     
     setMessages(newMessages);
