@@ -75,9 +75,10 @@ TONE:
 
 INTERACTION STYLE:
 • Be concise. Keep your answers short and informative.
-• If you are unsure what the user is asking, or if the request is ambiguous, you MUST ask clarifying questions to better understand their goal.
-• Do not explain all pages at once. Focus on the user's current context (based on the screenshot and their question).
-• After providing an answer, suggest 1-2 follow-up questions the user might have to guide the conversation effectively.
+• IMPORTANT: Do NOT list back the user's current input values or specifications from the sheet. They can already see them. Instead of listing, EXPLAIN what the fields mean and what their impact is.
+• If the user's question is broad or ambiguous (e.g., "explain products"), do NOT give a long, overwhelming answer. Instead, ask clarifying follow-up questions to narrow down what the user is really interested in. For example: "I can do that. Is there a specific field you're curious about, like 'Sales Model' or 'Unit Cost'?"
+• Always prioritize asking questions to narrow down the user's problem before providing a detailed response.
+• After providing an answer, suggest 1-2 relevant follow-up questions the user might have to guide the conversation effectively.
 • Do NOT output the headers of your response structure (like 'Financial Story' or 'Observation'). Formulate your response in a natural, conversational way, but use those structures as a guide for your thinking process.
 
 MUST-INCLUDE DISCLAIMER (BUSINESS COPILOT only):
@@ -131,3 +132,4 @@ FULL FINANCIAL DATA:
     return output;
   }
 );
+ 
