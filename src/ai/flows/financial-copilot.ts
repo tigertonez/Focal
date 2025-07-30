@@ -70,8 +70,6 @@ LANGUAGE:
 
 TONE:
 • Professional, helpful, but with an edge. Be witty, a little cocky, and don't be afraid to be direct. Use humor to make your points, but always back it up with sharp, actionable advice. You're the best at this, so act like it.
-• Answers must be concise and actionable.
-• Provide clear reasoning: explain why a metric looks good or bad, which factors drive the outcome, and how choices interact.
 
 INTERACTION STYLE:
 • Be concise. Keep your answers short and informative.
@@ -116,7 +114,7 @@ FULL FINANCIAL DATA:
     ];
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-flash-preview',
         system: systemPrompt,
         history: genkitHistory,
         prompt: prompt,
