@@ -96,7 +96,7 @@ export function FinancialCopilot() {
         handleSendMessage(proactiveAnalysis, true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, isCopilotOpen, setProactiveAnalysis]);
+  }, [proactiveAnalysis, isCopilotOpen]);
 
 
    useEffect(() => {
@@ -207,7 +207,7 @@ export function FinancialCopilot() {
                 {messages.map((msg, index) => (
                   <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : '')}>
                     {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0 mt-1" />}
-                    <div className={cn("p-2.5 rounded-lg max-w-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
+                    <div className={cn("p-2.5 rounded-lg", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                       <p className="whitespace-pre-wrap">{msg.text}</p>
                     </div>
                     {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />}
