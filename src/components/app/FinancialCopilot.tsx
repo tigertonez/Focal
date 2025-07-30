@@ -34,7 +34,7 @@ export function FinancialCopilot() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // State for resizable window
-  const [size, setSize] = useState({ width: 450, height: 600 });
+  const [size, setSize] = useState({ width: 550, height: 400 });
   const [isResizing, setIsResizing] = useState<{ right?: boolean, top?: boolean, left?: boolean }>({});
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -181,7 +181,7 @@ export function FinancialCopilot() {
   return (
     <div 
         ref={chatRef}
-        className="fixed bottom-8 left-8 z-50"
+        className="fixed bottom-4 left-4 z-50"
         style={{ width: size.width, height: size.height }}
     >
         <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5 relative">
