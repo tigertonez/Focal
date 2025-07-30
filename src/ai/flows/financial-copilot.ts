@@ -100,7 +100,7 @@ FULL FINANCIAL DATA:
 
     // Map Zod history to Genkit's Message[] type
     const genkitHistory: Message[] = history?.map(h => ({
-        role: h.role,
+        role: h.role === 'bot' ? 'model' : 'user',
         content: h.content.map(c => ({ text: c.text }))
     })) || [];
     
