@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/googleai';
 import { Message, Part } from 'genkit/content';
-import { CompanyContextSchema, EngineInputSchema, EngineOutputSchema } from '@/lib/types';
+import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
 
 
 const MessageSchema = z.object({
@@ -116,7 +116,7 @@ FULL FINANCIAL DATA:
     ];
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-pro-latest',
+        model: 'googleai/gemini-1.5-flash-latest',
         system: systemPrompt,
         history: genkitHistory,
         prompt: prompt,
