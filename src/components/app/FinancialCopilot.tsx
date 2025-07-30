@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { useForecast } from '@/context/ForecastContext';
 import { getFinancials } from '@/lib/get-financials';
 import { useToast } from '@/hooks/use-toast';
 import type { Message } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 
 export function FinancialCopilot() {
@@ -32,6 +33,64 @@ export function FinancialCopilot() {
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // State for resizable window
+  const [size, setSize] = useState({ width: 600, height: 500 });
+  const [isResizing, setIsResizing] = useState<{ right?: boolean, top?: boolean, left?: boolean }>({});
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, direction: 'right' | 'top' | 'left') => {
+    e.preventDefault();
+    setIsResizing({ [direction]: true });
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (Object.values(isResizing).every(v => !v)) return;
+
+    setSize(prevSize => {
+      let newWidth = prevSize.width;
+      let newHeight = prevSize.height;
+
+      if (isResizing.right) {
+        newWidth = e.clientX - (chatRef.current?.getBoundingClientRect().left ?? 0);
+      }
+      if (isResizing.left) {
+          const right = (chatRef.current?.getBoundingClientRect().right ?? 0);
+          newWidth = right - e.clientX;
+      }
+      if (isResizing.top) {
+        newHeight = (chatRef.current?.getBoundingClientRect().bottom ?? 0) - e.clientY;
+      }
+      
+      const minWidth = 400;
+      const minHeight = 300;
+
+      return {
+        width: Math.max(newWidth, minWidth),
+        height: Math.max(newHeight, minHeight)
+      };
+    });
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing({});
+  }, []);
+
+  useEffect(() => {
+    if (Object.values(isResizing).some(v => v)) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+
   useEffect(() => {
     if (proactiveAnalysis && isCopilotOpen) {
         handleSendMessage(proactiveAnalysis, true);
@@ -41,7 +100,6 @@ export function FinancialCopilot() {
 
 
    useEffect(() => {
-    // Scroll to bottom whenever messages update
     if (messages.length > 0) { 
         setTimeout(() => {
             const scrollViewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
@@ -68,10 +126,7 @@ export function FinancialCopilot() {
     }
 
     const userMessage: Message = { role: 'user', text: currentInput };
-    
-    // If it's a proactive message, it should start a new chat. Otherwise, continue the existing one.
-    const newMessages = isProactive ? [userMessage] : [...messages, userMessage];
-    
+    const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
@@ -124,8 +179,25 @@ export function FinancialCopilot() {
   };
   
   return (
-    <div className="fixed bottom-4 left-1/4 w-1/2 h-[60vh] z-50 transform -translate-x-1/2">
-        <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5">
+    <div 
+        ref={chatRef}
+        className="fixed bottom-8 left-1/2 z-50 transform -translate-x-1/2"
+        style={{ width: size.width, height: size.height }}
+    >
+        <Card className="w-full h-full flex flex-col shadow-2xl rounded-xl bg-card animate-in slide-in-from-bottom-5 relative">
+            <div 
+                className="absolute top-0 -left-1 h-full w-2 cursor-ew-resize"
+                onMouseDown={(e) => handleMouseDown(e, 'left')}
+            />
+            <div 
+                className="absolute top-0 -right-1 h-full w-2 cursor-ew-resize"
+                onMouseDown={(e) => handleMouseDown(e, 'right')}
+            />
+            <div 
+                className="absolute -top-1 left-0 w-full h-2 cursor-ns-resize"
+                onMouseDown={(e) => handleMouseDown(e, 'top')}
+            />
+
             <Button variant="ghost" size="icon" onClick={() => setIsCopilotOpen(false)} className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-md z-10">
                 <X className="h-4 w-4" />
             </Button>
@@ -133,12 +205,12 @@ export function FinancialCopilot() {
             <ScrollArea className="flex-1 p-4 min-h-0" ref={scrollAreaRef}>
               <div className="space-y-4 text-sm">
                 {messages.map((msg, index) => (
-                  <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
-                    <div className={`p-2.5 rounded-lg max-w-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : '')}>
+                    {msg.role === 'bot' && <Bot className="h-5 w-5 text-primary flex-shrink-0 mt-1" />}
+                    <div className={cn("p-2.5 rounded-lg max-w-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                       <p className="whitespace-pre-wrap">{msg.text}</p>
                     </div>
-                      {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+                    {msg.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />}
                   </div>
                 ))}
                   {isLoading && (
