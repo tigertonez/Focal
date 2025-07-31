@@ -236,82 +236,30 @@ const buildFixedCostTimeline = (
         const costAmountCents = toCents(cost.amount);
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
         const startMonth = schedule.endsWith('_m0') ? 0 : 1;
-        const upFrontMonth = timeline.requiresMonthZero ? 0 : 1;
         
-        const numPaymentMonths = cost.costType === 'Monthly Cost' 
-            ? timelineMonths.filter(m => m >= startMonth).length
-            : timeline.forecastMonths; 
-
-        if (isForPL) {
-            // In P&L, upfront costs are amortized, monthly costs are paid monthly
-            if (cost.paymentSchedule === 'up_front_m0') {
-                const operationalMonths = timelineMonths.filter(m => m >= 1);
-                if (operationalMonths.length > 0) {
-                     const monthlyShare = Math.floor(costAmountCents / operationalMonths.length);
-                     let remainder = costAmountCents % operationalMonths.length;
-                     operationalMonths.forEach(m => {
-                         const monthEntry = monthlyCostTimeline.find(entry => entry.month === m);
-                         if (monthEntry) {
-                             let amountThisMonth = monthlyShare;
-                             if (remainder > 0) {
-                                 amountThisMonth++;
-                                 remainder--;
-                             }
-                             monthEntry[cost.name] = (monthEntry[cost.name] || 0) + amountThisMonth;
+        if (cost.paymentSchedule === 'up_front_m0') {
+            const targetMonth = monthlyCostTimeline.find(t => t.month === startMonth);
+            if(targetMonth) {
+                targetMonth[cost.name] = (targetMonth[cost.name] || 0) + costAmountCents;
+            }
+        } else { // Monthly schedules
+             const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= startMonth);
+             if (cost.costType === 'Monthly Cost') {
+                  allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + costAmountCents; });
+             } else { // Total for Period, allocated evenly over payment months
+                if (allocationTimeline.length > 0) {
+                     const monthlyAmount = Math.floor(costAmountCents / allocationTimeline.length);
+                     let remainder = costAmountCents % allocationTimeline.length;
+                     allocationTimeline.forEach((month) => {
+                         let amountThisMonth = monthlyAmount;
+                         if(remainder > 0) {
+                             amountThisMonth++;
+                             remainder--;
                          }
+                         month[cost.name] = (month[cost.name] || 0) + amountThisMonth;
                      });
                 }
-            } else { // Monthly schedules
-                if (cost.costType === 'Monthly Cost') {
-                     timelineMonths.filter(m => m >= startMonth).forEach(m => {
-                         const monthEntry = monthlyCostTimeline.find(entry => entry.month === m);
-                         if (monthEntry) {
-                            monthEntry[cost.name] = (monthEntry[cost.name] || 0) + costAmountCents;
-                         }
-                     });
-                } else { // 'Total for Period', amortized/spread evenly
-                     const allocationTimeline = timelineMonths.filter(t => t >= startMonth);
-                     if (allocationTimeline.length > 0) {
-                         const monthlyAmount = Math.floor(costAmountCents / allocationTimeline.length);
-                         let remainder = costAmountCents % allocationTimeline.length;
-                         allocationTimeline.forEach(({ month }) => {
-                             const monthEntry = monthlyCostTimeline.find(entry => entry.month === month);
-                             if (monthEntry) {
-                                 let amountThisMonth = monthlyAmount;
-                                 if (remainder > 0) {
-                                     amountThisMonth++;
-                                     remainder--;
-                                 }
-                                 monthEntry[cost.name] = (monthEntry[cost.name] || 0) + amountThisMonth;
-                             }
-                         });
-                     }
-                }
-            }
-        } else { // Cash Flow Allocation
-            if (schedule === 'up_front_m0') {
-                 const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * numPaymentMonths) : costAmountCents;
-                 const targetMonth = monthlyCostTimeline.find(t => t.month === upFrontMonth);
-                 if(targetMonth) targetMonth[cost.name] = (targetMonth[cost.name] || 0) + totalCost;
-            } else { // Monthly schedules
-                 const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= startMonth);
-                 if (cost.costType === 'Monthly Cost') {
-                      allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + costAmountCents; });
-                 } else { // Total for Period, allocated evenly over payment months
-                    if (allocationTimeline.length > 0) {
-                         const monthlyAmount = Math.floor(costAmountCents / allocationTimeline.length);
-                         let remainder = costAmountCents % allocationTimeline.length;
-                         allocationTimeline.forEach((month) => {
-                             let amountThisMonth = monthlyAmount;
-                             if(remainder > 0) {
-                                 amountThisMonth++;
-                                 remainder--;
-                             }
-                             month[cost.name] = (month[cost.name] || 0) + amountThisMonth;
-                         });
-                    }
-                 }
-            }
+             }
         }
     });
 
@@ -506,6 +454,7 @@ const calculateProfitAndCashFlow = (
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         let variableCostsThisMonth = 0;
 
+        // DYNAMIC P&L VARIABLE COST CALCULATION
         if (accountingMethod === 'cogs') {
             const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
             for (const product of inputs.products) {
@@ -520,7 +469,6 @@ const calculateProfitAndCashFlow = (
                      }
                  });
              }
-             // For monthly cost models, costs are still recognized monthly
              const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
              inputs.products.forEach(p => {
                  if (p.costModel === 'monthly') {
