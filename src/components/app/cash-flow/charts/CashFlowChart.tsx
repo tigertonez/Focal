@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine, Cell } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -25,13 +25,9 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({
-    cashIn: {
-      label: t.insights.charts.cashIn,
+    netCashFlow: {
+      label: "Net Cash Flow",
       color: "hsl(var(--primary))",
-    },
-    cashOut: {
-      label: t.insights.charts.cashOut,
-      color: "hsl(var(--destructive) / 0.8)",
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
@@ -41,30 +37,12 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
 
 
   const chartData = React.useMemo(() => {
-    let runningCumulativeCash = 0;
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts } = data;
-    
-    return monthlyCashFlow.map(cf => {
-        const revenueData = monthlyRevenue.find(r => r.month === cf.month) || {};
-        const cashIn = Object.entries(revenueData).reduce((sum, [key, val]) => {
-            return key !== 'month' ? sum + val : sum;
-        }, 0);
-
-        const costData = monthlyCosts.find(c => c.month === cf.month) || {};
-        const cashOut = -Object.entries(costData).reduce((sum, [key, val]) => {
-            return key !== 'month' ? sum + val : sum;
-        }, 0);
-
-        const netCashFlow = cashIn + cashOut;
-        runningCumulativeCash += netCashFlow;
-
-        return {
-            month: `M${cf.month}`,
-            cashIn,
-            cashOut,
-            cumulativeCash: cf.cumulativeCash,
-        };
-    });
+    const { monthlyCashFlow } = data;
+    return monthlyCashFlow.map(cf => ({
+        month: `M${cf.month}`,
+        netCashFlow: cf.netCashFlow,
+        cumulativeCash: cf.cumulativeCash,
+    }));
   }, [data]);
 
   const valueFormatter = (value: number) => {
@@ -81,7 +59,6 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
         accessibilityLayer 
         data={chartData}
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
-        stackOffset="sign"
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -117,13 +94,14 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="cashIn" fill="hsl(var(--primary))" stackId="stack" />
-        <Bar dataKey="cashOut" fill="hsl(var(--destructive) / 0.8)" stackId="stack" />
+        <Bar dataKey="netCashFlow" yAxisId={0}>
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.netCashFlow >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive) / 0.8)'} />
+          ))}
+        </Bar>
         <Line type="monotone" dataKey="cumulativeCash" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} yAxisId={0} />
 
       </ComposedChart>
     </ChartContainer>
   )
 }
-
-    

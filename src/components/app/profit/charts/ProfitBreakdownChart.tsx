@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from "react"
@@ -12,15 +13,16 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import type { EngineOutput } from "@/lib/types"
+import type { EngineOutput, EngineInput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
+  inputs: EngineInput;
   currency: string;
 }
 
-export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
   
   const chartConfig = React.useMemo(() => ({
@@ -29,7 +31,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
       color: "hsl(var(--primary))",
     },
     costs: {
-      label: "Operating Costs",
+      label: "Operating Costs (P&L)",
       color: "hsl(var(--destructive) / 0.8)",
     },
     cumulativeProfit: {
@@ -39,32 +41,26 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
   }), [t]) satisfies ChartConfig
 
   const chartData = React.useMemo(() => {
-    let cumulativeProfit = 0;
-    const { monthlyRevenue, monthlyCosts } = data;
+    const { monthlyRevenue, monthlyProfit } = data;
     
     // Get all unique months from both revenue and costs, and sort them.
     const allMonths = Array.from(new Set([
         ...monthlyRevenue.map(m => m.month),
-        ...monthlyCosts.map(m => m.month),
+        ...monthlyProfit.map(m => m.month),
     ])).sort((a,b) => a - b);
+    
+    let cumulativeProfit = 0;
 
     return allMonths.map(month => {
-        // Find the revenue object for the current month.
         const revMonth = monthlyRevenue.find(r => r.month === month) || {};
-        // Sum all revenue values for that month, excluding the 'month' key.
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
             return key !== 'month' ? acc + (val as number) : acc;
         }, 0);
         
-        // Find the cost object for the current month.
-        const costMonth = monthlyCosts.find(c => c.month === month) || {};
-        // Sum all cost values for that month, excluding the 'month' key.
-        const costsForMonth = Object.entries(costMonth).reduce((acc, [key, val]) => {
-            return key !== 'month' ? acc + (val as number) : acc;
-        }, 0);
-
-        // Calculate the profit for this month.
-        const operatingProfit = revenueForMonth - costsForMonth;
+        const profitMonth = monthlyProfit.find(p => p.month === month);
+        const costsForMonth = profitMonth?.plOperatingCosts || 0;
+        
+        const operatingProfit = profitMonth?.operatingProfit || 0;
         cumulativeProfit += operatingProfit;
         
         return {

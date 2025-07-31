@@ -271,7 +271,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 
         if (product.costModel === 'monthly') {
             monthlyCostTimeline.forEach(month => {
-                const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month.month) || {})[product.productName] || 0;
+                const unitsThisMonth = (monthlyUnitsSold.find(u => u.month === month) || {})[product.productName] || 0;
                 if (unitsThisMonth > 0) {
                     month[product.productName] = (month[product.productName] || 0) + toCents(unitsThisMonth * (product.unitCost || 0));
                 }
@@ -397,7 +397,7 @@ const calculateProfitAndCashFlow = (
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         // P&L recognition only starts from Month 1
         if (month === 0) {
-            return { month, grossProfit: 0, operatingProfit: 0, netProfit: 0 };
+            return { month, grossProfit: 0, operatingProfit: 0, netProfit: 0, plOperatingCosts: 0 };
         }
         
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -412,7 +412,16 @@ const calculateProfitAndCashFlow = (
             if (month >= 1) { // P&L recognition starts M1
                  if (fc.costType === 'Total for Period') {
                     if (duration > 0) {
-                        fixedCostsThisMonth += toCents(fc.amount / duration);
+                        const totalCostAmount = toCents(fc.amount);
+                        const monthlyAmount = Math.floor(totalCostAmount / duration);
+                        let remainder = totalCostAmount % duration;
+                        const thisMonthIndex = timeline.timelineMonths.filter(m => m >= startMonthForPL).indexOf(month);
+
+                        let amountThisMonth = monthlyAmount;
+                        if (thisMonthIndex < remainder) {
+                            amountThisMonth++;
+                        }
+                        fixedCostsThisMonth += amountThisMonth;
                     }
                  } else if (fc.costType === 'Monthly Cost') {
                      if (month >= startMonthForPL) {
@@ -442,6 +451,7 @@ const calculateProfitAndCashFlow = (
             }
         }
         
+        const plOperatingCosts = fixedCostsThisMonth + variableCostsThisMonth;
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
         
@@ -461,7 +471,8 @@ const calculateProfitAndCashFlow = (
             month, 
             grossProfit: fromCents(grossProfit), 
             operatingProfit: fromCents(operatingProfit), 
-            netProfit: fromCents(netProfit) 
+            netProfit: fromCents(netProfit),
+            plOperatingCosts: fromCents(plOperatingCosts),
         };
     });
 

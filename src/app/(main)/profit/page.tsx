@@ -144,7 +144,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} currency={currency} />
+               <ProfitBreakdownChart data={data} inputs={inputs} currency={currency} />
             </CardContent>
         </Card>
       </section>
