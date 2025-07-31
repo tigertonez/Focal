@@ -59,6 +59,7 @@ export default function InputsPage() {
   const methods = useForm<EngineInput>({
     resolver: zodResolver(EngineInputSchema),
     defaultValues: initialInputs,
+    mode: 'onChange', // Validate on change to show errors sooner
   });
 
   const { control, watch, handleSubmit, formState: { errors } } = methods;
@@ -76,8 +77,13 @@ export default function InputsPage() {
   const watchedInputs = watch();
   
   const onSubmit = (data: EngineInput) => {
-    setInputs(data); // Final update to context before getting report
+    setInputs(data);
     getReport(data);
+  };
+
+  const handleSaveDraft = () => {
+    saveDraft(watchedInputs);
+    setInputs(watchedInputs);
   };
   
   const handleAddProduct = () => {
@@ -89,7 +95,8 @@ export default function InputsPage() {
         sellPrice: 25,
         salesModel: 'launch',
         sellThrough: 80,
-        depositPct: 0
+        depositPct: 0,
+        costModel: 'batch',
     });
   };
   
@@ -115,10 +122,12 @@ export default function InputsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveDraft = () => {
-    saveDraft(watchedInputs);
-    setInputs(watchedInputs); // Also update context on save
-  }
+  // This effect ensures that if the initialInputs from context are loaded from localStorage,
+  // the form is reset to reflect those values.
+  useEffect(() => {
+    methods.reset(initialInputs);
+  }, [initialInputs, methods]);
+
   
   const isManualMode = watchedInputs.realtime.dataSource === 'Manual';
 
@@ -185,7 +194,7 @@ export default function InputsPage() {
                           {watchedInputs.company?.logoDataUri && (
                               <img src={watchedInputs.company.logoDataUri} alt="Logo Preview" className="h-10 w-10 object-contain rounded-md border p-1" />
                           )}
-                          <Input id="logo" type="file" onChange={handleLogoChange} accept="image/svg+xml" className="text-xs file:mr-2 file:text-xs file:font-medium file:text-primary file:bg-primary/10 file:border-0 file:rounded-md file:px-2 file:py-1 hover:file:bg-primary/20" />
+                          <Input id="logo" type="file" onChange={handleLogoChange} accept="image/*" className="text-xs file:mr-2 file:text-xs file:font-medium file:text-primary file:bg-primary/10 file:border-0 file:rounded-md file:px-2 file:py-1 hover:file:bg-primary/20" />
                       </div>
                   </div>
               </Section>
@@ -246,3 +255,5 @@ export default function InputsPage() {
     </FormProvider>
   );
 }
+
+    

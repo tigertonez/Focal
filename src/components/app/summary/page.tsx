@@ -438,3 +438,5 @@ export default function SummaryPage() {
 
     return <SummaryPageContent data={financials.data} inputs={contextInputs} />;
 }
+
+    

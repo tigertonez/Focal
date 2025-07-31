@@ -25,7 +25,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
     const router = useRouter();
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
-    const preOrder = inputs.parameters.preOrder;
+    const preOrder = inputs.company?.production === 'preorder';
 
     const { costSummary, monthlyCosts, revenueSummary } = data;
     
