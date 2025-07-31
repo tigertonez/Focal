@@ -16,20 +16,30 @@ import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
 import { generateCssId } from "@/lib/generate-css-id"
 
-interface CostTimelineChartProps {
+interface MonthlyTimelineChartProps {
   data: any[];
   currency?: string;
   configOverrides?: Record<string, { label: string }>;
   formatAs?: 'currency' | 'number';
 }
 
-export function CostTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: CostTimelineChartProps) {
-  const { inputs } = useForecast();
+export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: MonthlyTimelineChartProps) {
+  const { inputs, t } = useForecast();
   
   const { chartConfig, costKeys, styleContent } = React.useMemo(() => {
     const newConfig: ChartConfig = {};
     const styleLines: string[] = [];
-    const allItems = [...inputs.products, ...inputs.fixedCosts, { id: 'Deposits', name: 'Deposits'}, { id: 'Final Payments', name: 'Final Payments'}];
+    
+    // Add a default for "Planning Buffer" if it exists in the data
+    const hasPlanningBuffer = data.some(month => month['Planning Buffer'] > 0);
+    const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
+
+    const allItems = [
+      ...inputs.products, 
+      ...inputs.fixedCosts, 
+      { id: 'Deposits', name: 'Deposits'}, 
+      { id: 'Final Payments', name: 'Final Payments'}
+    ];
     
     allItems.forEach(item => {
         const name = 'productName' in item ? item.productName : item.name;
@@ -50,18 +60,20 @@ export function CostTimelineChart({ data, currency, configOverrides, formatAs = 
         Object.keys(configOverrides).forEach(key => {
             if (newConfig[key]) {
                 newConfig[key].label = configOverrides[key].label;
+            } else if (t.insights.charts[key as keyof typeof t.insights.charts]) {
+                 newConfig[key] = { label: t.insights.charts[key as keyof typeof t.insights.charts] };
             }
         });
     }
 
-    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month') : [];
+    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month' && data.some(d => d[key] > 0)) : [];
 
     return { 
         chartConfig: newConfig, 
         costKeys: allKeys,
         styleContent: `[data-chart] { ${styleLines.join(' ')} }`
     };
-  }, [data, configOverrides, inputs.products, inputs.fixedCosts]);
+  }, [data, configOverrides, inputs.products, inputs.fixedCosts, t]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>

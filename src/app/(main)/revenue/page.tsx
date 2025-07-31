@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
-import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
+import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimelineChart';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
@@ -87,7 +87,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <CostTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
                         </CardContent>
                     </Card>
                     <Card>
@@ -95,7 +95,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <CostTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
                         </CardContent>
                     </Card>
                 </div>

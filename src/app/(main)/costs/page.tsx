@@ -8,7 +8,7 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency, getProductColor } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
+import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimelineChart';
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -99,7 +99,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                         <CardTitle>{t.pages.costs.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
-                       <CostTimelineChart data={monthlyCosts} currency={currency} />
+                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} />
                     </CardContent>
                 </Card>
             </section>

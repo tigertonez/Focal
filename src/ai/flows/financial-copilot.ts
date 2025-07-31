@@ -13,13 +13,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/googleai';
 import { Message, Part } from 'genkit/content';
-import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
+import { EngineInputSchema, EngineOutputSchema, MessageSchema } from '@/lib/types';
 
-
-const MessageSchema = z.object({
-  role: z.enum(['user', 'model']),
-  content: z.array(z.object({ text: z.string() })),
-});
 
 const FinancialCopilotInputSchema = z.object({
   screenshotDataUri: z.string().describe(
@@ -99,7 +94,7 @@ FULL FINANCIAL DATA:
     // Map Zod history to Genkit's Message[] type
     const genkitHistory: Message[] = history?.map(h => ({
         role: h.role === 'bot' ? 'model' : 'user',
-        content: h.content.map(c => ({ text: c.text }))
+        content: [{ text: h.text }]
     })) || [];
     
     // The last message in the history is the current user question.
@@ -130,7 +125,3 @@ FULL FINANCIAL DATA:
     return output;
   }
 );
-
-    
-
-    
