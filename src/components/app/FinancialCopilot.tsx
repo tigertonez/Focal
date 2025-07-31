@@ -9,7 +9,6 @@ import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
-import { getFinancials } from '@/lib/get-financials';
 import { useToast } from '@/hooks/use-toast';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -28,6 +27,8 @@ export function FinancialCopilot() {
     locale,
     messages,
     setMessages,
+    inputs,
+    financials,
   } = useForecast();
   const { toast } = useToast();
   
@@ -115,8 +116,7 @@ export function FinancialCopilot() {
     const currentInput = question || input;
     if (currentInput.trim() === '' || isLoading) return;
 
-    const financials = getFinancials();
-    if (financials.error || !financials.data || !financials.inputs) {
+    if (financials.error || !financials.data || !inputs) {
         toast({
             variant: "destructive",
             title: "Cannot start copilot",
@@ -153,7 +153,7 @@ export function FinancialCopilot() {
           screenshotDataUri,
           language: locale,
           financials: {
-            inputs: financials.inputs,
+            inputs: inputs,
             data: financials.data,
           }
         }),
