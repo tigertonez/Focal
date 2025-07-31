@@ -6,14 +6,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 import { useForecast } from '@/context/ForecastContext';
+import { EngineInput } from '@/lib/types';
 
 export const useFinancials = () => {
-    const { inputs, t } = useForecast();
+    const { t } = useForecast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    const getReport = () => {
+    const getReport = (inputs: EngineInput) => {
         setIsLoading(true);
+        // We pass the latest inputs to the loading page via context,
+        // which is set on the inputs page before calling this.
         router.push('/loading');
     };
     

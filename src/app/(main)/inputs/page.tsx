@@ -75,14 +75,9 @@ export default function InputsPage() {
   
   const watchedInputs = watch();
   
-  // Keep ForecastContext in sync with the form state
-  useEffect(() => {
-    setInputs(watchedInputs);
-  }, [watchedInputs, setInputs]);
-
   const onSubmit = (data: EngineInput) => {
-    setInputs(data); // Final update to context
-    getReport();
+    setInputs(data); // Final update to context before getting report
+    getReport(data);
   };
   
   const handleAddProduct = () => {
@@ -119,6 +114,11 @@ export default function InputsPage() {
     };
     reader.readAsDataURL(file);
   };
+
+  const handleSaveDraft = () => {
+    saveDraft(watchedInputs);
+    setInputs(watchedInputs); // Also update context on save
+  }
   
   const isManualMode = watchedInputs.realtime.dataSource === 'Manual';
 
@@ -232,7 +232,7 @@ export default function InputsPage() {
           </div>
 
           <footer className="flex justify-between items-center mt-8 pt-6 border-t">
-            <Button variant="outline" type="button" onClick={() => saveDraft(watchedInputs)}>
+            <Button variant="outline" type="button" onClick={handleSaveDraft}>
               {t.inputs.footer.saveDraft}
             </Button>
             
