@@ -16,18 +16,16 @@ interface CashFlowTableProps {
 }
 
 export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts } = data;
 
     const tableData = monthlyCashFlow.map((cf) => {
         const revenue = Object.values(monthlyRevenue.find(r => r.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
         const costs = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
-        const taxes = monthlyProfit.find(p => p.month === cf.month)?.tax || 0;
-        const cashOut = costs + taxes;
         
         return {
             month: cf.month,
             cashIn: revenue,
-            cashOut: cashOut,
+            cashOut: costs,
             netCashFlow: cf.netCashFlow,
             cumulativeCash: cf.cumulativeCash,
             status: cf.cumulativeCash < 0 ? t.pages.cashFlow.table.fundingNeeded : t.pages.cashFlow.table.cashPositive,
@@ -82,3 +80,5 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
         </Card>
     );
 }
+
+    
