@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine } from "recharts"
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, ReferenceLine } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -26,51 +26,18 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
   const { t } = useForecast();
   
   const chartConfig = React.useMemo(() => ({
-    revenue: {
-      label: t.insights.charts.revenue,
-      color: "hsl(var(--primary))",
-    },
-    costs: {
-      label: "Operating Costs (P&L)",
-      color: "hsl(var(--destructive) / 0.8)",
-    },
-    cumulativeProfit: {
+    cumulativeOperatingProfit: {
       label: t.insights.charts.cumulativeProfit,
       color: "hsl(var(--accent))",
     }
   }), [t]) satisfies ChartConfig
 
   const chartData = React.useMemo(() => {
-    const { monthlyRevenue, monthlyProfit } = data;
-    
-    // Get all unique months from both revenue and costs, and sort them.
-    const allMonths = Array.from(new Set([
-        ...monthlyRevenue.map(m => m.month),
-        ...monthlyProfit.map(m => m.month),
-    ])).sort((a,b) => a - b);
-    
-    let cumulativeProfit = 0;
-
-    return allMonths.map(month => {
-        const revMonth = monthlyRevenue.find(r => r.month === month) || {};
-        const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
-            return key !== 'month' ? acc + (val as number) * 100 : acc;
-        }, 0);
-        
-        const profitMonth = monthlyProfit.find(p => p.month === month);
-        const costsForMonth = (profitMonth?.plOperatingCosts || 0) * 100;
-        const operatingProfit = (profitMonth?.operatingProfit || 0) * 100;
-
-        cumulativeProfit += operatingProfit;
-        
-        return {
-            month: `M${month}`,
-            revenue: revenueForMonth / 100,
-            costs: -(costsForMonth / 100), // Make costs negative for the stacked bar chart
-            cumulativeProfit: cumulativeProfit / 100,
-        };
-    });
-  }, [data]);
+    return data.monthlyProfit.map(month => ({
+        month: `M${month.month}`,
+        cumulativeOperatingProfit: month.cumulativeOperatingProfit,
+    }));
+  }, [data.monthlyProfit]);
   
   if (!chartData || chartData.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
@@ -86,11 +53,10 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
 
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
-      <ComposedChart 
+      <LineChart
         accessibilityLayer 
         data={chartData}
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
-        stackOffset="sign"
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -110,13 +76,12 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
           content={<ChartTooltipContent 
             formatter={(value, name) => {
                const itemConfig = chartConfig[name as keyof typeof chartConfig];
-               const displayValue = name === 'costs' ? -(value as number) : value;
                return (
                 <div className="flex items-center">
                     <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
                     <div className="flex flex-1 justify-between">
                         <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Number(displayValue), currency, false)}</span>
+                        <span className="ml-4 font-bold">{formatCurrency(Number(value), currency, false)}</span>
                     </div>
                 </div>
               )
@@ -127,11 +92,15 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
 
-        <Bar dataKey="costs" fill={"hsl(var(--destructive) / 0.8)"} stackId="stack" />
-        <Bar dataKey="revenue" fill="hsl(var(--primary))" stackId="stack" />
-        <Line type="monotone" dataKey="cumulativeProfit" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} yAxisId={0} />
-
-      </ComposedChart>
+        <Line 
+          type="monotone" 
+          dataKey="cumulativeOperatingProfit" 
+          stroke="hsl(var(--accent))" 
+          strokeWidth={3} 
+          dot={{ r: 4, fill: "hsl(var(--accent))" }} 
+          activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+        />
+      </LineChart>
     </ChartContainer>
   )
 }

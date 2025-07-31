@@ -307,8 +307,10 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
         let totalAmount = 0;
         if (cost.costType === 'Monthly Cost') {
-             // For monthly costs, the total is amount * forecast duration
-             totalAmount = cost.amount * inputs.parameters.forecastMonths;
+             // Correctly calculate total monthly costs over the actual period they run
+            const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
+            const applicableMonths = timeline.timelineMonths.filter(m => m >= startMonth).length;
+            totalAmount = cost.amount * applicableMonths;
         } else { // 'Total for Period'
             totalAmount = cost.amount;
         }
@@ -376,14 +378,7 @@ const calculateProfitAndCashFlow = (
 
     const totalGrossProfit = totalRevenueCents - variableCostsForPL;
 
-    // Corrected Total Fixed Cost Calculation for P&L
-    const totalFixedCostForPL = inputs.fixedCosts.reduce((acc, cost) => {
-        if (cost.costType === 'Monthly Cost') {
-            return acc + toCents(cost.amount * forecastMonths);
-        }
-        return acc + toCents(cost.amount);
-    }, 0);
-
+    const totalFixedCostForPL = toCents(costSummary.totalFixed);
 
     const totalOperatingProfit = totalGrossProfit - totalFixedCostForPL;
 
@@ -394,15 +389,41 @@ const calculateProfitAndCashFlow = (
     let cumulativeOperatingProfit = 0;
     let profitBreakEvenMonth: number | null = null;
     let cumulativeTax = 0;
+    
+    // Create a monthly breakdown of fixed costs for the P&L
+    const monthlyFixedCostForPLBreakdown: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
+    inputs.fixedCosts.forEach(cost => {
+        const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
+        const applicableMonths = timelineMonths.filter(m => m >= startMonth);
+        if (cost.costType === 'Monthly Cost') {
+             applicableMonths.forEach(m => {
+                 const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
+                 if (monthEntry) monthEntry[cost.name] = (monthEntry[cost.name] || 0) + toCents(cost.amount);
+             })
+        } else { // Total for Period
+            const totalCostCents = toCents(cost.amount);
+            const monthlyShare = Math.floor(totalCostCents / (forecastMonths));
+            let remainder = totalCostCents % forecastMonths;
 
-    // Monthly Fixed Cost for P&L (consistent allocation)
-    const monthlyFixedCostForPL = totalFixedCostForPL / forecastMonths;
-
-    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
-        if (month === 0) {
-            return { month, grossProfit: 0, operatingProfit: 0, netProfit: 0, plOperatingCosts: 0, tax: 0 };
+            timelineMonths.filter(m => m >= 1).forEach(m => {
+                 const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
+                 if (monthEntry) {
+                     let amountThisMonth = monthlyShare;
+                     if(remainder > 0) {
+                         amountThisMonth++;
+                         remainder--;
+                     }
+                     monthEntry[cost.name] = (monthEntry[cost.name] || 0) + amountThisMonth;
+                 }
+            })
         }
+    });
+    
+    const monthlyTotalFixedCostForPL = monthlyFixedCostForPLBreakdown.map(monthEntry => 
+        Object.entries(monthEntry).reduce((sum, [key, val]) => key !== 'month' ? sum + val : sum, 0)
+    );
 
+    const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month, index) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         let variableCostsThisMonth = 0;
@@ -423,10 +444,11 @@ const calculateProfitAndCashFlow = (
                 }
             }
         }
-
-        const plOperatingCosts = monthlyFixedCostForPL + variableCostsThisMonth;
+        
+        const fixedCostsThisMonth = monthlyTotalFixedCostForPL[index] || 0;
+        const plOperatingCosts = fixedCostsThisMonth + variableCostsThisMonth;
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
-        const operatingProfit = grossProfit - monthlyFixedCostForPL;
+        const operatingProfit = grossProfit - fixedCostsThisMonth;
 
         const prevCumulativeProfit = cumulativeOperatingProfit;
         cumulativeOperatingProfit += operatingProfit;
@@ -453,6 +475,7 @@ const calculateProfitAndCashFlow = (
             netProfit: fromCents(netProfit),
             plOperatingCosts: fromCents(plOperatingCosts),
             tax: fromCents(tax),
+            cumulativeOperatingProfit: fromCents(cumulativeOperatingProfit),
         };
     });
     
