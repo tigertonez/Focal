@@ -37,9 +37,9 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
         value: costSummary.totalVariable,
         color: 'hsl(var(--primary))',
       },
-      ...inputs.fixedCosts.map(cost => ({
+      ...costSummary.fixedCosts.map(cost => ({
           name: cost.name,
-          value: cost.costType === 'Monthly Cost' ? cost.amount * inputs.parameters.forecastMonths : cost.amount,
+          value: cost.amount,
           item: cost,
       })),
     ].filter(item => item.value > 0);
