@@ -1,5 +1,4 @@
 
-
 import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema, CashFlowSummarySchema } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
 
@@ -227,36 +226,65 @@ const buildFixedCostTimeline = (
     const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     const operationalMonths = timelineMonths.filter(m => m >= 1);
+    
+    const totalRevenueCents = monthlyRevenueTimeline.reduce((total, monthData) => {
+        return total + Object.entries(monthData).reduce((monthTotal, [key, value]) => key !== 'month' ? monthTotal + value : monthTotal, 0);
+    }, 0);
 
     inputs.fixedCosts.forEach(cost => {
-        const schedule = cost.paymentSchedule || 'monthly_from_m0';
-        let startMonth = schedule.endsWith('_m0') ? 0 : 1;
-        
-        // Handle one-time, up-front payments
-        if (schedule === 'up_front_m0') {
-             const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * operationalMonths.length) : toCents(cost.amount);
-             const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
-             if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
-             return;
-        }
-        
-        // Handle other monthly/period costs
-        const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= startMonth);
-        if (cost.costType === 'Monthly Cost') {
-             allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + toCents(cost.amount); });
-        } else { // Total for Period (non-marketing), allocated evenly
-            const totalCostAmount = toCents(cost.amount);
-            const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalCostAmount / allocationTimeline.length) : 0;
-            let remainder = allocationTimeline.length > 0 ? totalCostAmount % allocationTimeline.length : 0;
+        const isMarketingCost = cost.name.toLowerCase().includes('marketing');
 
-            allocationTimeline.forEach((month) => {
-                let amountThisMonth = monthlyAmount;
-                if(remainder > 0) {
-                    amountThisMonth++;
-                    remainder--;
+        if (isMarketingCost && totalRevenueCents > 0) {
+            const totalMarketingCost = toCents(cost.amount);
+            let distributedMarketingCost = 0;
+            operationalMonths.forEach(m => {
+                const revMonth = monthlyRevenueTimeline.find(r => r.month === m);
+                if (revMonth) {
+                    const monthRevenue = Object.entries(revMonth).reduce((sum, [key, value]) => key !== 'month' ? sum + value : sum, 0);
+                    const revenueShare = monthRevenue / totalRevenueCents;
+                    const marketingForMonth = Math.round(totalMarketingCost * revenueShare);
+                    
+                    const costMonth = monthlyCostTimeline.find(c => c.month === m);
+                    if (costMonth) {
+                        costMonth[cost.name] = (costMonth[cost.name] || 0) + marketingForMonth;
+                        distributedMarketingCost += marketingForMonth;
+                    }
                 }
-                month[cost.name] = (month[cost.name] || 0) + amountThisMonth;
             });
+            // Distribute remainder due to rounding
+            const remainder = totalMarketingCost - distributedMarketingCost;
+            if (remainder !== 0 && operationalMonths.length > 0) {
+                const lastMonthEntry = monthlyCostTimeline.find(entry => entry.month === operationalMonths[operationalMonths.length - 1]);
+                if (lastMonthEntry) lastMonthEntry[cost.name] = (lastMonthEntry[cost.name] || 0) + remainder;
+            }
+        } else { // Handle non-marketing costs or marketing costs with no revenue
+            const schedule = cost.paymentSchedule || 'monthly_from_m0';
+            let startMonth = schedule.endsWith('_m0') ? 0 : 1;
+            
+            if (schedule === 'up_front_m0') {
+                 const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * operationalMonths.length) : toCents(cost.amount);
+                 const upFrontMonth = monthlyCostTimeline.find(t => t.month === 0);
+                 if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
+                 return;
+            }
+            
+            const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= startMonth);
+            if (cost.costType === 'Monthly Cost') {
+                 allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + toCents(cost.amount); });
+            } else { // Total for Period, allocated evenly
+                const totalCostAmount = toCents(cost.amount);
+                const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalCostAmount / allocationTimeline.length) : 0;
+                let remainder = allocationTimeline.length > 0 ? totalCostAmount % allocationTimeline.length : 0;
+
+                allocationTimeline.forEach((month) => {
+                    let amountThisMonth = monthlyAmount;
+                    if(remainder > 0) {
+                        amountThisMonth++;
+                        remainder--;
+                    }
+                    month[cost.name] = (month[cost.name] || 0) + amountThisMonth;
+                });
+            }
         }
     });
 
@@ -307,14 +335,14 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + toCents(p.depositPaid), 0);
 
-    // Calculate total fixed cost for each item for the entire period
     const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
         let totalAmount = 0;
-        const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
-        const applicableMonths = timeline.timelineMonths.filter(m => m >= startMonth).length;
-        
+        const schedule = cost.paymentSchedule || 'monthly_from_m0';
+        let startMonth = schedule.endsWith('_m0') ? 0 : 1;
+        const numPaymentMonths = timeline.timelineMonths.filter(m => m >= startMonth).length;
+
         if (cost.costType === 'Monthly Cost') {
-            totalAmount = cost.amount * applicableMonths;
+            totalAmount = cost.amount * numPaymentMonths;
         } else { // 'Total for Period'
             totalAmount = cost.amount;
         }
@@ -332,7 +360,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const costSummary = {
         totalFixed: fromCents(totalFixedCostInPeriod),
         totalVariable: fromCents(totalVariableCost),
-        totalOperating: fromCents(totalFixedCostInPeriod + cogsOfSoldGoods), // Corrected: OpCost for P&L is Fixed + COGS
+        totalOperating: fromCents(totalFixedCostInPeriod + cogsOfSoldGoods),
         avgCostPerUnit: totalPlannedUnits > 0 ? fromCents(totalVariableCost / totalPlannedUnits) : 0,
         fixedCosts: calculatedFixedCosts,
         variableCosts: variableCostBreakdown,
@@ -383,36 +411,32 @@ const calculateProfitAndCashFlow = (
     const totalFixedCostForPL = toCents(costSummary.totalFixed);
     const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
 
-    const businessIsProfitable = totalOperatingProfit > 0;
-    const totalTaxAmount = 0; // Removed tax from calculation
-    const totalNetProfit = totalOperatingProfit - totalTaxAmount;
-
     let cumulativeOperatingProfit = 0;
     let profitBreakEvenMonth: number | null = null;
     
-    // --- Dynamic Fixed Cost P&L Allocation ---
+    // --- START: CORRECT P&L FIXED COST ALLOCATION ---
     const monthlyFixedCostForPLBreakdown: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     const operationalMonths = timelineMonths.filter(m => m >= 1);
     
-    // Separate marketing from other fixed costs
+    // Separate marketing from other fixed costs for P&L
     const marketingCosts = inputs.fixedCosts.filter(c => c.name.toLowerCase().includes('marketing'));
     const otherFixedCosts = inputs.fixedCosts.filter(c => !c.name.toLowerCase().includes('marketing'));
     
-    // 1. Allocate non-marketing fixed costs linearly
+    // 1. Allocate non-marketing fixed costs linearly for P&L
     otherFixedCosts.forEach(cost => {
-        const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
-        const numPaymentMonths = timelineMonths.filter(m => m >= startMonth).length;
-
+        const applicableMonths = cost.costType === 'Monthly Cost' 
+            ? timelineMonths.filter(m => m >= (cost.paymentSchedule.endsWith('_m0') ? 0 : 1))
+            : operationalMonths;
+        
         if (cost.costType === 'Monthly Cost') {
-             const applicableMonths = timelineMonths.filter(m => m >= startMonth);
              applicableMonths.forEach(m => {
                  const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
                  if (monthEntry) monthEntry[cost.name] = (monthEntry[cost.name] || 0) + toCents(cost.amount);
              })
         } else { // Total for Period
             const totalCostCents = toCents(cost.amount);
-            const monthlyShare = Math.floor(totalCostCents / operationalMonths.length);
-            let remainder = totalCostCents % operationalMonths.length;
+            const monthlyShare = operationalMonths.length > 0 ? Math.floor(totalCostCents / operationalMonths.length) : 0;
+            let remainder = operationalMonths.length > 0 ? totalCostCents % operationalMonths.length : 0;
 
             operationalMonths.forEach(m => {
                  const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
@@ -428,7 +452,7 @@ const calculateProfitAndCashFlow = (
         }
     });
 
-    // 2. Allocate marketing costs based on revenue share
+    // 2. Allocate marketing costs based on revenue share for P&L
     marketingCosts.forEach(cost => {
         const totalMarketingCost = toCents(cost.amount);
         if (totalRevenueCents > 0) {
@@ -470,7 +494,7 @@ const calculateProfitAndCashFlow = (
              });
         }
     });
-    // --- End Dynamic Fixed Cost P&L Allocation ---
+    // --- END CORRECT P&L FIXED COST ALLOCATION ---
     
     const monthlyTotalFixedCostForPL = monthlyFixedCostForPLBreakdown.map(monthEntry => 
         Object.entries(monthEntry).reduce((sum, [key, val]) => key !== 'month' ? sum + val : sum, 0)
@@ -532,10 +556,10 @@ const calculateProfitAndCashFlow = (
     const profitSummary = {
         totalGrossProfit: fromCents(totalRevenueCents - variableCostsForPL),
         totalOperatingProfit: fromCents(totalOperatingProfit),
-        totalNetProfit: fromCents(totalNetProfit),
+        totalNetProfit: fromCents(totalOperatingProfit), // Net profit is now same as operating profit
         grossMargin: totalRevenueCents > 0 ? ((totalRevenueCents - variableCostsForPL) / totalRevenueCents) * 100 : 0,
         operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
-        netMargin: totalRevenueCents > 0 ? (totalNetProfit / totalRevenueCents) * 100 : 0,
+        netMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
         breakEvenMonth: profitBreakEvenMonth,
     };
 
@@ -587,7 +611,7 @@ const calculateProfitAndCashFlow = (
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
         cashPositiveMonth: cashPositiveMonth,
-        estimatedTaxes: fromCents(totalTaxAmount),
+        estimatedTaxes: 0,
     };
 
     return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
