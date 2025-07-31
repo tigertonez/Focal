@@ -117,12 +117,9 @@ export function FinancialCopilot() {
     if (currentInput.trim() === '' || isLoading) return;
 
     if (financials.error || !financials.data || !inputs) {
-        toast({
-            variant: "destructive",
-            title: "Cannot start copilot",
-            description: "Please run a report from the Inputs page first to load the data.",
-        });
-        return;
+      const botMessage: Message = { role: 'bot', text: "Please go to the Inputs page and click 'Get Report' first. I need the financial data to be able to help you." };
+      setMessages(prev => [...prev, botMessage]);
+      return;
     }
 
     const userMessage: Message = { role: 'user', text: currentInput };
