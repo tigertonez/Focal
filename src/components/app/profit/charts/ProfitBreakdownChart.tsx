@@ -13,7 +13,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import type { EngineOutput, EngineInput } from "@/lib/types"
+import type { EngineOutput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
@@ -51,7 +51,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         variableCosts: -Math.abs(month.variableCosts), // Ensure it's negative for stacking
         fixedCosts: -Math.abs(month.fixedCosts),     // Ensure it's negative for stacking
         cumulativeOperatingProfit: month.cumulativeOperatingProfit,
-    })).filter(d => d.month !== 'M0'); // Filter out month 0 for this P&L view
+    }));
   }, [data.monthlyProfit]);
   
   const valueFormatter = (value: number) => {
