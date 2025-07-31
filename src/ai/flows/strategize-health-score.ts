@@ -25,6 +25,7 @@ const prompt = ai.definePrompt({
   name: 'strategizeHealthScorePrompt',
   input: { schema: StrategizeHealthScoreInputSchema },
   output: { schema: StrategizeHealthScoreOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
    config: {
     maxOutputTokens: 1024,
     temperature: 0.4,

@@ -20,6 +20,7 @@ const prompt = ai.definePrompt({
   name: 'cashFlowInsightPrompt',
   input: { schema: AnalyzeCashFlowInputSchema },
   output: { schema: AnalyzeCashFlowOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
   config: {
     maxOutputTokens: 768,
     temperature: 0.4,

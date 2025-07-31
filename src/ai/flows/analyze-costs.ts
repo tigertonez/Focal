@@ -18,6 +18,7 @@ const prompt = ai.definePrompt({
   name: 'costInsightPrompt',
   input: { schema: AnalyzeCostsInputSchema },
   output: { schema: AnalyzeCostsOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
   config: {
     maxOutputTokens: 768,
     temperature: 0.4,

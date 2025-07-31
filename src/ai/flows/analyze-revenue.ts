@@ -19,6 +19,7 @@ const prompt = ai.definePrompt({
   name: 'revenueInsightPrompt',
   input: { schema: AnalyzeRevenueInputSchema },
   output: { schema: AnalyzeRevenueOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
   config: {
     maxOutputTokens: 768,
     temperature: 0.4,
