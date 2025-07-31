@@ -237,7 +237,7 @@ const buildFixedCostTimeline = (
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
         const startMonth = schedule.endsWith('_m0') ? 0 : 1;
         
-        if (cost.paymentSchedule === 'up_front_m0') {
+        if (schedule === 'up_front_m0') {
             const targetMonth = monthlyCostTimeline.find(t => t.month === startMonth);
             if(targetMonth) {
                 targetMonth[cost.name] = (targetMonth[cost.name] || 0) + costAmountCents;
@@ -250,7 +250,7 @@ const buildFixedCostTimeline = (
                 if (allocationTimeline.length > 0) {
                      const monthlyAmount = Math.floor(costAmountCents / allocationTimeline.length);
                      let remainder = costAmountCents % allocationTimeline.length;
-                     allocationTimeline.forEach((month) => {
+                     allocationTimeline.forEach((month, i) => {
                          let amountThisMonth = monthlyAmount;
                          if(remainder > 0) {
                              amountThisMonth++;
@@ -509,7 +509,7 @@ const calculateProfitAndCashFlow = (
     const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
     
     const businessIsProfitable = totalOperatingProfit > 0;
-    const totalTaxAmountCents = 0; //businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
+    const totalTaxAmountCents = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
     const totalNetProfit = totalOperatingProfit - totalTaxAmountCents;
     
     const profitSummary = {
@@ -555,7 +555,7 @@ const calculateProfitAndCashFlow = (
         
         const taxForMonth = toCents(monthlyProfit.find(p => p.month === month)?.tax || 0);
 
-        const netCashFlow = cashIn - cashOutCosts - taxForMonth;
+        const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
 
