@@ -164,7 +164,7 @@ export function FinancialCopilot() {
     } catch (err: any) {
         const errorMessage = err.message || 'An unexpected error occurred.';
         setError(errorMessage);
-        const botMessage: Message = { role: 'bot', text: t.copilot.error };
+        const botMessage: Message = { role: 'bot', text: `${t.copilot.error} (${errorMessage})` };
         setMessages(prev => [...prev, botMessage]);
     } finally {
       setIsLoading(false);
