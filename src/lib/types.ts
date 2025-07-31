@@ -154,6 +154,7 @@ export const MonthlyProfitSchema = z.object({
   operatingProfit: z.number(),
   netProfit: z.number(),
   plOperatingCosts: z.number(),
+  tax: z.number(),
 });
 export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
 

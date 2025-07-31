@@ -35,7 +35,7 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
     const { revenueSummary, profitSummary, costSummary } = data;
-    const { currency, taxRate, accountingMethod } = inputs.parameters;
+    const { currency, taxRate, accountingMethod, forecastMonths } = inputs.parameters;
     const { locale } = useForecast();
 
     const productData = React.useMemo(() => {
@@ -63,15 +63,20 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                 if (product.costModel === 'monthly') {
                     productVariableCosts = soldUnits * (product.unitCost || 0);
                 } else { // Batch
+                     // In conservative P&L, full batch cost hits in month 1, so for product-level we consider all planned units
                     productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
                 }
             }
             
             const grossProfit = productRevenue - productVariableCosts;
             const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
-
-            const revenueShare = totalRevenue > 0 ? productRevenue / totalRevenue : 0;
-            const allocatedFixedCosts = totalFixedCosts * revenueShare;
+            
+            // Allocate fixed costs based on revenue share
+            let allocatedFixedCosts = 0;
+            if (totalRevenue > 0) {
+                 const revenueShare = productRevenue / totalRevenue;
+                 allocatedFixedCosts = totalFixedCosts * revenueShare;
+            }
 
             const operatingProfit = grossProfit - allocatedFixedCosts;
             const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;

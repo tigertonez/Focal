@@ -21,7 +21,7 @@ export function CashFlowTable({ data, currency, t }: CashFlowTableProps) {
     const tableData = monthlyCashFlow.map((cf) => {
         const revenue = Object.values(monthlyRevenue.find(r => r.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
         const costs = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
-        const taxes = (monthlyProfit.find(p => p.month === cf.month)?.operatingProfit || 0) - (monthlyProfit.find(p => p.month === cf.month)?.netProfit || 0);
+        const taxes = monthlyProfit.find(p => p.month === cf.month)?.tax || 0;
         const cashOut = costs + taxes;
         
         return {
