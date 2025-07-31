@@ -161,7 +161,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
         </section>
 
         <section className="pt-4">
-            <ProfitInsights data={data} currency={currency} />
+            <ProfitInsights />
         </section>
 
       <footer className="flex justify-between mt-8 pt-6 border-t">

@@ -54,20 +54,20 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
     return allMonths.map(month => {
         const revMonth = monthlyRevenue.find(r => r.month === month) || {};
         const revenueForMonth = Object.entries(revMonth).reduce((acc, [key, val]) => {
-            return key !== 'month' ? acc + (val as number) : acc;
+            return key !== 'month' ? acc + (val as number) * 100 : acc;
         }, 0);
         
         const profitMonth = monthlyProfit.find(p => p.month === month);
-        const costsForMonth = profitMonth?.plOperatingCosts || 0;
-        
-        const operatingProfit = profitMonth?.operatingProfit || 0;
+        const costsForMonth = (profitMonth?.plOperatingCosts || 0) * 100;
+        const operatingProfit = (profitMonth?.operatingProfit || 0) * 100;
+
         cumulativeProfit += operatingProfit;
         
         return {
             month: `M${month}`,
-            revenue: revenueForMonth,
-            costs: -costsForMonth, // Make costs negative for the stacked bar chart
-            cumulativeProfit,
+            revenue: revenueForMonth / 100,
+            costs: -(costsForMonth / 100), // Make costs negative for the stacked bar chart
+            cumulativeProfit: cumulativeProfit / 100,
         };
     });
   }, [data]);
