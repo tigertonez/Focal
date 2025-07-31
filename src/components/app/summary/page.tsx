@@ -371,68 +371,58 @@ function SummaryPageContent({ data, inputs }: { data: EngineOutput, inputs: Engi
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <div className="flex justify-between items-start">
-        <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
-      </div>
-      
-      <KPISection data={data} currency={inputs.parameters.currency} />
-      
-      <HealthPanel 
-        healthData={data.businessHealth}
-        financialSummaries={{
-          revenue: data.revenueSummary,
-          cost: data.costSummary,
-          profit: data.profitSummary,
-        }}
-        onRecalculate={() => router.push('/inputs')}
-      />
+      <div id="report-content" className="space-y-8">
+        <div className="flex justify-between items-start">
+          <SectionHeader title="Financial Summary" description="An overview of your business forecast." />
+        </div>
+        
+        <KPISection data={data} currency={inputs.parameters.currency} />
+        
+        <HealthPanel 
+          healthData={data.businessHealth}
+          financialSummaries={{
+            revenue: data.revenueSummary,
+            cost: data.costSummary,
+            profit: data.profitSummary,
+          }}
+          onRecalculate={() => router.push('/inputs')}
+        />
 
-      <CashBridge data={data} currency={inputs.parameters.currency} />
+        <CashBridge data={data} currency={inputs.parameters.currency} />
+      </div>
 
       <footer className="flex justify-between items-center mt-8 pt-6 border-t">
         <Button onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
+        <DownloadReportButton />
       </footer>
-      <DownloadReportButton />
     </div>
   );
 }
 
 export default function SummaryPage() {
-    const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
-        data: null,
-        inputs: null,
-        error: null,
-        isLoading: true,
-    });
+    const { financials, inputs: contextInputs } = useForecast();
 
-    useEffect(() => {
-        const result = getFinancials();
-        setFinancials({ ...result, isLoading: false });
-    }, []);
-
-    const { data, inputs, error, isLoading } = financials;
-
-    if (isLoading) {
+    if (financials.isLoading) {
         return <SummaryPageSkeleton />;
     }
 
-    if (error) {
+    if (financials.error) {
         return (
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>Calculation Error</AlertTitle>
                     <AlertDescription>
-                        {error} Please correct the issues on the Inputs page and try again.
+                        {financials.error} Please correct the issues on the Inputs page and try again.
                     </AlertDescription>
                 </Alert>
             </div>
         );
     }
 
-    if (!data || !inputs) {
+    if (!financials.data || !contextInputs) {
         return (
             <div className="p-4 md:p-8 text-center">
                  <Alert>
@@ -446,5 +436,5 @@ export default function SummaryPage() {
         );
     }
 
-    return <SummaryPageContent data={data} inputs={inputs} />;
+    return <SummaryPageContent data={financials.data} inputs={contextInputs} />;
 }

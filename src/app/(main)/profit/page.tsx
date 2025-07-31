@@ -2,18 +2,17 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
-import { getFinancials } from '@/lib/get-financials';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
@@ -145,7 +144,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} inputs={inputs} currency={currency} />
+               <ProfitBreakdownChart data={data} currency={currency} />
             </CardContent>
         </Card>
       </section>
@@ -178,42 +177,29 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
 }
 
 export default function ProfitPage() {
-  const { t } = useForecast();
-  const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
-    data: null,
-    inputs: null,
-    error: null,
-    isLoading: true,
-  });
+  const { t, financials, inputs: contextInputs } = useForecast();
 
-  useEffect(() => {
-    const result = getFinancials();
-    setFinancials({ ...result, isLoading: false });
-  }, []);
-
-  const { data, inputs, error, isLoading } = financials;
-
-  if (isLoading) {
+  if (financials.isLoading) {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  if (error) {
+  if (financials.error) {
     return (
       <div className="p-4 md:p-8">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
           <AlertTitle>{t.errors.calculationError}</AlertTitle>
           <AlertDescription>
-            {error} {t.errors.calculationErrorDescription}
+            {financials.error} {t.errors.calculationErrorDescription}
           </AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  if (!data || !inputs) {
+  if (!financials.data || !contextInputs) {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  return <ProfitPageContent data={data} inputs={inputs} t={t} />;
+  return <ProfitPageContent data={financials.data} inputs={contextInputs} t={t} />;
 }

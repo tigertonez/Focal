@@ -1,20 +1,23 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
 import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, type Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { ZodError } from 'zod';
-import html2canvas from 'html2canvas';
-import { getFinancials } from '@/lib/get-financials';
+import { calculateFinancials } from '@/lib/engine/financial-engine';
 import { translations, type Translations } from '@/lib/translations';
 
+interface FinancialsState {
+  data: EngineOutput | null;
+  error: string | null;
+  isLoading: boolean;
+}
 
 interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
-  financials: { data: EngineOutput | null; inputs: EngineInput | null; error: string | null; } | null;
+  financials: FinancialsState;
+  calculateFinancials: () => void;
   updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
   addProduct: () => void;
   removeProduct: (id: string) => void;
@@ -22,16 +25,13 @@ interface ForecastContextType {
   addFixedCost: () => void;
   removeFixedCost: (id: string) => void;
   saveDraft: () => void;
-  runProactiveAnalysis: () => void;
-  proactiveAnalysis: string | null;
-  setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   locale: 'en' | 'de';
   setLocale: React.Dispatch<React.SetStateAction<'en' | 'de'>>;
-  t: Translations['en']; // The actual translation object
+  t: Translations['en'];
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -103,8 +103,7 @@ const DRAFT_STORAGE_KEY = 'forecastDraft';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
-  const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; } | null>(null);
-  const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
+  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: true });
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
   const { toast } = useToast();
@@ -115,7 +114,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       { role: 'bot', text: t.copilot.initial }
   ]);
   
-  // Update initial message when language changes
   useEffect(() => {
     setMessages(currentMessages => {
         if (currentMessages.length === 1 && currentMessages[0].role === 'bot') {
@@ -146,11 +144,25 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to load draft from local storage", e);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
+    // Initial load should not be loading anymore
+    setFinancials(prev => ({...prev, isLoading: false}));
   }, [toast, t]);
-  
-  useEffect(() => {
-    setFinancials(getFinancials());
-  }, [inputs]);
+
+  const calculateFinancialsAndSetState = () => {
+    setFinancials({ data: null, error: null, isLoading: true });
+    try {
+        const result = EngineInputSchema.safeParse(inputs);
+        if (!result.success) {
+            const firstError = result.error.errors[0]?.message || 'Invalid input.';
+            throw new Error(firstError);
+        }
+        const calculatedData = calculateFinancials(result.data);
+        setFinancials({ data: calculatedData, error: null, isLoading: false });
+    } catch (e: any) {
+        console.error("Error calculating financials:", e);
+        setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
+    }
+  };
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
@@ -241,15 +253,11 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const runProactiveAnalysis = () => {
-    const analysisQuestion = "Review the completed forecast on the screen for financial clarity, dependency mistakes, and UI/UX issues. Be concise.";
-    setProactiveAnalysis(analysisQuestion);
-  }
-  
   const value = useMemo(() => ({
     inputs,
     setInputs,
     financials,
+    calculateFinancials: calculateFinancialsAndSetState,
     updateProduct,
     addProduct,
     removeProduct,
@@ -257,9 +265,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     addFixedCost,
     removeFixedCost,
     saveDraft,
-    runProactiveAnalysis,
-    proactiveAnalysis,
-    setProactiveAnalysis,
     isCopilotOpen,
     setIsCopilotOpen,
     messages,
@@ -267,7 +272,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     locale,
     setLocale,
     t,
-  }), [inputs, financials, proactiveAnalysis, isCopilotOpen, messages, locale, t]);
+  }), [inputs, financials, isCopilotOpen, messages, locale, t]);
 
   return (
     <ForecastContext.Provider value={value}>

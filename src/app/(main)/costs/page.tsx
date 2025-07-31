@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -13,8 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft } from 'lucide-react';
-import type { EngineOutput, EngineInput, Product, FixedCostItem } from '@/lib/types';
-import { getFinancials } from '@/lib/get-financials';
+import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
@@ -191,42 +190,29 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
 }
 
 export default function CostsPage() {
-    const { t } = useForecast();
-    const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
-        data: null,
-        inputs: null,
-        error: null,
-        isLoading: true,
-    });
+    const { t, financials, inputs: contextInputs } = useForecast();
 
-    useEffect(() => {
-        const result = getFinancials();
-        setFinancials({ ...result, isLoading: false });
-    }, []);
-
-    const { data, inputs, error, isLoading } = financials;
-
-    if (isLoading) {
+    if (financials.isLoading) {
         return <CostsPageSkeleton t={t} />;
     }
 
-    if (error) {
+    if (financials.error) {
         return (
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} {t.errors.calculationErrorDescription}
+                        {financials.error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
         );
     }
 
-    if (!data || !inputs) {
+    if (!financials.data || !contextInputs) {
         return <CostsPageSkeleton t={t} />;
     }
 
-    return <CostsPageContent data={data} inputs={inputs} t={t} />;
+    return <CostsPageContent data={financials.data} inputs={contextInputs} t={t} />;
 }

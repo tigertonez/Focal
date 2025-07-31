@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -9,16 +9,14 @@ import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
-import type { EngineOutput, EngineInput, Product } from '@/lib/types';
+import type { EngineOutput, EngineInput } from '@/lib/types';
 import { CostTimelineChart } from '@/components/app/costs/charts/CostTimelineChart';
-import { getFinancials } from '@/lib/get-financials';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { RevenueBreakdownPieChart } from '@/components/app/revenue/charts/RevenueBreakdownPieChart';
 
 function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: EngineInput, t: any }) {
     const router = useRouter();
@@ -165,45 +163,32 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
 }
 
 export default function RevenuePage() {
-    const { t } = useForecast();
-    const [financials, setFinancials] = useState<{ data: EngineOutput | null; inputs: EngineInput | null; error: string | null; isLoading: boolean }>({
-        data: null,
-        inputs: null,
-        error: null,
-        isLoading: true,
-    });
+    const { t, financials, inputs: contextInputs } = useForecast();
     const router = useRouter();
 
-    useEffect(() => {
-        const result = getFinancials();
-        setFinancials({ ...result, isLoading: false });
-    }, []);
-
-    const { data, inputs, error, isLoading } = financials;
-
-    if (isLoading) {
+    if (financials.isLoading) {
         return <RevenuePageSkeleton t={t} />;
     }
 
-    if (error) {
+    if (financials.error) {
         return (
             <div className="p-4 md:p-8">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
                     <AlertDescription>
-                        {error} {t.errors.calculationErrorDescription}
+                        {financials.error} {t.errors.calculationErrorDescription}
                     </AlertDescription>
                 </Alert>
             </div>
         );
     }
     
-    if (!data || !inputs) {
+    if (!financials.data || !contextInputs) {
         return <RevenuePageSkeleton t={t} />;
     }
 
-    if (data.revenueSummary.totalRevenue === 0) {
+    if (financials.data.revenueSummary.totalRevenue === 0) {
         return (
              <div className="p-4 md:p-8">
                 <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
@@ -218,5 +203,5 @@ export default function RevenuePage() {
         )
     }
 
-    return <RevenuePageContent data={data} inputs={inputs} t={t} />;
+    return <RevenuePageContent data={financials.data} inputs={contextInputs} t={t} />;
 }
