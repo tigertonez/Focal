@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine, Cell } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -25,9 +25,13 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({
-    netCashFlow: {
-      label: "Net Cash Flow",
+    cashIn: {
+      label: t.insights.charts.cashIn,
       color: "hsl(var(--primary))",
+    },
+    cashOut: {
+      label: t.insights.charts.cashOut,
+      color: "hsl(var(--destructive))",
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
@@ -37,12 +41,21 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
 
 
   const chartData = React.useMemo(() => {
-    const { monthlyCashFlow } = data;
-    return monthlyCashFlow.map(cf => ({
-        month: `M${cf.month}`,
-        netCashFlow: cf.netCashFlow,
-        cumulativeCash: cf.cumulativeCash,
-    }));
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    
+    return monthlyCashFlow.map((cf) => {
+        const revenue = Object.values(monthlyRevenue.find(r => r.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
+        const costs = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
+        const taxes = monthlyProfit.find(p => p.month === cf.month)?.tax || 0;
+        const cashOut = -(costs + taxes);
+        
+        return {
+            month: `M${cf.month}`,
+            cashIn: revenue,
+            cashOut: cashOut,
+            cumulativeCash: cf.cumulativeCash,
+        };
+    });
   }, [data]);
 
   const valueFormatter = (value: number) => {
@@ -53,12 +66,26 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
     return formatCurrency(Number(value), currency);
   };
 
+  const tooltipFormatter = (value: number, name: string) => {
+    const itemConfig = chartConfig[name as keyof typeof chartConfig];
+    return (
+     <div className="flex items-center">
+         <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
+         <div className="flex flex-1 justify-between">
+             <span>{itemConfig?.label || name}</span>
+             <span className="ml-4 font-bold">{formatCurrency(Math.abs(Number(value)), currency)}</span>
+         </div>
+     </div>
+   )
+ };
+
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
       <ComposedChart 
         accessibilityLayer 
         data={chartData}
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+        stackOffset="sign"
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -71,35 +98,27 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={10}
-          tickFormatter={(value) => formatCurrency(Number(value), currency)}
+          tickFormatter={(value) => valueFormatter(Number(value))}
         />
         <ChartTooltip
           cursor={true}
-          content={<ChartTooltipContent 
-            formatter={(value, name) => {
-               const itemConfig = chartConfig[name as keyof typeof chartConfig];
-               return (
-                <div className="flex items-center">
-                    <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
-                    <div className="flex flex-1 justify-between">
-                        <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Math.abs(Number(value)), currency)}</span>
-                    </div>
-                </div>
-              )
-            }}
-          />}
+          content={<ChartTooltipContent formatter={tooltipFormatter} />}
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="netCashFlow" yAxisId={0}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.netCashFlow >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive) / 0.8)'} />
-          ))}
-        </Bar>
-        <Line type="monotone" dataKey="cumulativeCash" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} yAxisId={0} />
+        <Bar dataKey="cashIn" stackId="stack" fill="hsl(var(--primary))" />
+        <Bar dataKey="cashOut" stackId="stack" fill="hsl(var(--destructive))" />
+
+        <Line 
+          type="monotone" 
+          dataKey="cumulativeCash" 
+          stroke="hsl(var(--accent))" 
+          strokeWidth={3} 
+          dot={{ r: 4 }} 
+          activeDot={{ r: 6 }} 
+        />
 
       </ComposedChart>
     </ChartContainer>
