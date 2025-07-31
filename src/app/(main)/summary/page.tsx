@@ -104,7 +104,7 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
               {icon}
               <span className="text-muted-foreground">{label}</span>
           </div>
-          <span className={`font-medium ${colorClass}`}>{isNegative ? '-' : ''}{formatCurrency(value, currency)}</span>
+          <span className={`font-medium ${colorClass}`}>{isNegative ? '-' : ''}{formatCurrency(value, currency, false)}</span>
       </div>
     );
 
