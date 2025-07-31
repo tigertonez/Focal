@@ -41,13 +41,12 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
 
 
   const chartData = React.useMemo(() => {
-    const { monthlyCashFlow, monthlyRevenue, monthlyCosts, monthlyProfit } = data;
+    const { monthlyCashFlow, monthlyRevenue, monthlyCosts } = data;
     
     return monthlyCashFlow.map((cf) => {
         const revenue = Object.values(monthlyRevenue.find(r => r.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
         const costs = Object.values(monthlyCosts.find(c => c.month === cf.month) || {}).reduce((sum, val) => (typeof val === 'number' ? sum + val : sum), 0);
-        const taxes = monthlyProfit.find(p => p.month === cf.month)?.tax || 0;
-        const cashOut = -(costs + taxes);
+        const cashOut = -(costs);
         
         return {
             month: `M${cf.month}`,

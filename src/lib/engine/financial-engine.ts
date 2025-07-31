@@ -219,16 +219,46 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
 // Cost Calculation Engine
 // =================================================================
 
-const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record<string, number>[] => {
+const buildFixedCostTimeline = (
+    inputs: EngineInput, 
+    timeline: Timeline, 
+    monthlyRevenueTimeline: Record<string, number>[]
+): Record<string, number>[] => {
     const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
+    const totalRevenueCents = monthlyRevenueTimeline.reduce((total, monthData) => {
+        return total + Object.entries(monthData).reduce((monthTotal, [key, value]) => key !== 'month' ? monthTotal + value : monthTotal, 0);
+    }, 0);
+
     inputs.fixedCosts.forEach(cost => {
+        const costNameLower = cost.name.toLowerCase();
+        
+        // Handle Marketing costs that follow the revenue curve
+        if (costNameLower.includes('marketing') && cost.costType === 'Total for Period') {
+            const totalMarketingCost = toCents(cost.amount);
+            if (totalRevenueCents > 0) {
+                 monthlyRevenueTimeline.forEach(revMonth => {
+                    const monthRevenue = Object.entries(revMonth).reduce((sum, [key, value]) => key !== 'month' ? sum + value : sum, 0);
+                    const revenueShare = monthRevenue / totalRevenueCents;
+                    const marketingForMonth = Math.round(totalMarketingCost * revenueShare);
+                    
+                    const costMonth = monthlyCostTimeline.find(c => c.month === revMonth.month);
+                    if (costMonth) {
+                        costMonth[cost.name] = (costMonth[cost.name] || 0) + marketingForMonth;
+                    }
+                });
+            } else { // If no revenue, distribute evenly
+                 const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= 1);
+                 const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalMarketingCost / allocationTimeline.length) : 0;
+                 allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + monthlyAmount; });
+            }
+            return;
+        }
+
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
-
-        let startMonth = 1;
-        if (schedule.endsWith('_m0')) startMonth = 0;
-
+        let startMonth = schedule.endsWith('_m0') ? 0 : 1;
+        
         // Handle one-time, up-front payments
         if (schedule === 'up_front_m0') {
              const totalCost = cost.costType === 'Monthly Cost' ? toCents(cost.amount * timeline.forecastMonths) : toCents(cost.amount);
@@ -236,17 +266,17 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
              if(upFrontMonth) upFrontMonth[cost.name] = (upFrontMonth[cost.name] || 0) + totalCost;
              return;
         }
-
-        // Handle monthly allocated costs
+        
+        // Handle other monthly/period costs
         const allocationTimeline = monthlyCostTimeline.filter(t => t.month >= startMonth);
         if (cost.costType === 'Monthly Cost') {
              allocationTimeline.forEach(month => { month[cost.name] = (month[cost.name] || 0) + toCents(cost.amount); });
-        } else { // Total for Period, allocated monthly
+        } else { // Total for Period (non-marketing), allocated evenly
             const totalCostAmount = toCents(cost.amount);
             const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalCostAmount / allocationTimeline.length) : 0;
             let remainder = allocationTimeline.length > 0 ? totalCostAmount % allocationTimeline.length : 0;
 
-            allocationTimeline.forEach((month, index) => {
+            allocationTimeline.forEach((month) => {
                 let amountThisMonth = monthlyAmount;
                 if(remainder > 0) {
                     amountThisMonth++;
@@ -256,12 +286,13 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
             });
         }
     });
+
     return monthlyCostTimeline;
 };
 
-const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[]) => {
+const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSold: Record<string, number>[], monthlyRevenueTimeline: Record<string, number>[]) => {
     const preOrder = inputs.company?.production === 'preorder';
-    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline);
+    const monthlyCostTimeline = buildFixedCostTimeline(inputs, timeline, monthlyRevenueTimeline);
     let totalPlannedUnits = 0, totalVariableCost = 0;
 
     const variableCostBreakdown = inputs.products.map(product => {
@@ -375,9 +406,8 @@ const calculateProfitAndCashFlow = (
         ? toCents(costSummary.cogsOfSoldGoods)
         : toCents(costSummary.totalVariable);
 
-    const totalGrossProfit = totalRevenueCents - variableCostsForPL;
     const totalFixedCostForPL = toCents(costSummary.totalFixed);
-    const totalOperatingProfit = totalGrossProfit - totalFixedCostForPL;
+    const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
 
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
@@ -387,20 +417,19 @@ const calculateProfitAndCashFlow = (
     let profitBreakEvenMonth: number | null = null;
     let cumulativeTax = 0;
     
-    // Create a monthly breakdown of fixed costs for the P&L
     const monthlyFixedCostForPLBreakdown: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     inputs.fixedCosts.forEach(cost => {
         const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
-        const applicableMonths = timelineMonths.filter(m => m >= startMonth);
+        const operationalMonths = timelineMonths.filter(m => m >= 1);
+
         if (cost.costType === 'Monthly Cost') {
+             const applicableMonths = timelineMonths.filter(m => m >= startMonth);
              applicableMonths.forEach(m => {
                  const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
                  if (monthEntry) monthEntry[cost.name] = (monthEntry[cost.name] || 0) + toCents(cost.amount);
              })
         } else { // Total for Period
             const totalCostCents = toCents(cost.amount);
-            // Distribute only over the operational months (1-12)
-            const operationalMonths = timelineMonths.filter(m => m >= 1);
             const monthlyShare = Math.floor(totalCostCents / (operationalMonths.length));
             let remainder = totalCostCents % operationalMonths.length;
 
@@ -421,7 +450,7 @@ const calculateProfitAndCashFlow = (
     const monthlyTotalFixedCostForPL = monthlyFixedCostForPLBreakdown.map(monthEntry => 
         Object.entries(monthEntry).reduce((sum, [key, val]) => key !== 'month' ? sum + val : sum, 0)
     );
-
+    
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month, index) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
@@ -432,23 +461,23 @@ const calculateProfitAndCashFlow = (
                  variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
             }
         } else { // Conservative ("total_costs")
-             if (month > 0) { // Only apply for operational months
-                const totalBatchCostCents = inputs.products
-                    .filter(p => p.costModel === 'batch')
-                    .reduce((sum, p) => sum + toCents((p.plannedUnits || 0) * (p.unitCost || 0)), 0);
+             const totalBatchCostCents = inputs.products
+                .filter(p => p.costModel === 'batch')
+                .reduce((sum, p) => sum + toCents((p.plannedUnits || 0) * (p.unitCost || 0)), 0);
 
-                const monthlyBatchCostShare = Math.floor(totalBatchCostCents / forecastMonths);
-                let batchRemainder = totalBatchCostCents % forecastMonths;
-
+            const operationalMonths = timelineMonths.filter(m => m >= 1);
+            if (month > 0) {
+                const monthlyBatchCostShare = Math.floor(totalBatchCostCents / operationalMonths.length);
+                let batchRemainder = totalBatchCostCents % operationalMonths.length;
                 variableCostsThisMonth += monthlyBatchCostShare + (month <= batchRemainder ? 1 : 0);
-
-                const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-                for (const product of inputs.products) {
-                    if (product.costModel === 'monthly') {
-                        variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                    }
+            }
+             
+            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+            for (const product of inputs.products) {
+                if (product.costModel === 'monthly') {
+                    variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
                 }
-             }
+            }
         }
         
         const fixedCostsThisMonth = monthlyTotalFixedCostForPL[index] || 0;
@@ -496,12 +525,11 @@ const calculateProfitAndCashFlow = (
         lastMonthProfit.netProfit -= fromCents(finalTaxAdjustment);
     }
     
-
     const profitSummary = {
-        totalGrossProfit: fromCents(totalGrossProfit),
+        totalGrossProfit: fromCents(totalRevenueCents - variableCostsForPL),
         totalOperatingProfit: fromCents(totalOperatingProfit),
         totalNetProfit: fromCents(totalNetProfit),
-        grossMargin: totalRevenueCents > 0 ? (totalGrossProfit / totalRevenueCents) * 100 : 0,
+        grossMargin: totalRevenueCents > 0 ? ((totalRevenueCents - variableCostsForPL) / totalRevenueCents) * 100 : 0,
         operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
         netMargin: totalRevenueCents > 0 ? (totalNetProfit / totalRevenueCents) * 100 : 0,
         breakEvenMonth: profitBreakEvenMonth,
@@ -519,9 +547,7 @@ const calculateProfitAndCashFlow = (
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         const cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        const taxPaymentCents = toCents((monthlyProfit.find(p => p.month === month)?.tax || 0));
-
-        const netCashFlow = cashIn - cashOutCosts - taxPaymentCents;
+        const netCashFlow = cashIn - cashOutCosts;
 
         cumulativeCash += netCashFlow;
 
@@ -666,13 +692,13 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
 
         const timeline = createTimeline(inputs);
         const { monthlyUnitsSold, monthlyUnitsTimeline } = calculateUnitsSold(inputs, timeline);
-        const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
-        const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
-        const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
+        const { revenueSummary, monthlyRevenue, monthlyRevenueTimeline } = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
+        const costData = calculateCosts(inputs, timeline, monthlyUnitsSold, monthlyRevenueTimeline);
+        const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, { revenueSummary, monthlyRevenue, monthlyRevenueTimeline }, costData, monthlyUnitsSold);
 
         const achievedResult = {
-            revenueSummary: revenueData.revenueSummary,
-            monthlyRevenue: revenueData.monthlyRevenue,
+            revenueSummary: revenueSummary,
+            monthlyRevenue: monthlyRevenue,
             monthlyUnitsSold,
             costSummary: costData.costSummary,
             monthlyCosts: costData.monthlyCosts,
