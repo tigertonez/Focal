@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react"
@@ -13,15 +12,16 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import type { EngineOutput } from "@/lib/types"
+import type { EngineOutput, EngineInput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
+  inputs: EngineInput;
   currency: string;
 }
 
-export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({

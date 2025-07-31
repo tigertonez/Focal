@@ -224,7 +224,7 @@ const buildFixedCostTimeline = (
     monthlyRevenueTimeline: Record<string, number>[],
     isForPL: boolean = false
 ): Record<string, number>[] => {
-    const { timelineMonths, salesTimeline } = timeline;
+    const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     const operationalMonths = timelineMonths.filter(m => m >= 1);
 
@@ -240,23 +240,35 @@ const buildFixedCostTimeline = (
             : operationalMonths.length;
 
         if (isForPL) {
-            // P&L: Distribute costs evenly over operational months (1-12)
-            const totalCostAmount = toCents(cost.amount) * (cost.costType === 'Monthly Cost' ? totalPaymentMonths : 1);
-            if (operationalMonths.length > 0) {
-                 const monthlyShare = Math.floor(totalCostAmount / operationalMonths.length);
-                 let remainder = totalCostAmount % operationalMonths.length;
-                 operationalMonths.forEach(m => {
+            // P&L: Distribute costs evenly over operational months (1-12) for non-monthly costs.
+            // Monthly costs are applied monthly. One-off costs are depreciated/amortized.
+            const costAmountCents = toCents(cost.amount);
+            
+            if (cost.costType === 'Monthly Cost') {
+                 timelineMonths.filter(m => m >= startMonth).forEach(m => {
                      const monthEntry = monthlyCostTimeline.find(entry => entry.month === m);
                      if (monthEntry) {
-                         let amountThisMonth = monthlyShare;
-                         if (remainder > 0) {
-                             amountThisMonth++;
-                             remainder--;
-                         }
-                         monthEntry[cost.name] = (monthEntry[cost.name] || 0) + amountThisMonth;
+                        monthEntry[cost.name] = (monthEntry[cost.name] || 0) + costAmountCents;
                      }
                  });
+            } else { // 'Total for Period' -> Amortize/depreciate over operational months for P&L
+                 if (operationalMonths.length > 0) {
+                     const monthlyShare = Math.floor(costAmountCents / operationalMonths.length);
+                     let remainder = costAmountCents % operationalMonths.length;
+                     operationalMonths.forEach(m => {
+                         const monthEntry = monthlyCostTimeline.find(entry => entry.month === m);
+                         if (monthEntry) {
+                             let amountThisMonth = monthlyShare;
+                             if (remainder > 0) {
+                                 amountThisMonth++;
+                                 remainder--;
+                             }
+                             monthEntry[cost.name] = (monthEntry[cost.name] || 0) + amountThisMonth;
+                         }
+                     });
+                }
             }
+
         } else {
              // Cash Flow: Allocate based on actual payment schedule
             if (schedule === 'up_front_m0') {
@@ -419,6 +431,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     });
 
     const totalFixedCostInPeriod = calculatedFixedCosts.reduce((total, cost) => total + toCents(cost.amount), 0);
+    const totalOperatingCost = totalFixedCostInPeriod + totalVariableCost;
 
     const cogsOfSoldGoods = inputs.products.reduce((total, product) => {
         const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[product.productName] || 0), 0);
@@ -429,7 +442,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const costSummary = {
         totalFixed: fromCents(totalFixedCostInPeriod),
         totalVariable: fromCents(totalVariableCost),
-        totalOperating: fromCents(totalFixedCostInPeriod + totalVariableCost),
+        totalOperating: fromCents(totalOperatingCost),
         avgCostPerUnit: totalPlannedUnits > 0 ? fromCents(totalVariableCost / totalPlannedUnits) : 0,
         fixedCosts: calculatedFixedCosts,
         variableCosts: variableCostBreakdown,
@@ -467,8 +480,8 @@ const calculateProfitAndCashFlow = (
 ) => {
     const { timelineMonths } = timeline;
     const { revenueSummary, monthlyRevenueTimeline } = revenueData;
-    const { costSummary, monthlyCashOutflowTimeline } = costData;
-    const { accountingMethod, taxRate } = inputs.parameters;
+    const { monthlyCashOutflowTimeline } = costData;
+    const { taxRate } = inputs.parameters;
 
     // --- START: P&L FIXED COST ALLOCATION ---
     const monthlyFixedCostForPLBreakdown = buildFixedCostTimeline(inputs, timeline, monthlyRevenueTimeline, true);
@@ -483,29 +496,13 @@ const calculateProfitAndCashFlow = (
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         let variableCostsThisMonth = 0;
-        if (accountingMethod === 'cogs') {
-            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-            for (const product of inputs.products) {
-                 variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-            }
-        } else { // Conservative ("total_costs")
-             const totalBatchCostCents = inputs.products
-                .filter(p => p.costModel === 'batch')
-                .reduce((sum, p) => sum + toCents((p.plannedUnits || 0) * (p.unitCost || 0)), 0);
-
-            if (month === 1 && timeline.timelineMonths.includes(1)) {
-                variableCostsThisMonth += totalBatchCostCents;
-            }
-             
-            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-            for (const product of inputs.products) {
-                if (product.costModel === 'monthly') {
-                    variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                }
-            }
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+        for (const product of inputs.products) {
+                variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
         }
         
         const fixedCostsThisMonth = Object.values(monthlyFixedCostForPLBreakdown.find(m => m.month === month) || {}).reduce((s, v) => typeof v === 'number' ? s + v : s, 0);
+        
         const plOperatingCosts = fixedCostsThisMonth + variableCostsThisMonth;
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
         const operatingProfit = grossProfit - fixedCostsThisMonth;
@@ -513,13 +510,8 @@ const calculateProfitAndCashFlow = (
         cumulativeOperatingProfit += operatingProfit;
 
         let taxForMonth = 0;
-        if (cumulativeOperatingProfit > 0) {
-            const taxableProfit = cumulativeOperatingProfit - cumulativeTax;
-            if (taxableProfit > 0) {
-                taxForMonth = taxableProfit * (taxRate / 100);
-                cumulativeTax += taxForMonth;
-            }
-        }
+        // Tax logic will be adjusted to be simpler and likely removed from this core view later.
+        // For now, it is not being applied to cashflow.
 
         const netProfit = operatingProfit - taxForMonth;
 
@@ -545,7 +537,7 @@ const calculateProfitAndCashFlow = (
     const variableCostsForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.variableCosts), 0);
     const totalFixedCostForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.fixedCosts), 0);
     const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
-    const totalNetProfit = totalOperatingProfit - cumulativeTax;
+    const totalNetProfit = totalOperatingProfit; // Simplified: No tax for now
     
     const profitSummary = {
         totalGrossProfit: fromCents(totalRevenueCents - variableCostsForPL),
@@ -569,10 +561,6 @@ const calculateProfitAndCashFlow = (
         const costsForMonth = monthlyCashOutflowTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
-        // Tax is a cash outflow
-        const taxForMonth = toCents(monthlyProfit.find(p => p.month === month)?.tax || 0);
-        cashOutCosts += taxForMonth;
-
         const netCashFlow = cashIn - cashOutCosts;
         cumulativeCash += netCashFlow;
 
@@ -608,7 +596,7 @@ const calculateProfitAndCashFlow = (
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
         cashPositiveMonth: cashPositiveMonth,
-        estimatedTaxes: fromCents(cumulativeTax),
+        estimatedTaxes: 0, // Removed for now
     };
 
     return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
@@ -774,5 +762,3 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         throw new Error(e.message || 'An unknown error occurred in financial calculation.');
     }
 }
-
-    
