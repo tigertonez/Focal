@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from "react"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, ReferenceLine } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, ComposedChart, ReferenceLine } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -18,31 +18,42 @@ import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
-  inputs: EngineInput;
   currency: string;
 }
 
-export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
-  
+
   const chartConfig = React.useMemo(() => ({
+    revenue: {
+      label: t.insights.charts.revenue,
+      color: "hsl(var(--primary))",
+    },
+    variableCosts: {
+        label: "Variable Costs",
+        color: "hsl(var(--chart-4))",
+    },
+    fixedCosts: {
+        label: "Fixed Costs",
+        color: "hsl(var(--chart-1))",
+    },
     cumulativeOperatingProfit: {
       label: t.insights.charts.cumulativeProfit,
       color: "hsl(var(--accent))",
     }
-  }), [t]) satisfies ChartConfig
+  }), [t]) satisfies ChartConfig;
+
 
   const chartData = React.useMemo(() => {
     return data.monthlyProfit.map(month => ({
         month: `M${month.month}`,
+        revenue: month.revenue,
+        variableCosts: -Math.abs(month.variableCosts), // Ensure it's negative for stacking
+        fixedCosts: -Math.abs(month.fixedCosts),     // Ensure it's negative for stacking
         cumulativeOperatingProfit: month.cumulativeOperatingProfit,
-    }));
+    })).filter(d => d.month !== 'M0'); // Filter out month 0 for this P&L view
   }, [data.monthlyProfit]);
   
-  if (!chartData || chartData.length === 0) {
-    return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
-  }
-
   const valueFormatter = (value: number) => {
     const currencySymbol = (currency === 'EUR' ? '€' : '$');
     if (Math.abs(value) >= 1000) {
@@ -51,12 +62,26 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
     return formatCurrency(Number(value), currency, true);
   };
 
+  const tooltipFormatter = (value: number, name: string) => {
+    const itemConfig = chartConfig[name as keyof typeof chartConfig];
+    return (
+     <div className="flex items-center">
+         <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
+         <div className="flex flex-1 justify-between">
+             <span>{itemConfig?.label || name}</span>
+             <span className="ml-4 font-bold">{formatCurrency(Math.abs(Number(value)), currency)}</span>
+         </div>
+     </div>
+   )
+ };
+
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
-      <LineChart
+      <ComposedChart 
         accessibilityLayer 
         data={chartData}
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+        stackOffset="sign"
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -73,34 +98,26 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
         />
         <ChartTooltip
           cursor={true}
-          content={<ChartTooltipContent 
-            formatter={(value, name) => {
-               const itemConfig = chartConfig[name as keyof typeof chartConfig];
-               return (
-                <div className="flex items-center">
-                    <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: itemConfig?.color }}/>
-                    <div className="flex flex-1 justify-between">
-                        <span>{itemConfig?.label}</span>
-                        <span className="ml-4 font-bold">{formatCurrency(Number(value), currency, false)}</span>
-                    </div>
-                </div>
-              )
-            }}
-          />}
+          content={<ChartTooltipContent formatter={tooltipFormatter} />}
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
+        
+        <Bar dataKey="revenue" stackId="stack" fill="hsl(var(--primary))" />
+        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(var(--chart-4))" />
+        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--chart-1))" />
 
         <Line 
           type="monotone" 
           dataKey="cumulativeOperatingProfit" 
           stroke="hsl(var(--accent))" 
           strokeWidth={3} 
-          dot={{ r: 4, fill: "hsl(var(--accent))" }} 
-          activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+          dot={{ r: 4 }} 
+          activeDot={{ r: 6 }} 
         />
-      </LineChart>
+
+      </ComposedChart>
     </ChartContainer>
   )
 }

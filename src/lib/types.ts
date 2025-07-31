@@ -150,11 +150,15 @@ export type ProfitSummary = z.infer<typeof ProfitSummarySchema>;
 
 export const MonthlyProfitSchema = z.object({
   month: z.number(),
+  revenue: z.number(),
+  variableCosts: z.number(),
+  fixedCosts: z.number(),
   grossProfit: z.number(),
   operatingProfit: z.number(),
   netProfit: z.number(),
   plOperatingCosts: z.number(),
   tax: z.number(),
+  cumulativeOperatingProfit: z.number(),
 });
 export type MonthlyProfit = z.infer<typeof MonthlyProfitSchema>;
 

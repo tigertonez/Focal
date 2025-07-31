@@ -307,7 +307,6 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
         let totalAmount = 0;
         if (cost.costType === 'Monthly Cost') {
-             // Correctly calculate total monthly costs over the actual period they run
             const startMonth = cost.paymentSchedule.endsWith('_m0') ? 0 : 1;
             const applicableMonths = timeline.timelineMonths.filter(m => m >= startMonth).length;
             totalAmount = cost.amount * applicableMonths;
@@ -377,9 +376,7 @@ const calculateProfitAndCashFlow = (
         : toCents(costSummary.totalVariable);
 
     const totalGrossProfit = totalRevenueCents - variableCostsForPL;
-
     const totalFixedCostForPL = toCents(costSummary.totalFixed);
-
     const totalOperatingProfit = totalGrossProfit - totalFixedCostForPL;
 
     const businessIsProfitable = totalOperatingProfit > 0;
@@ -402,10 +399,12 @@ const calculateProfitAndCashFlow = (
              })
         } else { // Total for Period
             const totalCostCents = toCents(cost.amount);
-            const monthlyShare = Math.floor(totalCostCents / (forecastMonths));
-            let remainder = totalCostCents % forecastMonths;
+            // Distribute only over the operational months (1-12)
+            const operationalMonths = timelineMonths.filter(m => m >= 1);
+            const monthlyShare = Math.floor(totalCostCents / (operationalMonths.length));
+            let remainder = totalCostCents % operationalMonths.length;
 
-            timelineMonths.filter(m => m >= 1).forEach(m => {
+            operationalMonths.forEach(m => {
                  const monthEntry = monthlyFixedCostForPLBreakdown.find(entry => entry.month === m);
                  if (monthEntry) {
                      let amountThisMonth = monthlyShare;
@@ -433,16 +432,23 @@ const calculateProfitAndCashFlow = (
                  variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
             }
         } else { // Conservative ("total_costs")
-             for (const product of inputs.products) {
-                if (product.costModel === 'monthly') {
-                    const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-                    variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-                } else { // Batch costs are fully expensed in Month 1 for P&L
-                    if (month === 1) {
-                         variableCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+             if (month > 0) { // Only apply for operational months
+                const totalBatchCostCents = inputs.products
+                    .filter(p => p.costModel === 'batch')
+                    .reduce((sum, p) => sum + toCents((p.plannedUnits || 0) * (p.unitCost || 0)), 0);
+
+                const monthlyBatchCostShare = Math.floor(totalBatchCostCents / forecastMonths);
+                let batchRemainder = totalBatchCostCents % forecastMonths;
+
+                variableCostsThisMonth += monthlyBatchCostShare + (month <= batchRemainder ? 1 : 0);
+
+                const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
+                for (const product of inputs.products) {
+                    if (product.costModel === 'monthly') {
+                        variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
                     }
                 }
-            }
+             }
         }
         
         const fixedCostsThisMonth = monthlyTotalFixedCostForPL[index] || 0;
@@ -470,6 +476,9 @@ const calculateProfitAndCashFlow = (
 
         return {
             month,
+            revenue: fromCents(revenueThisMonth),
+            variableCosts: fromCents(variableCostsThisMonth),
+            fixedCosts: fromCents(fixedCostsThisMonth),
             grossProfit: fromCents(grossProfit),
             operatingProfit: fromCents(operatingProfit),
             netProfit: fromCents(netProfit),
