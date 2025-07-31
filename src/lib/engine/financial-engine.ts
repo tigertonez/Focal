@@ -239,7 +239,7 @@ const buildFixedCostTimeline = (
         // This calculates the number of times a monthly cost will actually be paid.
         const numPaymentMonths = cost.costType === 'Monthly Cost' 
             ? timelineMonths.filter(m => m >= startMonth).length
-            : timeline.forecastMonths; // Not relevant for 'Total' cost type
+            : timeline.forecastMonths; 
 
         if (isForPL) {
             const costAmountCents = toCents(cost.amount);
@@ -523,8 +523,6 @@ const calculateProfitAndCashFlow = (
 
         cumulativeOperatingProfit += operatingProfit;
 
-        const netProfit = operatingProfit; // Tax is removed from this monthly calculation for simplicity
-
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
             profitBreakEvenMonth = month;
         }
@@ -536,9 +534,9 @@ const calculateProfitAndCashFlow = (
             fixedCosts: fromCents(fixedCostsThisMonth),
             grossProfit: fromCents(grossProfit),
             operatingProfit: fromCents(operatingProfit),
-            netProfit: fromCents(netProfit),
+            netProfit: 0, // Calculated below
             plOperatingCosts: fromCents(plOperatingCosts),
-            tax: 0,
+            tax: 0, // Calculated below
             cumulativeOperatingProfit: fromCents(cumulativeOperatingProfit),
         };
     });
@@ -549,8 +547,8 @@ const calculateProfitAndCashFlow = (
     const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
     
     const businessIsProfitable = totalOperatingProfit > 0;
-    const totalTaxAmount = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
-    const totalNetProfit = totalOperatingProfit - totalTaxAmount;
+    const totalTaxAmountCents = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
+    const totalNetProfit = totalOperatingProfit - totalTaxAmountCents;
     
     const profitSummary = {
         totalGrossProfit: fromCents(totalRevenueCents - variableCostsForPL),
@@ -562,12 +560,40 @@ const calculateProfitAndCashFlow = (
         breakEvenMonth: profitBreakEvenMonth,
     };
 
+    // Allocate tax to profitable months for cash flow
+    const profitableMonths = monthlyProfit.filter(m => m.operatingProfit > 0);
+    const totalPositiveOpProfit = profitableMonths.reduce((sum, m) => sum + toCents(m.operatingProfit), 0);
+    
+    if (businessIsProfitable && totalPositiveOpProfit > 0) {
+        let distributedTax = 0;
+        monthlyProfit.forEach(m => {
+            if (m.operatingProfit > 0) {
+                const profitShare = toCents(m.operatingProfit) / totalPositiveOpProfit;
+                const taxForMonth = Math.round(totalTaxAmountCents * profitShare);
+                m.tax = fromCents(taxForMonth);
+                m.netProfit = m.operatingProfit - m.tax;
+                distributedTax += taxForMonth;
+            }
+        });
+        // Distribute remainder tax
+        const remainder = totalTaxAmountCents - distributedTax;
+        if (remainder !== 0 && profitableMonths.length > 0) {
+            const firstProfitableMonth = profitableMonths[0];
+            firstProfitableMonth.tax += fromCents(remainder);
+            firstProfitableMonth.netProfit -= fromCents(remainder);
+        }
+    }
+
+
     let cumulativeCash = 0, peakFundingNeed = 0;
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         const costsForMonth = monthlyCashOutflowTimeline.find(c => c.month === month) || {};
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-        const netCashFlow = cashIn - cashOutCosts;
+        
+        const taxForMonth = toCents(monthlyProfit.find(p => p.month === month)?.tax || 0);
+
+        const netCashFlow = cashIn - cashOutCosts - taxForMonth;
         cumulativeCash += netCashFlow;
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
 
@@ -595,7 +621,7 @@ const calculateProfitAndCashFlow = (
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
         cashPositiveMonth: cashPositiveMonth,
-        estimatedTaxes: 0,
+        estimatedTaxes: fromCents(totalTaxAmountCents),
     };
 
     return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
