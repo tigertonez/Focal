@@ -1,7 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeFinancialData } from '@/ai/flows/analyze-financial-data';
-import { financialCopilot } from '@/ai/flows/financial-copilot';
 import { z } from 'zod';
 import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
 
@@ -44,6 +42,8 @@ export async function POST(req: NextRequest) {
 
     if (action === 'analyze') {
       const { financialData, question } = validation.data;
+      // Dynamically import the flow to avoid issues on server start
+      const { analyzeFinancialData } = await import('@/ai/flows/analyze-financial-data');
       const result = await analyzeFinancialData({
         financialData: JSON.stringify(financialData, null, 2),
         question,
@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
 
     if (action === 'copilot') {
         const { history, screenshotDataUri, language, financials } = validation.data;
+        // Dynamically import the flow to avoid issues on server start
+        const { financialCopilot } = await import('@/ai/flows/financial-copilot');
         const result = await financialCopilot({
           history: history,
           screenshotDataUri: screenshotDataUri,
