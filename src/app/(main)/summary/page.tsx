@@ -98,13 +98,13 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
     const taxes = profitSummary.totalOperatingProfit - profitSummary.totalNetProfit;
     const netProfit = profitSummary.totalNetProfit;
 
-    const BridgeRow = ({ label, value, colorClass, isSubtle, icon, indent }: { label: string, value: number, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode, indent?: boolean }) => (
+    const BridgeRow = ({ label, value, colorClass, isSubtle, icon, indent, isNegative = false }: { label: string, value: number, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode, indent?: boolean, isNegative?: boolean }) => (
       <div className={`flex items-center justify-between py-1.5 text-sm ${indent ? 'pl-6' : ''}`}>
           <div className="flex items-center gap-2">
               {icon}
               <span className="text-muted-foreground">{label}</span>
           </div>
-          <span className={`font-medium ${colorClass}`}>{formatCurrency(value, currency)}</span>
+          <span className={`font-medium ${colorClass}`}>{isNegative ? '-' : ''}{formatCurrency(value, currency)}</span>
       </div>
     );
 
@@ -124,13 +124,13 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
                     <CardContent className="px-6 py-4">
                         <div className="space-y-1">
                             <BridgeRow label={t.insights.summary.waterfall.revenue} value={totalRevenue} />
-                            <BridgeRow label={costLabel} value={-costsToSubtract} colorClass="text-red-600" indent />
+                            <BridgeRow label={costLabel} value={costsToSubtract} colorClass="text-red-600" indent isNegative />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.grossProfit} value={grossProfit} />
-                            <BridgeRow label={t.insights.summary.waterfall.opex} value={-opex} colorClass="text-red-600" indent />
+                            <BridgeRow label={t.insights.summary.waterfall.opex} value={opex} colorClass="text-red-600" indent isNegative />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.operatingProfit} value={operatingProfit} />
-                            <BridgeRow label={t.insights.summary.waterfall.taxes} value={-taxes} colorClass="text-red-600" indent />
+                            <BridgeRow label={t.insights.summary.waterfall.taxes} value={taxes} colorClass="text-red-600" indent isNegative />
                             <Separator className="my-1" />
                             <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} colorClass="text-blue-600" />
                         </div>
