@@ -93,11 +93,12 @@ export function FinancialCopilot() {
 
 
   useEffect(() => {
-    if (proactiveAnalysis && isCopilotOpen) {
+    // Only run proactive analysis if the copilot is open, there's a prompt, and crucially, if data exists.
+    if (proactiveAnalysis && isCopilotOpen && financials.data && inputs) {
         handleSendMessage(proactiveAnalysis, true);
         setProactiveAnalysis(null);
     }
-  }, [proactiveAnalysis, isCopilotOpen]);
+  }, [proactiveAnalysis, isCopilotOpen, financials.data, inputs]);
 
 
    useEffect(() => {
