@@ -379,16 +379,14 @@ const calculateProfitAndCashFlow = (
     // --- START: PROFIT CALCULATION ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     
-    const cogsCents = toCents(costSummary.cogsOfSoldGoods);
+    // CORRECTED: Choose which variable cost to use based on accounting method
+    const variableCostsForPL = accountingMethod === 'cogs'
+        ? toCents(costSummary.cogsOfSoldGoods)
+        : toCents(costSummary.totalVariable);
+    
+    const totalGrossProfit = totalRevenueCents - variableCostsForPL;
 
-    const totalGrossProfit = totalRevenueCents - cogsCents;
-
-    let totalOperatingProfit = 0;
-    if (accountingMethod === 'cogs') {
-        totalOperatingProfit = totalGrossProfit - toCents(costSummary.totalFixed);
-    } else {
-        totalOperatingProfit = totalRevenueCents - toCents(costSummary.totalOperating);
-    }
+    const totalOperatingProfit = totalGrossProfit - toCents(costSummary.totalFixed);
     
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
@@ -404,7 +402,7 @@ const calculateProfitAndCashFlow = (
         
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        let operatingCostsThisMonth = 0;
+        let fixedCostsThisMonth = 0;
         
         // 1. Fixed costs are recognized from M1 onwards in P&L
         inputs.fixedCosts.forEach(fc => {
@@ -414,55 +412,45 @@ const calculateProfitAndCashFlow = (
             if (month >= 1) { // P&L recognition starts M1
                  if (fc.costType === 'Total for Period') {
                     if (duration > 0) {
-                        operatingCostsThisMonth += toCents(fc.amount / duration);
+                        fixedCostsThisMonth += toCents(fc.amount / duration);
                     }
                  } else if (fc.costType === 'Monthly Cost') {
                      if (month >= startMonthForPL) {
-                        operatingCostsThisMonth += toCents(fc.amount);
+                        fixedCostsThisMonth += toCents(fc.amount);
                      }
                  }
             }
         });
 
         // 2. Add variable costs based on accounting method
+        let variableCostsThisMonth = 0;
         if (accountingMethod === 'cogs') {
             const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
             for (const product of inputs.products) {
-                 operatingCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
+                 variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
             }
         } else { // Conservative ("total_costs")
              for (const product of inputs.products) {
                 if (product.costModel === 'monthly') {
                     const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-                    operatingCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
+                    variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
                 } else { // Batch costs are fully expensed in Month 1 for P&L
                     if (month === 1) {
-                         operatingCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
+                         variableCostsThisMonth += toCents((product.plannedUnits || 0) * (product.unitCost || 0));
                     }
                 }
             }
         }
         
-        const operatingProfit = revenueThisMonth - operatingCostsThisMonth;
+        const grossProfit = revenueThisMonth - variableCostsThisMonth;
+        const operatingProfit = grossProfit - fixedCostsThisMonth;
         
         let tax = 0;
         if (businessIsProfitable && operatingProfit > 0) {
             const totalOpProfitForTax = totalOperatingProfit > 0 ? totalOperatingProfit : 1;
             tax = Math.round(totalTaxAmount * (operatingProfit / totalOpProfitForTax));
         }
-
         const netProfit = operatingProfit - tax;
-
-        // Gross profit is always Revenue - COGS
-        const unitsSoldForMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-        const cogsThisMonth = Object.keys(unitsSoldForMonth).reduce((sum, productName) => {
-            if (productName === 'month') return sum;
-            const product = inputs.products.find(p => p.productName === productName);
-            const productCost = toCents((unitsSoldForMonth[productName as keyof typeof unitsSoldForMonth] || 0) * (product?.unitCost || 0));
-            return sum + productCost;
-        }, 0);
-        const grossProfit = revenueThisMonth - cogsThisMonth;
-
 
         cumulativeOperatingProfit += operatingProfit;
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
