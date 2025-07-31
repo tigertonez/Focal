@@ -61,7 +61,7 @@ export default function LoadingPage() {
         };
 
         runCalculation();
-    }, [inputs, router]);
+    }, [router]);
 
     // Effect for animating the progress bar
     useEffect(() => {
