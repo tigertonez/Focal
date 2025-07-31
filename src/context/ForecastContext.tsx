@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
@@ -17,14 +18,8 @@ interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   financials: FinancialsState;
-  calculateFinancials: () => void;
-  updateProduct: (productIndex: number, field: keyof Product, value: any) => void;
-  addProduct: () => void;
-  removeProduct: (id: string) => void;
-  updateFixedCost: (index: number, field: keyof FixedCostItem, value: any) => void;
-  addFixedCost: () => void;
-  removeFixedCost: (id: string) => void;
-  saveDraft: () => void;
+  calculateFinancials: (inputs: EngineInput) => void;
+  saveDraft: (inputs: EngineInput) => void;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
   proactiveAnalysis: string | null;
@@ -134,10 +129,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             const result = EngineInputSchema.safeParse(parsedDraft);
             if (result.success) {
                 setInputs(result.data);
-                toast({
-                    title: t.toasts.draftLoadedTitle,
-                    description: t.toasts.draftLoadedDescription,
-                });
             } else {
                  console.warn("Could not parse saved draft, starting fresh.", result.error);
                  localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -147,14 +138,13 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to load draft from local storage", e);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
-    // Initial load should not be loading anymore
     setFinancials(prev => ({...prev, isLoading: false}));
   }, [toast, t]);
 
-  const calculateFinancials = useCallback(() => {
+  const calculateFinancials = useCallback((currentInputs: EngineInput) => {
     setFinancials({ data: null, error: null, isLoading: true });
     try {
-        const result = EngineInputSchema.safeParse(inputs);
+        const result = EngineInputSchema.safeParse(currentInputs);
         if (!result.success) {
             const firstError = result.error.errors[0]?.message || 'Invalid input.';
             throw new Error(firstError);
@@ -165,72 +155,11 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error calculating financials:", e);
         setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
     }
-  }, [inputs]);
+  }, []);
 
-  const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
-    setInputs(prev => {
-        const newProducts = [...prev.products];
-        newProducts[productIndex] = { ...newProducts[productIndex], [field]: value };
-        return { ...prev, products: newProducts };
-    });
-  };
-
-  const addProduct = () => {
-    const newProduct: Product = {
-        id: `prod_${crypto.randomUUID()}`,
-        productName: '',
-        plannedUnits: 1000,
-        unitCost: 10,
-        sellPrice: 25,
-        salesModel: 'launch',
-        sellThrough: 80,
-        depositPct: 0
-    };
-    setInputs(prev => ({
-        ...prev,
-        products: [...prev.products, newProduct]
-    }));
-  };
-
-  const removeProduct = (id: string) => {
-    setInputs(prev => ({
-        ...prev,
-        products: prev.products.filter(p => p.id !== id)
-    }));
-  };
-
-  const updateFixedCost = (index: number, field: keyof FixedCostItem, value: any) => {
-    setInputs(prev => {
-        const newItems = [...prev.fixedCosts];
-        newItems[index] = { ...newItems[index], [field]: value };
-        return { ...prev, fixedCosts: newItems };
-    });
-  };
-
-  const addFixedCost = () => {
-    const newCost: FixedCostItem = {
-      id: `fc_${crypto.randomUUID()}`,
-      name: '',
-      amount: 0,
-      paymentSchedule: 'monthly_from_m0',
-      costType: 'Monthly Cost',
-    };
-    setInputs(prev => ({
-      ...prev,
-      fixedCosts: [...prev.fixedCosts, newCost],
-    }));
-  };
-
-  const removeFixedCost = (id: string) => {
-    setInputs(prev => ({
-      ...prev,
-       fixedCosts: prev.fixedCosts.filter(c => c.id !== id),
-    }));
-  };
-
-  const saveDraft = () => {
+  const saveDraft = (currentInputs: EngineInput) => {
      try {
-        const result = EngineInputSchema.safeParse(inputs);
+        const result = EngineInputSchema.safeParse(currentInputs);
         if (!result.success) {
             toast({
                 variant: "destructive",
@@ -240,7 +169,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        const dataToSave = JSON.stringify(inputs);
+        const dataToSave = JSON.stringify(currentInputs);
         localStorage.setItem(DRAFT_STORAGE_KEY, dataToSave);
         toast({
             title: t.toasts.draftSavedTitle,
@@ -261,12 +190,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setInputs,
     financials,
     calculateFinancials,
-    updateProduct,
-    addProduct,
-    removeProduct,
-    updateFixedCost,
-    addFixedCost,
-    removeFixedCost,
     saveDraft,
     isCopilotOpen,
     setIsCopilotOpen,

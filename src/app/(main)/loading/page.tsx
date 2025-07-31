@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -11,12 +12,12 @@ import { Progress } from '@/components/ui/progress';
 
 export default function LoadingPage() {
     const router = useRouter();
-    const { calculateFinancials, financials, t } = useForecast();
+    const { inputs, calculateFinancials, financials, t } = useForecast();
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        calculateFinancials();
-    }, [calculateFinancials]);
+        calculateFinancials(inputs);
+    }, [calculateFinancials, inputs]);
 
     useEffect(() => {
         if (!financials.isLoading) {

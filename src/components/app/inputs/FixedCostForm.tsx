@@ -1,29 +1,32 @@
 
+
 'use client';
 
 import React from 'react';
-import { useForecast } from '@/context/ForecastContext';
+import { useFormContext, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, HelpCircle } from 'lucide-react';
-import type { FixedCostItem } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getProductColor, cn } from '@/lib/utils';
+import { getProductColor } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { useForecast } from '@/context/ForecastContext';
 
-export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = ({ cost, index }) => {
-    const { updateFixedCost, removeFixedCost, inputs, t } = useForecast();
-    const currency = inputs.parameters.currency;
-    const colorInputRef = React.useRef<HTMLInputElement>(null);
+export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: number) => void; }> = ({ index, removeFixedCost }) => {
+    const { control, watch } = useFormContext();
+    const { t } = useForecast();
     
+    const currency = watch('parameters.currency');
+    const cost = watch(`fixedCosts.${index}`);
+    const colorInputRef = React.useRef<HTMLInputElement>(null);
+    const assignedColor = React.useMemo(() => getProductColor(cost), [cost]);
+
     // State to detect mobile view for currency symbol
     const [isMobile, setIsMobile] = React.useState(false);
 
     React.useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
@@ -31,44 +34,20 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
 
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type } = e.target;
-        let finalValue: string | number = value;
-        if (type === 'number') {
-            finalValue = value === '' ? '' : parseFloat(value);
-            if (isNaN(finalValue as number)) return;
-        }
-        updateFixedCost(index, name as keyof FixedCostItem, finalValue);
-    };
-    
-    const handleSelectChange = (name: keyof FixedCostItem) => (value: string) => {
-        updateFixedCost(index, name, value);
-    };
-
-    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        updateFixedCost(index, 'color', e.target.value);
-    };
-    
-    const schedule = cost.paymentSchedule || 'monthly_from_m0';
-    const costType = cost.costType || 'Total for Period';
-    
-    const name = cost.name.toLowerCase();
-    const isPlanningBuffer = name.includes('planning buffer');
+    const isPlanningBuffer = cost.name?.toLowerCase().includes('planning buffer');
     const planningBufferTitle = t.inputs.fixedCosts.planningBuffer;
-
-    const assignedColor = React.useMemo(() => getProductColor(cost), [cost.id, cost.color, cost.name]);
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
              <div className="flex items-start gap-3">
                 <div className="flex-grow space-y-2">
                     <div className="flex items-center gap-2">
-                         <Input
-                            name="name"
-                            value={cost.name}
-                            onChange={handleChange}
-                            placeholder={t.inputs.fixedCosts.costName}
-                            className="text-sm"
+                        <Controller
+                            name={`fixedCosts.${index}.name`}
+                            control={control}
+                            render={({ field }) => (
+                                <Input {...field} placeholder={t.inputs.fixedCosts.costName} className="text-sm" />
+                            )}
                         />
                          {isPlanningBuffer && (
                             <TooltipProvider>
@@ -88,20 +67,27 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                    <div 
-                        className="h-5 w-5 rounded-full cursor-pointer border" 
-                        style={{ backgroundColor: assignedColor }}
-                        onClick={() => colorInputRef.current?.click()}
-                    >
-                        <input 
-                            ref={colorInputRef}
-                            type="color"
-                            value={assignedColor}
-                            onChange={handleColorChange}
-                            className="opacity-0 w-0 h-0 absolute"
-                        />
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeFixedCost(cost.id)} className="text-muted-foreground hover:text-destructive h-8 w-8">
+                    <Controller
+                        name={`fixedCosts.${index}.color`}
+                        control={control}
+                        render={({ field }) => (
+                            <>
+                                <div 
+                                    className="h-5 w-5 rounded-full cursor-pointer border" 
+                                    style={{ backgroundColor: assignedColor }}
+                                    onClick={() => colorInputRef.current?.click()}
+                                />
+                                <input 
+                                    ref={colorInputRef}
+                                    type="color"
+                                    value={field.value || '#ffffff'}
+                                    onChange={field.onChange}
+                                    className="opacity-0 w-0 h-0 absolute"
+                                />
+                            </>
+                        )}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeFixedCost(index)} className="text-muted-foreground hover:text-destructive h-8 w-8">
                         <Trash2 size={18} />
                     </Button>
                 </div>
@@ -111,37 +97,56 @@ export const FixedCostForm: React.FC<{ cost: FixedCostItem; index: number }> = (
                 <div className="space-y-1">
                     <Label className="text-xs">{t.inputs.fixedCosts.amount}</Label>
                     <div className="relative">
-                        <Input
-                            name="amount"
-                            type="number"
-                            value={cost.amount}
-                            onChange={handleChange}
-                            placeholder={t.inputs.fixedCosts.amount}
-                            className="text-sm pr-[140px]"
+                        <Controller
+                            name={`fixedCosts.${index}.amount`}
+                            control={control}
+                            render={({ field }) => (
+                                <Input
+                                    {...field}
+                                    type="number"
+                                    placeholder="0"
+                                    className="text-sm pr-[140px]"
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                            )}
                         />
                         <span className="absolute inset-y-0 right-[108px] flex items-center pr-3 text-sm text-muted-foreground">{currencySymbol}</span>
-                         <Select onValueChange={handleSelectChange('costType')} value={costType}>
-                            <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Total for Period">{t.inputs.fixedCosts.total}</SelectItem>
-                                <SelectItem value="Monthly Cost">{t.inputs.fixedCosts.perMonth}</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Controller
+                            name={`fixedCosts.${index}.costType`}
+                            control={control}
+                            defaultValue="Total for Period"
+                            render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <SelectTrigger className="absolute top-0 right-0 h-full w-[100px] text-xs bg-transparent border-l rounded-l-none px-2 text-muted-foreground">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Total for Period">{t.inputs.fixedCosts.total}</SelectItem>
+                                        <SelectItem value="Monthly Cost">{t.inputs.fixedCosts.perMonth}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
                     </div>
                 </div>
 
                 <div className="space-y-1">
                     <Label className="text-xs">{t.inputs.fixedCosts.paymentSchedule.title}</Label>
-                    <Select onValueChange={handleSelectChange('paymentSchedule')} value={schedule}>
-                        <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="up_front_m0">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
-                            <SelectItem value="monthly_from_m0">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m0}</SelectItem>
-                            <SelectItem value="monthly_from_m1">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m1}</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Controller
+                        name={`fixedCosts.${index}.paymentSchedule`}
+                        control={control}
+                        defaultValue="monthly_from_m0"
+                        render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger className="text-sm"><SelectValue placeholder={t.inputs.fixedCosts.paymentSchedule.title} /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="up_front_m0">{t.inputs.fixedCosts.paymentSchedule.upFront}</SelectItem>
+                                    <SelectItem value="monthly_from_m0">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m0}</SelectItem>
+                                    <SelectItem value="monthly_from_m1">{t.inputs.fixedCosts.paymentSchedule.monthly_from_m1}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    />
                 </div>
             </div>
         </div>
