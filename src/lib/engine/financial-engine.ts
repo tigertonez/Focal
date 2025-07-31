@@ -30,7 +30,7 @@ const createTimeline = (inputs: EngineInput) => {
 
     // Timeline for all calculations (costs, cash flow etc.)
     const timelineMonths = preOrder
-      ? Array.from({ length: forecastMonths + 1 }, (_, i) => i) 
+      ? Array.from({ length: forecastMonths + 1 }, (_, i) => i)
       : Array.from({ length: forecastMonths }, (_, i) => i + 1);
 
     // Sales can happen from M0 in pre-order, otherwise start from M1.
@@ -71,7 +71,7 @@ const getSalesWeights = (months: number, salesModel: 'launch' | 'even' | 'season
         case 'even':
             weights = Array(months).fill(1 / months);
             break;
-        case 'seasonal': 
+        case 'seasonal':
             const mid = (months - 1) / 2;
             for (let i = 0; i < months; i++) {
                 weights[i] = Math.exp(-Math.pow(i - mid, 2) / (2 * Math.pow(months / 4, 2)));
@@ -98,17 +98,17 @@ const calculateRevenue = (inputs: EngineInput, timeline: Timeline, monthlyUnitsT
         const soldUnitsData = monthlyUnitsTimeline.map(m => m[product.productName] || 0);
         const totalSoldUnits = soldUnitsData.reduce((sum, units) => sum + units, 0);
         const totalRevenue = toCents(totalSoldUnits * (product.sellPrice || 0));
-        
+
         timelineMonths.forEach((month, i) => {
              const revenueTimelineMonth = monthlyRevenueTimeline.find(m => m.month === month);
              if (revenueTimelineMonth) {
                  revenueTimelineMonth[product.productName] = toCents(soldUnitsData[i] * (product.sellPrice || 0));
              }
         });
-        
+
         return { name: product.productName, totalRevenue, totalSoldUnits };
     });
-    
+
     const totalSoldUnits = productBreakdown.reduce((sum, p) => sum + p.totalSoldUnits, 0);
     const totalRevenue = productBreakdown.reduce((sum, p) => sum + p.totalRevenue, 0);
 
@@ -120,18 +120,18 @@ const calculateRevenue = (inputs: EngineInput, timeline: Timeline, monthlyUnitsT
         ltv: 0,
         cac: 0,
     };
-    
+
     const allRevenueKeys = new Set<string>(['month', ...products.map(p => p.productName)]);
     const monthlyRevenue = monthlyRevenueTimeline.map(monthData => {
         const completeMonth: Record<string, any> = { month: monthData.month };
-        allRevenueKeys.forEach(key => { 
+        allRevenueKeys.forEach(key => {
             if (key !== 'month') {
                 completeMonth[key] = fromCents(monthData[key] || 0);
             }
         });
         return MonthlyRevenueSchema.parse(completeMonth);
     });
-    
+
     return { revenueSummary, monthlyRevenue, monthlyRevenueTimeline }; // Return cents-based timeline
 };
 
@@ -139,12 +139,12 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
     const { products } = inputs;
     const { timelineMonths, salesTimeline } = timeline;
     const isManualMode = inputs.realtime.dataSource === 'Manual';
-    
+
     const monthlyUnitsTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
 
     products.forEach(product => {
         const isLowVolume = product.plannedUnits !== undefined && product.plannedUnits >= 1 && product.plannedUnits <= 10;
-        
+
         if (isLowVolume) {
             if (product.plannedUnits && product.estimatedSales) {
                 product.sellThrough = (product.estimatedSales / product.plannedUnits) * 100;
@@ -152,7 +152,7 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
                 product.sellThrough = 0;
             }
         }
-        
+
         if (isManualMode && isLowVolume) {
             const soldUnits = Math.round(product.estimatedSales || 0);
             const saleMonth = product.saleMonth === 0 || product.saleMonth ? product.saleMonth : 1; // Default to month 1
@@ -164,12 +164,12 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
             if (product.plannedUnits === undefined || product.sellThrough === undefined || product.salesModel === undefined) {
                 throw new Error(`Product "${product.productName}" is missing required fields for manual forecasting.`);
             }
-            
+
             // --- AXIOM ENFORCEMENT & ROBUST DISTRIBUTION ---
             // 1. Calculate the EXACT total units to sell. This is the source of truth.
             const totalUnitsToSell = Math.round((product.plannedUnits || 0) * ((product.sellThrough || 0) / 100));
             const salesWeights = getSalesWeights(salesTimeline.length, product.salesModel || 'launch');
-            
+
             // 2. Calculate the initial distribution with flooring, and track the error.
             let distributedUnits = 0;
             const monthlyUnitDistribution = salesWeights.map(weight => {
@@ -222,10 +222,10 @@ const calculateUnitsSold = (inputs: EngineInput, timeline: Timeline) => {
 const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record<string, number>[] => {
     const { timelineMonths } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
-    
+
     inputs.fixedCosts.forEach(cost => {
         const schedule = cost.paymentSchedule || 'monthly_from_m0';
-        
+
         let startMonth = 1;
         if (schedule.endsWith('_m0')) startMonth = 0;
 
@@ -245,8 +245,8 @@ const buildFixedCostTimeline = (inputs: EngineInput, timeline: Timeline): Record
             const totalCostAmount = toCents(cost.amount);
             const monthlyAmount = allocationTimeline.length > 0 ? Math.floor(totalCostAmount / allocationTimeline.length) : 0;
             let remainder = allocationTimeline.length > 0 ? totalCostAmount % allocationTimeline.length : 0;
-            
-            allocationTimeline.forEach((month, index) => { 
+
+            allocationTimeline.forEach((month, index) => {
                 let amountThisMonth = monthlyAmount;
                 if(remainder > 0) {
                     amountThisMonth++;
@@ -289,20 +289,20 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
                 if (month1) month1['Final Payments'] = (month1['Final Payments'] || 0) + totalProductionCost;
             }
         }
-        
+
         totalPlannedUnits += plannedUnits;
         totalVariableCost += totalProductionCost;
 
         return {
-            name: product.productName, plannedUnits, unitCost: fromCents(toCents(product.unitCost)), 
+            name: product.productName, plannedUnits, unitCost: fromCents(toCents(product.unitCost)),
             totalProductionCost: fromCents(totalProductionCost),
-            depositPaid: fromCents(depositPaid), 
+            depositPaid: fromCents(depositPaid),
             remainingCost: fromCents(totalProductionCost - depositPaid)
         };
     });
 
     const totalDepositsPaid = variableCostBreakdown.reduce((sum, p) => sum + toCents(p.depositPaid), 0);
-    
+
     // Calculate total fixed cost for each item for the entire period
     const calculatedFixedCosts = inputs.fixedCosts.map(cost => {
         let totalAmount = 0;
@@ -316,7 +316,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     });
 
     const totalFixedCostInPeriod = calculatedFixedCosts.reduce((total, cost) => total + toCents(cost.amount), 0);
-    
+
     const cogsOfSoldGoods = inputs.products.reduce((total, product) => {
         const unitsSoldForProduct = monthlyUnitsSold.reduce((sum, month) => sum + (month[product.productName] || 0), 0);
         return total + toCents(unitsSoldForProduct * (product.unitCost || 0));
@@ -335,18 +335,18 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
         cogsOfUnsoldGoods: fromCents(cogsOfUnsoldGoods),
         cogsOfSoldGoods: fromCents(cogsOfSoldGoods),
     };
-    
+
     const allCostKeys = new Set<string>(['month', 'Deposits', 'Final Payments', ...inputs.fixedCosts.map(c => c.name), ...inputs.products.filter(p => p.costModel === 'monthly').map(p => p.productName)]);
     const monthlyCosts = monthlyCostTimeline.map(monthData => {
         const completeMonth: Record<string, any> = { month: monthData.month };
-        allCostKeys.forEach(key => { 
+        allCostKeys.forEach(key => {
             if (key !== 'month') {
                 completeMonth[key] = fromCents(monthData[key] || 0);
             }
         });
         return MonthlyCostSchema.parse(completeMonth);
     }) as MonthlyCost[];
-    
+
     return { costSummary, monthlyCosts, monthlyCostTimeline }; // Return cents-based timeline
 };
 
@@ -356,54 +356,54 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
 // =================================================================
 
 const calculateProfitAndCashFlow = (
-    inputs: EngineInput, 
-    timeline: Timeline, 
-    revenueData: ReturnType<typeof calculateRevenue>, 
-    costData: ReturnType<typeof calculateCosts>, 
+    inputs: EngineInput,
+    timeline: Timeline,
+    revenueData: ReturnType<typeof calculateRevenue>,
+    costData: ReturnType<typeof calculateCosts>,
     monthlyUnitsSold: Record<string, number>[]
 ) => {
     const { timelineMonths } = timeline;
     const { revenueSummary, monthlyRevenueTimeline } = revenueData;
     const { costSummary, monthlyCostTimeline } = costData;
     const { taxRate, accountingMethod, forecastMonths } = inputs.parameters;
-    
+
     // --- START: PROFIT CALCULATION ---
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-    
+
     const variableCostsForPL = accountingMethod === 'cogs'
         ? toCents(costSummary.cogsOfSoldGoods)
         : toCents(costSummary.totalVariable);
-    
+
     const totalGrossProfit = totalRevenueCents - variableCostsForPL;
 
-    const totalOperatingProfit = totalGrossProfit - toCents(costSummary.totalFixed);
-    
+    // Corrected Total Fixed Cost Calculation for P&L
+    const totalFixedCostForPL = inputs.fixedCosts.reduce((acc, cost) => {
+        if (cost.costType === 'Monthly Cost') {
+            return acc + toCents(cost.amount * forecastMonths);
+        }
+        return acc + toCents(cost.amount);
+    }, 0);
+
+
+    const totalOperatingProfit = totalGrossProfit - totalFixedCostForPL;
+
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmount = businessIsProfitable ? Math.round(totalOperatingProfit * (taxRate / 100)) : 0;
     const totalNetProfit = totalOperatingProfit - totalTaxAmount;
 
-    let cumulativeOperatingProfit = 0, profitBreakEvenMonth: number | null = null;
+    let cumulativeOperatingProfit = 0;
+    let profitBreakEvenMonth: number | null = null;
     let cumulativeTax = 0;
-    
+
+    // Monthly Fixed Cost for P&L (consistent allocation)
+    const monthlyFixedCostForPL = totalFixedCostForPL / forecastMonths;
+
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
-        // P&L recognition only starts from Month 1
         if (month === 0) {
             return { month, grossProfit: 0, operatingProfit: 0, netProfit: 0, plOperatingCosts: 0, tax: 0 };
         }
-        
-        const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        let fixedCostsThisMonth = 0;
-        inputs.fixedCosts.forEach(fc => {
-            if (fc.costType === 'Total for Period') {
-                fixedCostsThisMonth += toCents(fc.amount) / forecastMonths;
-            } else if (fc.costType === 'Monthly Cost') {
-                 const startMonth = fc.paymentSchedule.endsWith('_m0') ? 0 : 1;
-                 if (month >= startMonth) {
-                    fixedCostsThisMonth += toCents(fc.amount);
-                 }
-            }
-        });
+        const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         let variableCostsThisMonth = 0;
         if (accountingMethod === 'cogs') {
@@ -423,11 +423,11 @@ const calculateProfitAndCashFlow = (
                 }
             }
         }
-        
-        const plOperatingCosts = fixedCostsThisMonth + variableCostsThisMonth;
+
+        const plOperatingCosts = monthlyFixedCostForPL + variableCostsThisMonth;
         const grossProfit = revenueThisMonth - variableCostsThisMonth;
-        const operatingProfit = grossProfit - fixedCostsThisMonth;
-        
+        const operatingProfit = grossProfit - monthlyFixedCostForPL;
+
         const prevCumulativeProfit = cumulativeOperatingProfit;
         cumulativeOperatingProfit += operatingProfit;
 
@@ -446,15 +446,24 @@ const calculateProfitAndCashFlow = (
             profitBreakEvenMonth = month;
         }
 
-        return { 
-            month, 
-            grossProfit: fromCents(grossProfit), 
-            operatingProfit: fromCents(operatingProfit), 
+        return {
+            month,
+            grossProfit: fromCents(grossProfit),
+            operatingProfit: fromCents(operatingProfit),
             netProfit: fromCents(netProfit),
             plOperatingCosts: fromCents(plOperatingCosts),
             tax: fromCents(tax),
         };
     });
+    
+    // Final check for tax rounding issues
+    const finalTaxAdjustment = totalTaxAmount - cumulativeTax;
+    if (Math.abs(finalTaxAdjustment) > 0 && monthlyProfit.length > 1) {
+        const lastMonthProfit = monthlyProfit[monthlyProfit.length -1];
+        lastMonthProfit.tax += fromCents(finalTaxAdjustment);
+        lastMonthProfit.netProfit -= fromCents(finalTaxAdjustment);
+    }
+    
 
     const profitSummary = {
         totalGrossProfit: fromCents(totalGrossProfit),
@@ -471,54 +480,54 @@ const calculateProfitAndCashFlow = (
 
     // --- START: CASH FLOW CALCULATION ---
     let cumulativeCash = 0, peakFundingNeed = 0;
-    
+
     const monthlyCashFlow: MonthlyCashFlow[] = timelineMonths.map(month => {
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
-        
+
         const costsForMonth = monthlyCostTimeline.find(c => c.month === month) || {};
         const cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
-        const taxPayment = (monthlyProfit.find(p => p.month === month)?.tax || 0);
+        const taxPaymentCents = toCents((monthlyProfit.find(p => p.month === month)?.tax || 0));
 
-        const netCashFlow = cashIn - cashOutCosts - toCents(taxPayment);
+        const netCashFlow = cashIn - cashOutCosts - taxPaymentCents;
 
         cumulativeCash += netCashFlow;
 
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
-        
-        return { 
-            month, 
-            netCashFlow: fromCents(netCashFlow), 
-            cumulativeCash: fromCents(cumulativeCash) 
+
+        return {
+            month,
+            netCashFlow: fromCents(netCashFlow),
+            cumulativeCash: fromCents(cumulativeCash)
         };
     });
-    
+
     let cashPositiveMonth: number | null = null;
     const lastNegativeMonthIndex = monthlyCashFlow.map(cf => cf.cumulativeCash).findLastIndex(c => c < 0);
-    
+
     if (lastNegativeMonthIndex === -1 && monthlyCashFlow[0] && monthlyCashFlow[0].cumulativeCash >= 0) {
         cashPositiveMonth = monthlyCashFlow[0].month;
-    } 
+    }
     else if (lastNegativeMonthIndex < monthlyCashFlow.length - 1) {
          cashPositiveMonth = monthlyCashFlow[lastNegativeMonthIndex + 1].month;
     }
-    
-    const avgMonthlyBurnRate = fromCents(toCents(costSummary.totalFixed)) / timeline.forecastMonths;
+
+    const avgMonthlyBurnRate = fromCents(totalFixedCostForPL) / timeline.forecastMonths;
     const finalEndingCash = fromCents(cumulativeCash);
-    
-    const runway = finalEndingCash > 0 && avgMonthlyBurnRate > 0 
-        ? finalEndingCash / avgMonthlyBurnRate 
+
+    const runway = finalEndingCash > 0 && avgMonthlyBurnRate > 0
+        ? finalEndingCash / avgMonthlyBurnRate
         : (finalEndingCash > 0 ? Infinity : 0);
 
     const cashFlowSummary = {
-        endingCashBalance: finalEndingCash, 
+        endingCashBalance: finalEndingCash,
         potentialCashBalance: 0,
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
         cashPositiveMonth: cashPositiveMonth,
-        estimatedTaxes: fromCents(cumulativeTax),
+        estimatedTaxes: fromCents(totalTaxAmount),
     };
-    
+
     return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
 };
 
@@ -550,12 +559,12 @@ const calculateBusinessHealth = (
 
     const netMargin = summaries.profit.netMargin;
     const cashRunway = summaries.cash.runway;
-    
+
     // Contribution Margin is Revenue minus the COGS of *sold* items.
-    const contributionMargin = summaries.revenue.totalRevenue > 0 ? 
-      ((summaries.revenue.totalRevenue - summaries.cost.cogsOfSoldGoods) / summaries.revenue.totalRevenue) * 100 
+    const contributionMargin = summaries.revenue.totalRevenue > 0 ?
+      ((summaries.revenue.totalRevenue - summaries.cost.cogsOfSoldGoods) / summaries.revenue.totalRevenue) * 100
       : 0;
-      
+
     const peakFundingNeed = summaries.cash.peakFundingNeed;
     const avgSellThrough = inputs.products.length > 0
         ? inputs.products.reduce((acc, p) => acc + (p.sellThrough || 0), 0) / inputs.products.length
@@ -563,44 +572,44 @@ const calculateBusinessHealth = (
     const breakEvenMonths = summaries.profit.breakEvenMonth || inputs.parameters.forecastMonths + 1;
 
     const kpis: BusinessHealthScoreKpi[] = [
-        { 
-            label: 'Net Margin', 
-            value: normalize(netMargin, 0, 25), 
+        {
+            label: 'Net Margin',
+            value: normalize(netMargin, 0, 25),
             weight: weights.netMargin,
             tooltip: 'Measures final profit as a % of revenue. Scored on a scale from 0% (score: 0) to 25%+ (score: 100).'
         },
-        { 
-            label: 'Cash Runway', 
-            value: normalize(cashRunway, 0, 12), 
+        {
+            label: 'Cash Runway',
+            value: normalize(cashRunway, 0, 12),
             weight: weights.cashRunway,
             tooltip: 'Months of operation your cash reserves can cover based on your fixed costs. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).'
         },
-        { 
-            label: 'Contribution Margin', 
-            value: normalize(contributionMargin, 10, 60), 
+        {
+            label: 'Contribution Margin',
+            value: normalize(contributionMargin, 10, 60),
             weight: weights.contributionMargin,
             tooltip: 'Measures per-unit profitability (Revenue - COGS). Scored on a scale from 10% (score: 0) to 60%+ (score: 100).'
         },
-        { 
-            label: 'Peak Funding', 
-            value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true), 
+        {
+            label: 'Peak Funding',
+            value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true),
             weight: weights.peakFunding,
             tooltip: 'The minimum capital needed. Scored inversely; a lower need (relative to revenue) is better.'
         },
-        { 
-            label: 'Sell-Through', 
-            value: normalize(avgSellThrough, 50, 100), 
+        {
+            label: 'Sell-Through',
+            value: normalize(avgSellThrough, 50, 100),
             weight: weights.sellThrough,
             tooltip: 'The % of inventory you expect to sell. Scored on a scale from 50% (score: 0) to 100% (score: 100).'
         },
-        { 
-            label: 'Break-Even', 
-            value: normalize(breakEvenMonths, 1, 12, true), 
+        {
+            label: 'Break-Even',
+            value: normalize(breakEvenMonths, 1, 12, true),
             weight: weights.breakEven,
             tooltip: 'The months until profitability. Scored inversely; a shorter time to break-even is better (12 months = 0, 1 month = 100).'
         },
     ];
-    
+
     const finalScore = kpis.reduce((acc, kpi) => acc + (kpi.value * kpi.weight), 0);
 
     return {
@@ -628,7 +637,7 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         const revenueData = calculateRevenue(inputs, timeline, monthlyUnitsTimeline);
         const costData = calculateCosts(inputs, timeline, monthlyUnitsSold);
         const profitAndCashFlowData = calculateProfitAndCashFlow(inputs, timeline, revenueData, costData, monthlyUnitsSold);
-    
+
         const achievedResult = {
             revenueSummary: revenueData.revenueSummary,
             monthlyRevenue: revenueData.monthlyRevenue,
@@ -641,20 +650,20 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
         if (isPotentialCalculation) {
             return {
                 ...achievedResult,
-                businessHealth: undefined, 
+                businessHealth: undefined,
             };
         }
 
         const potentialInputs = JSON.parse(JSON.stringify(inputs));
-        potentialInputs.products.forEach((p: Product) => { 
-            p.sellThrough = 100; 
+        potentialInputs.products.forEach((p: Product) => {
+            p.sellThrough = 100;
             if (p.plannedUnits >= 1 && p.plannedUnits <= 10) {
                 p.estimatedSales = p.plannedUnits;
             }
         });
-        
+
         const potentialResult = calculateFinancials(potentialInputs, true);
-        
+
         const healthScore = calculateBusinessHealth(inputs, {
             revenue: achievedResult.revenueSummary,
             cost: achievedResult.costSummary,
@@ -668,13 +677,13 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
                 ...achievedResult.cashFlowSummary,
                 potentialCashBalance: potentialResult.cashFlowSummary.endingCashBalance
             },
-            profitSummary: { 
+            profitSummary: {
                 ...achievedResult.profitSummary,
                 potentialGrossProfit: potentialResult.profitSummary.totalGrossProfit,
             },
             businessHealth: healthScore,
         };
-        
+
         return finalResult;
 
     } catch (e: any) {
