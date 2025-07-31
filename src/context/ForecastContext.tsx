@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
 import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, type Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { calculateFinancials } from '@/lib/engine/financial-engine';
+import { calculateFinancials as calculateFinancialsEngine } from '@/lib/engine/financial-engine';
 import { translations, type Translations } from '@/lib/translations';
 
 interface FinancialsState {
@@ -27,6 +27,8 @@ interface ForecastContextType {
   saveDraft: () => void;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  proactiveAnalysis: string | null;
+  setProactiveAnalysis: React.Dispatch<React.SetStateAction<string | null>>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   locale: 'en' | 'de';
@@ -105,6 +107,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
   const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: true });
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
   const { toast } = useToast();
   
@@ -148,7 +151,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     setFinancials(prev => ({...prev, isLoading: false}));
   }, [toast, t]);
 
-  const calculateFinancialsAndSetState = () => {
+  const calculateFinancials = useCallback(() => {
     setFinancials({ data: null, error: null, isLoading: true });
     try {
         const result = EngineInputSchema.safeParse(inputs);
@@ -156,13 +159,13 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             const firstError = result.error.errors[0]?.message || 'Invalid input.';
             throw new Error(firstError);
         }
-        const calculatedData = calculateFinancials(result.data);
+        const calculatedData = calculateFinancialsEngine(result.data);
         setFinancials({ data: calculatedData, error: null, isLoading: false });
     } catch (e: any) {
         console.error("Error calculating financials:", e);
         setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
     }
-  };
+  }, [inputs]);
 
   const updateProduct = (productIndex: number, field: keyof Product, value: any) => {
     setInputs(prev => {
@@ -257,7 +260,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     inputs,
     setInputs,
     financials,
-    calculateFinancials: calculateFinancialsAndSetState,
+    calculateFinancials,
     updateProduct,
     addProduct,
     removeProduct,
@@ -267,12 +270,14 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     saveDraft,
     isCopilotOpen,
     setIsCopilotOpen,
+    proactiveAnalysis,
+    setProactiveAnalysis,
     messages,
     setMessages,
     locale,
     setLocale,
     t,
-  }), [inputs, financials, isCopilotOpen, messages, locale, t]);
+  }), [inputs, financials, calculateFinancials, isCopilotOpen, proactiveAnalysis, messages, locale, t]);
 
   return (
     <ForecastContext.Provider value={value}>
