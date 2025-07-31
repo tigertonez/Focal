@@ -117,7 +117,7 @@ export function FinancialCopilot() {
     const currentInput = question || input;
     if (currentInput.trim() === '' || isLoading) return;
 
-    if (financials.error || !financials.data || !inputs) {
+    if (!financials.data || !inputs) {
       const botMessage: Message = { role: 'bot', text: "Please go to the Inputs page and click 'Get Report' first. I need the financial data to be able to help you." };
       setMessages(prev => [...prev, botMessage]);
       return;
@@ -130,11 +130,6 @@ export function FinancialCopilot() {
     setIsLoading(true);
     setError(null);
     
-    const apiHistory = newMessages.map(msg => ({
-      role: msg.role === 'bot' ? 'model' : 'user',
-      content: [{ text: msg.text }]
-    }));
-
     try {
       const mainContent = document.querySelector('main');
       if (!mainContent) throw new Error("Main content area not found for screenshot.");
@@ -147,7 +142,7 @@ export function FinancialCopilot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'copilot',
-          history: apiHistory,
+          history: newMessages, // Send the Message[] array directly
           screenshotDataUri,
           language: locale,
           financials: {

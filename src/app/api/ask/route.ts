@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
+import { EngineInputSchema, EngineOutputSchema, MessageSchema } from '@/lib/types';
 
 
 const AnalyzeDataSchema = z.object({
@@ -10,14 +10,9 @@ const AnalyzeDataSchema = z.object({
   question: z.string(),
 });
 
-const CopilotMessageSchema = z.object({
-  role: z.enum(['user', 'model']),
-  content: z.array(z.object({ text: z.string() })),
-});
-
 const CopilotSchema = z.object({
   action: z.literal('copilot'),
-  history: z.array(CopilotMessageSchema),
+  history: z.array(MessageSchema),
   screenshotDataUri: z.string(),
   language: z.string().optional(),
   financials: z.object({
