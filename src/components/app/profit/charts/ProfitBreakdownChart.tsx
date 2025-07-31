@@ -17,11 +17,10 @@ import { useForecast } from "@/context/ForecastContext";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
-  inputs: EngineInput;
   currency: string;
 }
 
-export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({
@@ -45,7 +44,8 @@ export function ProfitBreakdownChart({ data, inputs, currency }: ProfitBreakdown
 
 
   const chartData = React.useMemo(() => {
-    return data.monthlyProfit.map(month => ({
+    return data.monthlyProfit
+      .map(month => ({
         month: `M${month.month}`,
         revenue: month.revenue,
         variableCosts: -Math.abs(month.variableCosts), // Ensure it's negative for stacking
