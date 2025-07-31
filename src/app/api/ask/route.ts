@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeFinancialData } from '@/ai/flows/analyze-financial-data';
 import { financialCopilot } from '@/ai/flows/financial-copilot';
-import { calculateFinancials } from '@/lib/engine/financial-engine';
 import { z } from 'zod';
 import { EngineInputSchema, EngineOutputSchema } from '@/lib/types';
 
@@ -29,13 +28,8 @@ const CopilotSchema = z.object({
   }),
 });
 
-const CalculateFinancialsSchema = z.object({
-    action: z.literal('calculate-financials'),
-    inputs: EngineInputSchema,
-});
 
-
-const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema, CalculateFinancialsSchema]);
+const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,16 +62,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(result);
     }
     
-    if (action === 'calculate-financials') {
-        const { inputs } = validation.data;
-        // The financial engine handles all calculations internally.
-        // No pre-processing is needed here.
-        const result = calculateFinancials(inputs);
-        // Return the full result payload to the client
-        return NextResponse.json({ data: result, inputs });
-    }
-
-
     return NextResponse.json({ error: 'Invalid action specified' }, { status: 400 });
 
   } catch (error) {

@@ -16,7 +16,7 @@ export default function LoadingPage() {
 
     useEffect(() => {
         calculateFinancials();
-    }, []);
+    }, [calculateFinancials]);
 
     useEffect(() => {
         if (!financials.isLoading) {
