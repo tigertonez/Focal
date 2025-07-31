@@ -4,12 +4,6 @@ import { z } from 'zod';
 import { EngineInputSchema, EngineOutputSchema, MessageSchema } from '@/lib/types';
 
 
-const AnalyzeDataSchema = z.object({
-  action: z.literal('analyze'),
-  financialData: z.any(),
-  question: z.string(),
-});
-
 const CopilotSchema = z.object({
   action: z.literal('copilot'),
   history: z.array(MessageSchema),
@@ -22,7 +16,7 @@ const CopilotSchema = z.object({
 });
 
 
-const ApiSchema = z.union([AnalyzeDataSchema, CopilotSchema]);
+const ApiSchema = CopilotSchema; // Simplified to a single schema for now
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,17 +28,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { action } = validation.data;
-
-    if (action === 'analyze') {
-      const { financialData, question } = validation.data;
-      // Dynamically import the flow to avoid issues on server start
-      const { analyzeFinancialData } = await import('@/ai/flows/analyze-financial-data');
-      const result = await analyzeFinancialData({
-        financialData: JSON.stringify(financialData, null, 2),
-        question,
-      });
-      return NextResponse.json(result);
-    }
 
     if (action === 'copilot') {
         const { history, screenshotDataUri, language, financials } = validation.data;
@@ -61,9 +44,12 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json({ error: 'Invalid action specified' }, { status: 400 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in /api/ask:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to process your request.', details: errorMessage }, { status: 500 });
+    // Return a simple error structure that the client can easily handle.
+    return NextResponse.json(
+        { error: error.message || 'An unknown error occurred on the server.' }, 
+        { status: 500 }
+    );
   }
 }

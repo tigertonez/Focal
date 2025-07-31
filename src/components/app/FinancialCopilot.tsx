@@ -9,7 +9,6 @@ import { Bot, User, Loader2, ArrowUp, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useForecast } from '@/context/ForecastContext';
-import { useToast } from '@/hooks/use-toast';
 import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +29,6 @@ export function FinancialCopilot() {
     inputs,
     financials,
   } = useForecast();
-  const { toast } = useToast();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -118,7 +116,7 @@ export function FinancialCopilot() {
     if (currentInput.trim() === '' || isLoading) return;
 
     if (!financials.data || !inputs) {
-      const botMessage: Message = { role: 'bot', text: "Please go to the Inputs page and click 'Get Report' first. I need the financial data to be able to help you." };
+      const botMessage: Message = { role: 'bot', text: t.errors.noDataDescription };
       setMessages(prev => [...prev, botMessage]);
       return;
     }
@@ -142,7 +140,7 @@ export function FinancialCopilot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'copilot',
-          history: newMessages, // Send the Message[] array directly
+          history: newMessages,
           screenshotDataUri,
           language: locale,
           financials: {
@@ -153,8 +151,14 @@ export function FinancialCopilot() {
       });
 
       const result = await response.json();
+
       if (!response.ok) {
-        throw new Error(result.details || result.error || 'Failed to get a response from the copilot.');
+        // Now, we expect a simple { error: 'message' } structure
+        throw new Error(result.error || 'An API error occurred.');
+      }
+      
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       const botMessage: Message = { role: 'bot', text: result.answer };
