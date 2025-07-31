@@ -224,7 +224,7 @@ const buildFixedCostTimeline = (
     monthlyRevenueTimeline: Record<string, number>[],
     isForPL: boolean = false
 ): Record<string, number>[] => {
-    const { timelineMonths } = timeline;
+    const { timelineMonths, salesTimeline } = timeline;
     const monthlyCostTimeline: Record<string, number>[] = timelineMonths.map(m => ({ month: m }));
     const operationalMonths = timelineMonths.filter(m => m >= 1);
 
@@ -429,7 +429,7 @@ const calculateCosts = (inputs: EngineInput, timeline: Timeline, monthlyUnitsSol
     const costSummary = {
         totalFixed: fromCents(totalFixedCostInPeriod),
         totalVariable: fromCents(totalVariableCost),
-        totalOperating: fromCents(totalFixedCostInPeriod + cogsOfSoldGoods),
+        totalOperating: fromCents(totalFixedCostInPeriod + totalVariableCost),
         avgCostPerUnit: totalPlannedUnits > 0 ? fromCents(totalVariableCost / totalPlannedUnits) : 0,
         fixedCosts: calculatedFixedCosts,
         variableCosts: variableCostBreakdown,
@@ -468,24 +468,16 @@ const calculateProfitAndCashFlow = (
     const { timelineMonths } = timeline;
     const { revenueSummary, monthlyRevenueTimeline } = revenueData;
     const { costSummary, monthlyCashOutflowTimeline } = costData;
-    const { accountingMethod } = inputs.parameters;
+    const { accountingMethod, taxRate } = inputs.parameters;
 
-    // --- START: PROFIT CALCULATION ---
-    const totalRevenueCents = toCents(revenueSummary.totalRevenue);
-
-    const variableCostsForPL = accountingMethod === 'cogs'
-        ? toCents(costSummary.cogsOfSoldGoods)
-        : toCents(costSummary.totalVariable);
-
-    const totalFixedCostForPL = toCents(costSummary.totalFixed);
-    const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
-
-    let cumulativeOperatingProfit = 0;
-    let profitBreakEvenMonth: number | null = null;
-    
     // --- START: P&L FIXED COST ALLOCATION ---
     const monthlyFixedCostForPLBreakdown = buildFixedCostTimeline(inputs, timeline, monthlyRevenueTimeline, true);
     // --- END P&L FIXED COST ALLOCATION ---
+    
+    // --- START: PROFIT CALCULATION ---
+    let cumulativeOperatingProfit = 0;
+    let profitBreakEvenMonth: number | null = null;
+    let cumulativeTax = 0;
     
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
@@ -519,7 +511,17 @@ const calculateProfitAndCashFlow = (
         const operatingProfit = grossProfit - fixedCostsThisMonth;
 
         cumulativeOperatingProfit += operatingProfit;
-        const netProfit = operatingProfit; // No taxes applied
+
+        let taxForMonth = 0;
+        if (cumulativeOperatingProfit > 0) {
+            const taxableProfit = cumulativeOperatingProfit - cumulativeTax;
+            if (taxableProfit > 0) {
+                taxForMonth = taxableProfit * (taxRate / 100);
+                cumulativeTax += taxForMonth;
+            }
+        }
+
+        const netProfit = operatingProfit - taxForMonth;
 
         if (profitBreakEvenMonth === null && cumulativeOperatingProfit > 0 && month >= 1) {
             profitBreakEvenMonth = month;
@@ -534,18 +536,24 @@ const calculateProfitAndCashFlow = (
             operatingProfit: fromCents(operatingProfit),
             netProfit: fromCents(netProfit),
             plOperatingCosts: fromCents(plOperatingCosts),
-            tax: 0,
+            tax: fromCents(taxForMonth),
             cumulativeOperatingProfit: fromCents(cumulativeOperatingProfit),
         };
     });
     
+    const totalRevenueCents = toCents(revenueSummary.totalRevenue);
+    const variableCostsForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.variableCosts), 0);
+    const totalFixedCostForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.fixedCosts), 0);
+    const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
+    const totalNetProfit = totalOperatingProfit - cumulativeTax;
+    
     const profitSummary = {
         totalGrossProfit: fromCents(totalRevenueCents - variableCostsForPL),
         totalOperatingProfit: fromCents(totalOperatingProfit),
-        totalNetProfit: fromCents(totalOperatingProfit),
+        totalNetProfit: fromCents(totalNetProfit),
         grossMargin: totalRevenueCents > 0 ? ((totalRevenueCents - variableCostsForPL) / totalRevenueCents) * 100 : 0,
         operatingMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
-        netMargin: totalRevenueCents > 0 ? (totalOperatingProfit / totalRevenueCents) * 100 : 0,
+        netMargin: totalRevenueCents > 0 ? (totalNetProfit / totalRevenueCents) * 100 : 0,
         breakEvenMonth: profitBreakEvenMonth,
     };
 
@@ -559,10 +567,13 @@ const calculateProfitAndCashFlow = (
         const cashIn = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
 
         const costsForMonth = monthlyCashOutflowTimeline.find(c => c.month === month) || {};
-        const cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
+        let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
+        
+        // Tax is a cash outflow
+        const taxForMonth = toCents(monthlyProfit.find(p => p.month === month)?.tax || 0);
+        cashOutCosts += taxForMonth;
 
         const netCashFlow = cashIn - cashOutCosts;
-
         cumulativeCash += netCashFlow;
 
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
@@ -597,7 +608,7 @@ const calculateProfitAndCashFlow = (
         peakFundingNeed: fromCents(Math.abs(peakFundingNeed)),
         runway: isFinite(runway) ? runway : 0,
         cashPositiveMonth: cashPositiveMonth,
-        estimatedTaxes: 0,
+        estimatedTaxes: fromCents(cumulativeTax),
     };
 
     return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
