@@ -97,7 +97,7 @@ export default function LandingPage() {
               <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden border-2 shadow-lg">
                 <iframe 
                   className="w-full h-full"
-                  src="https://www.youtube.com/watch?v=VhTf_Inf7Fs" 
+                  src="https://www.youtube.com/embed/VhTf_Inf7Fs" 
                   frameBorder="0" 
                   allow="autoplay; fullscreen; picture-in-picture" 
                   allowFullScreen>
