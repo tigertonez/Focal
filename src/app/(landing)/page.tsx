@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 
@@ -37,7 +37,7 @@ export default function LandingPage() {
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
           <div className="container mx-auto flex justify-between items-center">
               <Link href="/">
-                <Image src="/logo.png" alt="Focal Logo" width={115} height={115} priority />
+                <Image src="/logo.png" alt="Focal Logo" width={140} height={140} priority />
               </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
@@ -76,9 +76,9 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="pt-16 pb-0 bg-background">
+        <section id="features" className="py-16 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-5xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
                 Your entire financial workflow, unified.
               </h2>
@@ -99,26 +99,32 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="flex flex-col justify-center">
-              <Separator className="my-8" />
-              <div className="grid md:grid-cols-3 gap-12">
-                {features.map((feature) => (
-                  <div key={feature.title} className="p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CheckCircle className="text-primary h-6 w-6" />
-                      <h3 className="text-xl font-semibold">{feature.title}</h3>
+            <div className="flex flex-col justify-center items-center mt-16">
+              <Card className="w-full max-w-2xl shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">What you can do</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {features.map((feature, index) => (
+                    <div key={feature.title}>
+                      {index > 0 && <Separator className="my-4" />}
+                      <div className="flex items-start gap-4">
+                        <CheckCircle className="text-primary h-6 w-6 mt-1 flex-shrink-0" />
+                        <div>
+                          <h3 className="text-lg font-semibold">{feature.title}</h3>
+                          <p className="mt-1 text-muted-foreground">{feature.description}</p>
+                        </div>
+                      </div>
                     </div>
-                    <p className="mt-2 text-muted-foreground text-justify">{feature.description}</p>
-                  </div>
-                ))}
-              </div>
-              <Separator className="my-8" />
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
         
         {/* SECTION 3: PRICING / TIERS */}
-        <section id="waitlist" className="py-12 bg-muted/50">
+        <section id="waitlist" className="py-16 bg-muted/50">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-5 gap-12 items-center">
                     <div className="md:col-span-2">
