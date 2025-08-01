@@ -37,17 +37,17 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean, tooltip?: string }> = ({ title, children, className, icon, defaultOpen = false, tooltip }) => (
     <Collapsible defaultOpen={defaultOpen} className={cn(className)}>
-        <Card>
+        <Card className="overflow-hidden group">
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <CollapsibleTrigger className='w-full'>
-                            <div className="flex w-full items-center justify-between p-4 cursor-pointer hover:bg-primary/10 rounded-t-lg transition-colors duration-200">
+                             <div className="flex w-full items-center justify-between p-6 cursor-pointer bg-card hover:bg-[#324E98] hover:text-white rounded-t-lg transition-colors duration-200">
                                 <div className="flex items-center gap-3">
                                     {icon}
-                                    <span className="font-semibold">{title}</span>
+                                    <span className="font-semibold text-lg">{title}</span>
                                 </div>
-                                <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
+                                <ChevronRight className="h-5 w-5 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
                             </div>
                         </CollapsibleTrigger>
                     </TooltipTrigger>
@@ -59,7 +59,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; className?: 
                 </Tooltip>
             </TooltipProvider>
 
-            <CollapsibleContent className="p-4 pt-0">
+            <CollapsibleContent className="p-4 pt-4 bg-card">
                 {children}
             </CollapsibleContent>
         </Card>
@@ -136,16 +136,17 @@ export default function InputsPage() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-muted/50 min-h-screen">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-muted/40 min-h-screen">
         <main className="p-4 md:p-8">
           <SectionHeader title={t.inputs.title} description={t.inputs.description} />
 
           <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6 items-start">
+             <div className="grid md:grid-cols-2 gap-6 items-start">
+              <div className="space-y-6">
                 <Section 
                     title={t.inputs.products.title} 
                     icon={<Briefcase />} 
-                    defaultOpen={false} 
+                    defaultOpen={true} 
                     tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
                 >
                     <div className="space-y-6">
@@ -153,15 +154,15 @@ export default function InputsPage() {
                         <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
                       ))}
                     </div>
-                    <Button variant="outline" type="button" onClick={handleAddProduct} className="w-full border-dashed">
+                    <Button variant="outline" type="button" onClick={handleAddProduct} className="w-full border-dashed mt-4">
                       <PlusCircle className="mr-2" size={16} /> {t.inputs.products.addProduct}
                     </Button>
                 </Section>
-              
+                
                 <Section 
                     title={t.inputs.fixedCosts.title} 
                     icon={<Building />} 
-                    defaultOpen={false} 
+                    defaultOpen={true} 
                     tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
                 >
                     <div className="space-y-3">
@@ -173,8 +174,10 @@ export default function InputsPage() {
                       <PlusCircle className="mr-2" size={16} /> {t.inputs.fixedCosts.addFixedCost}
                     </Button>
                 </Section>
-
-                <Section 
+              </div>
+              
+              <div className="space-y-6">
+                 <Section 
                     title="Company Context" 
                     icon={<Wrench />}
                     tooltip="Provide general context about your business. This helps the AI tailor its analysis and advice to your specific situation."
@@ -225,6 +228,7 @@ export default function InputsPage() {
                         </SelectField>
                     </div>
                 </Section>
+              </div>
 
             </div>
           </div>
