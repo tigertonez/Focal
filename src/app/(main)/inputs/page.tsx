@@ -34,12 +34,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { EngineInputSchema, type EngineInput } from '@/lib/types';
 
 
-const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean, isHighlighted?: boolean }> = ({ title, children, className, icon, defaultOpen = false, isHighlighted }) => (
+const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean }> = ({ title, children, className, icon, defaultOpen = false }) => (
     <Collapsible defaultOpen={defaultOpen} className={cn("space-y-4", className)}>
         <CollapsibleTrigger asChild>
             <div className={cn(
                 "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer",
-                isHighlighted ? "bg-primary/10 border-primary/20" : "bg-muted/40"
+                "bg-muted/40"
                 )}>
                 <div className="flex items-center gap-3">
                     {icon}
@@ -130,7 +130,7 @@ export default function InputsPage() {
 
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-8 items-start">
-               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={true} isHighlighted>
+               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={true}>
                   <div className="space-y-6">
                     {productFields.map((field, index) => (
                       <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
@@ -141,7 +141,7 @@ export default function InputsPage() {
                   </Button>
               </Section>
               
-              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={true} isHighlighted>
+              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={true}>
                 <div className="space-y-3">
                   {fixedCostFields.map((field, index) => (
                     <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
