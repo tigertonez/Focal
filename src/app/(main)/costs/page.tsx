@@ -107,12 +107,8 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
              <section className="grid md:grid-cols-2 gap-8 pt-4">
                  <div className="space-y-8">
                     <div className="space-y-2">
+                         <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
                          <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    {t.pages.costs.charts.investment}
-                                </CardTitle>
-                            </CardHeader>
                             <CardContent className="h-[300px] w-full">
                                 <InvestmentPieChart data={investmentData} currency={currency} />
                             </CardContent>

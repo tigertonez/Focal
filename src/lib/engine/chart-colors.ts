@@ -29,8 +29,9 @@ export const semanticColorMap: Record<string, string> = {
     "Equip": "hsl(var(--chart-5))",
 
     // Specific keywords for cash flow items that need reliable colors
-    "Deposits": "hsl(25, 84%, 60%)",      // A distinct orange
-    "Final Payments": "hsl(217, 30%, 55%)",// A slate blue
+    // These are now more distinct to avoid collision with fixed costs
+    "Deposits": "hsl(30, 90%, 55%)",      // A distinct, vibrant orange
+    "Final Payments": "hsl(200, 85%, 50%)",// A distinct, bright cyan
 
     // General application colors for reference
     "Revenue": "hsl(var(--primary))",
