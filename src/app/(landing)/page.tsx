@@ -36,15 +36,8 @@ export default function LandingPage() {
       {/* HEADER */}
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
           <div className="container mx-auto flex justify-between items-center">
-              <Link href="/" className="text-white">
-                <svg width="80" height="80" viewBox="0 0 160 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M80 0L99.2173 55.4388L157.063 68.5574L114.14 114.561L128.435 174.562L80 144.9L31.565 174.562L45.8598 114.561L2.93661 68.5574L60.7827 55.4388L80 0Z" fill="white"/>
-                  <path d="M80 165C124.183 165 160 129.183 160 85C160 40.8172 124.183 5 80 5C35.8172 5 0 40.8172 0 85C0 129.183 35.8172 165 80 165Z" fill="black" stroke="white" strokeWidth="10"/>
-                  <path d="M80 15C118.66 15 150 46.3401 150 85C150 123.66 118.66 155 80 155C41.3401 155 10 123.66 10 85C10 46.3401 41.3401 15 80 15Z" fill="white"/>
-                  <path d="M80 85C80 123.66 41.3401 155 0 155C-3.4141e-06 145.419 1.95471 136.015 5.68347 127.452C16.0355 103.294 45.4709 85 80 85Z" fill="#1E40AF"/>
-                  <path d="M80 85C80 46.3401 118.66 15 160 15C160 24.5813 158.045 33.9853 154.317 42.548C143.964 66.7056 114.529 85 80 85Z" fill="#F97316"/>
-                  <text x="50%" y="175" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="40" fontWeight="bold" fontFamily="sans-serif">FOCAL</text>
-                </svg>
+              <Link href="/">
+                <Image src="/logo.png" alt="Focal Logo" width={80} height={80} />
               </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
