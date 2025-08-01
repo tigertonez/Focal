@@ -36,11 +36,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean }> = ({ title, children, className, icon, defaultOpen = false }) => (
-    <Collapsible defaultOpen={defaultOpen} className={cn("space-y-4", className)}>
+    <Collapsible defaultOpen={defaultOpen} className={cn(className)}>
         <Card>
             <CardContent className="p-0">
                 <CollapsibleTrigger className='w-full'>
-                    <div className="flex w-full items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
+                    <div className="flex w-full items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg">
                         <div className="flex items-center gap-3">
                             {icon}
                             <span className="font-semibold">{title}</span>
@@ -48,7 +48,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; className?: 
                         <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
                     </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 p-4 pt-0 border-t">
+                <CollapsibleContent className="space-y-4 p-4 pt-0">
                     {children}
                 </CollapsibleContent>
             </CardContent>
@@ -126,7 +126,7 @@ export default function InputsPage() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-background min-h-screen">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-muted/50 min-h-screen">
         <main className="p-4 md:p-8">
           <SectionHeader title={t.inputs.title} description={t.inputs.description} />
 
@@ -199,33 +199,9 @@ export default function InputsPage() {
                 </Section>
 
             </div>
-            
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-                      <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
-                      <h2 className="text-base font-semibold">{t.inputs.realtime.title}</h2>
-                  </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-4 pl-6">
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <SelectField name="realtime.dataSource" label={t.inputs.realtime.dataSource}>
-                        <SelectItem value="Manual">{t.inputs.realtime.manual}</SelectItem>
-                        <SelectItem value="Shopify" disabled>Shopify ({t.inputs.realtime.comingSoon})</SelectItem>
-                        <SelectItem value="CSV" disabled>CSV Import ({t.inputs.realtime.comingSoon})</SelectItem>
-                      </SelectField>
-                      {!isManualMode && (
-                          <>
-                              <InputField name="realtime.apiKey" label="API Key" type="password" placeholder={t.inputs.realtime.apiKeyPlaceholder} />
-                              <InputField name="realtime.timezone" label="Timezone" />
-                          </>
-                      )}
-                  </div>
-               </CollapsibleContent>
-            </Collapsible>
           </div>
 
-          <footer className="flex justify-between items-center mt-8 pt-6 border-t">
+          <footer className="flex justify-between items-center mt-8 pt-6 border-t border-border/50">
             <Button variant="outline" type="button" onClick={handleSaveDraft}>
               {t.inputs.footer.saveDraft}
             </Button>
