@@ -65,7 +65,7 @@ export default function LandingPage() {
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
             </p>
             <div className="mt-20 flex items-center justify-center">
-              <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg scale-110 font-bold px-8 py-6 text-lg">
+              <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg font-bold px-8 py-6 text-lg">
                 Build My Forecast <ArrowRight className="ml-2" />
               </Button>
             </div>
