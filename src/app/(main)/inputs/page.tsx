@@ -146,7 +146,6 @@ export default function InputsPage() {
                 <Section 
                     title={t.inputs.products.title} 
                     icon={<Briefcase />} 
-                    defaultOpen={true} 
                     tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
                 >
                     <div className="space-y-6">
@@ -162,7 +161,6 @@ export default function InputsPage() {
                 <Section 
                     title={t.inputs.fixedCosts.title} 
                     icon={<Building />} 
-                    defaultOpen={true} 
                     tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
                 >
                     <div className="space-y-3">
