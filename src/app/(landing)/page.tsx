@@ -37,24 +37,27 @@ export default function LandingPage() {
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
           <div className="container mx-auto flex justify-between items-center">
               <Link href="/" className="text-white">
-                {/* === PASTE YOUR SVG LOGO HERE === */}
                 <svg
+                  viewBox="0 0 100 125"
+                  className="h-16 w-auto"
+                  fill="white"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-8 w-auto"
                 >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5"></path>
-                  <path d="M2 12l10 5 10-5"></path>
+                  <defs>
+                    <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                      <stop offset="0%" style={{stopColor: 'rgb(255,255,255)', stopOpacity: 1}} />
+                      <stop offset="100%" style={{stopColor: 'rgb(0,0,255)', stopOpacity: 1}} />
+                    </radialGradient>
+                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                       <stop offset="0%" style={{stopColor: 'rgb(135,206,235)', stopOpacity: 1}} />
+                       <stop offset="50%" style={{stopColor: 'rgb(25,25,112)', stopOpacity: 1}} />
+                       <stop offset="100%" style={{stopColor: 'rgb(255,165,0)', stopOpacity: 1}} />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="40" r="35" fill="url(#grad2)"/>
+                  <path d="M50 15 a25 25 0 0 1 0 50 a12.5 12.5 0 0 1 0 -25 a12.5 12.5 0 0 0 0 -25" fill="white"/>
+                  <text x="50" y="110" fontFamily="sans-serif" fontSize="24" fontWeight="bold" textAnchor="middle" fill="white">FOCAL</text>
                 </svg>
-                {/* =================================== */}
               </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
@@ -108,7 +111,7 @@ export default function LandingPage() {
               <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden border-2 shadow-lg">
                 <iframe 
                   className="w-full h-full"
-                  src="https://player.vimeo.com/video/909421124?h=746979cd39&title=0&byline=0&portrait=0&background=1" 
+                  src="https://www.youtube.com/watch?v=VhTf_Inf7Fs" 
                   frameBorder="0" 
                   allow="autoplay; fullscreen; picture-in-picture" 
                   allowFullScreen>
