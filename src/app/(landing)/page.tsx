@@ -33,10 +33,9 @@ export default function LandingPage() {
   
   const personas = [
       "Founders seeking investment",
-      "E-commerce managers",
-      "D2C brand operators",
-      "Financial consultants",
-      "Business strategists",
+      "D2C Brand Operators",
+      "E-commerce Managers",
+      "Shopify Store Owners",
   ]
 
   return (
@@ -134,7 +133,7 @@ export default function LandingPage() {
                      <Users className="text-primary" />
                      Built for founders, operators, and advisors
                  </h3>
-                 <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-3 text-muted-foreground">
+                 <div className="grid grid-cols-2 md:grid-cols-2 gap-x-8 gap-y-3 text-muted-foreground">
                     {personas.map(p => (
                        <div key={p} className="flex items-center gap-3">
                           <CheckCircle size={16} className="text-primary/80 flex-shrink-0" />
@@ -150,8 +149,8 @@ export default function LandingPage() {
         {/* SECTION 3: PRICING / TIERS */}
         <section id="waitlist" className="py-16 bg-muted/50">
             <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-5 gap-12 items-center">
-                    <div className="md:col-span-2">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
                         <h2 className="text-4xl font-bold">Start for Free.</h2>
                         <p className="mt-4 text-muted-foreground">
                             Use our simplified forecasting engine to see your potential revenue and basic costs instantly. No credit card required. Get a feel for how powerful financial clarity can be.
@@ -160,7 +159,7 @@ export default function LandingPage() {
                           Try the Free Forecaster <ArrowRight className="ml-2" />
                         </Button>
                     </div>
-                    <Card className="p-8 rounded-xl shadow-lg bg-card md:col-span-3">
+                    <Card className="p-8 rounded-xl shadow-lg bg-card">
                         <h3 className="text-2xl font-semibold">Join the Beta Waitlist.</h3>
                         <p className="mt-2 text-muted-foreground">
                             Ready for the full suite? Get early access to advanced features like AI-powered insights, cash flow analysis, PDF reports, and real-time data integration.
