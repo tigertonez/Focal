@@ -182,32 +182,34 @@ export default function InputsPage() {
                     icon={<Wrench />}
                     tooltip="Provide general context about your business. This helps the AI tailor its analysis and advice to your specific situation."
                 >
-                    <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
-                    <SelectField name="company.industry" label="Industry">
-                        <SelectItem value="fashion">Fashion & Apparel</SelectItem>
-                        <SelectItem value="jewelry">Jewelry</SelectItem>
-                        <SelectItem value="cosmetics">Cosmetics</SelectItem>
-                        <SelectItem value="food">Food & Beverage</SelectItem>
-                        <SelectItem value="digital">Digital Products</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                    </SelectField>
-                    <SelectField name="company.stage" label="Company Stage">
-                        <SelectItem value="idea">Idea</SelectItem>
-                        <SelectItem value="launch">Pre-Launch / Launch</SelectItem>
-                        <SelectItem value="growth">Growth</SelectItem>
-                        <SelectItem value="scale">Scale</SelectItem>
-                    </SelectField>
-                    <SelectField name="company.production" label="Production Model">
-                        <SelectItem value="preorder">Pre-Order</SelectItem>
-                        <SelectItem value="stock">Stock</SelectItem>
-                        <SelectItem value="ondemand">On-Demand</SelectItem>
-                    </SelectField>
-                    <SelectField name="company.teamSize" label="Team Size">
-                        <SelectItem value="solo">Solo Founder</SelectItem>
-                        <SelectItem value="2-5">2-5 Employees</SelectItem>
-                        <SelectItem value="6-20">6-20 Employees</SelectItem>
-                        <SelectItem value=">20">20+ Employees</SelectItem>
-                    </SelectField>
+                    <div className="space-y-4">
+                        <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
+                        <SelectField name="company.industry" label="Industry">
+                            <SelectItem value="fashion">Fashion & Apparel</SelectItem>
+                            <SelectItem value="jewelry">Jewelry</SelectItem>
+                            <SelectItem value="cosmetics">Cosmetics</SelectItem>
+                            <SelectItem value="food">Food & Beverage</SelectItem>
+                            <SelectItem value="digital">Digital Products</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                        </SelectField>
+                        <SelectField name="company.stage" label="Company Stage">
+                            <SelectItem value="idea">Idea</SelectItem>
+                            <SelectItem value="launch">Pre-Launch / Launch</SelectItem>
+                            <SelectItem value="growth">Growth</SelectItem>
+                            <SelectItem value="scale">Scale</SelectItem>
+                        </SelectField>
+                        <SelectField name="company.production" label="Production Model">
+                            <SelectItem value="preorder">Pre-Order</SelectItem>
+                            <SelectItem value="stock">Stock</SelectItem>
+                            <SelectItem value="ondemand">On-Demand</SelectItem>
+                        </SelectField>
+                        <SelectField name="company.teamSize" label="Team Size">
+                            <SelectItem value="solo">Solo Founder</SelectItem>
+                            <SelectItem value="2-5">2-5 Employees</SelectItem>
+                            <SelectItem value="6-20">6-20 Employees</SelectItem>
+                            <SelectItem value=">20">20+ Employees</SelectItem>
+                        </SelectField>
+                    </div>
                 </Section>
 
                 <Section 
