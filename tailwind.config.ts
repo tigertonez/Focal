@@ -17,6 +17,9 @@ export default {
       },
     },
     extend: {
+       backgroundImage: {
+        'hero-pattern': "url('/background.jpeg')",
+      },
       fontFamily: {
         headline: ['var(--font-headline)', 'Inter', 'sans-serif'],
         body: ['var(--font-body)', 'Inter', 'sans-serif'],

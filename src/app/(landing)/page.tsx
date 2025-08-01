@@ -60,16 +60,8 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1 flex flex-col">
-        <section className="relative w-full h-[70vh] flex items-center justify-center text-center text-primary-foreground">
-          <Image
-              src="/background.jpeg"
-              alt="Background"
-              fill
-              quality={100}
-              className="-z-10 object-cover"
-              data-ai-hint="abstract blue background"
-          />
-          <div className="absolute inset-0 bg-black/50 -z-10" />
+        <section className="relative w-full h-[70vh] flex items-center justify-center text-center text-primary-foreground bg-cover bg-center bg-hero-pattern">
+          <div className="absolute inset-0 bg-black/50 z-0" />
           <div className="max-w-4xl px-4 z-10">
             <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter">
               Your numbers, crystal-clear in five minutes.

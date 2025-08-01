@@ -100,4 +100,7 @@
     .text-value {
         font-size: var(--fs-value);
     }
+    .bg-hero-pattern {
+        background-image: url('/background.jpeg');
+    }
 }
