@@ -115,8 +115,8 @@ export default function LandingPage() {
         {/* SECTION 3: PRICING / TIERS */}
         <section id="waitlist" className="py-12 bg-muted/50">
             <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-5 gap-12 items-center">
-                    <div className="md:col-span-2">
+                <div className="grid md:grid-cols-3 gap-12 items-center">
+                    <div className="md:col-span-1">
                         <h2 className="text-4xl font-bold">Start for Free.</h2>
                         <p className="mt-4 text-muted-foreground">
                             Use our simplified forecasting engine to see your potential revenue and basic costs instantly. No credit card required. Get a feel for how powerful financial clarity can be.
@@ -125,7 +125,7 @@ export default function LandingPage() {
                           Try the Free Forecaster <ArrowRight className="ml-2" />
                         </Button>
                     </div>
-                    <Card className="p-8 rounded-xl shadow-lg bg-card md:col-span-3">
+                    <Card className="p-8 rounded-xl shadow-lg bg-card md:col-span-2">
                         <h3 className="text-2xl font-semibold">Join the Beta Waitlist.</h3>
                         <p className="mt-2 text-muted-foreground">
                             Ready for the full suite? Get early access to advanced features like AI-powered insights, cash flow analysis, PDF reports, and real-time data integration.
