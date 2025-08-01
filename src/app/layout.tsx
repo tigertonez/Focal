@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { AppShell } from '@/components/app/AppShell';
 import { Suspense } from 'react';
+import { ForecastProvider } from '@/context/ForecastContext';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -37,7 +38,11 @@ export default function RootLayout({
           fontHeadline.variable
         )}
       >
-        <AppShell>{children}</AppShell>
+        <ForecastProvider>
+            <Suspense>
+              {children}
+            </Suspense>
+        </ForecastProvider>
         <Toaster />
       </body>
     </html>

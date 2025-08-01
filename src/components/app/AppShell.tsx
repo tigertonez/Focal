@@ -1,14 +1,14 @@
 
 'use client';
 
-import { ForecastProvider, useForecast } from '@/context/ForecastContext';
+import { useForecast } from '@/context/ForecastContext';
 import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, Suspense } from 'react';
+import { useEffect } from 'react';
 import { MobileNav } from './MobileNav';
 
-function AppShellContent({ children }: { children: React.ReactNode }) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const isPdfMode = searchParams.get('pdf') === '1';
   const { isCopilotOpen } = useForecast();
@@ -35,15 +35,5 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       </div>
       {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
     </div>
-  );
-}
-
-export function AppShell({ children }: { children: React.ReactNode }) {
-  return (
-    <ForecastProvider>
-        <Suspense>
-            <AppShellContent>{children}</AppShellContent>
-        </Suspense>
-    </ForecastProvider>
   );
 }

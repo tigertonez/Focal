@@ -46,13 +46,11 @@ export default function LandingPage() {
           <div className="max-w-4xl px-4 z-10">
             <h1 
               className="text-5xl md:text-7xl font-bold font-headline tracking-tighter"
-              style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}
             >
               Your numbers, crystal-clear in five minutes.
             </h1>
             <p 
               className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/90"
-              style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}
             >
               Upload a few key business inputs and get a print-ready financial forecast—powered by AI and built for founders who hate spreadsheets.
             </p>
