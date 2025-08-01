@@ -62,7 +62,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="py-20 bg-background">
+        <section id="features" className="py-12 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-5xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
@@ -73,7 +73,7 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-16 max-w-5xl mx-auto">
+            <div className="mt-12 max-w-5xl mx-auto">
               <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden border-2 shadow-lg">
                 <iframe 
                   className="w-full h-full"
@@ -85,7 +85,7 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="mt-16 grid md:grid-cols-3 gap-12">
+            <div className="mt-12 grid md:grid-cols-3 gap-12">
               {features.map((feature) => (
                 <div key={feature.title} className="p-4">
                   <div className="flex items-center gap-3 mb-2">
@@ -99,10 +99,10 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <Separator className="my-12" />
+        <Separator className="my-6" />
 
         {/* SECTION 3: PRICING / TIERS */}
-        <section id="waitlist" className="py-20 bg-muted/50">
+        <section id="waitlist" className="py-12 bg-muted/50">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="max-w-md">
