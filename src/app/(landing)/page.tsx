@@ -60,7 +60,7 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1 flex flex-col">
-        <section className="relative w-full h-[70vh] flex items-center justify-center text-center text-white">
+        <section className="relative w-full h-[70vh] flex items-center justify-center text-center text-primary-foreground">
           <Image
               src="/background.jpeg"
               alt="Background"
