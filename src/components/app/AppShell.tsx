@@ -3,9 +3,59 @@
 
 import { useForecast } from '@/context/ForecastContext';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from './Header';
+import { cn } from '@/lib/utils';
+import {
+  LineChart,
+  ShoppingCart,
+  DollarSign,
+  Landmark,
+  Wallet,
+  LayoutGrid,
+} from 'lucide-react';
+import Link from 'next/link';
+
+const MobileNavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+
+    return (
+        <Link
+            href={href}
+            className={cn(
+                "flex flex-col items-center gap-1 p-2 rounded-lg text-xs font-medium",
+                isActive ? "text-primary" : "text-muted-foreground"
+            )}
+        >
+            <Icon className="h-5 w-5" />
+            <span>{label}</span>
+        </Link>
+    );
+};
+
+
+function MobileNav() {
+    const { t } = useForecast();
+    const navItems = [
+      { href: '/inputs', icon: LineChart, label: t.nav.inputs },
+      { href: '/revenue', icon: DollarSign, label: t.nav.revenue },
+      { href: '/costs', icon: ShoppingCart, label: t.nav.costs },
+      { href: '/profit', icon: Landmark, label: t.nav.profit },
+      { href: '/cash-flow', icon: Wallet, label: t.nav.cashFlow },
+      { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
+    ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-card border-t">
+      <div className="grid h-full grid-cols-6 max-w-lg mx-auto">
+        {navItems.map(item => <MobileNavLink key={item.href} {...item} />)}
+      </div>
+    </nav>
+  );
+}
+
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -27,9 +77,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-screen w-full bg-background">
       <div className="flex flex-1 flex-col">
         {!isPdfMode && <Header />}
-        <main className="flex-1 pt-16">
+        <main className="flex-1 pt-16 pb-16 lg:pb-0">
             {children}
         </main>
+         {!isPdfMode && <MobileNav />}
       </div>
       {!isPdfMode && isCopilotOpen && <FinancialCopilot />}
     </div>

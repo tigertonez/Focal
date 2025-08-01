@@ -23,27 +23,25 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
     const isActive = pathname === href || (href === '/inputs' && pathname === '/');
 
     return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Link
-                        href={href}
-                        className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                            isActive 
-                                ? "bg-primary/10 text-primary" 
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        )}
-                    >
-                        <Icon className="h-5 w-5" />
-                        <span className="hidden md:inline">{label}</span>
-                    </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="md:hidden">
-                    <p>{label}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href={href}
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-in-out hover:bg-muted/80 hover:text-foreground hover:scale-105",
+                isActive && "bg-primary/10 text-primary"
+              )}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="hidden md:inline">{label}</span>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="md:hidden">
+            <p>{label}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
 };
 
@@ -60,27 +58,35 @@ export function Header() {
       { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
     ];
     
-    const brandInitials = inputs.company?.brand?.substring(0, 2).toUpperCase() || 'P';
+    const brandName = inputs.company?.brand || 'Focal';
+    const brandInitials = brandName.substring(0, 2).toUpperCase();
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
-            <div className="flex items-center gap-4">
-                <Link href="/" className="p-1">
-                    <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-9 w-9 font-bold text-base">
+            {/* Left Section: Brand */}
+            <div className="flex items-center gap-3">
+                <Link href="/" className="flex items-center gap-3">
+                    <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-9 w-9 font-bold text-base flex-shrink-0">
                         {brandInitials}
                     </div>
+                    <span className="font-semibold text-lg hidden sm:inline">{brandName} Financials</span>
                 </Link>
-                <nav className="flex items-center gap-1 md:gap-2">
+            </div>
+
+            {/* Center Section: Navigation */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
+                <nav className="flex items-center gap-1 rounded-full border bg-muted/50 p-1">
                     {navItems.map(item => <NavLink key={item.href} {...item} />)}
                 </nav>
             </div>
             
+             {/* Right Section: Actions */}
             <div className="flex items-center gap-2">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                       <Button variant="ghost" size="icon" className="h-9 w-9 font-bold text-sm" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
-                            {locale === 'en' ? 'DE' : 'EN'}
+                       <Button variant="outline" size="icon" className="h-9 w-9 font-bold text-sm" onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}>
+                            {locale.toUpperCase()}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -91,7 +97,7 @@ export function Header() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setIsCopilotOpen(true)}>
+                        <Button variant="outline" size="icon" className="h-9 w-9 text-primary border-primary/50 hover:bg-primary/10 hover:text-primary" onClick={() => setIsCopilotOpen(true)}>
                             <Bot className="h-5 w-5" />
                             <span className="sr-only">{t.nav.askAI}</span>
                         </Button>
