@@ -113,18 +113,6 @@ export default function InputsPage() {
     });
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const dataUri = event.target?.result as string;
-        methods.setValue('company.logoDataUri', dataUri);
-    };
-    reader.readAsDataURL(file);
-  };
-
   // This effect ensures that if the initialInputs from context are loaded from localStorage,
   // the form is reset to reflect those values.
   useEffect(() => {
@@ -191,15 +179,6 @@ export default function InputsPage() {
                       <SelectItem value="6-20">6-20 Employees</SelectItem>
                       <SelectItem value=">20">20+ Employees</SelectItem>
                   </SelectField>
-                   <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                      <Label htmlFor="logo" className="font-medium text-sm">Company Logo</Label>
-                      <div className="md:col-span-2 flex items-center gap-4">
-                          {watchedInputs.company?.logoDataUri && (
-                              <img src={watchedInputs.company.logoDataUri} alt="Logo Preview" className="h-10 w-10 object-contain rounded-md border p-1" />
-                          )}
-                          <Input id="logo" type="file" onChange={handleLogoChange} accept="image/*" className="text-xs file:mr-2 file:text-xs file:font-medium file:text-primary file:bg-primary/10 file:border-0 file:rounded-md file:px-2 file:py-1 hover:file:bg-primary/20" />
-                      </div>
-                  </div>
               </Section>
               
               <Section title={t.inputs.parameters.title} icon={<Settings />}>
@@ -258,5 +237,3 @@ export default function InputsPage() {
     </FormProvider>
   );
 }
-
-    
