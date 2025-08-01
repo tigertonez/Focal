@@ -70,7 +70,7 @@
 @layer components {
     .bg-hero-pattern {
         background-image: url('/background.jpeg');
-        background-size: cover;
+        background-size: contain;
         background-position: center;
         background-repeat: no-repeat;
     }
