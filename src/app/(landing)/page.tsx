@@ -8,9 +8,13 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
 
 export default function LandingPage() {
   const router = useRouter();
+  const [activeFeature, setActiveFeature] = useState(0);
 
   const handlePrimaryCta = () => {
     router.push('/inputs');
@@ -20,14 +24,17 @@ export default function LandingPage() {
     {
       title: 'Secure Your Funding',
       description: 'Generate an investor-ready forecast that answers the tough questions on profitability and cash flow.',
+      image: '/feature-1.png'
     },
     {
       title: 'De-Risk Your Inventory',
       description: 'Model production costs and sales cycles to see the true cash impact of inventory before you spend a dime.',
+      image: '/feature-2.png'
     },
     {
       title: 'Master Your Margins',
       description: 'Go beyond revenue. Calculate product-level profitability to ensure every sale strengthens your bottom line.',
+      image: '/feature-3.png'
     },
   ];
   
@@ -106,26 +113,38 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="flex flex-col justify-center items-center mt-16">
-              <Card className="w-full max-w-5xl shadow-lg">
-                <CardContent className="p-8">
-                    <div className="space-y-6">
-                        <h3 className="text-center text-xl font-bold">Achieve your critical business goals</h3>
+            <div className="mt-16 max-w-6xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-4">
                         {features.map((feature, index) => (
-                          <div key={feature.title}>
-                            {index > 0 && <Separator className="my-4" />}
-                            <div className="flex items-start gap-4">
-                              <CheckCircle className="text-primary h-6 w-6 mt-1 flex-shrink-0" />
-                              <div>
-                                <h4 className="text-lg font-semibold">{feature.title}</h4>
-                                <p className="mt-1 text-muted-foreground">{feature.description}</p>
-                              </div>
+                            <div 
+                                key={feature.title}
+                                className={cn(
+                                    "p-4 rounded-lg cursor-pointer transition-all duration-300",
+                                    activeFeature === index ? "bg-primary/10" : "hover:bg-muted/50"
+                                )}
+                                onClick={() => setActiveFeature(index)}
+                            >
+                                <h4 className="text-xl font-bold">{feature.title}</h4>
+                                <p className={cn(
+                                    "mt-2 text-muted-foreground transition-all duration-300",
+                                    activeFeature === index ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                                )}>
+                                    {feature.description}
+                                </p>
                             </div>
-                          </div>
                         ))}
                     </div>
-                </CardContent>
-              </Card>
+                    <div className="w-full h-80 rounded-xl bg-muted overflow-hidden">
+                        <Image 
+                            src={features[activeFeature].image}
+                            alt={features[activeFeature].title}
+                            width={600}
+                            height={400}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="mt-12 max-w-4xl mx-auto">
