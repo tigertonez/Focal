@@ -80,7 +80,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="py-16 bg-background">
+        <section id="features" className="pt-16 pb-0 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-5xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
