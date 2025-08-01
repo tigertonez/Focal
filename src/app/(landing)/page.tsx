@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export default function LandingPage() {
             <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-white/80">
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
             </p>
-            <div className="mt-10 flex items-center justify-center">
-              <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg scale-105 font-bold">
+            <div className="mt-12 flex items-center justify-center">
+              <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg scale-110 font-bold px-8 py-6 text-lg">
                 Build My Forecast <ArrowRight className="ml-2" />
               </Button>
             </div>
@@ -63,7 +64,7 @@ export default function LandingPage() {
         {/* SECTION 2: FEATURES */}
         <section id="features" className="py-20 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto">
+            <div className="text-center max-w-5xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
                 Your entire financial workflow, unified.
               </h2>
@@ -98,6 +99,8 @@ export default function LandingPage() {
           </div>
         </section>
         
+        <Separator className="my-12" />
+
         {/* SECTION 3: PRICING / TIERS */}
         <section id="waitlist" className="py-20 bg-muted/50">
             <div className="container mx-auto px-4">
