@@ -100,11 +100,11 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col justify-center items-center mt-16">
-              <Card className="w-full max-w-2xl shadow-lg">
+              <Card className="w-full max-w-4xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold">What you can do</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pb-8">
                   {features.map((feature, index) => (
                     <div key={feature.title}>
                       {index > 0 && <Separator className="my-4" />}
