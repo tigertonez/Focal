@@ -68,7 +68,7 @@ export function Header() {
             {/* Left Section: Brand */}
             <div className="flex h-full items-center gap-4">
                 <Link href="/" className="flex items-center gap-3 h-full">
-                    <Image src={appLogo} alt={`${brandName} Logo`} width={62} height={62} className="object-contain" />
+                    <Image src={appLogo} alt={`${brandName} Logo`} width={78} height={78} className="object-contain" />
                 </Link>
                  <Separator orientation="vertical" className="h-2/3" />
             </div>
