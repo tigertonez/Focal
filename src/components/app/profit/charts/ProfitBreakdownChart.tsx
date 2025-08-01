@@ -31,15 +31,15 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
     },
     variableCosts: {
         label: "Variable Costs",
-        color: "hsl(var(--chart-4))",
+        color: "hsl(0, 70%, 70%)", // Lighter Red
     },
     fixedCosts: {
         label: "Fixed Costs",
-        color: "hsl(var(--chart-1))",
+        color: "hsl(var(--destructive))", // Main Red
     },
     cumulativeOperatingProfit: {
       label: t.insights.charts.cumulativeProfit,
-      color: "hsl(var(--accent))",
+      color: "hsl(140, 70%, 40%)", // Green
     }
   }), [t]) satisfies ChartConfig;
 
@@ -106,13 +106,13 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
         <Bar dataKey="revenue" stackId="stack" fill="hsl(var(--primary))" />
-        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(var(--chart-4))" />
-        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--chart-1))" />
+        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(0, 70%, 70%)" />
+        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--destructive))" />
 
         <Line 
           type="monotone" 
           dataKey="cumulativeOperatingProfit" 
-          stroke="hsl(var(--accent))" 
+          stroke="hsl(140, 70%, 40%)" 
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 
