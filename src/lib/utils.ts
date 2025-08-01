@@ -58,7 +58,7 @@ const productSemanticColors: Record<string, string[]> = {
  * @param item The product or fixed cost item object.
  * @returns A CSS color string (hex or HSL).
  */
-export function getProductColor(item: Product | FixedCostItem): string {
+export function getProductColor(item: Product | FixedCostItem | { id: string, name: string, color?: string }): string {
     const isProduct = 'productName' in item;
     const name = isProduct ? item.productName : item.name;
     const id = item.id;
@@ -116,7 +116,8 @@ export function getProductColor(item: Product | FixedCostItem): string {
 
         // If all colors are used, just cycle through them
         if (!color) {
-            color = palette[hash % palette.length];
+            // Fallback to a default color instead of black
+            color = 'hsl(var(--primary))';
         }
     }
     
