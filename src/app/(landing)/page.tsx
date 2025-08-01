@@ -41,26 +41,8 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="fixed top-0 left-0 right-0 z-50 flex h-20 items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-sm">
-        <h1 className="text-xl font-bold text-primary font-headline">Plaza</h1>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
-            How It Works
-          </Link>
-          <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-            Pricing
-          </Link>
-          <Button onClick={handlePrimaryCta} size="sm">
-            Get Forecast <ArrowRight className="ml-2" size={16} />
-          </Button>
-        </nav>
-        <Button onClick={handlePrimaryCta} size="sm" className="md:hidden">
-          Get Started
-        </Button>
-      </header>
-
       <main className="flex-1 flex flex-col">
-        <section className="relative w-full h-screen flex items-center justify-center text-center text-primary-foreground bg-hero-pattern bg-cover bg-center">
+        <section className="relative w-full h-screen flex items-center justify-center text-center text-primary-foreground bg-hero-pattern">
           <div className="max-w-4xl px-4 z-10">
             <h1 
               className="text-5xl md:text-7xl font-bold font-headline tracking-tighter"
