@@ -64,10 +64,9 @@ export default function LandingPage() {
           <Image
               src="/background.jpeg"
               alt="Background"
-              layout="fill"
-              objectFit="cover"
+              fill
               quality={100}
-              className="-z-10"
+              className="-z-10 object-cover"
               data-ai-hint="abstract blue background"
           />
           <div className="absolute inset-0 bg-black/50 -z-10" />
