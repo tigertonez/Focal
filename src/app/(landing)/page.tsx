@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -45,7 +46,17 @@ export default function LandingPage() {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
         {/* SECTION 1: HERO */}
-        <section className="relative w-full h-screen flex items-center justify-center text-center bg-hero-pattern">
+        <section className="relative w-full h-screen flex items-center justify-center text-center">
+          <div className="absolute top-0 left-0 w-full h-full">
+            <Image
+              src="/background.jpeg"
+              alt="Financial OS background"
+              layout="fill"
+              objectFit="cover"
+              className="z-0"
+              quality={100}
+            />
+          </div>
           <div className="max-w-3xl px-4 z-10">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
               The Financial OS for D2C Brands.
