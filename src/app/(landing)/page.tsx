@@ -40,7 +40,7 @@ export default function LandingPage() {
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
           <div className="container mx-auto flex justify-between items-center">
               <Link href="/">
-                <Image src={`/logo.png?v=${cacheBuster}`} alt="Focal Logo" width={96} height={96} priority />
+                <Image src={`/logo.png?v=${cacheBuster}`} alt="Focal Logo" width={115} height={115} priority />
               </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
@@ -55,7 +55,7 @@ export default function LandingPage() {
         <section className="relative w-full h-screen flex items-center justify-center text-center bg-black">
           <div className="absolute top-0 left-0 w-full h-full">
             <Image
-              src={`/background.jpeg`}
+              src={`/background.jpeg?v=${cacheBuster}`}
               alt="Financial OS background"
               layout="fill"
               objectFit="cover"
