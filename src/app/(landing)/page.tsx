@@ -64,7 +64,7 @@ export default function LandingPage() {
             <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-white/80">
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
             </p>
-            <div className="mt-10 flex items-center justify-center">
+            <div className="mt-12 flex items-center justify-center">
               <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg font-bold px-8 py-6 text-lg">
                 Build My Forecast <ArrowRight className="ml-2" />
               </Button>
@@ -95,6 +95,8 @@ export default function LandingPage() {
                 </iframe>
               </Card>
             </div>
+
+            <Separator className="my-12" />
 
             <div className="mt-12 grid md:grid-cols-3 gap-12">
               {features.map((feature) => (
