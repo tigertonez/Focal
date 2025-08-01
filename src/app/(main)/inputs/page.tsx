@@ -35,23 +35,33 @@ import { EngineInputSchema, type EngineInput } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 
 
-const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean }> = ({ title, children, className, icon, defaultOpen = false }) => (
+const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean, tooltip?: string }> = ({ title, children, className, icon, defaultOpen = false, tooltip }) => (
     <Collapsible defaultOpen={defaultOpen} className={cn(className)}>
         <Card>
-            <CardContent className="p-0">
-                <CollapsibleTrigger className='w-full'>
-                    <div className="flex w-full items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg">
-                        <div className="flex items-center gap-3">
-                            {icon}
-                            <span className="font-semibold">{title}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
-                    </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 p-4 pt-0">
-                    {children}
-                </CollapsibleContent>
-            </CardContent>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <CollapsibleTrigger className='w-full'>
+                            <div className="flex w-full items-center justify-between p-4 cursor-pointer hover:bg-primary/10 rounded-t-lg transition-colors duration-200">
+                                <div className="flex items-center gap-3">
+                                    {icon}
+                                    <span className="font-semibold">{title}</span>
+                                </div>
+                                <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
+                            </div>
+                        </CollapsibleTrigger>
+                    </TooltipTrigger>
+                    {tooltip && (
+                      <TooltipContent side="top" className="max-w-xs p-3">
+                          <p className="text-muted-foreground text-xs">{tooltip}</p>
+                      </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
+
+            <CollapsibleContent className="p-4 pt-0">
+                {children}
+            </CollapsibleContent>
         </Card>
     </Collapsible>
 );
@@ -132,7 +142,12 @@ export default function InputsPage() {
 
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6 items-start">
-                <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={true}>
+                <Section 
+                    title={t.inputs.products.title} 
+                    icon={<Briefcase />} 
+                    defaultOpen={false} 
+                    tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
+                >
                     <div className="space-y-6">
                       {productFields.map((field, index) => (
                         <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
@@ -143,7 +158,12 @@ export default function InputsPage() {
                     </Button>
                 </Section>
               
-                <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={true}>
+                <Section 
+                    title={t.inputs.fixedCosts.title} 
+                    icon={<Building />} 
+                    defaultOpen={false} 
+                    tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
+                >
                     <div className="space-y-3">
                       {fixedCostFields.map((field, index) => (
                         <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
@@ -154,7 +174,11 @@ export default function InputsPage() {
                     </Button>
                 </Section>
 
-                <Section title="Company Context" icon={<Wrench />}>
+                <Section 
+                    title="Company Context" 
+                    icon={<Wrench />}
+                    tooltip="Provide general context about your business. This helps the AI tailor its analysis and advice to your specific situation."
+                >
                     <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
                     <SelectField name="company.industry" label="Industry">
                         <SelectItem value="fashion">Fashion & Apparel</SelectItem>
@@ -183,7 +207,11 @@ export default function InputsPage() {
                     </SelectField>
                 </Section>
 
-                <Section title={t.inputs.parameters.title} icon={<Settings />}>
+                <Section 
+                    title={t.inputs.parameters.title} 
+                    icon={<Settings />}
+                    tooltip="Set the core financial and operational parameters for your forecast, such as the time horizon and tax rate."
+                >
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                         <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />
                         <InputField name="parameters.taxRate" label={t.inputs.parameters.taxRate.label} type="number" tooltip={t.inputs.parameters.taxRate.tooltip} layout="vertical" />
