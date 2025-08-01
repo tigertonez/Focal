@@ -37,27 +37,13 @@ export default function LandingPage() {
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
           <div className="container mx-auto flex justify-between items-center">
               <Link href="/" className="text-white">
-                <svg
-                  viewBox="0 0 100 125"
+                <Image
+                  src="/logo.png"
+                  alt="Focal Logo"
+                  width={80}
+                  height={80}
                   className="h-16 w-auto"
-                  fill="white"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                      <stop offset="0%" style={{stopColor: 'rgb(255,255,255)', stopOpacity: 1}} />
-                      <stop offset="100%" style={{stopColor: 'rgb(0,0,255)', stopOpacity: 1}} />
-                    </radialGradient>
-                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                       <stop offset="0%" style={{stopColor: 'rgb(135,206,235)', stopOpacity: 1}} />
-                       <stop offset="50%" style={{stopColor: 'rgb(25,25,112)', stopOpacity: 1}} />
-                       <stop offset="100%" style={{stopColor: 'rgb(255,165,0)', stopOpacity: 1}} />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="50" cy="40" r="35" fill="url(#grad2)"/>
-                  <path d="M50 15 a25 25 0 0 1 0 50 a12.5 12.5 0 0 1 0 -25 a12.5 12.5 0 0 0 0 -25" fill="white"/>
-                  <text x="50" y="110" fontFamily="sans-serif" fontSize="24" fontWeight="bold" textAnchor="middle" fill="white">FOCAL</text>
-                </svg>
+                />
               </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
@@ -96,7 +82,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="pt-24 pb-16 bg-background">
+        <section id="features" className="py-24 pb-16 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-5xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
