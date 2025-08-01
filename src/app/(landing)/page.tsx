@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
@@ -11,8 +11,6 @@ export default function LandingPage() {
   const router = useRouter();
 
   const handlePrimaryCta = () => {
-    // This will eventually lead to the simplified "Lite" version.
-    // For now, it goes to the standard inputs page.
     router.push('/inputs');
   };
 
@@ -35,13 +33,10 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* HEADER */}
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
-          <div className="container mx-auto flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold text-white">
-                  Focal
-              </Link>
-              <nav className="flex items-center gap-6 text-sm">
-                  <Link href="#features" className="text-white hover:text-white/80 hover:underline transition-colors">Features</Link>
-                  <Link href="#waitlist" className="text-white hover:text-white/80 hover:underline transition-colors">Waitlist</Link>
+          <div className="container mx-auto flex justify-end items-center">
+              <nav className="flex items-center gap-8">
+                  <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
+                  <Link href="#waitlist" className="text-base text-white hover:underline transition-opacity">Waitlist</Link>
               </nav>
           </div>
       </header>
@@ -89,11 +84,14 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="mt-16 grid md:grid-cols-3 gap-8 text-center">
+            <div className="mt-16 grid md:grid-cols-3 gap-12">
               {features.map((feature) => (
                 <div key={feature.title} className="p-4">
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-muted-foreground">{feature.description}</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle className="text-primary h-6 w-6" />
+                    <h3 className="text-xl font-semibold">{feature.title}</h3>
+                  </div>
+                  <p className="mt-2 text-muted-foreground text-justify">{feature.description}</p>
                 </div>
               ))}
             </div>
