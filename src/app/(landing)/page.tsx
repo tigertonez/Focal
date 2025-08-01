@@ -32,10 +32,10 @@ export default function LandingPage() {
   ];
   
   const personas = [
-      "Founders seeking investment",
-      "D2C Brand Operators",
-      "E-commerce Managers",
-      "Shopify Store Owners",
+      "For founders turning a vision into an investor-ready plan.",
+      "For D2C brands scaling from pre-order to a full-stock model.",
+      "For Shopify stores managing inventory for any physical product, from fashion to furniture.",
+      "For anyone who needs financial clarity without spending weeks in spreadsheets.",
   ]
 
   return (
@@ -131,12 +131,12 @@ export default function LandingPage() {
             <div className="mt-12 max-w-4xl mx-auto">
                  <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
                      <Users className="text-primary" />
-                     Built for founders, operators, and advisors
+                     Your financial command center, no matter what you sell.
                  </h3>
-                 <div className="grid grid-cols-2 md:grid-cols-2 gap-x-8 gap-y-3 text-muted-foreground">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
                     {personas.map(p => (
-                       <div key={p} className="flex items-center gap-3">
-                          <CheckCircle size={16} className="text-primary/80 flex-shrink-0" />
+                       <div key={p} className="flex items-start gap-3">
+                          <CheckCircle size={16} className="text-primary/80 flex-shrink-0 mt-1" />
                           <span>{p}</span>
                        </div>
                     ))}
