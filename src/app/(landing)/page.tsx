@@ -40,8 +40,8 @@ export default function LandingPage() {
                   Focal
               </Link>
               <nav className="flex items-center gap-6 text-sm">
-                  <Link href="#features" className="text-white/80 hover:text-white transition-colors">Features</Link>
-                  <Link href="#waitlist" className="text-white/80 hover:text-white transition-colors">Waitlist</Link>
+                  <Link href="#features" className="text-white hover:text-white/80 hover:underline transition-colors">Features</Link>
+                  <Link href="#waitlist" className="text-white hover:text-white/80 hover:underline transition-colors">Waitlist</Link>
               </nav>
           </div>
       </header>
@@ -109,7 +109,7 @@ export default function LandingPage() {
                         <p className="mt-4 text-muted-foreground">
                             Use our simplified forecasting engine to see your potential revenue and basic costs instantly. No credit card required. Get a feel for how powerful financial clarity can be.
                         </p>
-                        <Button size="lg" onClick={handlePrimaryCta} className="mt-8 bg-white text-blue-600 hover:bg-gray-200 font-bold">
+                        <Button size="lg" onClick={handlePrimaryCta} className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
                           Try the Free Forecaster <ArrowRight className="ml-2" />
                         </Button>
                     </div>
