@@ -61,7 +61,7 @@ export function Header() {
     ];
     
     const brandName = 'Focal'; // Hardcoded brand name
-    const appLogo = '/logo-dark.png'; // Hardcoded app logo
+    const appLogo = '/logo-dark.png?v=2'; // Hardcoded app logo with cache-busting
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
