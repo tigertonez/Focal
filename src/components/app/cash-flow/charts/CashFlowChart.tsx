@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react"
@@ -35,7 +34,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
-      color: "hsl(var(--accent))",
+      color: "hsl(140, 70%, 40%)", // Green for profit/positive trends
     }
   }), [t]) satisfies ChartConfig;
 
@@ -113,7 +112,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
         <Line 
           type="monotone" 
           dataKey="cumulativeCash" 
-          stroke="hsl(var(--accent))" 
+          stroke="hsl(140, 70%, 40%)" 
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 
