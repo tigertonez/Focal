@@ -32,7 +32,7 @@ export function formatNumber(value: number) {
 
 // --- Centralized Product Color Assignment ---
 const assignedColors: Record<string, string> = {};
-const usedColors = new Set<string>();
+let usedColorIndex = 0; // Use a simple index to cycle through colors for more reliable uniqueness
 
 // A simple hashing function to get a deterministic index from a string.
 const simpleHash = (str: string): number => {
@@ -63,65 +63,37 @@ export function getProductColor(item: Product | FixedCostItem | { id: string, na
     const name = isProduct ? item.productName : item.name;
     const id = item.id;
 
-    // 1. Priority: Use user-defined color if it exists
-    if (item.color) {
-        return item.color;
-    }
-    
-    // 2. Check cache to maintain consistency within a single render pass
-    if (assignedColors[id]) {
-        return assignedColors[id];
-    }
+    if (item.color) return item.color;
+    if (assignedColors[id]) return assignedColors[id];
 
     const lowerName = name.toLowerCase();
-    const hash = simpleHash(id);
-    let color: string | undefined;
-
-    // 3. New: Check for semantic product keywords
-    if (isProduct) {
-        for (const key in productSemanticColors) {
-            if (lowerName.includes(key)) {
-                const palette = productSemanticColors[key];
-                color = palette[hash % palette.length];
-                break; // Stop after first match
-            }
-        }
-    }
-
-    // 4. For Fixed Costs, check for semantic matches
-    if (!isProduct) {
-        for (const key in semanticColorMap) {
-            if (lowerName.includes(key.toLowerCase())) {
-                const semanticColor = semanticColorMap[key];
-                if (!usedColors.has(semanticColor)) {
-                    color = semanticColor;
-                }
-                break;
-            }
-        }
-    }
-
-    // 5. Fallback: Assign a deterministic color from the default palette, ensuring uniqueness
-    if (!color) {
-        const palette = isProduct ? productColorVars : chartColorVars;
-        let attempt = 0;
-        do {
-            const index = (hash + attempt) % palette.length;
-            const potentialColor = palette[index];
-            if (!usedColors.has(potentialColor)) {
-                color = potentialColor;
-            }
-            attempt++;
-        } while (!color && attempt < palette.length);
-
-        // If all colors are used, just cycle through them
-        if (!color) {
-            // Fallback to a default color instead of black
-            color = 'hsl(var(--primary))';
+    
+    // Check for direct semantic matches first (like "Deposits")
+    for (const key in semanticColorMap) {
+        if (lowerName === key.toLowerCase()) {
+            const color = semanticColorMap[key];
+            assignedColors[id] = color;
+            return color;
         }
     }
     
-    usedColors.add(color);
+    const hash = simpleHash(id);
+    let color: string;
+
+    // Check for keyword-based semantic matches
+    let foundSemantic = false;
+    for (const key in semanticColorMap) {
+        if (lowerName.includes(key.toLowerCase())) {
+            color = semanticColorMap[key];
+            assignedColors[id] = color;
+            foundSemantic = true;
+            return color;
+        }
+    }
+
+    const palette = isProduct ? productColorVars : chartColorVars;
+    color = palette[hash % palette.length];
+    
     assignedColors[id] = color;
     return color;
 }

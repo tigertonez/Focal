@@ -1,7 +1,5 @@
 
 
-// This file is being created to centralize chart color definitions.
-
 export const chartColorVars = [
   "hsl(var(--chart-1))",
   "hsl(var(--chart-2))",
@@ -20,18 +18,21 @@ export const productColorVars = [
 ];
 
 export const semanticColorMap: Record<string, string> = {
-    // Keywords from the new muted palette
+    // Specific keywords for fixed costs
     "Salaries": "hsl(var(--chart-1))", 
     "Marketing": "hsl(var(--chart-2))",
-    "Buffer": "hsl(var(--chart-3))", // For "Planning Buffer"
+    "Buffer": "hsl(var(--chart-3))",
     "Contingency": "hsl(var(--chart-3))",
-    "Deposits": "hsl(var(--chart-4))",
-    "Final Payments": "hsl(var(--chart-5))", 
     "Admin": "hsl(var(--chart-6))",
     "Tools": "hsl(var(--chart-6))",
     "Overheads": "hsl(var(--chart-6))",
+    "Equip": "hsl(var(--chart-5))",
 
-    // General application colors
+    // Specific keywords for cash flow items that need reliable colors
+    "Deposits": "hsl(25, 84%, 60%)",      // A distinct orange
+    "Final Payments": "hsl(217, 30%, 55%)",// A slate blue
+
+    // General application colors for reference
     "Revenue": "hsl(var(--primary))",
     "Profit": "hsl(var(--accent))",
 };
