@@ -73,7 +73,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="py-24 bg-background">
+        <section id="features" className="pt-24 pb-16 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-5xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
@@ -97,7 +97,7 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col justify-center my-16">
-              <Separator className="my-12" />
+              <Separator className="my-8" />
               <div className="grid md:grid-cols-3 gap-12">
                 {features.map((feature) => (
                   <div key={feature.title} className="p-4">
@@ -109,7 +109,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <Separator className="my-12" />
+              <Separator className="my-8" />
             </div>
           </div>
         </section>
