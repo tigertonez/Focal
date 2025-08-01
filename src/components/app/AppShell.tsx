@@ -2,11 +2,10 @@
 'use client';
 
 import { useForecast } from '@/context/ForecastContext';
-import { SideNav } from '@/components/app/SideNav';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
-import { MobileNav } from './MobileNav';
+import { Header } from './Header';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -26,10 +25,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen w-full bg-background">
-      {!isPdfMode && <SideNav />}
       <div className="flex flex-1 flex-col">
-        {!isPdfMode && <MobileNav />}
-        <main className="flex-1 pt-16 md:pt-0">
+        {!isPdfMode && <Header />}
+        <main className="flex-1 pt-16">
             {children}
         </main>
       </div>
