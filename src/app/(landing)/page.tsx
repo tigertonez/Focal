@@ -62,7 +62,7 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col">
         <section className="relative w-full h-[70vh] flex items-center justify-center text-center text-white">
           <Image
-              src="/background.jpg"
+              src="/background.jpeg"
               alt="Background"
               layout="fill"
               objectFit="cover"
