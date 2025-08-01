@@ -1,7 +1,8 @@
 
 
-import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema, CashFlowSummarySchema } from '@/lib/types';
+import { type EngineInput, type EngineOutput, type FixedCostItem, type Product, MonthlyCostSchema, MonthlyRevenueSchema, MonthlyUnitsSoldSchema, type MonthlyProfit, type MonthlyCashFlow, type BusinessHealth, RevenueSummarySchema, CostSummarySchema, type BusinessHealthScoreKpi, ProfitSummarySchema, CashFlowSummarySchema, ProductProfitabilitySchema, type ProductProfitability } from '@/lib/types';
 import type { MonthlyCost } from '@/lib/types';
+import { getProductColor } from '../utils';
 
 
 // =================================================================
@@ -442,7 +443,7 @@ const calculateProfitAndCashFlow = (
 ) => {
     const { timelineMonths } = timeline;
     const { revenueSummary, monthlyRevenueTimeline } = revenueData;
-    const { monthlyCashOutflowTimeline } = costData;
+    const { monthlyCashOutflowTimeline, costSummary } = costData;
     const { taxRate, accountingMethod } = inputs.parameters;
 
     const monthlyFixedCostForPLBreakdown = buildFixedCostTimeline(inputs, timeline, monthlyRevenueTimeline, true);
@@ -452,15 +453,19 @@ const calculateProfitAndCashFlow = (
     
     const monthlyProfit: MonthlyProfit[] = timelineMonths.map((month) => {
         const revenueThisMonth = Object.entries(monthlyRevenueTimeline.find(r => r.month === month) || {}).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
+        
+        // =================================================================
+        // CORRECTED: DYNAMIC P&L VARIABLE COST CALCULATION
+        // This block now correctly switches between COGS and Total Costs based on user input.
+        // =================================================================
         let variableCostsThisMonth = 0;
+        const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
 
-        // DYNAMIC P&L VARIABLE COST CALCULATION
         if (accountingMethod === 'cogs') {
-            const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
-            for (const product of inputs.products) {
-                variableCostsThisMonth += toCents((unitsSoldThisMonth[product.productName] || 0) * (product.unitCost || 0));
-            }
-        } else { // 'total_costs'
+            inputs.products.forEach(p => {
+                variableCostsThisMonth += toCents((unitsSoldThisMonth[p.productName] || 0) * (p.unitCost || 0));
+            });
+        } else { // 'total_costs' (Conservative)
              const firstMonth = timeline.requiresMonthZero ? 0 : 1;
              if (month === firstMonth) {
                  inputs.products.forEach(p => {
@@ -469,7 +474,6 @@ const calculateProfitAndCashFlow = (
                      }
                  });
              }
-             const unitsSoldThisMonth = monthlyUnitsSold.find(u => u.month === month) || {};
              inputs.products.forEach(p => {
                  if (p.costModel === 'monthly') {
                     variableCostsThisMonth += toCents((unitsSoldThisMonth[p.productName] || 0) * (p.unitCost || 0));
@@ -506,7 +510,8 @@ const calculateProfitAndCashFlow = (
     const totalRevenueCents = toCents(revenueSummary.totalRevenue);
     const variableCostsForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.variableCosts), 0);
     const totalFixedCostForPL = monthlyProfit.reduce((sum, m) => sum + toCents(m.fixedCosts), 0);
-    const totalOperatingProfit = totalRevenueCents - variableCostsForPL - totalFixedCostForPL;
+    const totalOperatingCostsCents = variableCostsForPL + totalFixedCostForPL;
+    const totalOperatingProfit = totalRevenueCents - totalOperatingCostsCents;
     
     const businessIsProfitable = totalOperatingProfit > 0;
     const totalTaxAmountCents = businessIsProfitable ? totalOperatingProfit * (taxRate / 100) : 0;
@@ -535,6 +540,8 @@ const calculateProfitAndCashFlow = (
                 m.tax = fromCents(taxForMonth);
                 m.netProfit = m.operatingProfit - m.tax;
                 distributedTax += taxForMonth;
+            } else {
+                 m.netProfit = m.operatingProfit; // For unprofitable months, net profit is op profit
             }
         });
         // Distribute remainder tax
@@ -544,6 +551,8 @@ const calculateProfitAndCashFlow = (
             firstProfitableMonth.tax += fromCents(remainder);
             firstProfitableMonth.netProfit -= fromCents(remainder);
         }
+    } else {
+         monthlyProfit.forEach(m => { m.netProfit = m.operatingProfit; });
     }
 
 
@@ -554,8 +563,9 @@ const calculateProfitAndCashFlow = (
         let cashOutCosts = Object.entries(costsForMonth).reduce((s, [key, value]) => key !== 'month' ? s + value : s, 0);
         
         const taxForMonth = toCents(monthlyProfit.find(p => p.month === month)?.tax || 0);
+        const totalCashOut = cashOutCosts + taxForMonth;
 
-        const netCashFlow = cashIn - cashOutCosts;
+        const netCashFlow = cashIn - totalCashOut;
         cumulativeCash += netCashFlow;
         if (cumulativeCash < peakFundingNeed) peakFundingNeed = cumulativeCash;
 
@@ -586,7 +596,68 @@ const calculateProfitAndCashFlow = (
         estimatedTaxes: fromCents(totalTaxAmountCents),
     };
 
-    return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow };
+    // =================================================================
+    // START: BULLETPROOF PRODUCT PROFITABILITY LOGIC
+    // =================================================================
+    const productProfitability: ProductProfitability[] = inputs.products.map(prod => {
+      const revData = revenueSummary.productBreakdown.find(p => p.name === prod.productName);
+      const soldUnits = revData?.totalSoldUnits || 0;
+      const revenueCents = toCents(revData?.totalRevenue);
+
+      if (revenueCents <= 0) {
+        return {
+          id: prod.id, productName: prod.productName, color: getProductColor(prod),
+          soldUnits: 0, sellThrough: prod.sellThrough || 0, productRevenue: 0,
+          grossProfit: 0, grossMargin: 0, operatingProfit: 0, operatingMargin: 0,
+          netProfit: 0, netMargin: 0
+        };
+      }
+
+      const variableCents =
+        accountingMethod === 'cogs'
+          ? toCents(soldUnits * (prod.unitCost || 0))
+          : toCents((prod.plannedUnits || 0) * (prod.unitCost || 0));
+
+      const grossProfitCents = revenueCents - variableCents;
+      const grossMargin = (grossProfitCents / revenueCents) * 100;
+
+      const revenueShare = totalRevenueCents > 0 ? revenueCents / totalRevenueCents : 0;
+
+      // Correctly allocate total fixed costs based on product's revenue share
+      const allocatedFixedCostsCents = Math.round(totalFixedCostForPL * revenueShare);
+      const operatingProfitCents = grossProfitCents - allocatedFixedCostsCents;
+      const operatingMargin = (operatingProfitCents / revenueCents) * 100;
+
+      // Correctly allocate total tax amount based on product's revenue share
+      const allocatedTaxCents = Math.round(totalTaxAmountCents * revenueShare);
+      const netProfitCents = operatingProfitCents - allocatedTaxCents;
+      const netMargin = (netProfitCents / revenueCents) * 100;
+      
+      return {
+        id: prod.id, productName: prod.productName, color: getProductColor(prod),
+        soldUnits, sellThrough: prod.sellThrough || 0,
+        productRevenue: fromCents(revenueCents), grossProfit: fromCents(grossProfitCents),
+        grossMargin, operatingProfit: fromCents(operatingProfitCents),
+        operatingMargin, netProfit: fromCents(netProfitCents), netMargin,
+      };
+    });
+
+    if(productProfitability.length > 1) {
+        const operatingMargins = new Set(productProfitability.map(p => p.operatingMargin.toFixed(5)));
+        const netMargins = new Set(productProfitability.map(p => p.netMargin.toFixed(5)));
+        if (operatingMargins.size === 1 && netMargins.size === 1) {
+            // Check if all gross margins are also the same. If so, it's a data coincidence.
+            const grossMargins = new Set(productProfitability.map(p => p.grossMargin.toFixed(5)));
+            if (grossMargins.size > 1) {
+                 throw new Error('ENGINE VALIDATION FAILED: All calculated product margins are identical. This indicates a critical error in cost allocation logic.');
+            }
+        }
+    }
+    // =================================================================
+    // END: BULLETPROOF PRODUCT PROFITABILITY LOGIC
+    // =================================================================
+
+    return { profitSummary, monthlyProfit, cashFlowSummary, monthlyCashFlow, productProfitability };
 };
 
 
@@ -701,7 +772,11 @@ export function calculateFinancials(inputs: EngineInput, isPotentialCalculation 
             monthlyUnitsSold,
             costSummary: costData.costSummary,
             monthlyCosts: costData.monthlyCosts,
-            ...profitAndCashFlowData
+            profitSummary: profitAndCashFlowData.profitSummary,
+            monthlyProfit: profitAndCashFlowData.monthlyProfit,
+            cashFlowSummary: profitAndCashFlowData.cashFlowSummary,
+            monthlyCashFlow: profitAndCashFlowData.monthlyCashFlow,
+            productProfitability: profitAndCashFlowData.productProfitability,
         };
 
         if (isPotentialCalculation) {

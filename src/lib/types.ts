@@ -136,6 +136,22 @@ export type MonthlyUnitsSold = z.infer<typeof MonthlyUnitsSoldSchema>;
 
 
 // Profit-related schemas
+export const ProductProfitabilitySchema = z.object({
+  id: z.string(),
+  productName: z.string(),
+  color: z.string(),
+  soldUnits: z.number(),
+  sellThrough: z.number(),
+  productRevenue: z.number(),
+  grossProfit: z.number(),
+  grossMargin: z.number(),
+  operatingProfit: z.number(),
+  operatingMargin: z.number(),
+  netProfit: z.number(),
+  netMargin: z.number(),
+});
+export type ProductProfitability = z.infer<typeof ProductProfitabilitySchema>;
+
 export const ProfitSummarySchema = z.object({
     totalGrossProfit: z.number(),
     potentialGrossProfit: z.number().optional(),
@@ -308,6 +324,7 @@ export const EngineOutputSchema = z.object({
     monthlyProfit: z.array(MonthlyProfitSchema),
     cashFlowSummary: CashFlowSummarySchema,
     monthlyCashFlow: z.array(MonthlyCashFlowSchema),
+    productProfitability: z.array(ProductProfitabilitySchema),
     businessHealth: BusinessHealthSchema.optional(),
 });
 export type EngineOutput = z.infer<typeof EngineOutputSchema>;
