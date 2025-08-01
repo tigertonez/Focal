@@ -103,7 +103,7 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="flex flex-col justify-center my-16">
+            <div className="flex flex-col justify-center">
               <Separator className="my-8" />
               <div className="grid md:grid-cols-3 gap-12">
                 {features.map((feature) => (
