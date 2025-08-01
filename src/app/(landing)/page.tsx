@@ -109,9 +109,9 @@ export default function LandingPage() {
 
             <div className="flex flex-col justify-center items-center mt-16">
               <Card className="w-full max-w-5xl shadow-lg">
-                <CardContent className="p-8 grid md:grid-cols-2 gap-8 items-start">
+                <CardContent className="p-8">
                     <div className="space-y-6">
-                        <h3 className="text-xl font-bold">Achieve your critical business goals</h3>
+                        <h3 className="text-center text-xl font-bold">Achieve your critical business goals</h3>
                         {features.map((feature, index) => (
                           <div key={feature.title}>
                             {index > 0 && <Separator className="my-4" />}
@@ -125,23 +125,25 @@ export default function LandingPage() {
                           </div>
                         ))}
                     </div>
-                    <div className="bg-muted/50 p-6 rounded-lg">
-                         <h3 className="text-xl font-bold flex items-center gap-2">
-                             <Users className="text-primary" />
-                             Built for...
-                         </h3>
-                         <ul className="mt-4 space-y-2 text-muted-foreground">
-                            {personas.map(p => (
-                               <li key={p} className="flex items-center gap-2">
-                                  <ArrowRight size={16} className="text-primary/70" />
-                                  <span>{p}</span>
-                               </li>
-                            ))}
-                         </ul>
-                    </div>
                 </CardContent>
               </Card>
             </div>
+
+            <div className="mt-12 max-w-4xl mx-auto">
+                 <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
+                     <Users className="text-primary" />
+                     Built for founders, operators, and advisors
+                 </h3>
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-3 text-muted-foreground">
+                    {personas.map(p => (
+                       <div key={p} className="flex items-center gap-3">
+                          <CheckCircle size={16} className="text-primary/80 flex-shrink-0" />
+                          <span>{p}</span>
+                       </div>
+                    ))}
+                 </div>
+            </div>
+
           </div>
         </section>
         
