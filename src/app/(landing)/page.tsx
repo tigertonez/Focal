@@ -2,10 +2,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, PlayCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -66,7 +66,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="py-24 md:py-32 bg-background">
+        <section id="features" className="py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
@@ -77,16 +77,11 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-20 max-w-5xl mx-auto">
-              <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden">
-                {/* 
-                  INSTRUCTION FOR YOU: 
-                  To add your video, replace the src attribute below with the embed link from YouTube or Vimeo.
-                  Example: "https://www.youtube.com/embed/your_video_id"
-                */}
+            <div className="mt-16 max-w-5xl mx-auto">
+              <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden border-2 shadow-lg">
                 <iframe 
                   className="w-full h-full"
-                  src="https://player.vimeo.com/video/909421124?h=746979cd39&title=0&byline=0&portrait=0" 
+                  src="https://player.vimeo.com/video/909421124?h=746979cd39&title=0&byline=0&portrait=0&background=1" 
                   frameBorder="0" 
                   allow="autoplay; fullscreen; picture-in-picture" 
                   allowFullScreen>
@@ -94,9 +89,9 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            <div className="mt-20 grid md:grid-cols-3 gap-8 text-left">
+            <div className="mt-16 grid md:grid-cols-3 gap-8 text-center">
               {features.map((feature) => (
-                <div key={feature.title} className="p-2">
+                <div key={feature.title} className="p-4">
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
                   <p className="mt-2 text-muted-foreground">{feature.description}</p>
                 </div>
@@ -106,7 +101,7 @@ export default function LandingPage() {
         </section>
         
         {/* SECTION 3: PRICING / TIERS */}
-        <section id="waitlist" className="py-24 md:py-32 bg-muted/50">
+        <section id="waitlist" className="py-20 bg-muted/50">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="max-w-md">
@@ -118,7 +113,7 @@ export default function LandingPage() {
                           Try the Free Forecaster <ArrowRight className="ml-2" />
                         </Button>
                     </div>
-                    <Card className="p-8 rounded-xl shadow-lg">
+                    <Card className="p-8 rounded-xl shadow-lg bg-card">
                         <h3 className="text-2xl font-semibold">Join the Beta Waitlist.</h3>
                         <p className="mt-2 text-muted-foreground">
                             Ready for the full suite? Get early access to advanced features like AI-powered insights, cash flow analysis, PDF reports, and real-time data integration.
@@ -143,5 +138,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
