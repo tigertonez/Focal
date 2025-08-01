@@ -11,6 +11,8 @@ export default function LandingPage() {
   const router = useRouter();
 
   const handlePrimaryCta = () => {
+    // This will eventually lead to the simplified "Lite" version.
+    // For now, it goes to the standard inputs page.
     router.push('/inputs');
   };
 
@@ -56,7 +58,7 @@ export default function LandingPage() {
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
             </p>
             <div className="mt-10 flex items-center justify-center">
-              <Button size="lg" onClick={handlePrimaryCta} className="bg-slate-900 text-white hover:bg-slate-800 shadow-lg scale-105">
+              <Button size="lg" onClick={handlePrimaryCta} className="bg-white text-blue-600 hover:bg-gray-200 shadow-lg scale-105 font-bold">
                 Build My Forecast <ArrowRight className="ml-2" />
               </Button>
             </div>
@@ -76,8 +78,19 @@ export default function LandingPage() {
             </div>
             
             <div className="mt-20 max-w-5xl mx-auto">
-              <Card className="w-full aspect-video bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                <PlayCircle className="h-20 w-20 text-muted-foreground" />
+              <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                {/* 
+                  INSTRUCTION FOR YOU: 
+                  To add your video, replace the src attribute below with the embed link from YouTube or Vimeo.
+                  Example: "https://www.youtube.com/embed/your_video_id"
+                */}
+                <iframe 
+                  className="w-full h-full"
+                  src="https://player.vimeo.com/video/909421124?h=746979cd39&title=0&byline=0&portrait=0" 
+                  frameBorder="0" 
+                  allow="autoplay; fullscreen; picture-in-picture" 
+                  allowFullScreen>
+                </iframe>
               </Card>
             </div>
 
@@ -97,18 +110,18 @@ export default function LandingPage() {
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="max-w-md">
-                        <h2 className="text-4xl font-bold">Get Started for Free.</h2>
+                        <h2 className="text-4xl font-bold">Start for Free.</h2>
                         <p className="mt-4 text-muted-foreground">
-                            Use a simplified version of our forecasting engine to get a feel for how it works. See your potential revenue and basic costs instantly. No credit card required.
+                            Use our simplified forecasting engine to see your potential revenue and basic costs instantly. No credit card required. Get a feel for how powerful financial clarity can be.
                         </p>
-                        <Button size="lg" onClick={handlePrimaryCta} className="mt-8 bg-slate-900 text-white hover:bg-slate-800">
+                        <Button size="lg" onClick={handlePrimaryCta} className="mt-8 bg-white text-blue-600 hover:bg-gray-200 font-bold">
                           Try the Free Forecaster <ArrowRight className="ml-2" />
                         </Button>
                     </div>
                     <Card className="p-8 rounded-xl shadow-lg">
                         <h3 className="text-2xl font-semibold">Join the Beta Waitlist.</h3>
                         <p className="mt-2 text-muted-foreground">
-                            Get early access to the full platform, including advanced features like cash flow analysis, profitability tracking, and real-time data integration.
+                            Ready for the full suite? Get early access to advanced features like AI-powered insights, cash flow analysis, PDF reports, and real-time data integration.
                         </p>
                         <form className="mt-6 flex gap-4">
                           <input type="email" placeholder="your@email.com" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
