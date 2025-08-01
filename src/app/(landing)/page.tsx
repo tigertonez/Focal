@@ -66,7 +66,7 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-white px-4">
             <Image
-                src="https://placehold.co/1920x1080.png"
+                src="https://placehold.co/1920x1080/000000/FFFFFF.png"
                 alt="Financial chart background"
                 data-ai-hint="financial chart"
                 layout="fill"
