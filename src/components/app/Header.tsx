@@ -60,22 +60,15 @@ export function Header() {
       { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
     ];
     
-    const brandName = inputs.company?.brand || 'Focal';
-    const logoUri = inputs.company?.logoDataUri;
+    const brandName = 'Focal'; // Hardcoded brand name
+    const appLogo = '/logo-dark.png'; // Hardcoded app logo
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
             {/* Left Section: Brand */}
             <div className="flex h-full items-center gap-4">
                 <Link href="/" className="flex items-center gap-3 h-full">
-                    {logoUri ? (
-                       <Image src={logoUri} alt={`${brandName} Logo`} width={32} height={32} className="object-contain" />
-                    ) : (
-                       <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-9 w-9 font-bold text-base flex-shrink-0">
-                           {brandName.substring(0, 2).toUpperCase()}
-                       </div>
-                    )}
-                    <span className="font-semibold text-lg hidden sm:inline">{brandName} Financials</span>
+                    <Image src={appLogo} alt={`${brandName} Logo`} width={80} height={32} className="object-contain" />
                 </Link>
                  <Separator orientation="vertical" className="h-2/3" />
             </div>
@@ -118,3 +111,5 @@ export function Header() {
         </header>
     );
 };
+
+    

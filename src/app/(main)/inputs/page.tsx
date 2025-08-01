@@ -142,7 +142,7 @@ export default function InputsPage() {
 
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-8 items-start">
-               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={false} isHighlighted>
+               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={true} isHighlighted>
                   <div className="space-y-6">
                     {productFields.map((field, index) => (
                       <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
@@ -153,7 +153,7 @@ export default function InputsPage() {
                   </Button>
               </Section>
               
-              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={false} isHighlighted>
+              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={true} isHighlighted>
                 <div className="space-y-3">
                   {fixedCostFields.map((field, index) => (
                     <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
@@ -258,3 +258,5 @@ export default function InputsPage() {
     </FormProvider>
   );
 }
+
+    
