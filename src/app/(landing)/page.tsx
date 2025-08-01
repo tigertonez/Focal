@@ -97,7 +97,7 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col justify-center">
-              <Separator className="my-6" />
+              <Separator className="mt-6 mb-6" />
               <div className="grid md:grid-cols-3 gap-12">
                 {features.map((feature) => (
                   <div key={feature.title} className="p-4">
