@@ -31,7 +31,6 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1 flex flex-col pt-20">
-        {/* Hero Section */}
         <section className="relative flex-grow flex flex-col justify-center items-start text-left px-4 md:px-8 py-24">
             <div className="max-w-3xl z-10">
                 <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter text-foreground">
@@ -48,33 +47,6 @@ export default function LandingPage() {
                          <Link href="#how-it-works">See How It Works</Link>
                     </Button>
                 </div>
-            </div>
-
-             {/* Abstract SVG Background Shape */}
-            <div className="absolute bottom-0 right-0 w-full h-full overflow-hidden z-0">
-                <svg
-                    className="absolute bottom-0 right-0 w-[150%] h-[100%] md:w-[100%] md:h-[120%] lg:w-[80%] lg:h-[150%] xl:w-[70%] xl:h-[150%]"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                >
-                    <defs>
-                        <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style={{stopColor: 'hsl(var(--primary))', stopOpacity: 0.8}} />
-                            <stop offset="100%" style={{stopColor: 'hsl(217, 80%, 45%)', stopOpacity: 0.9}} />
-                        </linearGradient>
-                        <filter id='grainy' x='0' y='0' width='100%' height='100%'>
-                          <feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/>
-                          <feComposite operator="in" in2="SourceGraphic" result="noisy-image" />
-                          <feColorMatrix type="saturate" values="0" />
-                          <feBlend in="SourceGraphic" in2="noisy-image" mode="multiply" />
-                        </filter>
-                    </defs>
-                    <path
-                        fill="url(#blueGradient)"
-                        d="M 100 100 V 50 H 90 V 40 H 70 V 30 H 50 V 20 H 30 V 10 H 0 V 100 Z"
-                        style={{filter: "url(#grainy)"}}
-                    />
-                </svg>
             </div>
         </section>
       </main>
