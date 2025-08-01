@@ -46,7 +46,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
                             name={`fixedCosts.${index}.name`}
                             control={control}
                             render={({ field }) => (
-                                <Input {...field} placeholder={t.inputs.fixedCosts.costName} className="text-sm" />
+                                <Input {...field} placeholder={t.inputs.fixedCosts.costName} className="text-sm font-semibold h-9" />
                             )}
                         />
                          {isPlanningBuffer && (

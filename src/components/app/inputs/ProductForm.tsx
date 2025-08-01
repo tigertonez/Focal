@@ -8,11 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, HelpCircle } from 'lucide-react';
+import { Trash2, HelpCircle, ShoppingCart, DollarSign, Percent, Zap } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProductColor } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useForecast } from '@/context/ForecastContext';
+import { Separator } from '@/components/ui/separator';
+
+const FormSection = ({ title, icon: Icon, children }: { title: string, icon: React.ElementType, children: React.ReactNode }) => (
+    <div className="space-y-3">
+        <h4 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+            <Icon size={16} />
+            {title}
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-1">
+            {children}
+        </div>
+    </div>
+);
+
 
 export const ProductForm: React.FC<{ index: number; removeProduct: (index: number) => void }> = ({ index, removeProduct }) => {
   const { control, watch } = useFormContext();
@@ -35,7 +49,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 <Controller
                   name={`products.${index}.productName`}
                   control={control}
-                  render={({ field }) => <Input {...field} placeholder={t.inputs.products.productName} className="text-sm px-2" />}
+                  render={({ field }) => <Input {...field} placeholder={t.inputs.products.productName} className="text-sm font-semibold h-9" />}
                 />
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 mt-1">
@@ -64,10 +78,12 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 </Button>
             </div>
         </div>
-      
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor={`plannedUnits-${index}`} className="text-sm font-medium">{t.inputs.products.plannedUnits}</Label>
+        
+        <Separator />
+        
+        <FormSection title="Inventory & Costs" icon={ShoppingCart}>
+             <div className="space-y-1">
+                <Label htmlFor={`plannedUnits-${index}`} className="text-xs">{t.inputs.products.plannedUnits}</Label>
                 <Controller
                     name={`products.${index}.plannedUnits`}
                     control={control}
@@ -79,8 +95,8 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                     )}
                 />
             </div>
-            <div className="space-y-2">
-                <Label htmlFor={`unitCost-${index}`} className="text-sm font-medium">{t.inputs.products.unitCost}</Label>
+             <div className="space-y-1">
+                <Label htmlFor={`unitCost-${index}`} className="text-xs">{t.inputs.products.unitCost}</Label>
                 <Controller
                     name={`products.${index}.unitCost`}
                     control={control}
@@ -92,32 +108,13 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                     )}
                 />
             </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
-                <Label htmlFor={`sellPrice-${index}`} className="text-sm font-medium">{t.inputs.products.sellPrice}</Label>
-                 <Controller
-                    name={`products.${index}.sellPrice`}
-                    control={control}
-                    render={({ field }) => (
-                        <div className="relative">
-                            <Input {...field} id={`sellPrice-${index}`} type="number" className="text-sm pr-10" placeholder="e.g., 49.99" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
-                        </div>
-                    )}
-                />
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor={`depositPct-${index}`} className="text-sm font-medium flex items-center gap-2">
+             <div className="space-y-1">
+                <Label htmlFor={`depositPct-${index}`} className="text-xs flex items-center gap-1">
                     {t.inputs.products.deposit}
                     <TooltipProvider>
                         <Tooltip>
-                            <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                            <TooltipContent className="max-w-xs p-3">
-                                <p className="font-semibold">{t.inputs.products.deposit}</p>
-                                <p className="text-muted-foreground text-xs">{t.inputs.products.depositTooltip}</p>
-                            </TooltipContent>
+                            <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
+                            <TooltipContent className="max-w-xs"><p>{t.inputs.products.depositTooltip}</p></TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </Label>
@@ -132,102 +129,118 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                     )}
                 />
             </div>
-        </div>
-        
-         <div className="pt-4 space-y-3">
-             <Label className="text-sm font-medium flex items-center gap-2">{t.inputs.products.costModel.title}</Label>
-             <Controller
-                name={`products.${index}.costModel`}
-                control={control}
-                defaultValue="batch"
-                render={({ field }) => (
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
-                            <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
-                            <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
-                        </div>
-                    </RadioGroup>
-                )}
-             />
-        </div>
+             <div className="space-y-1">
+                 <Label className="text-xs flex items-center gap-1">{t.inputs.products.costModel.title}</Label>
+                 <Controller
+                    name={`products.${index}.costModel`}
+                    control={control}
+                    defaultValue="batch"
+                    render={({ field }) => (
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 h-9">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
+                                <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
+                                <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
+                            </div>
+                        </RadioGroup>
+                    )}
+                 />
+            </div>
+        </FormSection>
 
         {isManualMode && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            {isLowVolume ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor={`estimatedSales-${index}`} className="text-sm font-medium">{t.inputs.products.estimatedSales}</Label>
-                  <Controller
-                    name={`products.${index}.estimatedSales`}
-                    control={control}
-                    render={({ field }) => (
-                        <div className="relative">
-                            <Input {...field} id={`estimatedSales-${index}`} type="number" className="text-sm pr-14" placeholder="e.g., 3" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{t.inputs.products.units}</span>
-                        </div>
-                    )}
+          <>
+            <Separator />
+            <FormSection title="Sales Forecast" icon={Zap}>
+              <div className="space-y-1">
+                  <Label htmlFor={`sellPrice-${index}`} className="text-xs">{t.inputs.products.sellPrice}</Label>
+                   <Controller
+                      name={`products.${index}.sellPrice`}
+                      control={control}
+                      render={({ field }) => (
+                          <div className="relative">
+                              <Input {...field} id={`sellPrice-${index}`} type="number" className="text-sm pr-10" placeholder="e.g., 49.99" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{currency}</span>
+                          </div>
+                      )}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`saleMonth-${index}`} className="text-sm font-medium">{t.inputs.products.saleMonth}</Label>
-                  <Controller
-                    name={`products.${index}.saleMonth`}
-                    control={control}
-                    defaultValue={1}
-                    render={({ field }) => (
-                        <Select onValueChange={(v) => field.onChange(parseInt(v))} value={String(field.value)}>
-                            <SelectTrigger id={`saleMonth-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                            {timeline.map(month => (
-                                <SelectItem key={month} value={String(month)}>Month {month}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor={`sellThrough-${index}`} className="text-sm font-medium">{t.inputs.products.sellThrough}</Label>
-                  <Controller
-                     name={`products.${index}.sellThrough`}
-                     control={control}
-                     render={({ field }) => (
-                        <div className="relative">
-                            <Input {...field} id={`sellThrough-${index}`} type="number" className="text-sm pr-6" placeholder="e.g., 85" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
-                        </div>
-                     )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`salesModel-${index}`} className="text-sm font-medium">{t.inputs.products.salesModel.title}</Label>
-                  <Controller
-                     name={`products.${index}.salesModel`}
-                     control={control}
-                     defaultValue="launch"
-                     render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="launch">{t.inputs.products.salesModel.launch}</SelectItem>
-                                <SelectItem value="even">{t.inputs.products.salesModel.even}</SelectItem>
-                                <SelectItem value="seasonal">{t.inputs.products.salesModel.seasonal}</SelectItem>
-                                <SelectItem value="growth">{t.inputs.products.salesModel.growth}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                     )}
-                   />
-                </div>
-              </>
-            )}
-          </div>
+              </div>
+
+              {isLowVolume ? (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor={`estimatedSales-${index}`} className="text-xs">{t.inputs.products.estimatedSales}</Label>
+                    <Controller
+                      name={`products.${index}.estimatedSales`}
+                      control={control}
+                      render={({ field }) => (
+                          <div className="relative">
+                              <Input {...field} id={`estimatedSales-${index}`} type="number" className="text-sm pr-14" placeholder="e.g., 3" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">{t.inputs.products.units}</span>
+                          </div>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`saleMonth-${index}`} className="text-xs">{t.inputs.products.saleMonth}</Label>
+                    <Controller
+                      name={`products.${index}.saleMonth`}
+                      control={control}
+                      defaultValue={1}
+                      render={({ field }) => (
+                          <Select onValueChange={(v) => field.onChange(parseInt(v))} value={String(field.value)}>
+                              <SelectTrigger id={`saleMonth-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                              {timeline.map(month => (
+                                  <SelectItem key={month} value={String(month)}>Month {month}</SelectItem>
+                              ))}
+                              </SelectContent>
+                          </Select>
+                      )}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor={`sellThrough-${index}`} className="text-xs">{t.inputs.products.sellThrough}</Label>
+                    <Controller
+                       name={`products.${index}.sellThrough`}
+                       control={control}
+                       render={({ field }) => (
+                          <div className="relative">
+                              <Input {...field} id={`sellThrough-${index}`} type="number" className="text-sm pr-6" placeholder="e.g., 85" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">%</span>
+                          </div>
+                       )}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`salesModel-${index}`} className="text-xs">{t.inputs.products.salesModel.title}</Label>
+                    <Controller
+                       name={`products.${index}.salesModel`}
+                       control={control}
+                       defaultValue="launch"
+                       render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger id={`salesModel-${index}`} className="text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="launch">{t.inputs.products.salesModel.launch}</SelectItem>
+                                  <SelectItem value="even">{t.inputs.products.salesModel.even}</SelectItem>
+                                  <SelectItem value="seasonal">{t.inputs.products.salesModel.seasonal}</SelectItem>
+                                  <SelectItem value="growth">{t.inputs.products.salesModel.growth}</SelectItem>
+                              </SelectContent>
+                          </Select>
+                       )}
+                     />
+                  </div>
+                </>
+              )}
+            </FormSection>
+          </>
         )}
     </div>
   );

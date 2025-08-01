@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useForecast } from '@/context/ForecastContext';
+import { Separator } from '../ui/separator';
+import Image from 'next/image';
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
     const pathname = usePathname();
@@ -59,18 +61,23 @@ export function Header() {
     ];
     
     const brandName = inputs.company?.brand || 'Focal';
-    const brandInitials = brandName.substring(0, 2).toUpperCase();
+    const logoUri = inputs.company?.logoDataUri;
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
             {/* Left Section: Brand */}
-            <div className="flex items-center gap-3">
-                <Link href="/" className="flex items-center gap-3">
-                    <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-9 w-9 font-bold text-base flex-shrink-0">
-                        {brandInitials}
-                    </div>
+            <div className="flex h-full items-center gap-4">
+                <Link href="/" className="flex items-center gap-3 h-full">
+                    {logoUri ? (
+                       <Image src={logoUri} alt={`${brandName} Logo`} width={32} height={32} className="object-contain" />
+                    ) : (
+                       <div className="bg-primary/20 text-primary p-1 rounded-lg flex items-center justify-center h-9 w-9 font-bold text-base flex-shrink-0">
+                           {brandName.substring(0, 2).toUpperCase()}
+                       </div>
+                    )}
                     <span className="font-semibold text-lg hidden sm:inline">{brandName} Financials</span>
                 </Link>
+                 <Separator orientation="vertical" className="h-2/3" />
             </div>
 
             {/* Center Section: Navigation */}

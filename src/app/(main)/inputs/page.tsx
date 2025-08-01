@@ -6,7 +6,7 @@ import React, { useEffect } from 'react';
 import { useForecast } from '@/context/ForecastContext';
 import { useFinancials } from '@/hooks/useFinancials';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, HelpCircle, Bot, Loader2, ChevronRight, Briefcase, Building, Wrench, Settings, Palette, Upload } from 'lucide-react';
+import { PlusCircle, HelpCircle, Bot, Loader2, ChevronRight, Briefcase, Building, Wrench, Settings, Palette, Upload, ShoppingCart, DollarSign, Percent, Zap } from 'lucide-react';
 import { FixedCostForm } from '@/components/app/inputs/FixedCostForm';
 import { ProductForm } from '@/components/app/inputs/ProductForm';
 import { InputField } from '@/components/app/inputs/InputField';
@@ -34,10 +34,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { EngineInputSchema, type EngineInput } from '@/lib/types';
 
 
-const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean }> = ({ title, children, className, icon, defaultOpen = false }) => (
+const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean, isHighlighted?: boolean }> = ({ title, children, className, icon, defaultOpen = false, isHighlighted }) => (
     <Collapsible defaultOpen={defaultOpen} className={cn("space-y-4", className)}>
         <CollapsibleTrigger asChild>
-            <div className="flex w-full items-center justify-between rounded-lg border bg-muted/40 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer">
+            <div className={cn(
+                "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer",
+                isHighlighted ? "bg-primary/10 border-primary/20" : "bg-muted/40"
+                )}>
                 <div className="flex items-center gap-3">
                     {icon}
                     <span>{title}</span>
@@ -139,7 +142,7 @@ export default function InputsPage() {
 
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-8 items-start">
-               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={false}>
+               <Section title={t.inputs.products.title} icon={<Briefcase />} defaultOpen={false} isHighlighted>
                   <div className="space-y-6">
                     {productFields.map((field, index) => (
                       <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
@@ -150,7 +153,7 @@ export default function InputsPage() {
                   </Button>
               </Section>
               
-              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={false}>
+              <Section title={t.inputs.fixedCosts.title} icon={<Building />} defaultOpen={false} isHighlighted>
                 <div className="space-y-3">
                   {fixedCostFields.map((field, index) => (
                     <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
@@ -255,5 +258,3 @@ export default function InputsPage() {
     </FormProvider>
   );
 }
-
-    
