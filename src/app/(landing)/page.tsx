@@ -35,7 +35,27 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* HEADER */}
       <header className="absolute top-0 left-0 w-full z-20 px-4 md:px-8 py-6">
-          <div className="container mx-auto flex justify-end items-center">
+          <div className="container mx-auto flex justify-between items-center">
+              <Link href="/" className="text-white">
+                {/* === PASTE YOUR SVG LOGO HERE === */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-8 w-auto"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                {/* =================================== */}
+              </Link>
               <nav className="flex items-center gap-8">
                   <Link href="#features" className="text-base text-white hover:underline transition-opacity">Features</Link>
                   <Link href="#waitlist" className="text-base text-white hover:underline transition-opacity">Waitlist</Link>
