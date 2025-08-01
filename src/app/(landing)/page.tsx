@@ -57,9 +57,8 @@ export default function LandingPage() {
             <Image
               src={`/background.jpeg?v=${cacheBuster}`}
               alt="Financial OS background"
-              layout="fill"
-              objectFit="cover"
-              className="z-0"
+              fill
+              className="z-0 object-cover"
               quality={100}
               priority
             />
