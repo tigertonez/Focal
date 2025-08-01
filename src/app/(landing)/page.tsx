@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,18 +18,26 @@ export default function LandingPage() {
 
   const features = [
     {
-      title: 'Plan Your Inventory',
-      description: 'Model production costs, deposits, and lead times to see the true cash impact of your inventory.',
+      title: 'Secure Your Funding',
+      description: 'Generate an investor-ready forecast that answers the tough questions on profitability and cash flow.',
     },
     {
-      title: 'Forecast Profitability',
-      description: 'Calculate gross, operating, and net margins for every product to ensure your pricing is right.',
+      title: 'De-Risk Your Inventory',
+      description: 'Model production costs and sales cycles to see the true cash impact of inventory before you spend a dime.',
     },
     {
-      title: 'Master Your Cash Flow',
-      description: 'Project your future cash balance, identify funding needs, and never run out of cash unexpectedly.',
+      title: 'Master Your Margins',
+      description: 'Go beyond revenue. Calculate product-level profitability to ensure every sale strengthens your bottom line.',
     },
   ];
+  
+  const personas = [
+      "Founders seeking investment",
+      "E-commerce managers",
+      "D2C brand operators",
+      "Financial consultants",
+      "Business strategists",
+  ]
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -100,23 +108,37 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col justify-center items-center mt-16">
-              <Card className="w-full max-w-4xl shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold">What you can do</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 pb-8">
-                  {features.map((feature, index) => (
-                    <div key={feature.title}>
-                      {index > 0 && <Separator className="my-4" />}
-                      <div className="flex items-start gap-4">
-                        <CheckCircle className="text-primary h-6 w-6 mt-1 flex-shrink-0" />
-                        <div>
-                          <h3 className="text-lg font-semibold">{feature.title}</h3>
-                          <p className="mt-1 text-muted-foreground">{feature.description}</p>
-                        </div>
-                      </div>
+              <Card className="w-full max-w-5xl shadow-lg">
+                <CardContent className="p-8 grid md:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-bold">Achieve your critical business goals</h3>
+                        {features.map((feature, index) => (
+                          <div key={feature.title}>
+                            {index > 0 && <Separator className="my-4" />}
+                            <div className="flex items-start gap-4">
+                              <CheckCircle className="text-primary h-6 w-6 mt-1 flex-shrink-0" />
+                              <div>
+                                <h4 className="text-lg font-semibold">{feature.title}</h4>
+                                <p className="mt-1 text-muted-foreground">{feature.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                     </div>
-                  ))}
+                    <div className="bg-muted/50 p-6 rounded-lg">
+                         <h3 className="text-xl font-bold flex items-center gap-2">
+                             <Users className="text-primary" />
+                             Built for...
+                         </h3>
+                         <ul className="mt-4 space-y-2 text-muted-foreground">
+                            {personas.map(p => (
+                               <li key={p} className="flex items-center gap-2">
+                                  <ArrowRight size={16} className="text-primary/70" />
+                                  <span>{p}</span>
+                               </li>
+                            ))}
+                         </ul>
+                    </div>
                 </CardContent>
               </Card>
             </div>
