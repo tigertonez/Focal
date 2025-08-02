@@ -129,26 +129,6 @@ export default function LandingPage() {
                  </div>
             </div>
 
-            <div className="mt-20 max-w-5xl mx-auto">
-                <div className="grid md:grid-cols-3 gap-8 text-center">
-                    <div className="space-y-3">
-                        <BarChart className="h-8 w-8 text-primary mx-auto" />
-                        <h3 className="text-xl font-semibold">Secure Your Funding</h3>
-                        <p className="text-muted-foreground">Generate investor-ready forecasts to answer the tough questions.</p>
-                    </div>
-                     <div className="space-y-3">
-                        <ShieldCheck className="h-8 w-8 text-primary mx-auto" />
-                        <h3 className="text-xl font-semibold">De-Risk Your Inventory</h3>
-                        <p className="text-muted-foreground">Model inventory costs to see the true cash impact before you spend.</p>
-                    </div>
-                     <div className="space-y-3">
-                        <PieChart className="h-8 w-8 text-primary mx-auto" />
-                        <h3 className="text-xl font-semibold">Master Your Margins</h3>
-                        <p className="text-muted-foreground">Calculate product-level profitability to ensure every sale is profitable.</p>
-                    </div>
-                </div>
-            </div>
-
           </div>
         </section>
         
