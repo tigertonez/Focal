@@ -2,41 +2,19 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle, Users, BarChart, ShieldCheck, PieChart, PlayCircle } from 'lucide-react';
+import { ArrowRight, Users, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 
 export default function LandingPage() {
   const router = useRouter();
-  const [activeFeature, setActiveFeature] = useState(0);
 
   const handlePrimaryCta = () => {
     router.push('/inputs');
   };
-
-  const features = [
-    {
-      icon: <BarChart className="h-8 w-8 text-primary" />,
-      title: 'Secure Your Funding',
-      description: 'Generate an investor-ready forecast that answers the tough questions on profitability and cash flow.',
-    },
-    {
-      icon: <ShieldCheck className="h-8 w-8 text-primary" />,
-      title: 'De-Risk Your Inventory',
-      description: 'Model production costs and sales cycles to see the true cash impact of inventory before you spend a dime.',
-    },
-    {
-      icon: <PieChart className="h-8 w-8 text-primary" />,
-      title: 'Master Your Margins',
-      description: 'Go beyond revenue. Calculate product-level profitability to ensure every sale strengthens your bottom line.',
-    },
-  ];
   
   const personas = [
       "For founders turning a vision into an investor-ready plan.",
@@ -97,7 +75,7 @@ export default function LandingPage() {
                 Your entire financial workflow, unified.
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling.
+                Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling. No credit card required!
               </p>
             </div>
 
@@ -139,7 +117,7 @@ export default function LandingPage() {
                     <div>
                         <h2 className="text-4xl font-bold">Start for Free.</h2>
                         <p className="mt-4 text-muted-foreground">
-                            Use our simplified forecasting engine to see your potential revenue and basic costs instantly. No credit card required. Get a feel for how powerful financial clarity can be.
+                            Use our simplified forecasting engine to see your potential revenue and basic costs instantly. Get a feel for how powerful financial clarity can be.
                         </p>
                         <Button size="lg" onClick={handlePrimaryCta} className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
                           Try the Free Forecaster <ArrowRight className="ml-2" />
