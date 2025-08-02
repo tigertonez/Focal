@@ -126,7 +126,7 @@ export default function LandingPage() {
                     <Card className="p-8 rounded-xl shadow-lg bg-card">
                         <h3 className="text-2xl font-semibold">Join the Beta Waitlist.</h3>
                         <p className="mt-2 text-muted-foreground">
-                            Ready for the full suite? Get early access to advanced features like AI-powered insights, cash flow analysis, PDF reports, and real-time data integration.
+                          Unlock advanced features like AI insights, cash flow analysis, PDF reports, and real-time data integration.
                         </p>
                         <form className="mt-6 flex gap-4">
                           <input type="email" placeholder="your@email.com" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
