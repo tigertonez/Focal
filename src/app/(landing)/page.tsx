@@ -73,18 +73,15 @@ export default function LandingPage() {
               <h2 className="text-4xl md:text-5xl font-bold">
                 Your entire financial workflow, unified.
               </h2>
-          </div>
-          
-          <div className="bg-muted w-full py-8 mt-8">
-             <div className="container mx-auto px-4">
-                <p className="text-center text-lg text-muted-foreground">
-                    Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling. No credit card required!
-                </p>
-             </div>
+               <p className="text-lg text-muted-foreground mt-4">
+                  Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling.
+                  <br />
+                  <span className="italic">No credit card required!</span>
+              </p>
           </div>
 
           <div className="mt-20 px-4">
-              <div className="bg-muted rounded-xl aspect-video w-full mx-auto overflow-hidden">
+              <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto overflow-hidden shadow-2xl">
                   <iframe
                       className="w-full h-full"
                       src="https://www.youtube.com/embed/dQw4w9WgXcQ"
