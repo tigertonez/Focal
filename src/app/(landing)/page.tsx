@@ -100,26 +100,32 @@ export default function LandingPage() {
                 Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling.
               </p>
             </div>
-            
-            <div className="mt-20 max-w-4xl mx-auto space-y-12">
-                {features.map((feature) => (
-                    <div key={feature.title} className="flex items-start gap-6">
-                        <div className="flex-shrink-0 mt-1">
-                            {feature.icon}
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">{feature.title}</h3>
-                            <p className="mt-1 text-muted-foreground">{feature.description}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
 
             <div className="mt-20">
                 <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto flex items-center justify-center">
                     <div className="text-center text-muted-foreground">
                         <PlayCircle className="h-16 w-16 mx-auto" />
                         <p className="mt-2 font-medium">Watch Demo</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="mt-20 max-w-5xl mx-auto">
+                <div className="grid md:grid-cols-3 gap-8 text-center">
+                    <div className="space-y-3">
+                        <BarChart className="h-8 w-8 text-primary mx-auto" />
+                        <h3 className="text-xl font-semibold">Secure Your Funding</h3>
+                        <p className="text-muted-foreground">Generate investor-ready forecasts to answer the tough questions.</p>
+                    </div>
+                     <div className="space-y-3">
+                        <ShieldCheck className="h-8 w-8 text-primary mx-auto" />
+                        <h3 className="text-xl font-semibold">De-Risk Your Inventory</h3>
+                        <p className="text-muted-foreground">Model inventory costs to see the true cash impact before you spend.</p>
+                    </div>
+                     <div className="space-y-3">
+                        <PieChart className="h-8 w-8 text-primary mx-auto" />
+                        <h3 className="text-xl font-semibold">Master Your Margins</h3>
+                        <p className="text-muted-foreground">Calculate product-level profitability to ensure every sale is profitable.</p>
                     </div>
                 </div>
             </div>
