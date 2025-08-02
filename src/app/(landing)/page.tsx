@@ -110,6 +110,21 @@ export default function LandingPage() {
                 </div>
             </div>
             
+            <div className="mt-20 max-w-4xl mx-auto">
+                 <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
+                     <Users className="text-primary" />
+                     Your financial command center, no matter what you sell.
+                 </h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
+                    {personas.map(p => (
+                       <div key={p} className="flex items-start gap-3">
+                          <CheckCircle size={16} className="text-primary/80 flex-shrink-0 mt-1" />
+                          <span>{p}</span>
+                       </div>
+                    ))}
+                 </div>
+            </div>
+
             <div className="mt-20 max-w-5xl mx-auto">
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                     <div className="space-y-3">
@@ -128,21 +143,6 @@ export default function LandingPage() {
                         <p className="text-muted-foreground">Calculate product-level profitability to ensure every sale is profitable.</p>
                     </div>
                 </div>
-            </div>
-
-            <div className="mt-20 max-w-4xl mx-auto">
-                 <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
-                     <Users className="text-primary" />
-                     Your financial command center, no matter what you sell.
-                 </h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
-                    {personas.map(p => (
-                       <div key={p} className="flex items-start gap-3">
-                          <CheckCircle size={16} className="text-primary/80 flex-shrink-0 mt-1" />
-                          <span>{p}</span>
-                       </div>
-                    ))}
-                 </div>
             </div>
 
           </div>
