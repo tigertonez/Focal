@@ -109,6 +109,9 @@ export default function LandingPage() {
                  </div>
             </div>
           </div>
+          <div className="container mx-auto px-4 mt-20">
+            <div className="border-b border-border/50"></div>
+          </div>
         </section>
         
         {/* SECTION 3: PRICING / TIERS */}
