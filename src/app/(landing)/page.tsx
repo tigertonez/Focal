@@ -69,16 +69,23 @@ export default function LandingPage() {
 
         {/* SECTION 2: FEATURES */}
         <section id="features" className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto">
+          <div className="container mx-auto px-4 text-center">
+            <div className="max-w-3xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
                 Your entire financial workflow, unified.
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling. No credit card required!
-              </p>
             </div>
+          </div>
+          
+          <div className="bg-muted w-full py-8 mt-8">
+             <div className="container mx-auto px-4">
+                <p className="text-center text-lg text-muted-foreground">
+                    Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling. No credit card required!
+                </p>
+             </div>
+          </div>
 
+          <div className="container mx-auto px-4">
             <div className="mt-20">
                 <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto overflow-hidden">
                     <iframe
@@ -106,7 +113,6 @@ export default function LandingPage() {
                     ))}
                  </div>
             </div>
-
           </div>
         </section>
         
