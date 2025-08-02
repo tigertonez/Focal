@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle, Users, BarChart, ShieldCheck, PieChart } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, ShieldCheck, PieChart, PlayCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,17 +22,17 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: <BarChart className="h-10 w-10 text-primary" />,
+      icon: <BarChart className="h-8 w-8 text-primary" />,
       title: 'Secure Your Funding',
       description: 'Generate an investor-ready forecast that answers the tough questions on profitability and cash flow.',
     },
     {
-      icon: <ShieldCheck className="h-10 w-10 text-primary" />,
+      icon: <ShieldCheck className="h-8 w-8 text-primary" />,
       title: 'De-Risk Your Inventory',
       description: 'Model production costs and sales cycles to see the true cash impact of inventory before you spend a dime.',
     },
     {
-      icon: <PieChart className="h-10 w-10 text-primary" />,
+      icon: <PieChart className="h-8 w-8 text-primary" />,
       title: 'Master Your Margins',
       description: 'Go beyond revenue. Calculate product-level profitability to ensure every sale strengthens your bottom line.',
     },
@@ -101,14 +101,26 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-16 max-w-2xl mx-auto space-y-12">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex flex-col items-center text-center">
-                  {feature.icon}
-                  <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-muted-foreground">{feature.description}</p>
+            <div className="mt-20 grid md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-10">
+                  {features.map((feature) => (
+                    <div key={feature.title} className="flex items-start gap-4">
+                      <div className="flex-shrink-0 mt-1">
+                        {feature.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold">{feature.title}</h3>
+                        <p className="mt-1 text-muted-foreground">{feature.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                 <div className="bg-muted rounded-xl aspect-video flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                        <PlayCircle className="h-16 w-16 mx-auto" />
+                        <p className="mt-2 font-medium">Watch Demo</p>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-20 max-w-4xl mx-auto">
