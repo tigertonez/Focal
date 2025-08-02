@@ -101,16 +101,14 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-16 max-w-6xl mx-auto">
-              <div className="grid md:grid-cols-3 gap-8 text-center">
-                {features.map((feature) => (
-                  <div key={feature.title} className="flex flex-col items-center p-4">
-                    {feature.icon}
-                    <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
-                    <p className="mt-2 text-muted-foreground">{feature.description}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-16 max-w-2xl mx-auto space-y-12">
+              {features.map((feature) => (
+                <div key={feature.title} className="flex flex-col items-center text-center">
+                  {feature.icon}
+                  <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
+                  <p className="mt-2 text-muted-foreground">{feature.description}</p>
+                </div>
+              ))}
             </div>
 
             <div className="mt-20 max-w-4xl mx-auto">
