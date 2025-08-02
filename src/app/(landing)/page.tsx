@@ -102,11 +102,15 @@ export default function LandingPage() {
             </div>
 
             <div className="mt-20">
-                <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                        <PlayCircle className="h-16 w-16 mx-auto" />
-                        <p className="mt-2 font-medium">Watch Demo</p>
-                    </div>
+                <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto overflow-hidden">
+                    <iframe
+                        className="w-full h-full"
+                        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    ></iframe>
                 </div>
             </div>
             
