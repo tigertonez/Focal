@@ -76,7 +76,7 @@ export default function LandingPage() {
                <p className="text-lg text-muted-foreground mt-4">
                   Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling.
                   <br />
-                  <span className="italic">No credit card required!</span>
+                  <span>*No credit card required!</span>
               </p>
           </div>
 
