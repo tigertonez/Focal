@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, ShieldCheck, PieChart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,19 +22,19 @@ export default function LandingPage() {
 
   const features = [
     {
+      icon: <BarChart className="h-10 w-10 text-primary" />,
       title: 'Secure Your Funding',
       description: 'Generate an investor-ready forecast that answers the tough questions on profitability and cash flow.',
-      image: '/feature-1.png'
     },
     {
+      icon: <ShieldCheck className="h-10 w-10 text-primary" />,
       title: 'De-Risk Your Inventory',
       description: 'Model production costs and sales cycles to see the true cash impact of inventory before you spend a dime.',
-      image: '/feature-2.png'
     },
     {
+      icon: <PieChart className="h-10 w-10 text-primary" />,
       title: 'Master Your Margins',
       description: 'Go beyond revenue. Calculate product-level profitability to ensure every sale strengthens your bottom line.',
-      image: '/feature-3.png'
     },
   ];
   
@@ -90,7 +90,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section id="features" className="py-16 bg-background">
+        <section id="features" className="py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold">
@@ -101,53 +101,19 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-12 max-w-5xl mx-auto">
-              <Card className="w-full aspect-video bg-muted flex items-center justify-center overflow-hidden border-2 shadow-lg">
-                <iframe 
-                  className="w-full h-full"
-                  src="https://www.youtube.com/embed/VhTf_Inf7Fs" 
-                  frameBorder="0" 
-                  allow="autoplay; fullscreen; picture-in-picture" 
-                  allowFullScreen>
-                </iframe>
-              </Card>
-            </div>
-
             <div className="mt-16 max-w-6xl mx-auto">
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-4">
-                        {features.map((feature, index) => (
-                            <div 
-                                key={feature.title}
-                                className={cn(
-                                    "p-4 rounded-lg cursor-pointer transition-all duration-300",
-                                    activeFeature === index ? "bg-primary/10" : "hover:bg-muted/50"
-                                )}
-                                onClick={() => setActiveFeature(index)}
-                            >
-                                <h4 className="text-xl font-bold">{feature.title}</h4>
-                                <p className={cn(
-                                    "mt-2 text-muted-foreground transition-all duration-300",
-                                    activeFeature === index ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                                )}>
-                                    {feature.description}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="w-full h-80 rounded-xl bg-muted overflow-hidden">
-                        <Image 
-                            src={features[activeFeature].image}
-                            alt={features[activeFeature].title}
-                            width={600}
-                            height={400}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-                </div>
+              <div className="grid md:grid-cols-3 gap-8 text-center">
+                {features.map((feature) => (
+                  <div key={feature.title} className="flex flex-col items-center p-4">
+                    {feature.icon}
+                    <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
+                    <p className="mt-2 text-muted-foreground">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-12 max-w-4xl mx-auto">
+            <div className="mt-20 max-w-4xl mx-auto">
                  <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
                      <Users className="text-primary" />
                      Your financial command center, no matter what you sell.
