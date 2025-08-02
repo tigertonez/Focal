@@ -69,12 +69,10 @@ export default function LandingPage() {
 
         {/* SECTION 2: FEATURES */}
         <section id="features" className="py-20 bg-background">
-          <div className="container mx-auto px-4 text-center">
-            <div className="max-w-3xl mx-auto">
+          <div className="w-full text-center px-4">
               <h2 className="text-4xl md:text-5xl font-bold">
                 Your entire financial workflow, unified.
               </h2>
-            </div>
           </div>
           
           <div className="bg-muted w-full py-8 mt-8">
@@ -99,12 +97,12 @@ export default function LandingPage() {
           </div>
 
           <div className="container mx-auto px-4">
-            <div className="mt-20 max-w-4xl mx-auto">
-                 <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
+            <div className="mt-20 max-w-4xl mx-auto text-center">
+                 <h3 className="text-xl font-bold mb-6 flex items-center justify-center gap-2">
                      <Users className="text-primary" />
                      Your financial command center, no matter what you sell.
                  </h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground text-left">
                     {personas.map(p => (
                        <div key={p} className="flex items-start gap-3">
                           <CheckCircle size={16} className="text-primary/80 flex-shrink-0 mt-1" />
