@@ -74,9 +74,9 @@ export default function LandingPage() {
                 Your entire financial workflow, unified.
               </h2>
                <p className="text-lg text-muted-foreground mt-4">
-                  Focal is the first platform that connects your inventory planning, cost management, and financial forecasting in one place. Stop guessing, start scaling.
+                  For every founder who's ever felt like they're flying blind: This is your command center. Stop the guesswork, and start building a resilient, scalable business.
                   <br />
-                  <span>*No credit card required.</span>
+                  <span>(No credit card required.)</span>
               </p>
           </div>
 
@@ -84,7 +84,7 @@ export default function LandingPage() {
               <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto overflow-hidden shadow-2xl">
                   <iframe
                       className="w-full h-full"
-                      src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                      src="https://www.youtube.com/embed/S2p5A4rA_v4"
                       title="YouTube video player"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
