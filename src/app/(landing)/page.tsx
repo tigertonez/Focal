@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Users, CheckCircle } from 'lucide-react';
+import { ArrowRight, Users, CheckCircle, BarChart, ShieldCheck, PieChart, PlayCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
@@ -85,20 +85,20 @@ export default function LandingPage() {
              </div>
           </div>
 
+          <div className="mt-20">
+              <div className="bg-muted rounded-xl aspect-video w-full mx-auto overflow-hidden">
+                  <iframe
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                  ></iframe>
+              </div>
+          </div>
+
           <div className="container mx-auto px-4">
-            <div className="mt-20">
-                <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto overflow-hidden">
-                    <iframe
-                        className="w-full h-full"
-                        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    ></iframe>
-                </div>
-            </div>
-            
             <div className="mt-20 max-w-4xl mx-auto">
                  <h3 className="text-center text-xl font-bold mb-6 flex items-center justify-center gap-2">
                      <Users className="text-primary" />
