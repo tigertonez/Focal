@@ -101,21 +101,22 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="mt-20 grid md:grid-cols-2 gap-12 items-center">
-                <div className="space-y-10">
-                  {features.map((feature) => (
-                    <div key={feature.title} className="flex items-start gap-4">
-                      <div className="flex-shrink-0 mt-1">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold">{feature.title}</h3>
-                        <p className="mt-1 text-muted-foreground">{feature.description}</p>
-                      </div>
+            <div className="mt-20 max-w-4xl mx-auto space-y-12">
+                {features.map((feature) => (
+                    <div key={feature.title} className="flex items-start gap-6">
+                        <div className="flex-shrink-0 mt-1">
+                            {feature.icon}
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold">{feature.title}</h3>
+                            <p className="mt-1 text-muted-foreground">{feature.description}</p>
+                        </div>
                     </div>
-                  ))}
-                </div>
-                 <div className="bg-muted rounded-xl aspect-video flex items-center justify-center">
+                ))}
+            </div>
+
+            <div className="mt-20">
+                <div className="bg-muted rounded-xl aspect-video w-full max-w-5xl mx-auto flex items-center justify-center">
                     <div className="text-center text-muted-foreground">
                         <PlayCircle className="h-16 w-16 mx-auto" />
                         <p className="mt-2 font-medium">Watch Demo</p>
