@@ -154,7 +154,7 @@ export default function LandingPage() {
                           <input type="email" placeholder="your@email.com" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
                           <Button>Join Waitlist</Button>
                         </form>
-                        <p className="text-xs text-muted-foreground mt-3">We're granting access to new users every week.</p>
+                        <p className="text-xs text-muted-foreground mt-3">No spam. You'll only get an email with access to the tool.</p>
                     </Card>
                 </div>
             </div>
