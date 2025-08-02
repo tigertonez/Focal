@@ -147,5 +147,3 @@ export default function ProfitPage() {
 
   return <ProfitPageContent data={financials.data} inputs={contextInputs} t={t} />;
 }
-
-    
