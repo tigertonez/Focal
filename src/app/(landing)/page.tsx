@@ -83,7 +83,7 @@ export default function LandingPage() {
              </div>
           </div>
 
-          <div className="mt-20">
+          <div className="mt-20 px-4">
               <div className="bg-muted rounded-xl aspect-video w-full mx-auto overflow-hidden">
                   <iframe
                       className="w-full h-full"
