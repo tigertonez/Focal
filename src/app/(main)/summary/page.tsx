@@ -6,7 +6,7 @@ import React, { useCallback } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import type { EngineOutput, EngineInput, BusinessHealth, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, ChevronRight, BarChart } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, ChevronRight, BarChart, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -23,6 +23,22 @@ import { HealthPanel } from '@/components/app/summary/HealthPanel';
 // =================================================================
 // Child Components
 // =================================================================
+
+// Define a "Paywall" component for Pro features
+const ProPaywall = ({ t }: { t: any }) => (
+    <div className="p-4 md:p-8">
+        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
+        <Card className="mt-8 p-8 text-center bg-muted/50 border-dashed">
+            <Sparkles className="mx-auto h-12 w-12 text-yellow-500" />
+            <h3 className="mt-4 text-xl font-semibold">Unlock Your Full Financial Summary</h3>
+            <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+                See the big picture. Get your Business Health Score, download PDF reports, and receive a strategic analysis to guide your next steps.
+            </p>
+            <Button className="mt-6" size="lg">Upgrade to Pro</Button>
+        </Card>
+    </div>
+);
+
 
 const KPISection = ({ data, currency, t }: { data: EngineOutput, currency: string, t: any }) => {
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
@@ -188,6 +204,12 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
 export default function SummaryPage() {
     const { t, financials, inputs: contextInputs } = useForecast();
+    // For now, we assume all users are on a free plan. This will be dynamic in the future.
+    const isFreePlan = true;
+
+    if (isFreePlan) {
+        return <ProPaywall t={t} />;
+    }
 
     if (financials.isLoading) {
         return <SummaryPageSkeleton t={t} />;

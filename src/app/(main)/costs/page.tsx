@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -12,7 +13,7 @@ import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimel
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft } from 'lucide-react';
+import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft, Sparkles } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,20 @@ import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieC
 import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
 
+// Define a "Paywall" component for Pro features
+const ProPaywall = ({ t }: { t: any }) => (
+    <div className="p-4 md:p-8">
+        <SectionHeader title={t.pages.costs.title} description={t.pages.costs.description} />
+        <Card className="mt-8 p-8 text-center bg-muted/50 border-dashed">
+            <Sparkles className="mx-auto h-12 w-12 text-yellow-500" />
+            <h3 className="mt-4 text-xl font-semibold">Unlock Full Cost Analysis</h3>
+            <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+                Go beyond revenue. Understand your fixed vs. variable costs, see your investment breakdown, and get AI-powered recommendations to improve your margins.
+            </p>
+            <Button className="mt-6" size="lg">Upgrade to Pro</Button>
+        </Card>
+    </div>
+);
 
 function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
     const router = useRouter();
@@ -187,6 +202,12 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
 
 export default function CostsPage() {
     const { t, financials, inputs: contextInputs } = useForecast();
+    // For now, we assume all users are on a free plan. This will be dynamic in the future.
+    const isFreePlan = true;
+
+    if (isFreePlan) {
+        return <ProPaywall t={t} />;
+    }
 
     if (financials.isLoading) {
         return <CostsPageSkeleton t={t} />;

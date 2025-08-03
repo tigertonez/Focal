@@ -7,7 +7,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target, Sparkles } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -20,6 +20,21 @@ import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
 
+// Define a "Paywall" component for Pro features
+const ProPaywall = ({ t }: { t: any }) => (
+    <div className="p-4 md:p-8">
+        <SectionHeader title={t.pages.profit.title} description={t.pages.profit.description} />
+        <Card className="mt-8 p-8 text-center bg-muted/50 border-dashed">
+            <Sparkles className="mx-auto h-12 w-12 text-yellow-500" />
+            <h3 className="mt-4 text-xl font-semibold">Unlock Full Profitability Analysis</h3>
+            <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+                Is your business model viable? See your Gross, Operating, and Net Profit. Analyze profitability per product and get an AI-powered growth report.
+            </p>
+            <Button className="mt-6" size="lg">Upgrade to Pro</Button>
+        </Card>
+    </div>
+);
+
 function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
   const { profitSummary, revenueSummary, costSummary } = data;
@@ -29,7 +44,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   const achievedGrossProfit = profitSummary.totalGrossProfit;
   const profitProgress = potentialGrossProfit > 0 ? (achievedGrossProfit / potentialGrossProfit) * 100 : 0;
   
-  const weightedNetMargin = profitSummary.netMargin;
+  const netMargin = profitSummary.netMargin;
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
@@ -63,7 +78,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
           />
           <KpiCard 
             label={netMarginTitle}
-            value={`${weightedNetMargin.toFixed(1)}%`} 
+            value={`${netMargin.toFixed(1)}%`} 
             icon={<Target />} 
             helpTitle={netMarginTitle}
             help={netMarginTooltip} 
@@ -122,6 +137,12 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
 
 export default function ProfitPage() {
   const { t, financials, inputs: contextInputs } = useForecast();
+  // For now, we assume all users are on a free plan. This will be dynamic in the future.
+  const isFreePlan = true;
+
+  if (isFreePlan) {
+    return <ProPaywall t={t} />;
+  }
 
   if (financials.isLoading) {
     return <ProfitPageSkeleton t={t} />;

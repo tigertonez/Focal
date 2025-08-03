@@ -131,9 +131,6 @@ export default function InputsPage() {
     methods.reset(initialInputs);
   }, [initialInputs, methods]);
 
-  
-  const isFreePlan = true; // This will be dynamic in the future
-
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} className="bg-muted/40 min-h-screen">
@@ -141,110 +138,96 @@ export default function InputsPage() {
           <SectionHeader title={t.inputs.title} description={t.inputs.description} />
 
           <div className="space-y-6">
-             <div className="grid grid-cols-1 gap-6 items-start">
+            <Section 
+                title={t.inputs.products.title} 
+                icon={<Briefcase />} 
+                tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
+                defaultOpen={true}
+            >
+                <div className="space-y-6">
+                  {productFields.map((field, index) => (
+                    <ProductForm key={field.id} index={index} removeProduct={removeProduct} />
+                  ))}
+                </div>
+                <Button variant="outline" type="button" onClick={handleAddProduct} className="w-full border-dashed mt-4">
+                  <PlusCircle className="mr-2" size={16} /> {t.inputs.products.addProduct}
+                </Button>
+            </Section>
+
+            <div className="grid md:grid-cols-2 gap-6 items-start">
+              <div className="space-y-6">
                 <Section 
-                    title={t.inputs.products.title} 
-                    icon={<Briefcase />} 
-                    tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
-                    defaultOpen={true}
+                    title={t.inputs.fixedCosts.title} 
+                    icon={<Building />} 
+                    tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
                 >
-                    <div className="space-y-6">
-                      {productFields.map((field, index) => (
-                        <ProductForm key={field.id} index={index} removeProduct={removeProduct} isFreePlan={isFreePlan} />
+                    <div className="space-y-3">
+                      {fixedCostFields.map((field, index) => (
+                        <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
                       ))}
                     </div>
-                    <Button variant="outline" type="button" onClick={handleAddProduct} className="w-full border-dashed mt-4">
-                      <PlusCircle className="mr-2" size={16} /> {t.inputs.products.addProduct}
+                    <Button variant="outline" type="button" onClick={handleAddFixedCost} className="w-full border-dashed mt-4">
+                      <PlusCircle className="mr-2" size={16} /> {t.inputs.fixedCosts.addFixedCost}
                     </Button>
                 </Section>
               </div>
+              
+              <div className="space-y-6">
+                  <Section 
+                      title="Company Context" 
+                      icon={<Wrench />}
+                      tooltip="Provide general context about your business. This helps the AI tailor its analysis and advice to your specific situation."
+                  >
+                      <div className="space-y-4">
+                          <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
+                          <SelectField name="company.industry" label="Industry">
+                              <SelectItem value="fashion">Fashion & Apparel</SelectItem>
+                              <SelectItem value="jewelry">Jewelry</SelectItem>
+                              <SelectItem value="cosmetics">Cosmetics</SelectItem>
+                              <SelectItem value="food">Food & Beverage</SelectItem>
+                              <SelectItem value="digital">Digital Products</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                          </SelectField>
+                          <SelectField name="company.stage" label="Company Stage">
+                              <SelectItem value="idea">Idea</SelectItem>
+                              <SelectItem value="launch">Pre-Launch / Launch</SelectItem>
+                              <SelectItem value="growth">Growth</SelectItem>
+                              <SelectItem value="scale">Scale</SelectItem>
+                          </SelectField>
+                          <SelectField name="company.production" label="Production Model">
+                              <SelectItem value="preorder">Pre-Order</SelectItem>
+                              <SelectItem value="stock">Stock</SelectItem>
+                              <SelectItem value="ondemand">On-Demand</SelectItem>
+                          </SelectField>
+                          <SelectField name="company.teamSize" label="Team Size">
+                              <SelectItem value="solo">Solo Founder</SelectItem>
+                              <SelectItem value="2-5">2-5 Employees</SelectItem>
+                              <SelectItem value="6-20">6-20 Employees</SelectItem>
+                              <SelectItem value=">20">20+ Employees</SelectItem>
+                          </SelectField>
+                      </div>
+                  </Section>
 
-               {isFreePlan ? (
-                  <Card className="p-6 text-center bg-muted/50 border-dashed">
-                    <Sparkles className="mx-auto h-8 w-8 text-yellow-500" />
-                    <h3 className="mt-2 text-lg font-semibold">Unlock Your Full Forecast</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Upgrade to Pro to add fixed costs, company context, and advanced parameters for a complete financial picture.
-                    </p>
-                    <Button className="mt-4">Upgrade to Pro</Button>
-                  </Card>
-                ) : (
-                  <div className="grid md:grid-cols-2 gap-6 items-start">
-                    <div className="space-y-6">
-                      <Section 
-                          title={t.inputs.fixedCosts.title} 
-                          icon={<Building />} 
-                          tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
-                      >
-                          <div className="space-y-3">
-                            {fixedCostFields.map((field, index) => (
-                              <FixedCostForm key={field.id} index={index} removeFixedCost={removeFixedCost} />
-                            ))}
-                          </div>
-                          <Button variant="outline" type="button" onClick={handleAddFixedCost} className="w-full border-dashed mt-4">
-                            <PlusCircle className="mr-2" size={16} /> {t.inputs.fixedCosts.addFixedCost}
-                          </Button>
-                      </Section>
-                    </div>
-                    
-                    <div className="space-y-6">
-                       <Section 
-                          title="Company Context" 
-                          icon={<Wrench />}
-                          tooltip="Provide general context about your business. This helps the AI tailor its analysis and advice to your specific situation."
-                      >
-                          <div className="space-y-4">
-                              <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
-                              <SelectField name="company.industry" label="Industry">
-                                  <SelectItem value="fashion">Fashion & Apparel</SelectItem>
-                                  <SelectItem value="jewelry">Jewelry</SelectItem>
-                                  <SelectItem value="cosmetics">Cosmetics</SelectItem>
-                                  <SelectItem value="food">Food & Beverage</SelectItem>
-                                  <SelectItem value="digital">Digital Products</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                              </SelectField>
-                              <SelectField name="company.stage" label="Company Stage">
-                                  <SelectItem value="idea">Idea</SelectItem>
-                                  <SelectItem value="launch">Pre-Launch / Launch</SelectItem>
-                                  <SelectItem value="growth">Growth</SelectItem>
-                                  <SelectItem value="scale">Scale</SelectItem>
-                              </SelectField>
-                              <SelectField name="company.production" label="Production Model">
-                                  <SelectItem value="preorder">Pre-Order</SelectItem>
-                                  <SelectItem value="stock">Stock</SelectItem>
-                                  <SelectItem value="ondemand">On-Demand</SelectItem>
-                              </SelectField>
-                              <SelectField name="company.teamSize" label="Team Size">
-                                  <SelectItem value="solo">Solo Founder</SelectItem>
-                                  <SelectItem value="2-5">2-5 Employees</SelectItem>
-                                  <SelectItem value="6-20">6-20 Employees</SelectItem>
-                                  <SelectItem value=">20">20+ Employees</SelectItem>
-                              </SelectField>
-                          </div>
-                      </Section>
-
-                      <Section 
-                          title={t.inputs.parameters.title} 
-                          icon={<Settings />}
-                          tooltip="Set the core financial and operational parameters for your forecast, such as the time horizon and tax rate."
-                      >
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
-                              <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />
-                              <InputField name="parameters.taxRate" label={t.inputs.parameters.taxRate.label} type="number" tooltip={t.inputs.parameters.taxRate.tooltip} layout="vertical" />
-                              <SelectField name="parameters.currency" label={t.inputs.parameters.currency} layout="vertical">
-                                  <SelectItem value="EUR">EUR</SelectItem>
-                                  <SelectItem value="USD">USD</SelectItem>
-                              </SelectField>
-                               <SelectField name="parameters.accountingMethod" label={t.inputs.parameters.accountingMethod.label} tooltip={t.inputs.parameters.accountingMethod.tooltip} layout="vertical">
-                                <SelectItem value="total_costs">{t.inputs.parameters.accountingMethod.total_costs}</SelectItem>
-                                <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
-                              </SelectField>
-                          </div>
-                      </Section>
-                    </div>
-                  </div>
-                )}
-
+                  <Section 
+                      title={t.inputs.parameters.title} 
+                      icon={<Settings />}
+                      tooltip="Set the core financial and operational parameters for your forecast, such as the time horizon and tax rate."
+                  >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+                          <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />
+                          <InputField name="parameters.taxRate" label={t.inputs.parameters.taxRate.label} type="number" tooltip={t.inputs.parameters.taxRate.tooltip} layout="vertical" />
+                          <SelectField name="parameters.currency" label={t.inputs.parameters.currency} layout="vertical">
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                          </SelectField>
+                            <SelectField name="parameters.accountingMethod" label={t.inputs.parameters.accountingMethod.label} tooltip={t.inputs.parameters.accountingMethod.tooltip} layout="vertical">
+                            <SelectItem value="total_costs">{t.inputs.parameters.accountingMethod.total_costs}</SelectItem>
+                            <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
+                          </SelectField>
+                      </div>
+                  </Section>
+              </div>
+            </div>
           </div>
 
           <footer className="flex justify-between items-center mt-8 pt-6 border-t border-border/50">
@@ -252,7 +235,7 @@ export default function InputsPage() {
               {t.inputs.footer.saveDraft}
             </Button>
             
-             <Button size="lg" className="w-48" type="submit" disabled={isLoading}>
+              <Button size="lg" className="w-48" type="submit" disabled={isLoading}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {t.inputs.footer.getReport}
               </Button>
