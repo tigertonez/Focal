@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from "react";
@@ -34,76 +35,12 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 
 
 export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
-    const { revenueSummary, profitSummary, costSummary } = data;
-    const { currency, taxRate, accountingMethod, forecastMonths } = inputs.parameters;
-    const { locale } = useForecast();
+    const { productProfitability } = data;
+    const { currency } = inputs.parameters;
 
-    const productData = React.useMemo(() => {
-        const totalOperatingProfit = profitSummary.totalOperatingProfit;
-        const totalRevenue = revenueSummary.totalRevenue;
-        const totalFixedCosts = costSummary.totalFixed;
-        const businessIsProfitable = totalOperatingProfit > 0;
-        
-        let totalProfitToTax = 0;
-        if(businessIsProfitable) {
-            totalProfitToTax = totalOperatingProfit;
-        }
-        
-        const totalTaxAmount = totalProfitToTax * (taxRate / 100);
-        
-        return inputs.products.map((product) => {
-            const revenueBreakdown = revenueSummary.productBreakdown.find(p => p.name === product.productName);
-            const productRevenue = revenueBreakdown?.totalRevenue || 0;
-            const soldUnits = revenueBreakdown?.totalSoldUnits || 0;
-
-            let productVariableCosts = 0;
-            if (accountingMethod === 'cogs') {
-                productVariableCosts = soldUnits * (product.unitCost || 0);
-            } else { // Conservative
-                if (product.costModel === 'monthly') {
-                    productVariableCosts = soldUnits * (product.unitCost || 0);
-                } else { // Batch
-                     // In conservative P&L, full batch cost hits in month 1, so for product-level we consider all planned units
-                    productVariableCosts = (product.plannedUnits || 0) * (product.unitCost || 0);
-                }
-            }
-            
-            const grossProfit = productRevenue - productVariableCosts;
-            const grossMargin = productRevenue > 0 ? (grossProfit / productRevenue) * 100 : 0;
-            
-            // Allocate fixed costs based on revenue share
-            let allocatedFixedCosts = 0;
-            if (totalRevenue > 0) {
-                 const revenueShare = productRevenue / totalRevenue;
-                 allocatedFixedCosts = totalFixedCosts * revenueShare;
-            }
-
-            const operatingProfit = grossProfit - allocatedFixedCosts;
-            const operatingMargin = productRevenue > 0 ? (operatingProfit / productRevenue) * 100 : 0;
-
-            let productTax = 0;
-            if (businessIsProfitable && operatingProfit > 0) {
-                 // Tax is allocated based on the product's share of positive operating profit
-                 const productOpProfitShare = totalOperatingProfit > 0 ? operatingProfit / totalOperatingProfit : 0;
-                 productTax = totalTaxAmount * productOpProfitShare;
-            }
-
-            const netProfit = operatingProfit - productTax;
-            const netMargin = productRevenue > 0 ? (netProfit / productRevenue) * 100 : 0;
-
-            return {
-                ...product,
-                soldUnits,
-                color: getProductColor(product),
-                grossProfit,
-                grossMargin,
-                operatingProfit,
-                operatingMargin,
-                netProfit,
-                netMargin,
-            };
-        });
-    }, [data, inputs, locale, accountingMethod, taxRate]); // Ensure recalculation when dependencies change
+    if (!productProfitability || productProfitability.length === 0) {
+        return <p>No product profitability data available.</p>;
+    }
 
     return (
         <div className="space-y-4">
@@ -119,7 +56,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {productData.map(p => (
+                        {productProfitability.map(p => (
                             <TableRow key={`${p.id}-gross`}>
                                 <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
@@ -147,7 +84,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {productData.map(p => (
+                        {productProfitability.map(p => (
                             <TableRow key={`${p.id}-op`}>
                                 <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
@@ -175,7 +112,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {productData.map(p => (
+                        {productProfitability.map(p => (
                             <TableRow key={`${p.id}-net`}>
                                 <TableCell className="font-medium flex items-center gap-2 pl-2 md:pl-4">
                                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />

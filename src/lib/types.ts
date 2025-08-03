@@ -18,8 +18,8 @@ export type CompanyContext = z.infer<typeof CompanyContextSchema>;
 export const ProductSchema = z.object({
   id: z.string(), 
   productName: z.string({ required_error: 'Product name is required.' }).min(1, 'Product name is required.'),
-  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(0).optional(),
-  unitCost: z.number({ required_error: 'Unit cost is required.' }).min(0),
+  plannedUnits: z.number({ required_error: 'Planned units are required.' }).min(0),
+  unitCost: z.number().min(0).optional(),
   sellPrice: z.number({ required_error: 'Sales price is required.' }).min(0),
   salesModel: z.enum(['launch', 'even', 'seasonal', 'growth'], { required_error: 'Sales model is required.' }).optional(),
   sellThrough: z.number({ required_error: 'Sell-through is required.' }).min(0).max(100).optional(),
