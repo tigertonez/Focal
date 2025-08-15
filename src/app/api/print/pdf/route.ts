@@ -1,17 +1,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Set a 60-second timeout for this function
 
 export async function GET(req: NextRequest) {
-  let browser;
-  let page;
+  let browser: any;
+  let page: any;
   const { searchParams, headers, nextUrl } = req;
-  const isDebug = searchParams.get('debug') === '1' || headers.get('Accept')?.includes('application/json');
+  const isDebug = searchParams.get('debug') === '1' || (headers.get('Accept') || '').toLowerCase().includes('application/json');
 
   try {
     // 1. Construct the URL to the print page
@@ -21,14 +19,19 @@ export async function GET(req: NextRequest) {
     
     const printUrl = new URL(printPath, origin);
     searchParams.forEach((value, key) => {
-      if (key !== 'debug') printUrl.searchParams.append(key, value);
+      // Forward all params, including 'debug' if present
+      printUrl.searchParams.append(key, value);
     });
     
     if (!printUrl.toString()) {
-        throw new Error('BAD_URL: The generated print URL is invalid.');
+      throw new Error('BAD_URL: The generated print URL is invalid.');
     }
     
-    // 2. Launch the browser
+    // 2. Dynamically import dependencies
+    const puppeteer = (await import('puppeteer-core')).default;
+    const chromium = (await import('@sparticuz/chromium')).default;
+    
+    // 3. Launch the browser
     let executablePath;
     try {
         executablePath = await chromium.executablePath();
@@ -44,7 +47,7 @@ export async function GET(req: NextRequest) {
     });
     page = await browser.newPage();
 
-    // 3. Forward cookies
+    // 4. Forward cookies
     const cookieHeader = headers.get('cookie');
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').map(cookieStr => {
@@ -55,7 +58,7 @@ export async function GET(req: NextRequest) {
       await page.setCookie(...cookies);
     }
     
-    // 4. Navigate and wait for readiness
+    // 5. Navigate and wait for readiness
     try {
         await page.goto(printUrl.toString(), { waitUntil: 'networkidle0', timeout: 60000 });
     } catch (e: any) {
@@ -68,7 +71,7 @@ export async function GET(req: NextRequest) {
         throw new Error(`READINESS_TIMEOUT: The page readiness signal (window.READY) was not received in time.`);
     }
 
-    // 5. Generate PDF or return debug info
+    // 6. Generate PDF or return debug info
     if (isDebug) {
         return NextResponse.json({ 
             ok: true, 
@@ -104,7 +107,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     const [code, ...messageParts] = error.message.split(': ');
     const message = messageParts.join(': ');
-    const recognizedCode = ['LAUNCH_FAILED', 'GOTO_FAILED', 'READINESS_TIMEOUT', 'PDF_RENDER_FAILED', 'BAD_URL'].includes(code) ? code : 'UNKNOWN_ERROR';
+    const recognizedCode = ['LAUNCH_FAILED', 'GOTO_FAILED', 'READINESS_TIMEOUT', 'PDF_RENDER_FAILED', 'BAD_URL', 'IMPORT_FAILED'].includes(code) ? code : 'UNKNOWN_ERROR';
     
     console.warn(`[pdf:server]`, recognizedCode, message || error.message);
     
