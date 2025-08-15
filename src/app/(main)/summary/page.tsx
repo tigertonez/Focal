@@ -155,13 +155,11 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div id="report-content" className="space-y-6">
-        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} className="mb-0" />
+        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
         
-        <div className="pt-2">
-          <KPISection data={data} currency={inputs.parameters.currency} t={t} />
-        </div>
+        <KPISection data={data} currency={inputs.parameters.currency} t={t} />
         
-        <div className="pt-2 space-y-8">
+        <div className="space-y-6">
           <HealthPanel 
               healthData={data.businessHealth}
               financialSummaries={{
