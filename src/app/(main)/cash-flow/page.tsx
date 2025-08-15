@@ -20,22 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
 
-// Define a "Paywall" component for Pro features
-const ProPaywall = ({ t }: { t: any }) => (
-    <div className="p-4 md:p-8">
-        <SectionHeader title={t.pages.cashFlow.title} description={t.pages.cashFlow.description} />
-        <Card className="mt-8 p-8 text-center bg-muted/50 border-dashed">
-            <Sparkles className="mx-auto h-12 w-12 text-yellow-500" />
-            <h3 className="mt-4 text-xl font-semibold">Unlock Full Cash Flow Analysis</h3>
-            <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-                Avoid the #1 startup killer: running out of cash. See your monthly burn, runway, and peak funding needs to plan ahead and secure your financing.
-            </p>
-            <Button className="mt-6" size="lg">Upgrade to Pro</Button>
-        </Card>
-    </div>
-);
-
-
 function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
   const { cashFlowSummary, profitSummary } = data;
@@ -125,12 +109,6 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
 
 export default function CashFlowPage() {
     const { t, financials, inputs: contextInputs } = useForecast();
-    // For now, we assume all users are on a free plan. This will be dynamic in the future.
-    const isFreePlan = true;
-
-    if (isFreePlan) {
-        return <ProPaywall t={t} />;
-    }
 
     if (financials.isLoading) {
         return <CashFlowPageSkeleton t={t} />;
