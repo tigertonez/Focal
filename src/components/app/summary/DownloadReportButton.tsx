@@ -5,9 +5,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { apiUrl, withQuery } from '@/lib/paths';
+import { useToast } from '@/hooks/use-toast';
 
 let debugMode = true;
-const debugSteps = ['entry','import','launch','goto','ready'] as const;
+const debugSteps = ['entry','import','launch'] as const;
 let debugIndex = 0;
 
 
@@ -19,6 +20,7 @@ let debugIndex = 0;
  */
 export function DownloadReportButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleDownload = async () => {
     setIsLoading(true);
@@ -37,7 +39,7 @@ export function DownloadReportButton() {
         try {
           payload = ct.includes('application/json') ? await res.json() : await res.text();
         } catch {
-          payload = null;
+          payload = { raw: 'failed to parse response' };
         }
 
         console.info('[pdf:debug:step]', step, 'status=', res.status, 'ct=', ct, 'payload=', payload);
@@ -46,7 +48,7 @@ export function DownloadReportButton() {
           alert('PDF DEBUG step=' + step + '\nstatus=' + res.status + '\nct=' + ct + '\n' + JSON.stringify(payload));
         }
 
-        if (res.status >= 400 || (payload && payload.ok === true && (payload.phase === 'READY' || payload.phase === 'GOTO_OK'))) {
+        if (res.status >= 400 || (payload && payload.ok === true && (payload.phase === 'READY' || payload.phase === 'GOTO_OK' || payload.phase === 'LAUNCHED'))) {
           debugMode = false;
         }
       } catch (err: any) {
@@ -63,26 +65,72 @@ export function DownloadReportButton() {
 
     // --- Normal Path ---
     const queryParams: Record<string, any> = { title: 'Strategic Report', locale: 'en' };
-    const printUrl = withQuery('/print/report', queryParams);
-    const pdfApiUrl = withQuery('/api/print/pdf', queryParams);
+    const printPageUrl = withQuery('/print/report', queryParams);
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60-second timeout
+    const fallbackToImageEmbed = async () => {
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const reportNode = document.getElementById('report-content');
+            if (!reportNode) throw new Error("Report content element not found.");
 
+            const canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+            const imageDataUri = canvas.toDataURL('image/jpeg', 0.92);
+
+            const embedController = new AbortController();
+            const embedTimeoutId = setTimeout(() => embedController.abort(), 60000);
+            
+            const embedRes = await fetch(apiUrl('/api/print/pdf'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf' },
+                body: JSON.stringify({ imageDataUri, title: 'ForecastReport' }),
+                signal: embedController.signal,
+            });
+            
+            clearTimeout(embedTimeoutId);
+
+            if (embedRes.ok && (embedRes.headers.get('content-type') || '').includes('application/pdf')) {
+                const blob = await embedRes.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ForecastReport-${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } else {
+                const errorJson = await embedRes.json().catch(() => ({ message: 'Failed to parse error response from embed fallback.' }));
+                 throw new Error(`Image embed fallback failed: ${errorJson.message || embedRes.statusText}`);
+            }
+
+        } catch (embedErr: any) {
+            console.warn('[pdf:embed-fallback]', embedErr.message || 'An unknown error occurred in image embed fallback.');
+            toast({
+                variant: 'destructive',
+                title: 'PDF Generation Failed',
+                description: 'Could not generate PDF. Opening a print-friendly page instead.',
+            });
+            window.open(printPageUrl, '_blank', 'noopener,noreferrer');
+        }
+    };
+    
     try {
-      const healthRes = await fetch(apiUrl('/api/print/health'));
-      console.info('[pdf:health]', healthRes.status, healthRes.ok, healthRes.headers.get('content-type') || '');
-      if (!healthRes.ok) {
-        const errorText = await healthRes.text();
-        throw new Error(`Health check failed: ${errorText || healthRes.statusText}`);
-      }
+      const launchCheckRes = await fetch(apiUrl('/api/print/pdf?debug=1&step=launch'));
+      const launchStatus = await launchCheckRes.json();
 
-      const pdfRes = await fetch(pdfApiUrl, { signal: controller.signal });
+      if (!launchStatus.ok && launchStatus.code === 'LAUNCH_FAILED') {
+          console.warn('[pdf:preflight-fail]', 'Headless browser launch failed, switching to image embed fallback.');
+          await fallbackToImageEmbed();
+          return;
+      }
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const pdfRes = await fetch(withQuery('/api/print/pdf', queryParams), { signal: controller.signal });
       clearTimeout(timeoutId);
 
-      const contentType = (pdfRes.headers.get('content-type') || '').toLowerCase();
-
-      if (pdfRes.ok && contentType.includes('application/pdf')) {
+      if (pdfRes.ok && (pdfRes.headers.get('content-type') || '').includes('application/pdf')) {
         const blob = await pdfRes.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -97,15 +145,8 @@ export function DownloadReportButton() {
         throw new Error(`PDF generation failed: ${errorText || pdfRes.statusText}`);
       }
     } catch (err: any) {
-      console.warn('[pdf-download]', err.message || 'An unknown error occurred');
-      
-      fetch(apiUrl('/api/print/capabilities'))
-        .then(res => res.json())
-        .then(data => console.info('[pdf:fallback]', 'capabilities', data))
-        .catch(capErr => console.warn('[pdf:fallback]', 'capabilities check failed', capErr));
-      
-      clearTimeout(timeoutId);
-      window.open(printUrl, '_blank', 'noopener,noreferrer');
+      console.warn('[pdf-download]', err.message || 'An unknown error occurred, attempting image fallback.');
+      await fallbackToImageEmbed();
     } finally {
       setIsLoading(false);
     }

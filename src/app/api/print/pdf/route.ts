@@ -216,3 +216,69 @@ export async function GET(request: Request) {
     { status: 200 }
   );
 }
+
+export async function POST(request: Request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return NextResponse.json({ ok: false, code: 'BAD_JSON', message: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  // Validate payload
+  const { imageDataUri, title } = body;
+  if (!imageDataUri || typeof imageDataUri !== 'string' || !/^data:image\/(png|jpeg);base64,/.test(imageDataUri)) {
+    return NextResponse.json(
+      { ok: false, code: 'BAD_IMAGE', message: 'imageDataUri must be a base64-encoded PNG or JPEG data URL.' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const { pdf, Document, Page, Image, View, StyleSheet } = await import('@react-pdf/renderer');
+    
+    const styles = StyleSheet.create({
+      page: {
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      image: {
+        objectFit: 'contain',
+        width: '100%',
+        height: '100%',
+      },
+    });
+
+    const PdfDocument = (
+      <Document title={title || 'Forecast Report'}>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.image}>
+            <Image src={imageDataUri} />
+          </View>
+        </Page>
+      </Document>
+    );
+    
+    const instance = pdf(PdfDocument);
+    const buffer = await instance.toBuffer();
+
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${(title || 'ForecastReport')}.pdf"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+
+  } catch (err: any) {
+    console.warn('[pdf:embed-fallback]', 'Failed to render PDF from image', err);
+    return NextResponse.json(
+      { ok: false, code: 'EMBED_FAILED', message: String(err.message || err) },
+      { status: 500 }
+    );
+  }
+}
