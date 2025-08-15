@@ -54,7 +54,7 @@ export default function LandingPage() {
           </div>
           <div className="max-w-3xl px-4 z-10">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
-              The Financial OS for D2C Brands.
+              Financial Clarity. <br /> On Demand.
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-white/80">
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
