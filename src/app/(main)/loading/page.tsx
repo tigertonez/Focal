@@ -16,8 +16,11 @@ export default function LoadingPage() {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        calculateFinancials(inputs);
-    }, [calculateFinancials, inputs]);
+        // This check prevents re-calculation if data already exists from a refresh
+        if (!financials.data) {
+          calculateFinancials(inputs);
+        }
+    }, [calculateFinancials, inputs, financials.data]);
 
     useEffect(() => {
         if (!financials.isLoading) {
@@ -35,7 +38,7 @@ export default function LoadingPage() {
 
     // Effect for animating the progress bar
     useEffect(() => {
-      if (!financials.error) {
+      if (financials.isLoading && !financials.error) {
         const timer = setInterval(() => {
           setProgress(prev => {
             if (prev >= 95) {
@@ -48,7 +51,7 @@ export default function LoadingPage() {
 
         return () => clearInterval(timer);
       }
-    }, [financials.error]);
+    }, [financials.isLoading, financials.error]);
 
     if (financials.error) {
         return (
