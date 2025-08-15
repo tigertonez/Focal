@@ -24,11 +24,46 @@ export async function GET(request: Request) {
   const normalizedBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
   const printUrl = origin + normalizedBase + '/print/report' + (url.search ? url.search : '');
 
-  // DEBUG path: always return JSON 200, no side effects
+  // DEBUG path: handle different steps
   if (isDebug) {
+    if (step === 'entry') {
+        return NextResponse.json(
+            { ok: true, phase: 'ENTRY', origin, basePath, printUrl, note: 'PDF stub route active' },
+            { status: 200 }
+        );
+    }
+    
+    if (step === 'import') {
+      try {
+        const chromiumMod = await import('@sparticuz/chromium');
+        const puppeteerMod = await import('puppeteer-core');
+        const chromium = (chromiumMod as any).default ?? chromiumMod;
+        const puppeteer = (puppeteerMod as any).default ?? puppeteerMod;
+
+        const execPath = await chromium.executablePath().catch(() => null);
+        const hasArgs = Array.isArray(chromium.args);
+        const hasPuppeteer = !!puppeteer?.launch;
+
+        return NextResponse.json({
+          ok: true,
+          phase: 'IMPORTED',
+          chromium: { hasArgs, execPath: !!execPath },
+          puppeteer: { available: hasPuppeteer },
+        }, { status: 200 });
+
+      } catch (err: any) {
+        return NextResponse.json({
+          ok: false,
+          code: 'IMPORT_FAILED',
+          message: String(err?.message || err),
+        }, { status: 500 });
+      }
+    }
+    
+    // For other debug steps, continue returning a stub
     return NextResponse.json(
-      { ok: true, phase: step.toUpperCase(), origin, basePath, printUrl, note: 'PDF stub route active' },
-      { status: 200 }
+        { ok:true, phase: 'STUB_CONTINUE', note: `Debug step '${step}' is not fully implemented yet.` }, 
+        { status: 200 }
     );
   }
 
