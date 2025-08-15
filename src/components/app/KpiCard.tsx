@@ -1,10 +1,10 @@
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -46,46 +46,34 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
 
   return (
     <Card className={cn("flex-1", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
-        <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-          {label}
-        </CardTitle>
+      <CardContent className="flex items-center justify-between p-3">
         <div className="flex items-center gap-2">
-            {help && (
-                isMobile ? (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      {helpTrigger}
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{helpTitle || label}</DialogTitle>
-                        <DialogDescription as="div" className="pt-2">
-                          {help}
-                        </DialogDescription>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                          {helpTrigger}
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs p-3">
-                          {helpContent}
-                        </TooltipContent>
-                    </Tooltip>
-                 </TooltipProvider>
-                )
-            )}
-            {icon}
+          {icon && <div className="text-muted-foreground">{icon}</div>}
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-muted-foreground">{label}</span>
+            <span className="text-base font-bold font-headline">{value}</span>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="text-lg font-bold font-headline">
-          {value}
-        </div>
+        {help && (
+          isMobile ? (
+            <Dialog>
+              <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{helpTitle || label}</DialogTitle>
+                  <DialogDescription as="div" className="pt-2">{help}</DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
+                <TooltipContent className="max-w-xs p-3">{helpContent}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )
+        )}
       </CardContent>
     </Card>
   );
