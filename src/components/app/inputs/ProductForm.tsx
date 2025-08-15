@@ -133,7 +133,12 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                             <TooltipTrigger asChild>
                                 <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs"><p>{t.inputs.products.depositTooltip}</p></TooltipContent>
+                            <TooltipContent className="max-w-xs p-3">
+                                <div className="space-y-1 text-left">
+                                    <p className="font-semibold">Anzahlung in Prozent</p>
+                                    <p className="text-muted-foreground text-xs">{t.inputs.products.depositTooltip}</p>
+                                </div>
+                            </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </div>
@@ -158,7 +163,12 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs"><p>{t.inputs.products.sellThroughTooltip}</p></TooltipContent>
+                        <TooltipContent className="max-w-xs p-3">
+                            <div className="space-y-1 text-left">
+                                <p className="font-semibold">Abverkaufsrate in Prozent</p>
+                                <p className="text-muted-foreground text-xs">{t.inputs.products.sellThroughTooltip}</p>
+                            </div>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </Label>
@@ -179,7 +189,12 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                  <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs"><p>{t.inputs.products.salesModel.tooltip}</p></TooltipContent>
+                        <TooltipContent className="max-w-xs p-3">
+                            <div className="space-y-1 text-left">
+                                <p className="font-semibold">Verkaufsmodell</p>
+                                <p className="text-muted-foreground text-xs">{t.inputs.products.salesModel.tooltip}</p>
+                            </div>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </Label>
@@ -206,7 +221,12 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                   <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs"><p>{t.inputs.products.costModel.tooltip}</p></TooltipContent>
+                        <TooltipContent className="max-w-xs p-3">
+                            <div className="space-y-1 text-left">
+                                <p className="font-semibold">Kostenmodell</p>
+                                <p className="text-muted-foreground text-xs">{t.inputs.products.costModel.tooltip}</p>
+                            </div>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
               </Label>

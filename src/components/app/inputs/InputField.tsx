@@ -18,10 +18,11 @@ export const InputField: React.FC<{
   type?: string;
   placeholder?: string;
   required?: boolean;
+  tooltipTitle?: string;
   tooltip?: string;
   badge?: string;
   layout?: 'horizontal' | 'vertical';
-}> = ({ name, label, type = 'text', placeholder, required, tooltip, badge, layout = 'horizontal' }) => {
+}> = ({ name, label, type = 'text', placeholder, required, tooltipTitle, tooltip, badge, layout = 'horizontal' }) => {
   const { control } = useFormContext();
 
   const renderInput = (field: any) => (
@@ -49,7 +50,12 @@ export const InputField: React.FC<{
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                <TooltipContent><p>{tooltip}</p></TooltipContent>
+                <TooltipContent className="max-w-xs p-3">
+                    <div className="space-y-1 text-left">
+                        <p className="font-semibold">{tooltipTitle || label}</p>
+                        <p className="text-muted-foreground text-xs">{tooltip}</p>
+                    </div>
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -71,7 +77,12 @@ export const InputField: React.FC<{
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-              <TooltipContent><p>{tooltip}</p></TooltipContent>
+              <TooltipContent className="max-w-xs p-3">
+                  <div className="space-y-1 text-left">
+                      <p className="font-semibold">{tooltipTitle || label}</p>
+                      <p className="text-muted-foreground text-xs">{tooltip}</p>
+                  </div>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}

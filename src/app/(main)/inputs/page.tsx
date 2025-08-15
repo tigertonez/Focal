@@ -142,6 +142,7 @@ export default function InputsPage() {
                 <Section 
                     title={t.inputs.products.title} 
                     icon={<Briefcase />} 
+                    defaultOpen={false}
                     tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
                 >
                     <div className="space-y-6">
@@ -177,7 +178,7 @@ export default function InputsPage() {
                 >
                     <div className="space-y-4">
                         <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
-                        <SelectField name="company.industry" label="Industry">
+                        <SelectField name="company.industry" label="Industry" tooltipTitle="Branchenspezifische Benchmarks" tooltip="Ihre Auswahl hier beeinflusst die Beispiele und Benchmarks, die die KI in ihren Analysen verwendet, um relevantere Ratschläge zu geben.">
                             <SelectItem value="fashion">Fashion & Apparel</SelectItem>
                             <SelectItem value="jewelry">Jewelry</SelectItem>
                             <SelectItem value="cosmetics">Cosmetics</SelectItem>
@@ -185,18 +186,18 @@ export default function InputsPage() {
                             <SelectItem value="digital">Digital Products</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                         </SelectField>
-                        <SelectField name="company.stage" label="Company Stage">
+                        <SelectField name="company.stage" label="Company Stage" tooltipTitle="Phase Ihres Unternehmens" tooltip="Die KI passt die Tiefe und den Fokus ihrer Ratschläge an Ihre Phase an – von Grundlagen für die 'Ideenphase' bis hin zu Optimierungsstrategien für die 'Skalierungsphase'.">
                             <SelectItem value="idea">Idea</SelectItem>
                             <SelectItem value="launch">Pre-Launch / Launch</SelectItem>
                             <SelectItem value="growth">Growth</SelectItem>
                             <SelectItem value="scale">Scale</SelectItem>
                         </SelectField>
-                        <SelectField name="company.production" label="Production Model">
+                        <SelectField name="company.production" label="Production Model" tooltipTitle="Produktions- und Geschäftsmodell" tooltip="Dieses Modell beeinflusst maßgeblich die Cashflow-Analyse. 'Pre-Order' ermöglicht Einnahmen vor den Produktionskosten, während 'Stock' höhere Anfangsinvestitionen erfordert.">
                             <SelectItem value="preorder">Pre-Order</SelectItem>
                             <SelectItem value="stock">Stock</SelectItem>
                             <SelectItem value="ondemand">On-Demand</SelectItem>
                         </SelectField>
-                        <SelectField name="company.teamSize" label="Team Size">
+                        <SelectField name="company.teamSize" label="Team Size" tooltipTitle="Größe Ihres Teams" tooltip="Diese Angabe hilft der KI, die Plausibilität Ihrer Fixkosten zu bewerten. Wenn Sie z.B. '2-5 Mitarbeiter' angeben, aber keine 'Gehälter'-Kosten existieren, wird die KI dies als potenziellen Planungsfehler erkennen.">
                             <SelectItem value="solo">Solo Founder</SelectItem>
                             <SelectItem value="2-5">2-5 Employees</SelectItem>
                             <SelectItem value="6-20">6-20 Employees</SelectItem>
@@ -211,13 +212,13 @@ export default function InputsPage() {
                     tooltip="Set the core financial and operational parameters for your forecast, such as the time horizon and tax rate."
                 >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
-                        <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />
-                        <InputField name="parameters.taxRate" label={t.inputs.parameters.taxRate.label} type="number" tooltip={t.inputs.parameters.taxRate.tooltip} layout="vertical" />
+                        <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltipTitle="Prognosezeitraum" tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />
+                        <InputField name="parameters.taxRate" label={t.inputs.parameters.taxRate.label} type="number" tooltipTitle="Steuersatz" tooltip={t.inputs.parameters.taxRate.tooltip} layout="vertical" />
                         <SelectField name="parameters.currency" label={t.inputs.parameters.currency} layout="vertical">
                             <SelectItem value="EUR">EUR</SelectItem>
                             <SelectItem value="USD">USD</SelectItem>
                         </SelectField>
-                          <SelectField name="parameters.accountingMethod" label={t.inputs.parameters.accountingMethod.label} tooltip={t.inputs.parameters.accountingMethod.tooltip} layout="vertical">
+                          <SelectField name="parameters.accountingMethod" label={t.inputs.parameters.accountingMethod.label} tooltipTitle="Buchhaltungsmethode" tooltip={t.inputs.parameters.accountingMethod.tooltip} layout="vertical">
                           <SelectItem value="total_costs">{t.inputs.parameters.accountingMethod.total_costs}</SelectItem>
                           <SelectItem value="cogs">{t.inputs.parameters.accountingMethod.cogs}</SelectItem>
                         </SelectField>

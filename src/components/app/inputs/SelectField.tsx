@@ -17,9 +17,10 @@ export const SelectField: React.FC<{
   label: string;
   children: React.ReactNode;
   layout?: 'horizontal' | 'vertical';
+  tooltipTitle?: string;
   tooltip?: string;
   className?: string;
-}> = ({ name, label, children, layout = 'horizontal', tooltip, className }) => {
+}> = ({ name, label, children, layout = 'horizontal', tooltipTitle, tooltip, className }) => {
   const { control } = useFormContext();
 
   const renderSelect = (field: any) => (
@@ -38,7 +39,12 @@ export const SelectField: React.FC<{
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3"><p>{tooltip}</p></TooltipContent>
+                <TooltipContent className="max-w-xs p-3">
+                    <div className="space-y-1 text-left">
+                        <p className="font-semibold">{tooltipTitle || label}</p>
+                        <p className="text-muted-foreground text-xs">{tooltip}</p>
+                    </div>
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -57,7 +63,12 @@ export const SelectField: React.FC<{
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-              <TooltipContent className="max-w-xs p-3"><p>{tooltip}</p></TooltipContent>
+              <TooltipContent className="max-w-xs p-3">
+                  <div className="space-y-1 text-left">
+                      <p className="font-semibold">{tooltipTitle || label}</p>
+                      <p className="text-muted-foreground text-xs">{tooltip}</p>
+                  </div>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
