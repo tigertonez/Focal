@@ -6,37 +6,48 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Set a 60-second timeout for this function
 
 export async function GET(req: NextRequest) {
-  let browser: any;
-  let page: any;
+  let browser: any = null;
+  let page: any = null;
   const { searchParams, headers, nextUrl } = req;
-  const isDebug = searchParams.get('debug') === '1' || (headers.get('Accept') || '').toLowerCase().includes('application/json');
-
+  
+  const isDebug = searchParams.get('debug') === '1' || (headers.get('accept') || '').toLowerCase().includes('application/json');
+  const step = searchParams.get('step') || '';
+  const origin = nextUrl.origin;
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  
+  let printUrl;
   try {
-    // 1. Construct the URL to the print page
-    const origin = nextUrl.origin;
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const printPath = `${basePath}/print/report`;
-    
-    const printUrl = new URL(printPath, origin);
-    searchParams.forEach((value, key) => {
-      // Forward all params, including 'debug' if present
-      printUrl.searchParams.append(key, value);
-    });
-    
-    if (!printUrl.toString()) {
-      throw new Error('BAD_URL: The generated print URL is invalid.');
-    }
-    
-    // 2. Dynamically import dependencies
+      printUrl = new URL(`${basePath}/print/report`, origin);
+      searchParams.forEach((value, key) => {
+          printUrl.searchParams.append(key, value);
+      });
+  } catch (error: any) {
+      console.warn('[pdf:server]', 'BAD_URL', error.message);
+      if (isDebug) {
+          return NextResponse.json({ ok: false, code: 'BAD_URL', message: 'Failed to construct a valid print URL' }, { status: 500 });
+      }
+      return NextResponse.json({ ok: false, error: 'An unknown error occurred during PDF generation.' }, { status: 500 });
+  }
+
+  if (isDebug && step === 'entry') {
+      return NextResponse.json({ ok: true, phase: 'ENTRY', origin, basePath, printUrl: printUrl.toString() }, { status: 200 });
+  }
+  
+  try {
+    // 1. Dynamically import dependencies
     const puppeteer = (await import('puppeteer-core')).default;
     const chromium = (await import('@sparticuz/chromium')).default;
     
-    // 3. Launch the browser
+    if (isDebug && step === 'import') {
+        return NextResponse.json({ ok: true, phase: 'IMPORTED' }, { status: 200 });
+    }
+    
+    // 2. Launch the browser
     let executablePath;
     try {
         executablePath = await chromium.executablePath();
-    } catch (e) {
-        throw new Error('LAUNCH_FAILED: Could not resolve Chromium executable path.');
+    } catch (e: any) {
+        throw new Error(`LAUNCH_FAILED: Could not resolve Chromium executable path. ${e.message}`);
     }
     
     browser = await puppeteer.launch({
@@ -46,8 +57,12 @@ export async function GET(req: NextRequest) {
       defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
     });
     page = await browser.newPage();
+    
+    if (isDebug && step === 'launch') {
+        return NextResponse.json({ ok: true, phase: 'LAUNCHED' }, { status: 200 });
+    }
 
-    // 4. Forward cookies
+    // 3. Forward cookies
     const cookieHeader = headers.get('cookie');
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').map(cookieStr => {
@@ -58,11 +73,15 @@ export async function GET(req: NextRequest) {
       await page.setCookie(...cookies);
     }
     
-    // 5. Navigate and wait for readiness
+    // 4. Navigate and wait for readiness
     try {
         await page.goto(printUrl.toString(), { waitUntil: 'networkidle0', timeout: 60000 });
     } catch (e: any) {
         throw new Error(`GOTO_FAILED: ${e.message}`);
+    }
+
+    if (isDebug && step === 'goto') {
+        return NextResponse.json({ ok: true, phase: 'GOTO_OK', printUrl: printUrl.toString() }, { status: 200 });
     }
     
     try {
@@ -71,7 +90,7 @@ export async function GET(req: NextRequest) {
         throw new Error(`READINESS_TIMEOUT: The page readiness signal (window.READY) was not received in time.`);
     }
 
-    // 6. Generate PDF or return debug info
+    // 5. If debug, return success JSON; otherwise, generate PDF
     if (isDebug) {
         return NextResponse.json({ 
             ok: true, 
@@ -94,7 +113,7 @@ export async function GET(req: NextRequest) {
         throw new Error(`PDF_RENDER_FAILED: ${e.message}`);
     }
 
-    // 7. Return PDF response
+    // 6. Return PDF response
     return new NextResponse(pdf, {
       status: 200,
       headers: {
@@ -107,25 +126,29 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     const [code, ...messageParts] = error.message.split(': ');
     const message = messageParts.join(': ');
-    const recognizedCode = ['LAUNCH_FAILED', 'GOTO_FAILED', 'READINESS_TIMEOUT', 'PDF_RENDER_FAILED', 'BAD_URL', 'IMPORT_FAILED'].includes(code) ? code : 'UNKNOWN_ERROR';
+    const recognizedCodes = ['LAUNCH_FAILED', 'GOTO_FAILED', 'READINESS_TIMEOUT', 'PDF_RENDER_FAILED', 'BAD_URL', 'IMPORT_FAILED'];
+    const errorCode = recognizedCodes.find(c => c === code) || 'UNKNOWN_ERROR';
     
-    console.warn(`[pdf:server]`, recognizedCode, message || error.message);
+    console.warn(`[pdf:server]`, errorCode, message || error.message);
     
     if (isDebug) {
         return NextResponse.json(
-            { ok: false, code: recognizedCode, message: message || error.message },
+            { ok: false, code: errorCode, message: message || error.message },
             { status: 500 }
         );
     }
     
-    // For non-debug requests, return a generic error
     return NextResponse.json(
       { ok: false, error: 'An unknown error occurred during PDF generation.' },
       { status: 500 }
     );
   } finally {
-    // 9. Cleanup
-    if (page) await page.close();
-    if (browser) await browser.close();
+    // 7. Cleanup
+    if (page) {
+      try { await page.close(); } catch {}
+    }
+    if (browser) {
+      try { await browser.close(); } catch {}
+    }
   }
 }
