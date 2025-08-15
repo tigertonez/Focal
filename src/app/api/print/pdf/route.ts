@@ -24,82 +24,140 @@ export async function GET(request: Request) {
   const normalizedBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
   const printUrl = origin + normalizedBase + '/print/report' + (url.search ? url.search : '');
 
-  // DEBUG path: handle different steps
-  if (isDebug) {
-    if (step === 'entry') {
-        return NextResponse.json(
-            { ok: true, phase: 'ENTRY', origin, basePath, printUrl, note: 'PDF stub route active' },
-            { status: 200 }
-        );
-    }
-    
-    if (step === 'import') {
-      try {
-        const chromiumMod = await import('@sparticuz/chromium');
-        const puppeteerMod = await import('puppeteer-core');
-        const chromium = (chromiumMod as any).default ?? chromiumMod;
-        const puppeteer = (puppeteerMod as any).default ?? puppeteerMod;
-
-        const execPath = await chromium.executablePath().catch(() => null);
-        const hasArgs = Array.isArray(chromium.args);
-        const hasPuppeteer = !!puppeteer?.launch;
-
-        return NextResponse.json({
-          ok: true,
-          phase: 'IMPORTED',
-          chromium: { hasArgs, execPath: !!execPath },
-          puppeteer: { available: hasPuppeteer },
-        }, { status: 200 });
-
-      } catch (err: any) {
-        return NextResponse.json({
-          ok: false,
-          code: 'IMPORT_FAILED',
-          message: String(err?.message || err),
-        }, { status: 500 });
-      }
-    }
-    
-    if (step === 'launch') {
-      let browser: any = null;
-      try {
-        const chromiumMod = await import('@sparticuz/chromium');
-        const puppeteerMod = await import('puppeteer-core');
-        const chromium = (chromiumMod as any).default ?? chromiumMod;
-        const puppeteer = (puppeteerMod as any).default ?? puppeteerMod;
-        
-        const executablePath = await chromium.executablePath();
-        
-        browser = await puppeteer.launch({
-          args: chromium.args,
-          executablePath,
-          headless: true,
-          defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
-        });
-
-        const version = await browser.version().catch(() => null);
-        const page = await browser.newPage();
-        await page.close();
-
-        return NextResponse.json(
-          { ok: true, phase: 'LAUNCHED', chromium: { executablePath: !!executablePath }, puppeteer: { version } },
-          { status: 200 }
-        );
-      } catch (err: any) {
-        return NextResponse.json(
-          { ok: false, code: 'LAUNCH_FAILED', message: String(err?.message || err) },
-          { status: 500 }
-        );
-      } finally {
-        try { await browser?.close(); } catch {}
-      }
-    }
-    
-    // For other debug steps, continue returning a stub
+  // EARLY DEBUG EXIT for entry point check
+  if (isDebug && step === 'entry') {
     return NextResponse.json(
-        { ok:true, phase: 'STUB_CONTINUE', note: `Debug step '${step}' is not fully implemented yet.` }, 
+        { ok: true, phase: 'ENTRY', origin, basePath, printUrl, note: 'PDF stub route active' },
         { status: 200 }
     );
+  }
+
+  // Handle 'import' step
+  if (isDebug && step === 'import') {
+    try {
+      const chromiumMod = await import('@sparticuz/chromium');
+      const puppeteerMod = await import('puppeteer-core');
+      const chromium = (chromiumMod as any).default ?? chromiumMod;
+      const puppeteer = (puppeteerMod as any).default ?? puppeteerMod;
+
+      const execPath = await chromium.executablePath().catch(() => null);
+      const hasArgs = Array.isArray(chromium.args);
+      const hasPuppeteer = !!puppeteer?.launch;
+
+      return NextResponse.json({
+        ok: true,
+        phase: 'IMPORTED',
+        chromium: { hasArgs, execPath: !!execPath },
+        puppeteer: { available: hasPuppeteer },
+      }, { status: 200 });
+
+    } catch (err: any) {
+      return NextResponse.json({
+        ok: false,
+        code: 'IMPORT_FAILED',
+        message: String(err?.message || err),
+      }, { status: 500 });
+    }
+  }
+
+  // Handle 'launch' step with robust fallback logic
+  if (isDebug && step === 'launch') {
+    const findAndLaunchChrome = async () => {
+      const { stat } = await import('fs/promises');
+      const { default: puppeteer } = await import('puppeteer-core');
+      const { default: sparticuz } = await import('@sparticuz/chromium');
+      
+      const candidates = [
+        { path: await sparticuz.executablePath().catch(() => null), source: 'sparticuz', args: sparticuz.args },
+        { path: process.env.PUPPETEER_EXECUTABLE_PATH, source: 'env', args: [] },
+        { path: '/usr/bin/google-chrome-stable', source: 'system', args: [] },
+        { path: '/usr/bin/google-chrome', source: 'system', args: [] },
+        { path: '/usr/bin/chromium-browser', source: 'system', args: [] },
+        { path: '/usr/bin/chromium', source: 'system', args: [] },
+      ];
+
+      const attempts: { path: string, existed: boolean, error?: string }[] = [];
+      let lastError: any = null;
+
+      for (const candidate of candidates) {
+        if (!candidate.path) continue;
+        
+        let browser: any = null;
+        let fileExists = false;
+        try {
+          await stat(candidate.path);
+          fileExists = true;
+        } catch {
+          attempts.push({ path: candidate.path, existed: false, error: 'File not found' });
+          continue;
+        }
+
+        try {
+          const launchArgs = Array.from(new Set([
+            ...(candidate.args || []),
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--single-process',
+            '--no-zygote',
+          ]));
+
+          browser = await puppeteer.launch({
+            executablePath: candidate.path,
+            args: launchArgs,
+            headless: true,
+            defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
+          });
+          
+          const page = await browser.newPage();
+          await page.close();
+          const version = await browser.version();
+          
+          return { ok: true, chosen: candidate.path, source: candidate.source, version };
+        } catch (err: any) {
+          const errorMessage = String(err.message || err);
+          lastError = err;
+          attempts.push({ path: candidate.path, existed: true, error: errorMessage });
+          
+          const isSharedLibError = /error while loading shared libraries|libnss|libx11|no such file or directory/i.test(errorMessage);
+          if (isSharedLibError) {
+             continue; // Try next candidate
+          }
+          // For other errors, we could also decide to stop, but for diagnosis, we try all.
+        } finally {
+            try { await browser?.close(); } catch {}
+        }
+      }
+      // If loop finishes without success
+      return { ok: false, error: lastError, attempts };
+    };
+    
+    const result = await findAndLaunchChrome();
+
+    if (result.ok) {
+        return NextResponse.json({
+            ok: true,
+            phase: 'LAUNCHED',
+            executablePath: result.chosen,
+            source: result.source,
+            version: result.version,
+        }, { status: 200 });
+    } else {
+        return NextResponse.json({
+            ok: false,
+            code: 'LAUNCH_FAILED',
+            message: result.error ? String(result.error.message || result.error) : 'All launch attempts failed.',
+            attempts: result.attempts,
+        }, { status: 500 });
+    }
+  }
+  
+  // For other debug steps, continue returning a stub
+  if (isDebug) {
+      return NextResponse.json(
+          { ok:true, phase: 'STUB_CONTINUE', note: `Debug step '${step}' is not fully implemented yet.` }, 
+          { status: 200 }
+      );
   }
 
   // NON-DEBUG path: return a simple JSON so we can verify routing works
