@@ -74,7 +74,7 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
                 )
              )}
           </div>
-          <div className="text-lg font-bold font-headline">{value}</div>
+          <div className="text-base font-bold font-headline">{value}</div>
         </div>
       </CardContent>
     </Card>
