@@ -10,32 +10,42 @@ export const maxDuration = 60; // Set a 60-second timeout for this function
 export async function GET(req: NextRequest) {
   let browser;
   let page;
+  const { searchParams, headers, nextUrl } = req;
+  const isDebug = searchParams.get('debug') === '1' || headers.get('Accept') === 'application/json';
 
   try {
-    // 1. Construct the URL to the print page, respecting basePath and forwarding query params
-    const { searchParams, nextUrl } = req;
+    // 1. Construct the URL to the print page
     const origin = nextUrl.origin;
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
     const printPath = `${basePath}/print/report`;
     
-    // Construct the final URL with query parameters
     const printUrl = new URL(printPath, origin);
     searchParams.forEach((value, key) => {
-      printUrl.searchParams.append(key, value);
+      if (key !== 'debug') printUrl.searchParams.append(key, value);
     });
     
-    // 2. Launch the browser using the optimized Chromium package
-    const executablePath = await chromium.executablePath();
+    if (!printUrl.toString()) {
+        throw new Error('BAD_URL: The generated print URL is invalid.');
+    }
+    
+    // 2. Launch the browser
+    let executablePath;
+    try {
+        executablePath = await chromium.executablePath();
+    } catch (e) {
+        throw new Error('LAUNCH_FAILED: Could not resolve Chromium executable path.');
+    }
+    
     browser = await puppeteer.launch({
       args: chromium.args,
       executablePath,
-      headless: true, // Use the new headless mode
+      headless: true,
       defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
     });
     page = await browser.newPage();
 
-    // 3. Forward cookies from the original request to the headless browser
-    const cookieHeader = req.headers.get('cookie');
+    // 3. Forward cookies
+    const cookieHeader = headers.get('cookie');
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').map(cookieStr => {
         const [name, ...rest] = cookieStr.trim().split('=');
@@ -45,21 +55,37 @@ export async function GET(req: NextRequest) {
       await page.setCookie(...cookies);
     }
     
-    // 4. Navigate to the page and wait for it to be fully ready
-    await page.goto(printUrl.toString(), { waitUntil: 'networkidle0', timeout: 60000 });
+    // 4. Navigate and wait for readiness
+    try {
+        await page.goto(printUrl.toString(), { waitUntil: 'networkidle0', timeout: 60000 });
+    } catch (e: any) {
+        throw new Error(`GOTO_FAILED: ${e.message}`);
+    }
     
-    // 5. Wait for the custom readiness signal from the inline script
-    await page.waitForFunction('window.READY === true', { timeout: 30000 });
+    try {
+        await page.waitForFunction('window.READY === true', { timeout: 30000 });
+    } catch (e: any) {
+        throw new Error(`READINESS_TIMEOUT: The page readiness signal (window.READY) was not received in time.`);
+    }
 
-    // 6. Generate the PDF from the rendered page
-    const pdf = await page.pdf({
-      printBackground: true,
-      preferCSSPageSize: true, // Use @page CSS for size and margins
-      format: 'A4',
-      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-    });
+    // 5. Generate PDF or return debug info
+    if (isDebug) {
+        return NextResponse.json({ ok: true, phase: 'pdf', headers: Object.fromEntries(headers.entries()) });
+    }
 
-    // 7. Return the PDF as a response with appropriate headers
+    let pdf;
+    try {
+        pdf = await page.pdf({
+            printBackground: true,
+            preferCSSPageSize: true,
+            format: 'A4',
+            margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+        });
+    } catch(e: any) {
+        throw new Error(`PDF_RENDER_FAILED: ${e.message}`);
+    }
+
+    // 7. Return PDF response
     return new NextResponse(pdf, {
       status: 200,
       headers: {
@@ -70,14 +96,26 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('PDF Generation Error:', error);
-    // 8. On error, return a structured JSON response
+    const [code, ...messageParts] = error.message.split(': ');
+    const message = messageParts.join(': ');
+    const recognizedCode = ['LAUNCH_FAILED', 'GOTO_FAILED', 'READINESS_TIMEOUT', 'PDF_RENDER_FAILED', 'BAD_URL'].includes(code) ? code : 'UNKNOWN_ERROR';
+    
+    console.warn(`[pdf:server]`, recognizedCode, message || error.message);
+    
+    if (isDebug) {
+        return NextResponse.json(
+            { ok: false, code: recognizedCode, message: message || error.message },
+            { status: 500 }
+        );
+    }
+    
+    // For non-debug requests, return a generic error
     return NextResponse.json(
-      { ok: false, error: error.message || 'An unknown error occurred during PDF generation.' },
+      { ok: false, error: 'An unknown error occurred during PDF generation.' },
       { status: 500 }
     );
   } finally {
-    // 9. Ensure browser and page are always closed
+    // 9. Cleanup
     if (page) await page.close();
     if (browser) await browser.close();
   }
