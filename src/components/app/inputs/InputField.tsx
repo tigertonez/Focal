@@ -11,6 +11,7 @@ import { HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 
 export const InputField: React.FC<{
   name: string;
@@ -24,6 +25,55 @@ export const InputField: React.FC<{
   layout?: 'horizontal' | 'vertical';
 }> = ({ name, label, type = 'text', placeholder, required, tooltipTitle, tooltip, badge, layout = 'horizontal' }) => {
   const { control } = useFormContext();
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+        if (typeof window !== 'undefined') {
+            setIsMobile(window.innerWidth < 768);
+        }
+    };
+    if (typeof window !== 'undefined') {
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+  
+  const helpTrigger = (
+    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+  );
+
+  const renderTooltip = () => {
+    if (!tooltip) return null;
+    if (isMobile) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{tooltipTitle || label}</DialogTitle>
+              <DialogDescription as="div" className="pt-2">{tooltip}</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
+          <TooltipContent className="max-w-xs p-3">
+              <div className="space-y-1 text-left">
+                  <p className="font-semibold">{tooltipTitle || label}</p>
+                  <p className="text-muted-foreground text-xs">{tooltip}</p>
+              </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
 
   const renderInput = (field: any) => (
     <Input
@@ -41,24 +91,18 @@ export const InputField: React.FC<{
     />
   );
   
+  const labelContent = (
+      <div className="flex items-center gap-2">
+          {label} {required && <span className="text-destructive">*</span>}
+          {tooltip && renderTooltip()}
+      </div>
+  );
+  
   if (layout === 'vertical') {
     return (
       <div className="space-y-2">
         <Label htmlFor={name} className="font-medium text-sm flex items-center gap-2">
-          {label} {required && <span className="text-destructive">*</span>}
-          {tooltip && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">
-                    <div className="space-y-1 text-left">
-                        <p className="font-semibold">{tooltipTitle || label}</p>
-                        <p className="text-muted-foreground text-xs">{tooltip}</p>
-                    </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          {labelContent}
         </Label>
         <div className="flex items-center gap-2">
           <Controller name={name} control={control} render={({ field }) => renderInput(field)} />
@@ -72,20 +116,7 @@ export const InputField: React.FC<{
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
       <Label htmlFor={name} className="font-medium text-sm flex items-center gap-2">
-        {label} {required && <span className="text-destructive">*</span>}
-        {tooltip && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-              <TooltipContent className="max-w-xs p-3">
-                  <div className="space-y-1 text-left">
-                      <p className="font-semibold">{tooltipTitle || label}</p>
-                      <p className="text-muted-foreground text-xs">{tooltip}</p>
-                  </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+        {labelContent}
       </Label>
       <div className="md:col-span-2 flex items-center gap-2">
         <Controller name={name} control={control} render={({ field }) => renderInput(field)} />

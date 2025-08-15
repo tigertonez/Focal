@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { getProductColor } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { useForecast } from '@/context/ForecastContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+
 
 export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: number) => void; }> = ({ index, removeFixedCost }) => {
     const { control, watch } = useFormContext();
@@ -41,6 +43,45 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
     const isPlanningBuffer = cost.name?.toLowerCase().includes('planning buffer');
+    
+    const helpTrigger = (
+      <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+    );
+
+    const renderTooltip = (title: string, description: string) => {
+      if (isMobile) {
+        return (
+          <Dialog>
+            <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription as="div" className="pt-2">{description}</DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        );
+      }
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
+            <TooltipContent className="max-w-xs p-3">
+              <div className="space-y-1 text-left">
+                  <p className="font-semibold">{title}</p>
+                  <p className="text-muted-foreground text-xs">{description}</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    const renderHelpIcon = (titleKey: keyof typeof t.inputs.fixedCosts, tooltipKey: keyof typeof t.inputs.fixedCosts) => {
+        const title = t.inputs.fixedCosts[titleKey].title;
+        const tooltip = t.inputs.fixedCosts[tooltipKey].tooltip;
+        return renderTooltip(title, tooltip);
+    };
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -54,21 +95,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
                                 <Input {...field} placeholder={t.inputs.fixedCosts.costName} className="text-sm font-semibold h-9" />
                             )}
                         />
-                         {isPlanningBuffer && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-xs p-3">
-                                      <div className="space-y-1 text-left">
-                                          <p className="font-semibold">{t.inputs.fixedCosts.planningBuffer.title}</p>
-                                          <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.planningBuffer.tooltip}</p>
-                                      </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
+                         {isPlanningBuffer && renderTooltip(t.inputs.fixedCosts.planningBuffer.title, t.inputs.fixedCosts.planningBuffer.tooltip)}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1">
@@ -101,17 +128,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="space-y-1">
                     <Label className="text-xs flex items-center gap-1.5">{t.inputs.fixedCosts.amount.title}
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                                <TooltipContent className="max-w-xs p-3">
-                                    <div className="space-y-1 text-left">
-                                        <p className="font-semibold">{t.inputs.fixedCosts.amount.title}</p>
-                                        <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.amount.tooltip}</p>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        {renderHelpIcon('amount', 'amount')}
                     </Label>
                     <div className="relative">
                         <Controller
@@ -149,17 +166,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
 
                 <div className="space-y-1">
                      <Label className="text-xs flex items-center gap-1.5">{t.inputs.fixedCosts.paymentSchedule.title}
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                                <TooltipContent className="max-w-xs p-3">
-                                    <div className="space-y-1 text-left">
-                                        <p className="font-semibold">{t.inputs.fixedCosts.paymentSchedule.title}</p>
-                                        <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.paymentSchedule.tooltip}</p>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        {renderHelpIcon('paymentSchedule', 'paymentSchedule')}
                     </Label>
                     <Controller
                         name={`fixedCosts.${index}.paymentSchedule`}

@@ -16,6 +16,7 @@ import { useForecast } from '@/context/ForecastContext';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 
 
 const FormSection = ({ title, icon: Icon, children }: { title: string, icon: React.ElementType, children: React.ReactNode }) => (
@@ -39,6 +40,60 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
   const currency = watch('parameters.currency');
   const colorInputRef = React.useRef<HTMLInputElement>(null);
   const assignedColor = getProductColor(product || {});
+  
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+        if (typeof window !== 'undefined') {
+            setIsMobile(window.innerWidth < 768);
+        }
+    };
+    if (typeof window !== 'undefined') {
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+  
+  const helpTrigger = (
+    <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+  );
+
+  const renderTooltip = (title: string, description: string) => {
+    if (isMobile) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription as="div" className="pt-2">{description}</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
+          <TooltipContent className="max-w-xs p-3">
+            <div className="space-y-1 text-left">
+                <p className="font-semibold">{title}</p>
+                <p className="text-muted-foreground text-xs">{description}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+  
+  const renderHelpIcon = (titleKey: keyof typeof t.inputs.products, tooltipKey: keyof typeof t.inputs.products) => {
+      const title = t.inputs.products[titleKey].title;
+      const tooltip = t.inputs.products[tooltipKey].tooltip;
+      return renderTooltip(title, tooltip);
+  };
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -128,19 +183,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
             <div className="space-y-1">
                  <div className="flex items-center gap-1.5 h-5">
                     <Label htmlFor={`depositPct-${index}`} className="text-xs">{t.inputs.products.deposit.title}</Label>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs p-3">
-                                <div className="space-y-1 text-left">
-                                    <p className="font-semibold">{t.inputs.products.deposit.title}</p>
-                                    <p className="text-muted-foreground text-xs">{t.inputs.products.deposit.tooltip}</p>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    {renderHelpIcon('deposit', 'deposit')}
                 </div>
                 <Controller
                     name={`products.${index}.depositPct`}
@@ -160,17 +203,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
           <div className="space-y-1">
             <Label htmlFor={`sellThrough-${index}`} className="text-xs flex items-center gap-1.5">
                 {t.inputs.products.sellThrough.title}
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs p-3">
-                            <div className="space-y-1 text-left">
-                                <p className="font-semibold">{t.inputs.products.sellThrough.title}</p>
-                                <p className="text-muted-foreground text-xs">{t.inputs.products.sellThrough.tooltip}</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                {renderHelpIcon('sellThrough', 'sellThrough')}
             </Label>
             <Controller
                 name={`products.${index}.sellThrough`}
@@ -186,17 +219,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
           <div className="space-y-1">
             <Label htmlFor={`salesModel-${index}`} className="text-xs flex items-center gap-1.5">
                 {t.inputs.products.salesModel.title}
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs p-3">
-                            <div className="space-y-1 text-left">
-                                <p className="font-semibold">{t.inputs.products.salesModel.title}</p>
-                                <p className="text-muted-foreground text-xs">{t.inputs.products.salesModel.tooltip}</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                {renderHelpIcon('salesModel', 'salesModel')}
             </Label>
             <Controller
                 name={`products.${index}.salesModel`}
@@ -218,17 +241,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
             <div className="space-y-1 md:col-span-2">
               <Label className="text-xs flex items-center gap-1.5">
                   {t.inputs.products.costModel.title}
-                  <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs p-3">
-                            <div className="space-y-1 text-left">
-                                <p className="font-semibold">{t.inputs.products.costModel.title}</p>
-                                <p className="text-muted-foreground text-xs">{t.inputs.products.costModel.tooltip}</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                  {renderHelpIcon('costModel', 'costModel')}
               </Label>
               <Controller
                 name={`products.${index}.costModel`}
