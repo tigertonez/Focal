@@ -28,46 +28,54 @@ export function DownloadReportButton() {
     }
     
     const printUrl = withQuery('/print/report', queryParams);
+    const pdfApiUrl = withQuery('/api/print/pdf', queryParams);
     
-    // Abort controller for fetch timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60-second timeout
 
     try {
-      // 1. Probe the health endpoint first
       const healthRes = await fetch(apiUrl('/api/print/health'));
-      console.info('[pdf]', 'health', { status: healthRes.status, ok: healthRes.ok, ct: healthRes.headers.get('content-type') });
+      console.info('[pdf:health]', healthRes.status, healthRes.ok, healthRes.headers.get('content-type') || '');
       if (!healthRes.ok) {
         const errorText = await healthRes.text();
         throw new Error(`Health check failed: ${errorText || healthRes.statusText}`);
       }
 
-      // 2. Request the PDF from the server
-      const pdfRes = await fetch(withQuery('/api/print/pdf', queryParams), {
+      const pdfRes = await fetch(pdfApiUrl, {
         signal: controller.signal,
         headers: isDebug ? { 'Accept': 'application/json' } : {},
       });
+      clearTimeout(timeoutId);
 
-      console.info('[pdf]', 'pdf_fetch', { status: pdfRes.status, ok: pdfRes.ok, ct: pdfRes.headers.get('content-type') });
-      clearTimeout(timeoutId); // Clear the timeout if fetch succeeds
+      const contentType = (pdfRes.headers.get('content-type') || '').toLowerCase();
 
-      // 3. Process the response
-      const contentType = pdfRes.headers.get('content-type') || '';
-      
-      if (isDebug || contentType.includes('application/json')) {
-        const json = await pdfRes.json();
-        console.info('[pdf:debug]', json);
-        if (process.env.NODE_ENV !== 'production') {
-            if (json.ok) {
-                alert('PDF DEBUG OK: ' + JSON.stringify(json));
-                return; // Success, stop here
-            } else {
-                 alert('PDF DEBUG FAIL: code=' + json.code + ' message=' + (json.message || ''));
-                 // Let it proceed to the catch block for fallback
-                 throw new Error(`Debug run failed with code: ${json.code}`);
+      if (isDebug) {
+        let payload: any = null;
+        try {
+            payload = await pdfRes.json();
+        } catch {
+            try {
+                const text = await pdfRes.text();
+                payload = { raw: text };
+            } catch {
+                payload = { raw: null };
             }
         }
-      } else if (pdfRes.ok && contentType.includes('application/pdf')) {
+        
+        console.info('[pdf:debug:url]', pdfApiUrl);
+        console.info('[pdf:debug:status]', pdfRes.status, pdfRes.ok, contentType);
+        console.info('[pdf:debug:payload]', payload);
+        
+        if (!process.env || process.env.NODE_ENV !== 'production') {
+          alert('PDF DEBUG ' + (pdfRes.ok ? 'OK' : 'FAIL') + ':\n' +
+                'status=' + pdfRes.status + '\n' +
+                'ct=' + contentType + '\n' +
+                JSON.stringify(payload));
+        }
+        return; // Stop execution here for the debug run
+      }
+
+      if (pdfRes.ok && contentType.includes('application/pdf')) {
         const blob = await pdfRes.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -82,10 +90,8 @@ export function DownloadReportButton() {
         throw new Error(`PDF generation failed: ${errorText || pdfRes.statusText}`);
       }
     } catch (err: any) {
-      // 4. On any failure, run diagnostics and fall back to opening the print page
       console.warn('[pdf-download]', err.message || 'An unknown error occurred');
       
-      // Perform capabilities check on fallback
       fetch(apiUrl('/api/print/capabilities'))
         .then(res => res.json())
         .then(data => console.info('[pdf:fallback]', 'capabilities', data))
