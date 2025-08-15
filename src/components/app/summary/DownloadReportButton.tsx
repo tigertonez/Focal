@@ -7,6 +7,8 @@ import { Loader2, Download } from 'lucide-react';
 import { apiUrl, withQuery } from '@/lib/paths';
 import { useToast } from '@/hooks/use-toast';
 
+const FORCE_FALLBACK = true;
+
 let debugMode = true;
 const debugSteps = ['entry','import','launch'] as const;
 let debugIndex = 0;
@@ -25,7 +27,7 @@ export function DownloadReportButton() {
   const handleDownload = async () => {
     setIsLoading(true);
 
-    const isDebug = debugMode && debugIndex < debugSteps.length;
+    const isDebug = !FORCE_FALLBACK && debugMode && debugIndex < debugSteps.length;
     
     if (isDebug) {
       const step = debugSteps[debugIndex++];
@@ -63,18 +65,20 @@ export function DownloadReportButton() {
       return; // End the debug click here
     }
 
-    // --- Normal Path ---
+    // --- Normal Path (or Forced Fallback) ---
     const queryParams: Record<string, any> = { title: 'Strategic Report', locale: 'en' };
     const printPageUrl = withQuery('/print/report', queryParams);
     
     const fallbackToImageEmbed = async () => {
+        console.info('[pdf:client] Starting fallback: capturing report content to image...');
         try {
             const html2canvas = (await import('html2canvas')).default;
             const reportNode = document.getElementById('report-content');
-            if (!reportNode) throw new Error("Report content element not found.");
+            if (!reportNode) throw new Error("Report content element #report-content not found.");
 
             const canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
             const imageDataUri = canvas.toDataURL('image/jpeg', 0.92);
+            console.info('[pdf:client] Image captured. POSTing to embed API...');
 
             const embedController = new AbortController();
             const embedTimeoutId = setTimeout(() => embedController.abort(), 60000);
@@ -87,9 +91,12 @@ export function DownloadReportButton() {
             });
             
             clearTimeout(embedTimeoutId);
+            const contentType = embedRes.headers.get('content-type') || '';
+            console.info(`[pdf:client] POST response: status=${embedRes.status}, content-type=${contentType}`);
 
-            if (embedRes.ok && (embedRes.headers.get('content-type') || '').includes('application/pdf')) {
+            if (embedRes.ok && contentType.includes('application/pdf')) {
                 const blob = await embedRes.blob();
+                console.info(`[pdf:client] PDF blob received (${(blob.size / 1024).toFixed(1)} KB). Triggering download...`);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -100,7 +107,7 @@ export function DownloadReportButton() {
                 window.URL.revokeObjectURL(url);
             } else {
                 const errorJson = await embedRes.json().catch(() => ({ message: 'Failed to parse error response from embed fallback.' }));
-                 throw new Error(`Image embed fallback failed: ${errorJson.message || embedRes.statusText}`);
+                 throw new Error(`PDF Fallback failed: ${errorJson.code || embedRes.statusText}`);
             }
 
         } catch (embedErr: any) {
@@ -108,13 +115,18 @@ export function DownloadReportButton() {
             toast({
                 variant: 'destructive',
                 title: 'PDF Generation Failed',
-                description: 'Could not generate PDF. Opening a print-friendly page instead.',
+                description: `Could not generate PDF (${embedErr.message}). Opening a print-friendly page instead.`,
             });
             window.open(printPageUrl, '_blank', 'noopener,noreferrer');
         }
     };
     
     try {
+      if (FORCE_FALLBACK) {
+        await fallbackToImageEmbed();
+        return;
+      }
+      
       const launchCheckRes = await fetch(apiUrl('/api/print/pdf?debug=1&step=launch'));
       const launchStatus = await launchCheckRes.json();
 

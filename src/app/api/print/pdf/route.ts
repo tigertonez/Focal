@@ -232,12 +232,16 @@ export async function POST(request: Request) {
   // Validate payload
   const imageDataUri = typeof body?.imageDataUri === 'string' ? body.imageDataUri : '';
   const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : 'ForecastReport';
-  if (!/^data:image\/(png|jpeg);base64,/.test(imageDataUri)) {
+  if (!/^data:image\/(png|jpeg|jpg);base64,/.test(imageDataUri)) {
     return NextResponse.json(
-      { ok: false, code: 'BAD_IMAGE', message: 'imageDataUri must be a base64-encoded PNG or JPEG data URL.' },
+      { ok: false, code: 'BAD_IMAGE', message: "Expected data:image/(png|jpeg|jpg);base64,..." },
       { status: 400 }
     );
   }
+  
+  const accept = (request.headers.get('accept') || '').toLowerCase();
+  const url = new URL(request.url);
+  const isDebug = url.searchParams.get('debug') === '1' || accept.includes('application/json');
 
   try {
     const React = await import('react');
@@ -263,6 +267,10 @@ export async function POST(request: Request) {
     
     const instance = (pdf as any)(doc);
     const buffer: Uint8Array = await instance.toBuffer();
+    
+    if (isDebug) {
+      return NextResponse.json({ ok: true, phase: 'POST_OK', bytes: buffer.length }, { status: 200 });
+    }
 
     return new NextResponse(buffer, {
       status: 200,
