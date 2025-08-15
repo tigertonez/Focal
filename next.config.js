@@ -20,6 +20,9 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
   },
+  env: {
+    NEXT_PUBLIC_BASE_PATH: '',
+  },
 };
 
 module.exports = nextConfig;
