@@ -15,7 +15,6 @@ import { KpiCard } from '@/components/app/KpiCard';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
 import { useForecast } from '@/context/ForecastContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HealthPanel } from '@/components/app/summary/HealthPanel';
@@ -180,7 +179,6 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
-        <DownloadReportButton />
       </footer>
     </div>
   );
