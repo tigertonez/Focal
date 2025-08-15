@@ -104,7 +104,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
-  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   
   const t = useMemo(() => translations[locale], [locale]);
@@ -121,11 +120,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         return currentMessages;
     });
   }, [t]);
-
-  // This effect runs only on the client, after the initial render.
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const calculateFinancials = useCallback((currentInputs: EngineInput) => {
     // This function is now the single point of calculation.
@@ -152,30 +146,30 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   
   // This effect handles restoring the session from localStorage.
   useEffect(() => {
-    if (isMounted) {
-        try {
-            const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-            if (savedDraft) {
-                const parsedDraft = JSON.parse(savedDraft);
-                const result = EngineInputSchema.safeParse(parsedDraft);
-                if (result.success) {
-                    setInputs(result.data);
-                    calculateFinancials(result.data); // Recalculate on load
-                } else {
-                     console.warn("Could not parse saved draft, using initial data.", result.error);
-                     localStorage.removeItem(DRAFT_STORAGE_KEY);
-                     setFinancials({ data: null, error: null, isLoading: false });
-                }
+    // This effect runs only on the client.
+    try {
+        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            const result = EngineInputSchema.safeParse(parsedDraft);
+            if (result.success) {
+                setInputs(result.data);
+                calculateFinancials(result.data); // Recalculate on load
             } else {
-                setFinancials({ data: null, error: null, isLoading: false });
+                 console.warn("Could not parse saved draft, using initial data.", result.error);
+                 localStorage.removeItem(DRAFT_STORAGE_KEY);
+                 setFinancials({ data: null, error: null, isLoading: false });
             }
-        } catch (e) {
-            console.error("Failed to load draft from local storage", e);
-            localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } else {
+            // No draft found, so we are no longer loading.
             setFinancials({ data: null, error: null, isLoading: false });
         }
+    } catch (e) {
+        console.error("Failed to load draft from local storage", e);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setFinancials({ data: null, error: null, isLoading: false });
     }
-  }, [isMounted, calculateFinancials]);
+  }, [calculateFinancials]); // calculateFinancials is stable due to useCallback
 
 
 
