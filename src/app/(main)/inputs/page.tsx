@@ -100,7 +100,7 @@ export default function InputsPage() {
 
   const handleSaveDraft = () => {
     saveDraft(watchedInputs);
-    setInputs(watchedInputs);
+    // No need to call setInputs here as saveDraft handles it.
   };
   
   const handleAddProduct = () => {

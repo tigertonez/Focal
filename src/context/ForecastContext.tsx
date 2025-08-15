@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
@@ -99,7 +100,7 @@ const DRAFT_STORAGE_KEY = 'forecastDraft';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
-  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: true });
+  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: false });
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
@@ -121,6 +122,28 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [t]);
 
+  useEffect(() => {
+    // This effect now only loads the INPUTS draft.
+    // The calculation is deferred until the user clicks "Get Report".
+    try {
+        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            const result = EngineInputSchema.safeParse(parsedDraft);
+            if (result.success) {
+                setInputs(result.data);
+            } else {
+                 console.warn("Could not parse saved draft, using initial data.", result.error);
+                 localStorage.removeItem(DRAFT_STORAGE_KEY);
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load draft from local storage", e);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
+
   const calculateFinancials = useCallback((currentInputs: EngineInput) => {
     setFinancials({ data: null, error: null, isLoading: true });
     try {
@@ -131,41 +154,15 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         }
         const calculatedData = calculateFinancialsEngine(result.data);
         setFinancials({ data: calculatedData, error: null, isLoading: false });
+        
+        // Also save the inputs that led to this successful calculation
+        saveDraft(currentInputs);
+
     } catch (e: any) {
         console.error("Error calculating financials:", e);
         setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
     }
   }, []);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      try {
-          const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-          if (savedDraft) {
-              const parsedDraft = JSON.parse(savedDraft);
-              const result = EngineInputSchema.safeParse(parsedDraft);
-              if (result.success) {
-                  setInputs(result.data);
-                  calculateFinancials(result.data);
-              } else {
-                   console.warn("Could not parse saved draft, starting fresh.", result.error);
-                   localStorage.removeItem(DRAFT_STORAGE_KEY);
-                   setFinancials({ data: null, error: null, isLoading: false });
-              }
-          } else {
-              setFinancials({ data: null, error: null, isLoading: false });
-          }
-      } catch (e) {
-          console.error("Failed to load draft from local storage", e);
-          localStorage.removeItem(DRAFT_STORAGE_KEY);
-          setFinancials({ data: null, error: null, isLoading: false });
-      }
-    }
-  }, [isMounted, calculateFinancials]);
 
   const saveDraft = (currentInputs: EngineInput) => {
      try {
