@@ -3,7 +3,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
-import { type EngineInput, EngineInputSchema, type Product, type FixedCostItem, type EngineOutput, type Message } from '@/lib/types';
+import { type EngineInput, EngineInputSchema, type EngineOutput, type Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { calculateFinancials as calculateFinancialsEngine } from '@/lib/engine/financial-engine';
 import { translations, type Translations } from '@/lib/translations';
@@ -18,7 +18,8 @@ interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   financials: FinancialsState;
-  calculateFinancials: (inputs: EngineInput) => void;
+  setFinancials: React.Dispatch<React.SetStateAction<FinancialsState>>;
+  calculateFinancials: (inputs: EngineInput) => EngineOutput;
   saveDraft: (inputs: EngineInput) => void;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -97,6 +98,7 @@ const initialInputs: EngineInput = {
 };
 
 const DRAFT_STORAGE_KEY = 'forecastDraft';
+const REPORT_STORAGE_KEY = 'forecastReport';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
@@ -112,6 +114,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       { role: 'bot', text: t.copilot.initial }
   ]);
   
+  // This effect ensures the initial message for the copilot is always in the correct language.
   useEffect(() => {
     setMessages(currentMessages => {
         if (currentMessages.length === 1 && currentMessages[0].role === 'bot') {
@@ -121,89 +124,70 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [t]);
 
-  const calculateFinancials = useCallback((currentInputs: EngineInput) => {
-    // This function is now the single point of calculation.
-    // It is called either by the user clicking "Get Report" or by the restore effect.
-    setFinancials({ data: null, error: null, isLoading: true });
+  // This effect runs only on the client to restore state from localStorage without causing hydration errors.
+  useEffect(() => {
     try {
-        const result = EngineInputSchema.safeParse(currentInputs);
-        if (!result.success) {
-            const firstError = result.error.errors[0]?.message || 'Invalid input.';
-            throw new Error(firstError);
-        }
-        const calculatedData = calculateFinancialsEngine(result.data);
-        setFinancials({ data: calculatedData, error: null, isLoading: false });
-        
-        // Also save the inputs that led to this successful calculation
-        saveDraft(currentInputs, true); // Silent save
+      const savedReport = localStorage.getItem(REPORT_STORAGE_KEY);
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
 
-    } catch (e: any) {
-        console.error("Error calculating financials:", e);
-        setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
+      if (savedReport) {
+        setFinancials({ data: JSON.parse(savedReport), error: null, isLoading: false });
+      } else {
+        setFinancials({ data: null, error: null, isLoading: false });
+      }
+
+      if (savedDraft) {
+        const parsedDraft = JSON.parse(savedDraft);
+        const result = EngineInputSchema.safeParse(parsedDraft);
+        if (result.success) {
+          setInputs(result.data);
+        } else {
+          console.warn("Could not parse saved draft, using initial data.", result.error);
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load state from local storage", e);
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      localStorage.removeItem(REPORT_STORAGE_KEY);
+      setFinancials({ data: null, error: null, isLoading: false });
     }
   }, []);
-  
-  
-  // This effect handles restoring the session from localStorage.
-  useEffect(() => {
-    // This effect runs only on the client.
-    try {
-        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-        if (savedDraft) {
-            const parsedDraft = JSON.parse(savedDraft);
-            const result = EngineInputSchema.safeParse(parsedDraft);
-            if (result.success) {
-                setInputs(result.data);
-                calculateFinancials(result.data); // Recalculate on load
-            } else {
-                 console.warn("Could not parse saved draft, using initial data.", result.error);
-                 localStorage.removeItem(DRAFT_STORAGE_KEY);
-                 setFinancials({ data: null, error: null, isLoading: false });
-            }
-        } else {
-            // No draft found, so we are no longer loading.
-            setFinancials({ data: null, error: null, isLoading: false });
-        }
-    } catch (e) {
-        console.error("Failed to load draft from local storage", e);
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-        setFinancials({ data: null, error: null, isLoading: false });
+
+  const calculateFinancials = useCallback((currentInputs: EngineInput): EngineOutput => {
+    const result = EngineInputSchema.safeParse(currentInputs);
+    if (!result.success) {
+      const firstError = result.error.errors[0]?.message || 'Invalid input.';
+      throw new Error(firstError);
     }
-  }, [calculateFinancials]); // calculateFinancials is stable due to useCallback
+    return calculateFinancialsEngine(result.data);
+  }, []);
 
-
-
-  const saveDraft = (currentInputs: EngineInput, silent = false) => {
+  const saveDraft = (currentInputs: EngineInput) => {
      try {
         const result = EngineInputSchema.safeParse(currentInputs);
         if (!result.success) {
-            if (!silent) {
-                toast({
-                    variant: "destructive",
-                    title: t.toasts.saveErrorTitle,
-                    description: t.toasts.saveErrorDescription,
-                });
-            }
+            toast({
+                variant: "destructive",
+                title: t.toasts.saveErrorTitle,
+                description: t.toasts.saveErrorDescription,
+            });
             return;
         }
 
         const dataToSave = JSON.stringify(currentInputs);
         localStorage.setItem(DRAFT_STORAGE_KEY, dataToSave);
-        if (!silent) {
-            toast({
-                title: t.toasts.draftSavedTitle,
-                description: t.toasts.draftSavedDescription,
-            });
-        }
+        toast({
+            title: t.toasts.draftSavedTitle,
+            description: t.toasts.draftSavedDescription,
+        });
     } catch (e) {
         console.error("Failed to save draft", e);
-        if (!silent) {
-            toast({
-                variant: "destructive",
-                title: t.toasts.saveFailedTitle,
-                description: t.toasts.saveFailedDescription,
-            });
-        }
+        toast({
+            variant: "destructive",
+            title: t.toasts.saveFailedTitle,
+            description: t.toasts.saveFailedDescription,
+        });
     }
   };
   
@@ -211,6 +195,7 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     inputs,
     setInputs,
     financials,
+    setFinancials,
     calculateFinancials,
     saveDraft,
     isCopilotOpen,
