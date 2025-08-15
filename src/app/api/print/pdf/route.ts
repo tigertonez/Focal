@@ -60,6 +60,41 @@ export async function GET(request: Request) {
       }
     }
     
+    if (step === 'launch') {
+      let browser: any = null;
+      try {
+        const chromiumMod = await import('@sparticuz/chromium');
+        const puppeteerMod = await import('puppeteer-core');
+        const chromium = (chromiumMod as any).default ?? chromiumMod;
+        const puppeteer = (puppeteerMod as any).default ?? puppeteerMod;
+        
+        const executablePath = await chromium.executablePath();
+        
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          executablePath,
+          headless: true,
+          defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
+        });
+
+        const version = await browser.version().catch(() => null);
+        const page = await browser.newPage();
+        await page.close();
+
+        return NextResponse.json(
+          { ok: true, phase: 'LAUNCHED', chromium: { executablePath: !!executablePath }, puppeteer: { version } },
+          { status: 200 }
+        );
+      } catch (err: any) {
+        return NextResponse.json(
+          { ok: false, code: 'LAUNCH_FAILED', message: String(err?.message || err) },
+          { status: 500 }
+        );
+      } finally {
+        try { await browser?.close(); } catch {}
+      }
+    }
+    
     // For other debug steps, continue returning a stub
     return NextResponse.json(
         { ok:true, phase: 'STUB_CONTINUE', note: `Debug step '${step}' is not fully implemented yet.` }, 
