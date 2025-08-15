@@ -112,7 +112,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
             <ArrowLeft className="mr-2" /> Back to Costs
         </Button>
         <Button onClick={() => router.push('/cash-flow')}>
-          {t.pages.profit.footer} <ArrowRight className="mr-2" />
+          {t.pages.profit.footer} <ArrowRight className="ml-2" />
         </Button>
       </footer>
     </div>
