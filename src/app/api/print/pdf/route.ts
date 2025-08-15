@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   let browser;
   let page;
   const { searchParams, headers, nextUrl } = req;
-  const isDebug = searchParams.get('debug') === '1' || headers.get('Accept') === 'application/json';
+  const isDebug = searchParams.get('debug') === '1' || headers.get('Accept')?.includes('application/json');
 
   try {
     // 1. Construct the URL to the print page
@@ -70,9 +70,15 @@ export async function GET(req: NextRequest) {
 
     // 5. Generate PDF or return debug info
     if (isDebug) {
-        return NextResponse.json({ ok: true, phase: 'pdf', headers: Object.fromEntries(headers.entries()) });
+        return NextResponse.json({ 
+            ok: true, 
+            phase: 'READY', 
+            printUrl: printUrl.toString(), 
+            note: 'PDF not produced in debug mode'
+        });
     }
 
+    await page.emulateMediaType('screen');
     let pdf;
     try {
         pdf = await page.pdf({
