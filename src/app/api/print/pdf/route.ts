@@ -6,10 +6,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Set a 60-second timeout for this function
 
 export async function GET(req: NextRequest) {
-  let browser: any = null;
-  let page: any = null;
+  // ---- Phase 0: parse URL & build basics (cannot throw) ----
   const { searchParams, headers, nextUrl } = req;
-  
   const isDebug = searchParams.get('debug') === '1' || (headers.get('accept') || '').toLowerCase().includes('application/json');
   const step = searchParams.get('step') || '';
   const origin = nextUrl.origin;
@@ -22,19 +20,24 @@ export async function GET(req: NextRequest) {
           printUrl.searchParams.append(key, value);
       });
   } catch (error: any) {
-      console.warn('[pdf:server]', 'BAD_URL', error.message);
+      const message = 'Failed to construct a valid print URL';
+      console.warn('[pdf:server]', 'BAD_URL', message);
       if (isDebug) {
-          return NextResponse.json({ ok: false, code: 'BAD_URL', message: 'Failed to construct a valid print URL' }, { status: 500 });
+          return NextResponse.json({ ok: false, code: 'BAD_URL', message }, { status: 500 });
       }
       return NextResponse.json({ ok: false, error: 'An unknown error occurred during PDF generation.' }, { status: 500 });
   }
 
+  // ---- EARLY DEBUG EXIT: must run BEFORE any dynamic import ----
   if (isDebug && step === 'entry') {
       return NextResponse.json({ ok: true, phase: 'ENTRY', origin, basePath, printUrl: printUrl.toString() }, { status: 200 });
   }
   
+  let browser: any = null;
+  let page: any = null;
+
   try {
-    // 1. Dynamically import dependencies
+    // ---- Phase 1: dynamic imports (inside try/catch) ----
     const puppeteer = (await import('puppeteer-core')).default;
     const chromium = (await import('@sparticuz/chromium')).default;
     
@@ -42,7 +45,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: true, phase: 'IMPORTED' }, { status: 200 });
     }
     
-    // 2. Launch the browser
+    // ---- Phase 2: launch browser/page ----
     let executablePath;
     try {
         executablePath = await chromium.executablePath();
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: true, phase: 'LAUNCHED' }, { status: 200 });
     }
 
-    // 3. Forward cookies
+    // ---- Phase 3: Cookie Forwarding & Navigation ----
     const cookieHeader = headers.get('cookie');
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').map(cookieStr => {
@@ -73,7 +76,6 @@ export async function GET(req: NextRequest) {
       await page.setCookie(...cookies);
     }
     
-    // 4. Navigate and wait for readiness
     try {
         await page.goto(printUrl.toString(), { waitUntil: 'networkidle0', timeout: 60000 });
     } catch (e: any) {
@@ -84,13 +86,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: true, phase: 'GOTO_OK', printUrl: printUrl.toString() }, { status: 200 });
     }
     
+    // ---- Phase 4: readiness ----
     try {
         await page.waitForFunction('window.READY === true', { timeout: 30000 });
     } catch (e: any) {
         throw new Error(`READINESS_TIMEOUT: The page readiness signal (window.READY) was not received in time.`);
     }
 
-    // 5. If debug, return success JSON; otherwise, generate PDF
+    // ---- Phase 5: pdf ----
     if (isDebug) {
         return NextResponse.json({ 
             ok: true, 
@@ -113,7 +116,6 @@ export async function GET(req: NextRequest) {
         throw new Error(`PDF_RENDER_FAILED: ${e.message}`);
     }
 
-    // 6. Return PDF response
     return new NextResponse(pdf, {
       status: 200,
       headers: {
@@ -143,7 +145,7 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   } finally {
-    // 7. Cleanup
+    // ---- Cleanup ----
     if (page) {
       try { await page.close(); } catch {}
     }
