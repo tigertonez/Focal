@@ -28,7 +28,7 @@ const KPISection = ({ data, currency, t }: { data: EngineOutput, currency: strin
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       <KpiCard
         label={t.pages.summary.kpi.revenue}
         value={formatCurrency(revenueSummary.totalRevenue, currency)}
@@ -132,7 +132,7 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
                             <BridgeRow label={t.insights.summary.waterfall.operatingProfit} value={operatingProfit} />
                             <BridgeRow label={t.insights.summary.waterfall.taxes} value={taxes} colorClass="text-red-600" indent isNegative />
                             <Separator className="my-1" />
-                            <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} colorClass="text-blue-600" />
+                            <BridgeRow label={t.insights.summary.waterfall.netProfit} value={netProfit} colorClass="font-bold text-primary" />
                         </div>
                     </CardContent>
                 </Card>
