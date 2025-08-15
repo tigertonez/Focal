@@ -58,7 +58,7 @@ const initialInputs: EngineInput = {
       id: 'prod_shorts',
       productName: 'Shorts',
       plannedUnits: 150,
-      unitCost: 30,
+      unitCost: 35,
       sellPrice: 80,
       sellThrough: 75,
       salesModel: 'seasonal',
