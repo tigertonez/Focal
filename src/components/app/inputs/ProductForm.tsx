@@ -111,7 +111,9 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
         <Separator />
         <FormSection title="Costs & Margins" icon={ShoppingCart}>
               <div className="space-y-1">
-                <Label htmlFor={`unitCost-${index}`} className="text-xs">{t.inputs.products.unitCost}</Label>
+                 <div className="h-[1.25rem] flex items-center">
+                    <Label htmlFor={`unitCost-${index}`} className="text-xs">{t.inputs.products.unitCost}</Label>
+                 </div>
                 <Controller
                     name={`products.${index}.unitCost`}
                     control={control}
@@ -124,7 +126,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 />
             </div>
             <div className="space-y-1">
-                <div className="flex items-center gap-1.5 h-[1.25rem]">
+                 <div className="flex items-center gap-1.5 h-[1.25rem]">
                     <Label htmlFor={`depositPct-${index}`} className="text-xs">{t.inputs.products.deposit}</Label>
                     <TooltipProvider>
                         <Tooltip>
