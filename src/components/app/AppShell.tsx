@@ -3,7 +3,7 @@
 
 import { useForecast } from '@/context/ForecastContext';
 import { FinancialCopilot } from '@/components/app/FinancialCopilot';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from './Header';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,7 @@ function MobileNav() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const isPdfMode = searchParams.get('pdf') === '1';
   const { isCopilotOpen } = useForecast();
 
@@ -72,6 +73,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return () => clearTimeout(timer);
     }
   }, [isPdfMode]);
+
+  // Proactively pre-fetch all main report pages for instant navigation
+  useEffect(() => {
+    const reportPages = ['/revenue', '/costs', '/profit', '/cash-flow', '/summary'];
+    reportPages.forEach(page => {
+        router.prefetch(page);
+    });
+  }, [router]);
 
   return (
     <div className="relative flex min-h-screen w-full bg-background">
