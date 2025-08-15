@@ -154,25 +154,25 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <div id="report-content" className="space-y-8">
-        <div className="flex justify-between items-start">
-            <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
-        </div>
+      <div id="report-content" className="space-y-6">
+        <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} className="mb-0" />
         
         <KPISection data={data} currency={inputs.parameters.currency} t={t} />
         
-        <HealthPanel 
-            healthData={data.businessHealth}
-            financialSummaries={{
-              revenue: data.revenueSummary,
-              cost: data.costSummary,
-              profit: data.profitSummary,
-            }}
-            onRecalculate={handleRecalculate}
-            t={t}
-        />
+        <div className="pt-2 space-y-8">
+          <HealthPanel 
+              healthData={data.businessHealth}
+              financialSummaries={{
+                revenue: data.revenueSummary,
+                cost: data.costSummary,
+                profit: data.profitSummary,
+              }}
+              onRecalculate={handleRecalculate}
+              t={t}
+          />
 
-        <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
+          <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
+        </div>
       </div>
 
       <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4">
