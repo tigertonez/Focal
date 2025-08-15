@@ -57,7 +57,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
   }, []);
   
   const helpTrigger = (
-    <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
   );
 
   const renderTooltip = (title: string, description: string) => {
