@@ -21,8 +21,12 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile(); // Check on mount
+    const checkMobile = () => {
+        if (typeof window !== 'undefined') {
+            setIsMobile(window.innerWidth < 768);
+        }
+    };
+    checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -42,7 +46,7 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
 
   return (
     <Card className={cn("flex-1", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-4 pt-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2">
         <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
           {label}
         </CardTitle>
@@ -78,8 +82,8 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
             {icon}
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-3 pt-0">
-        <div className="text-2xl font-bold font-headline">
+      <CardContent className="p-2 pt-0">
+        <div className="text-xl font-bold font-headline">
           {value}
         </div>
       </CardContent>
