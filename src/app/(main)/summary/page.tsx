@@ -27,7 +27,7 @@ const KPISection = ({ data, currency, t }: { data: EngineOutput, currency: strin
   const { revenueSummary, costSummary, profitSummary, cashFlowSummary } = data;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       <KpiCard
         label={t.pages.summary.kpi.revenue}
         value={formatCurrency(revenueSummary.totalRevenue, currency)}
@@ -157,7 +157,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
       <div id="report-content" className="space-y-6">
         <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} className="mb-0" />
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="pt-2">
           <KPISection data={data} currency={inputs.parameters.currency} t={t} />
         </div>
         
