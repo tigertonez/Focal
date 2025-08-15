@@ -127,7 +127,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
             </div>
             <div className="space-y-1">
                  <div className="flex items-center gap-1.5 h-5">
-                    <Label htmlFor={`depositPct-${index}`} className="text-xs">{t.inputs.products.deposit}</Label>
+                    <Label htmlFor={`depositPct-${index}`} className="text-xs">{t.inputs.products.deposit.title}</Label>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -135,8 +135,8 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs p-3">
                                 <div className="space-y-1 text-left">
-                                    <p className="font-semibold">Anzahlung in Prozent</p>
-                                    <p className="text-muted-foreground text-xs">{t.inputs.products.depositTooltip}</p>
+                                    <p className="font-semibold">{t.inputs.products.deposit.title}</p>
+                                    <p className="text-muted-foreground text-xs">{t.inputs.products.deposit.tooltip}</p>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
@@ -159,14 +159,14 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
         <FormSection title="Advanced Forecasting" icon={Zap}>
           <div className="space-y-1">
             <Label htmlFor={`sellThrough-${index}`} className="text-xs flex items-center gap-1.5">
-                {t.inputs.products.sellThrough}
+                {t.inputs.products.sellThrough.title}
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                             <div className="space-y-1 text-left">
-                                <p className="font-semibold">Abverkaufsrate in Prozent</p>
-                                <p className="text-muted-foreground text-xs">{t.inputs.products.sellThroughTooltip}</p>
+                                <p className="font-semibold">{t.inputs.products.sellThrough.title}</p>
+                                <p className="text-muted-foreground text-xs">{t.inputs.products.sellThrough.tooltip}</p>
                             </div>
                         </TooltipContent>
                     </Tooltip>
@@ -191,7 +191,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                             <div className="space-y-1 text-left">
-                                <p className="font-semibold">Verkaufsmodell</p>
+                                <p className="font-semibold">{t.inputs.products.salesModel.title}</p>
                                 <p className="text-muted-foreground text-xs">{t.inputs.products.salesModel.tooltip}</p>
                             </div>
                         </TooltipContent>
@@ -223,7 +223,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                         <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs p-3">
                             <div className="space-y-1 text-left">
-                                <p className="font-semibold">Kostenmodell</p>
+                                <p className="font-semibold">{t.inputs.products.costModel.title}</p>
                                 <p className="text-muted-foreground text-xs">{t.inputs.products.costModel.tooltip}</p>
                             </div>
                         </TooltipContent>

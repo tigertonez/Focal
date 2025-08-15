@@ -41,8 +41,8 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
     const isPlanningBuffer = cost.name?.toLowerCase().includes('planning buffer');
-    const planningBufferTitle = "Risikopuffer";
-    const planningBufferTooltip = "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen.";
+    const planningBufferTitle = t.inputs.fixedCosts.planningBuffer.title;
+    const planningBufferTooltip = t.inputs.fixedCosts.planningBuffer.tooltip;
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">

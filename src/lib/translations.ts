@@ -293,12 +293,14 @@ export const translations = {
             units: "units",
             unitCost: "Unit Cost",
             sellPrice: "Sales Price",
-            deposit: "Deposit %",
-            depositTooltip: "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery.",
-            estimatedSales: "Estimated Sales (Units)",
-            saleMonth: "Sale Month",
-            sellThrough: "Sell-Through %",
-            sellThroughTooltip: "The percentage of your total planned stock that you expect to sell. A crucial driver for your revenue forecast.",
+            deposit: {
+              title: "Deposit %",
+              tooltip: "The percentage of the total production cost you pay to your supplier up-front as a deposit. The rest is paid upon delivery."
+            },
+            sellThrough: {
+              title: "Sell-Through %",
+              tooltip: "The percentage of your total planned stock that you expect to sell. A crucial driver for your revenue forecast."
+            },
             salesModel: {
                 title: "Sales Model",
                 tooltip: "How sales are distributed over time. 'Launch' is front-loaded, 'Even' is stable, 'Seasonal' peaks mid-period, and 'Growth' increases steadily.",
@@ -327,7 +329,10 @@ export const translations = {
                 monthly_from_m0: "Monthly (from M0)",
                 monthly_from_m1: "Monthly (from M1)",
             },
-            planningBuffer: "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast."
+            planningBuffer: {
+                title: "Risk Buffer",
+                tooltip: "A contingency fund for unexpected costs. Typically set at 10-20% of total fixed costs to provide a safety net for your forecast."
+            }
         },
         parameters: {
             title: "General Parameters",
@@ -340,11 +345,6 @@ export const translations = {
                 tooltip: "Your estimated corporate tax rate.",
             },
             currency: "Currency",
-            preOrder: {
-                title: "Pre-Order Mode",
-                tooltip: "Enables a 'Month 0' for pre-launch costs (e.g., deposits) and revenue before the main forecast begins in Month 1.",
-                badge: "+ Month 0",
-            },
             accountingMethod: {
                 label: "Accounting Method",
                 tooltip: "'Conservative' treats all production costs as an immediate expense, which is safer for cash flow planning. 'Accrual (COGS)' only expenses the costs of goods when they are actually sold.",
@@ -352,12 +352,24 @@ export const translations = {
                 total_costs: "Conservative (Total Costs)",
             }
         },
-        realtime: {
-            title: "Realtime Settings",
-            dataSource: "Data Source",
-            manual: "Manual Forecast",
-            comingSoon: "Coming Soon",
-            apiKeyPlaceholder: "Required for data source",
+        company: {
+          title: "Company Context",
+          industry: {
+            title: "Industry",
+            tooltip: "Your selection here influences the examples and benchmarks the AI uses in its analysis to provide more relevant advice."
+          },
+          stage: {
+            title: "Company Stage",
+            tooltip: "The AI adapts the depth and focus of its advice to your stage – from basics for the 'Idea' phase to optimization strategies for the 'Scaling' phase."
+          },
+          production: {
+            title: "Production Model",
+            tooltip: "This model significantly influences the cash flow analysis. 'Pre-Order' allows for revenue before production costs, while 'Stock' requires higher initial investments."
+          },
+          teamSize: {
+            title: "Team Size",
+            tooltip: "This information helps the AI to assess the plausibility of your fixed costs. For example, if you specify '2-5 employees' but no 'Salaries' cost exists, the AI will identify this as a potential planning error."
+          }
         },
         footer: {
             saveDraft: "Save Draft",
@@ -657,12 +669,14 @@ export const translations = {
             units: "Stück",
             unitCost: "Stückkosten",
             sellPrice: "Verkaufspreis",
-            deposit: "Anzahlung %",
-            depositTooltip: "Der Prozentsatz der gesamten Produktionskosten, den Sie Ihrem Lieferanten im Voraus als Anzahlung leisten. Der Rest wird bei Lieferung bezahlt.",
-            estimatedSales: "Geschätzter Absatz (Einheiten)",
-            saleMonth: "Verkaufsmonat",
-            sellThrough: "Abverkaufsrate %",
-            sellThroughTooltip: "Der Prozentsatz Ihres geplanten Lagerbestands, den Sie voraussichtlich verkaufen werden. Ein entscheidender Faktor für Ihre Umsatzprognose.",
+            deposit: {
+              title: "Anzahlung %",
+              tooltip: "Der Prozentsatz der gesamten Produktionskosten, den Sie Ihrem Lieferanten im Voraus als Anzahlung leisten. Der Rest wird bei Lieferung bezahlt."
+            },
+            sellThrough: {
+              title: "Abverkaufsrate %",
+              tooltip: "Der Prozentsatz Ihres geplanten Lagerbestands, den Sie voraussichtlich verkaufen werden. Ein entscheidender Faktor für Ihre Umsatzprognose."
+            },
             salesModel: {
                 title: "Verkaufsmodell",
                 tooltip: "Wie sich der Umsatz über die Zeit verteilt. 'Launch' ist zu Beginn hoch, 'Gleichmäßig' ist stabil, 'Saisonal' hat Spitzen in der Mitte des Zeitraums und 'Wachstum' steigt stetig an.",
@@ -691,7 +705,10 @@ export const translations = {
                 monthly_from_m0: "Monatlich (ab M0)",
                 monthly_from_m1: "Monatlich (ab M1)",
             },
-            planningBuffer: "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen."
+            planningBuffer: {
+              title: "Risikopuffer",
+              tooltip: "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen."
+            }
         },
         parameters: {
             title: "Allgemeine Parameter",
@@ -704,24 +721,31 @@ export const translations = {
                 tooltip: "Ihr geschätzter Körperschaftsteuersatz.",
             },
             currency: "Währung",
-            preOrder: {
-                title: "Vorbestellungsmodus",
-                tooltip: "Aktiviert einen 'Monat 0' für Kosten (z.B. Anzahlungen) und Einnahmen vor Beginn der Hauptprognose in Monat 1.",
-                badge: "+ Monat 0",
-            },
             accountingMethod: {
                 label: "Buchhaltungsmethode",
                 tooltip: "'Konservativ' behandelt alle Produktionskosten als sofortigen Aufwand, was für die Cashflow-Planung sicherer ist. 'Periodengerecht (COGS)' verbucht die Kosten der Waren erst, wenn sie tatsächlich verkauft werden.",
                 cogs: "Periodengerecht (COGS)",
                 total_costs: "Konservativ (Gesamtkosten)",
-            },
+            }
         },
-        realtime: {
-            title: "Echtzeit-Einstellungen",
-            dataSource: "Datenquelle",
-            manual: "Manuelle Prognose",
-            comingSoon: "Bald verfügbar",
-            apiKeyPlaceholder: "Erforderlich für Datenquelle",
+        company: {
+            title: "Unternehmenskontext",
+            industry: {
+                title: "Branche",
+                tooltip: "Ihre Auswahl hier beeinflusst die Beispiele und Benchmarks, die die KI in ihren Analysen verwendet, um relevantere Ratschläge zu geben."
+            },
+            stage: {
+                title: "Unternehmensphase",
+                tooltip: "Die KI passt die Tiefe und den Fokus ihrer Ratschläge an Ihre Phase an – von Grundlagen für die 'Ideenphase' bis hin zu Optimierungsstrategien für die 'Skalierungsphase'."
+            },
+            production: {
+                title: "Produktionsmodell",
+                tooltip: "Dieses Modell beeinflusst maßgeblich die Cashflow-Analyse. 'Pre-Order' ermöglicht Einnahmen vor den Produktionskosten, während 'Stock' höhere Anfangsinvestitionen erfordert."
+            },
+            teamSize: {
+                title: "Teamgröße",
+                tooltip: "Diese Angabe hilft der KI, die Plausibilität Ihrer Fixkosten zu bewerten. Wenn Sie z.B. '2-5 Mitarbeiter' angeben, aber keine 'Gehälter'-Kosten existieren, wird die KI dies als potenziellen Planungsfehler erkennen."
+            }
         },
         footer: {
             saveDraft: "Entwurf speichern",
