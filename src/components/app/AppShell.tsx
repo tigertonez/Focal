@@ -16,6 +16,8 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import Link from 'next/link';
+import { DRAFT_STORAGE_KEY, REPORT_STORAGE_KEY } from '@/lib/constants';
+import { EngineInputSchema } from '@/lib/types';
 
 const MobileNavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
     const pathname = usePathname();
@@ -61,7 +63,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isPdfMode = searchParams.get('pdf') === '1';
-  const { isCopilotOpen } = useForecast();
+  const { isCopilotOpen, setInputs, setFinancials, calculateFinancials, financials } = useForecast();
+
+  // This effect runs only on the client to restore state from localStorage.
+  // This is the definitive fix for the hydration error.
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      const savedReport = localStorage.getItem(REPORT_STORAGE_KEY);
+
+      if (savedReport) {
+          const parsedReport = JSON.parse(savedReport);
+          setFinancials({ data: parsedReport, error: null, isLoading: false });
+          // If we have a report, we should also have a draft that created it.
+          if (savedDraft) {
+              const parsedDraft = JSON.parse(savedDraft);
+              const result = EngineInputSchema.safeParse(parsedDraft);
+              if (result.success) {
+                  setInputs(result.data);
+              }
+          }
+      } else if (savedDraft) {
+          const parsedDraft = JSON.parse(savedDraft);
+          const result = EngineInputSchema.safeParse(parsedDraft);
+          if (result.success) {
+              setInputs(result.data);
+              // If there's a draft but no report, recalculate it.
+              const reportData = calculateFinancials(result.data);
+              setFinancials({ data: reportData, error: null, isLoading: false });
+          } else {
+              localStorage.removeItem(DRAFT_STORAGE_KEY);
+          }
+      }
+    } catch (e) {
+      console.error("Failed to load state from local storage", e);
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      localStorage.removeItem(REPORT_STORAGE_KEY);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on mount.
+
 
   // Add data-pdf-ready attribute when the app is ready for PDF rendering
   useEffect(() => {

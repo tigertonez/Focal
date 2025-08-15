@@ -6,6 +6,7 @@ import { type EngineInput, EngineInputSchema, type EngineOutput, type Message } 
 import { useToast } from '@/hooks/use-toast';
 import { calculateFinancials as calculateFinancialsEngine } from '@/lib/engine/financial-engine';
 import { translations, type Translations } from '@/lib/translations';
+import { DRAFT_STORAGE_KEY, REPORT_STORAGE_KEY } from '@/lib/constants';
 
 interface FinancialsState {
   data: EngineOutput | null;
@@ -96,12 +97,9 @@ const initialInputs: EngineInput = {
   },
 };
 
-const DRAFT_STORAGE_KEY = 'forecastDraft';
-const REPORT_STORAGE_KEY = 'forecastReport';
-
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
-  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: false });
+  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: true });
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
@@ -113,7 +111,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       { role: 'bot', text: t.copilot.initial }
   ]);
   
-  // This effect ensures the initial message for the copilot is always in the correct language.
   useEffect(() => {
     setMessages(currentMessages => {
         if (currentMessages.length === 1 && currentMessages[0].role === 'bot') {
@@ -122,49 +119,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         return currentMessages;
     });
   }, [t]);
-
-  // This effect runs only on the client to restore state from localStorage without causing hydration errors.
-  useEffect(() => {
-    // This hook runs ONLY on the client, after the initial render, thus avoiding hydration mismatch.
-    try {
-      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-      const savedReport = localStorage.getItem(REPORT_STORAGE_KEY);
-      
-      let inputsToUse = initialInputs;
-
-      if (savedDraft) {
-        const parsedDraft = JSON.parse(savedDraft);
-        const result = EngineInputSchema.safeParse(parsedDraft);
-        if (result.success) {
-          inputsToUse = result.data;
-          setInputs(result.data); // Update inputs state
-        } else {
-          console.warn("Could not parse saved draft, using initial data.", result.error);
-          localStorage.removeItem(DRAFT_STORAGE_KEY);
-        }
-      }
-
-      if (savedReport) {
-        // If a report exists, we trust it was calculated with the correct inputs.
-        setFinancials({ data: JSON.parse(savedReport), error: null, isLoading: false });
-      } else if (savedDraft) {
-        // If only a draft exists, recalculate on load.
-        try {
-            const data = calculateFinancialsEngine(inputsToUse);
-            localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
-            setFinancials({ data, error: null, isLoading: false });
-        } catch (e: any) {
-            console.error("Error recalculating financials from draft on load:", e);
-            setFinancials({ data: null, error: e.message || "Failed to recalculate from draft.", isLoading: false });
-        }
-      }
-
-    } catch (e) {
-      console.error("Failed to load state from local storage", e);
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-      localStorage.removeItem(REPORT_STORAGE_KEY);
-    }
-  }, []); // Empty dependency array ensures this runs only once on the client.
 
   const calculateFinancials = useCallback((currentInputs: EngineInput): EngineOutput => {
     const result = EngineInputSchema.safeParse(currentInputs);

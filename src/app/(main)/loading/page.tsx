@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -37,7 +36,8 @@ export default function LoadingPage() {
               setFinancials({ data: null, error: errorMessage, isLoading: false });
             }
         }
-    }, [inputs, calculateFinancials, setFinancials, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inputs]);
 
 
     // Effect for animating the progress bar
