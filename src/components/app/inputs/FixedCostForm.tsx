@@ -41,8 +41,6 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
     const isPlanningBuffer = cost.name?.toLowerCase().includes('planning buffer');
-    const planningBufferTitle = t.inputs.fixedCosts.planningBuffer.title;
-    const planningBufferTooltip = t.inputs.fixedCosts.planningBuffer.tooltip;
 
     return (
         <div className="bg-muted/50 p-4 rounded-lg space-y-4">
@@ -64,8 +62,8 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
                                     </TooltipTrigger>
                                     <TooltipContent className="max-w-xs p-3">
                                       <div className="space-y-1 text-left">
-                                          <p className="font-semibold">{planningBufferTitle}</p>
-                                          <p className="text-muted-foreground text-xs">{planningBufferTooltip}</p>
+                                          <p className="font-semibold">{t.inputs.fixedCosts.planningBuffer.title}</p>
+                                          <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.planningBuffer.tooltip}</p>
                                       </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -102,7 +100,19 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="space-y-1">
-                    <Label className="text-xs">{t.inputs.fixedCosts.amount}</Label>
+                    <Label className="text-xs flex items-center gap-1.5">{t.inputs.fixedCosts.amount.title}
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipContent className="max-w-xs p-3">
+                                    <div className="space-y-1 text-left">
+                                        <p className="font-semibold">{t.inputs.fixedCosts.amount.title}</p>
+                                        <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.amount.tooltip}</p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </Label>
                     <div className="relative">
                         <Controller
                             name={`fixedCosts.${index}.amount`}
@@ -138,7 +148,19 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
                 </div>
 
                 <div className="space-y-1">
-                    <Label className="text-xs">{t.inputs.fixedCosts.paymentSchedule.title}</Label>
+                     <Label className="text-xs flex items-center gap-1.5">{t.inputs.fixedCosts.paymentSchedule.title}
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild><HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger>
+                                <TooltipContent className="max-w-xs p-3">
+                                    <div className="space-y-1 text-left">
+                                        <p className="font-semibold">{t.inputs.fixedCosts.paymentSchedule.title}</p>
+                                        <p className="text-muted-foreground text-xs">{t.inputs.fixedCosts.paymentSchedule.tooltip}</p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </Label>
                     <Controller
                         name={`fixedCosts.${index}.paymentSchedule`}
                         control={control}

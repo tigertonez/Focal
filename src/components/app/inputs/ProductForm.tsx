@@ -215,7 +215,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 )}
               />
           </div>
-            <div className="space-y-1">
+            <div className="space-y-1 md:col-span-2">
               <Label className="text-xs flex items-center gap-1.5">
                   {t.inputs.products.costModel.title}
                   <TooltipProvider>
@@ -238,11 +238,11 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 h-9">
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
-                            <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.batch}</Label>
+                            <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal cursor-pointer">{t.inputs.products.costModel.batch}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
-                            <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal">{t.inputs.products.costModel.monthly}</Label>
+                            <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal cursor-pointer">{t.inputs.products.costModel.monthly}</Label>
                         </div>
                     </RadioGroup>
                 )}

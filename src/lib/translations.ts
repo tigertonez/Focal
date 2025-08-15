@@ -320,11 +320,15 @@ export const translations = {
             title: "Fixed Costs",
             addFixedCost: "Add Fixed Cost",
             costName: "Cost Name (e.g., Salaries)",
-            amount: "Amount",
+            amount: {
+              title: "Amount",
+              tooltip: "Enter the total amount for the period or the recurring monthly amount, depending on the type selected."
+            },
             total: "Total",
             perMonth: "/ month",
             paymentSchedule: {
                 title: "Payment Schedule",
+                tooltip: "Defines when the cost is paid. 'Up-Front' is a one-time payment in Month 0. 'Monthly' costs are paid every month starting from the selected month.",
                 upFront: "Paid Up-Front (in M0)",
                 monthly_from_m0: "Monthly (from M0)",
                 monthly_from_m1: "Monthly (from M1)",
@@ -696,18 +700,22 @@ export const translations = {
             title: "Fixkosten",
             addFixedCost: "Fixkosten hinzufügen",
             costName: "Kostenart (z.B. Gehälter)",
-            amount: "Betrag",
+             amount: {
+              title: "Betrag",
+              tooltip: "Geben Sie den Gesamtbetrag für den Zeitraum oder den wiederkehrenden monatlichen Betrag ein, je nach ausgewähltem Typ."
+            },
             total: "Gesamt",
             perMonth: "/ Monat",
             paymentSchedule: {
-                title: "Zahlungsweise",
+                title: "Zahlungsplan",
+                tooltip: "Definiert, wann die Kosten bezahlt werden. 'Vorauszahlung' ist eine einmalige Zahlung in Monat 0. 'Monatliche' Kosten werden jeden Monat ab dem ausgewählten Monat bezahlt.",
                 upFront: "Vorauszahlung (in M0)",
                 monthly_from_m0: "Monatlich (ab M0)",
                 monthly_from_m1: "Monatlich (ab M1)",
             },
             planningBuffer: {
-              title: "Risikopuffer",
-              tooltip: "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen."
+                title: "Risikopuffer",
+                tooltip: "Ein Notfallfonds für unerwartete Kosten. Typischerweise 10-20% der gesamten Fixkosten, um ein Sicherheitsnetz für Ihre Prognose zu schaffen."
             }
         },
         parameters: {
