@@ -123,19 +123,15 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                     )}
                 />
             </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 mb-1">
-                    <Label htmlFor={`depositPct-${index}`} className="text-xs">
-                        {t.inputs.products.deposit}
-                    </Label>
+            <div className="space-y-1">
+                <div className="flex items-center gap-1.5 h-[1.25rem]">
+                    <Label htmlFor={`depositPct-${index}`} className="text-xs">{t.inputs.products.deposit}</Label>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                                <p>{t.inputs.products.depositTooltip}</p>
-                            </TooltipContent>
+                            <TooltipContent className="max-w-xs"><p>{t.inputs.products.depositTooltip}</p></TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </div>
