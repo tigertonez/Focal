@@ -663,40 +663,40 @@ const calculateBusinessHealth = (
 
     const kpis: BusinessHealthScoreKpi[] = [
         {
-            label: 'Net Margin',
+            labelKey: 'netMargin',
             value: normalize(netMargin, 0, 25),
             weight: weights.netMargin,
-            tooltip: 'Measures final profit as a % of revenue. Scored on a scale from 0% (score: 0) to 25%+ (score: 100).'
+            tooltipKey: 'netMarginHelp'
         },
         {
-            label: 'Cash Runway',
+            labelKey: 'cashRunway',
             value: normalize(cashRunway, 0, 12),
             weight: weights.cashRunway,
-            tooltip: 'Months of operation your cash reserves can cover based on your fixed costs. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).'
+            tooltipKey: 'runwayHelp'
         },
         {
-            label: 'Contribution Margin',
+            labelKey: 'contributionMargin',
             value: normalize(contributionMargin, 10, 60),
             weight: weights.contributionMargin,
-            tooltip: 'Measures per-unit profitability (Revenue - COGS). Scored on a scale from 10% (score: 0) to 60%+ (score: 100).'
+            tooltipKey: 'contributionMarginHelp'
         },
         {
-            label: 'Peak Funding',
+            labelKey: 'peakFunding',
             value: normalize(peakFundingNeed, 0, summaries.revenue.totalRevenue * 0.5, true),
             weight: weights.peakFunding,
-            tooltip: 'The minimum capital needed. Scored inversely; a lower need (relative to revenue) is better.'
+            tooltipKey: 'peakFundingHelp'
         },
         {
-            label: 'Sell-Through',
+            labelKey: 'sellThrough',
             value: normalize(avgSellThrough, 50, 100),
             weight: weights.sellThrough,
-            tooltip: 'The % of inventory you expect to sell. Scored on a scale from 50% (score: 0) to 100% (score: 100).'
+            tooltipKey: 'sellThroughHelp'
         },
         {
-            label: 'Break-Even',
+            labelKey: 'breakEven',
             value: normalize(breakEvenMonths, 1, 12, true),
             weight: weights.breakEven,
-            tooltip: 'The months until profitability. Scored inversely; a shorter time to break-even is better (12 months = 0, 1 month = 100).'
+            tooltipKey: 'breakEvenHelp'
         },
     ];
 

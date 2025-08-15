@@ -199,10 +199,10 @@ export type MonthlyCashFlow = z.infer<typeof MonthlyCashFlowSchema>;
 
 // Health Score Schema
 export const BusinessHealthScoreKpiSchema = z.object({
-  label: z.string(),
+  labelKey: z.string(),
   value: z.number(), // The normalized score (0-100)
   weight: z.number(),
-  tooltip: z.string(),
+  tooltipKey: z.string(),
 });
 export type BusinessHealthScoreKpi = z.infer<typeof BusinessHealthScoreKpiSchema>;
 

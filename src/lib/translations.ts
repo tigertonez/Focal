@@ -264,6 +264,14 @@ export const translations = {
             health: {
                 new: "This feature is new. Please re-run your report to see the analysis.",
                 recalculate: "Go to Inputs & Recalculate",
+                kpis: {
+                  netMargin: "Net Margin",
+                  cashRunway: "Cash Runway",
+                  contributionMargin: "Contribution Margin",
+                  peakFunding: "Peak Funding",
+                  sellThrough: "Sell-Through",
+                  breakEven: "Break-Even",
+                },
                 netMarginHelp: "Measures final profit as a % of revenue. Scored on a scale from 0% (score: 0) to 25%+ (score: 100).",
                 runwayHelp: "Months of operation your cash reserves can cover. Scored on a scale from 0 months (score: 0) to 12+ months (score: 100).",
                 contributionMarginHelp: "Measures per-unit profitability before fixed costs. Scored on a scale from 10% (score: 0) to 60%+ (score: 100).",
@@ -366,7 +374,7 @@ export const translations = {
       cashFlow: 'Cashflow',
       summary: 'Zusammenfassung',
       askAI: 'KI fragen',
-      toggleLanguage: 'Switch Language',
+      toggleLanguage: 'Sprache ändern',
     },
     toasts: {
       draftLoadedTitle: "Entwurf geladen",
@@ -620,6 +628,14 @@ export const translations = {
             health: {
                 new: "Diese Funktion ist neu. Bitte führen Sie Ihren Bericht erneut aus, um die Analyse zu sehen.",
                 recalculate: "Zu den Eingaben & neu berechnen",
+                kpis: {
+                  netMargin: "Nettomarge",
+                  cashRunway: "Cash Runway",
+                  contributionMargin: "Deckungsbeitrag",
+                  peakFunding: "Finanzierungsbedarf",
+                  sellThrough: "Abverkaufsrate",
+                  breakEven: "Break-Even",
+                },
                 netMarginHelp: "Misst den Endgewinn als % des Umsatzes. Bewertet auf einer Skala von 0% (Score: 0) bis 25%+ (Score: 100).",
                 runwayHelp: "Monate, die Ihre Barreserven den Betrieb decken können. Bewertet auf einer Skala von 0 Monaten (Score: 0) bis 12+ Monaten (Score: 100).",
                 contributionMarginHelp: "Misst die Rentabilität pro Einheit vor Fixkosten. Bewertet auf einer Skala von 10% (Score: 0) bis 60%+ (Score: 100).",

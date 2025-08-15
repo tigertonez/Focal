@@ -172,7 +172,12 @@ export const HealthPanel = ({
 
                     <div className="md:col-span-2 space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                            {kpis.map(kpi => <HealthBar key={kpi.label} label={kpi.label} value={kpi.value} tooltip={kpi.tooltip} />)}
+                            {kpis.map(kpi => <HealthBar 
+                                key={kpi.labelKey} 
+                                label={t.pages.summary.health.kpis[kpi.labelKey as keyof typeof t.pages.summary.health.kpis]} 
+                                value={kpi.value} 
+                                tooltip={t.pages.summary.health[kpi.tooltipKey as keyof typeof t.pages.summary.health]}
+                            />)}
                         </div>
                     </div>
                 </div>
