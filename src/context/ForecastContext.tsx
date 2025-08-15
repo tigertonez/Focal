@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
@@ -121,26 +120,6 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [t]);
 
-  useEffect(() => {
-    try {
-        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-        if (savedDraft) {
-            const parsedDraft = JSON.parse(savedDraft);
-            const result = EngineInputSchema.safeParse(parsedDraft);
-            if (result.success) {
-                setInputs(result.data);
-            } else {
-                 console.warn("Could not parse saved draft, starting fresh.", result.error);
-                 localStorage.removeItem(DRAFT_STORAGE_KEY);
-            }
-        }
-    } catch (e) {
-        console.error("Failed to load draft from local storage", e);
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-    }
-    setFinancials(prev => ({...prev, isLoading: false}));
-  }, [toast, t]);
-
   const calculateFinancials = useCallback((currentInputs: EngineInput) => {
     setFinancials({ data: null, error: null, isLoading: true });
     try {
@@ -156,6 +135,30 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
         setFinancials({ data: null, error: e.message || 'An unknown error occurred.', isLoading: false });
     }
   }, []);
+
+  useEffect(() => {
+    try {
+        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            const result = EngineInputSchema.safeParse(parsedDraft);
+            if (result.success) {
+                setInputs(result.data);
+                calculateFinancials(result.data);
+            } else {
+                 console.warn("Could not parse saved draft, starting fresh.", result.error);
+                 localStorage.removeItem(DRAFT_STORAGE_KEY);
+                 setFinancials({ data: null, error: null, isLoading: false });
+            }
+        } else {
+            setFinancials({ data: null, error: null, isLoading: false });
+        }
+    } catch (e) {
+        console.error("Failed to load draft from local storage", e);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setFinancials({ data: null, error: null, isLoading: false });
+    }
+  }, [calculateFinancials]);
 
   const saveDraft = (currentInputs: EngineInput) => {
      try {

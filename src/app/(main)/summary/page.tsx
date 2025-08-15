@@ -3,9 +3,9 @@
 
 import React, { useCallback } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
-import type { EngineOutput, EngineInput, BusinessHealth, RevenueSummary, CostSummary, ProfitSummary } from '@/lib/types';
+import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, ChevronRight, BarChart, Sparkles } from 'lucide-react';
+import { Terminal, TrendingUp, TrendingDown, Landmark, PiggyBank, Target, CalendarCheck2, ChevronRight, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -153,11 +153,13 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
   }, [router]);
 
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6">
       <div id="report-content" className="space-y-6">
         <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} className="mb-0" />
         
-        <KPISection data={data} currency={inputs.parameters.currency} t={t} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <KPISection data={data} currency={inputs.parameters.currency} t={t} />
+        </div>
         
         <div className="pt-2 space-y-8">
           <HealthPanel 
@@ -186,7 +188,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 }
 
 export default function SummaryPage() {
-    const { t, financials, inputs: contextInputs } = useForecast();
+    const { t, financials, inputs } = useForecast();
 
     if (financials.isLoading) {
         return <SummaryPageSkeleton t={t} />;
@@ -206,7 +208,7 @@ export default function SummaryPage() {
         );
     }
 
-    if (!financials.data || !contextInputs) {
+    if (!financials.data || !inputs) {
         return (
             <div className="p-4 md:p-8 text-center">
                  <Alert>
@@ -220,5 +222,5 @@ export default function SummaryPage() {
         );
     }
 
-    return <SummaryPageContent data={financials.data} inputs={contextInputs} t={t} />;
+    return <SummaryPageContent data={financials.data} inputs={inputs} t={t} />;
 }

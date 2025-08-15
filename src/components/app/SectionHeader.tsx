@@ -14,7 +14,7 @@ export function SectionHeader({ title, description, className }: SectionHeaderPr
         {title}
       </h1>
       {description && (
-        <p className="text-muted-foreground mt-2">{description}</p>
+        <p className="text-muted-foreground mt-2 max-w-2xl">{description}</p>
       )}
     </div>
   );

@@ -6,12 +6,12 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, TrendingUp, Briefcase, Landmark, Target } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { KpiCard } from '@/components/app/KpiCard';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreakdownChart';
@@ -21,7 +21,7 @@ import { useForecast } from '@/context/ForecastContext';
 
 function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
-  const { profitSummary, revenueSummary, costSummary } = data;
+  const { profitSummary } = data;
   const currency = inputs.parameters.currency;
 
   const potentialGrossProfit = profitSummary.potentialGrossProfit ?? 0;
@@ -34,7 +34,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
 
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6">
       <SectionHeader title={t.pages.profit.title} description={t.pages.profit.description} />
       
       <section>
@@ -112,7 +112,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
             <ArrowLeft className="mr-2" /> Back to Costs
         </Button>
         <Button onClick={() => router.push('/cash-flow')}>
-          {t.pages.profit.footer} <ArrowRight className="ml-2" />
+          {t.pages.profit.footer} <ArrowRight className="mr-2" />
         </Button>
       </footer>
     </div>
@@ -120,7 +120,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
 }
 
 export default function ProfitPage() {
-  const { t, financials, inputs: contextInputs } = useForecast();
+  const { t, financials, inputs } = useForecast();
 
   if (financials.isLoading) {
     return <ProfitPageSkeleton t={t} />;
@@ -140,9 +140,9 @@ export default function ProfitPage() {
     );
   }
 
-  if (!financials.data || !contextInputs) {
+  if (!financials.data || !inputs) {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  return <ProfitPageContent data={financials.data} inputs={contextInputs} t={t} />;
+  return <ProfitPageContent data={financials.data} inputs={inputs} t={t} />;
 }

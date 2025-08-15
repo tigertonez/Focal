@@ -32,7 +32,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
 
     return (
-        <div className="p-4 md:p-8 space-y-8">
+        <div className="p-4 md:p-8 space-y-6">
             <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
 
             <section>
@@ -163,7 +163,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
 }
 
 export default function RevenuePage() {
-    const { t, financials, inputs: contextInputs } = useForecast();
+    const { t, financials, inputs } = useForecast();
     const router = useRouter();
 
     if (financials.isLoading) {
@@ -184,7 +184,7 @@ export default function RevenuePage() {
         );
     }
     
-    if (!financials.data || !contextInputs) {
+    if (!financials.data || !inputs) {
         return <RevenuePageSkeleton t={t} />;
     }
 
@@ -203,5 +203,5 @@ export default function RevenuePage() {
         )
     }
 
-    return <RevenuePageContent data={financials.data} inputs={contextInputs} t={t} />;
+    return <RevenuePageContent data={financials.data} inputs={inputs} t={t} />;
 }

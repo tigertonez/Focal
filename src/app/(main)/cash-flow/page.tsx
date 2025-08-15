@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/app/SectionHeader';
 import { CashFlowPageSkeleton } from '@/components/app/cash-flow/CashFlowPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Wallet, TrendingDown, CalendarClock, Banknote, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, Wallet, TrendingDown, CalendarClock, Banknote, ArrowRight } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -21,14 +21,14 @@ import { useForecast } from '@/context/ForecastContext';
 
 function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
   const router = useRouter();
-  const { cashFlowSummary, profitSummary } = data;
+  const { cashFlowSummary } = data;
   const currency = inputs.parameters.currency;
 
   const potentialCashPosition = cashFlowSummary.potentialCashBalance;
   const cashProgress = potentialCashPosition > 0 ? (cashFlowSummary.endingCashBalance / potentialCashPosition) * 100 : 0;
 
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6">
       <SectionHeader title={t.pages.cashFlow.title} description={t.pages.cashFlow.description} />
       
       <section>
@@ -107,7 +107,7 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
 
 
 export default function CashFlowPage() {
-    const { t, financials, inputs: contextInputs } = useForecast();
+    const { t, financials, inputs } = useForecast();
 
     if (financials.isLoading) {
         return <CashFlowPageSkeleton t={t} />;
@@ -127,9 +127,9 @@ export default function CashFlowPage() {
         );
     }
 
-    if (!financials.data || !contextInputs) {
+    if (!financials.data || !inputs) {
         return <CashFlowPageSkeleton t={t} />;
     }
 
-    return <CashFlowPageContent data={financials.data} inputs={contextInputs} t={t} />;
+    return <CashFlowPageContent data={financials.data} inputs={inputs} t={t} />;
 }

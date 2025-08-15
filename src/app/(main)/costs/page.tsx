@@ -12,7 +12,7 @@ import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimel
 import { Separator } from '@/components/ui/separator';
 import { CostRow } from '@/components/app/costs/CostRow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft, Sparkles } from 'lucide-react';
+import { Terminal, ArrowRight, Building, Package, Activity, Calculator, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -45,7 +45,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
 
 
     return (
-        <div className="p-4 md:p-8 space-y-8">
+        <div className="p-4 md:p-8 space-y-6">
             <SectionHeader title={t.pages.costs.title} description={t.pages.costs.description} />
             
             <section>
@@ -185,7 +185,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
 }
 
 export default function CostsPage() {
-    const { t, financials, inputs: contextInputs } = useForecast();
+    const { t, financials, inputs } = useForecast();
 
     if (financials.isLoading) {
         return <CostsPageSkeleton t={t} />;
@@ -205,9 +205,9 @@ export default function CostsPage() {
         );
     }
 
-    if (!financials.data || !contextInputs) {
+    if (!financials.data || !inputs) {
         return <CostsPageSkeleton t={t} />;
     }
 
-    return <CostsPageContent data={financials.data} inputs={contextInputs} t={t} />;
+    return <CostsPageContent data={financials.data} inputs={inputs} t={t} />;
 }
