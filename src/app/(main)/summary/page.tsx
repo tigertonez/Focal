@@ -100,11 +100,11 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
 
     const BridgeRow = ({ label, value, colorClass, isSubtle, icon, indent, isNegative = false }: { label: string, value: number, colorClass?: string, isSubtle?: boolean, icon?: React.ReactNode, indent?: boolean, isNegative?: boolean }) => (
       <div className={`flex items-center justify-between py-1.5 text-sm ${indent ? 'pl-6' : ''}`}>
-          <div className="flex items-center gap-2">
-              {icon}
-              <span className="text-muted-foreground">{label}</span>
+          <div className="flex items-center gap-2 text-muted-foreground">
+              {isNegative && <span className="text-red-500 font-mono">-</span>}
+              <span>{label}</span>
           </div>
-          <span className={`font-medium ${colorClass}`}>{isNegative ? '-' : ''}{formatCurrency(value, currency, false)}</span>
+          <span className={`font-medium ${colorClass}`}>{formatCurrency(value, currency, false)}</span>
       </div>
     );
 
