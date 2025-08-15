@@ -26,10 +26,16 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
     const [isMobile, setIsMobile] = React.useState(false);
 
     React.useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        const checkMobile = () => {
+            if (typeof window !== 'undefined') {
+                setIsMobile(window.innerWidth < 768);
+            }
+        };
+        if (typeof window !== 'undefined') {
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+            return () => window.removeEventListener('resize', checkMobile);
+        }
     }, []);
 
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
