@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { apiUrl, withQuery } from '@/lib/paths';
 
+let nextClickDebug = true; // One-time debug flag
+
 /**
  * A client-side component that handles the PDF download process.
  * It includes a health check, PDF fetching with a timeout,
@@ -16,8 +18,14 @@ export function DownloadReportButton() {
 
   const handleDownload = async () => {
     setIsLoading(true);
-    const debug = true; // Diagnostic flag
-    const queryParams = { title: 'Strategic Report', locale: 'en' };
+    const queryParams: Record<string, any> = { title: 'Strategic Report', locale: 'en' };
+
+    // One-time debug logic
+    if (nextClickDebug) {
+      queryParams.debug = 1;
+      nextClickDebug = false;
+    }
+
     const printUrl = withQuery('/print/report', queryParams);
     
     // Abort controller for fetch timeout
@@ -27,7 +35,7 @@ export function DownloadReportButton() {
     try {
       // 1. Probe the health endpoint first
       const healthRes = await fetch(apiUrl('/api/print/health'));
-      if (debug) console.info('[pdf]', 'health', { status: healthRes.status, ok: healthRes.ok, ct: healthRes.headers.get('content-type') });
+      console.info('[pdf]', 'health', { status: healthRes.status, ok: healthRes.ok, ct: healthRes.headers.get('content-type') });
       if (!healthRes.ok) {
         const errorText = await healthRes.text();
         throw new Error(`Health check failed: ${errorText || healthRes.statusText}`);
@@ -38,7 +46,7 @@ export function DownloadReportButton() {
         signal: controller.signal,
       });
 
-      if (debug) console.info('[pdf]', 'pdf_fetch', { status: pdfRes.status, ok: pdfRes.ok, ct: pdfRes.headers.get('content-type') });
+      console.info('[pdf]', 'pdf_fetch', { status: pdfRes.status, ok: pdfRes.ok, ct: pdfRes.headers.get('content-type') });
       clearTimeout(timeoutId); // Clear the timeout if fetch succeeds
 
       // 3. Process the response
@@ -53,6 +61,13 @@ export function DownloadReportButton() {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+      } else if (pdfRes.ok && contentType?.includes('application/json')) {
+        // Handle successful debug response
+        const json = await pdfRes.json();
+        console.info('[pdf:debug]', json);
+        if (process.env.NODE_ENV !== 'production') {
+          alert('PDF Debug: ' + JSON.stringify(json));
+        }
       } else {
         const errorText = await pdfRes.text();
         throw new Error(`PDF generation failed: ${errorText || pdfRes.statusText}`);
