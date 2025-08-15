@@ -59,76 +59,126 @@ export async function GET(request: Request) {
       }, { status: 500 });
     }
   }
-
+  
   // Handle 'launch' step with robust fallback logic
   if (isDebug && step === 'launch') {
+    
+    // This helper function encapsulates the complex launch logic
     const findAndLaunchChrome = async () => {
       const { stat } = await import('fs/promises');
-      const { default: puppeteer } = await import('puppeteer-core');
-      const { default: sparticuz } = await import('@sparticuz/chromium');
-      
-      const candidates = [
-        { path: await sparticuz.executablePath().catch(() => null), source: 'sparticuz', args: sparticuz.args },
-        { path: process.env.PUPPETEER_EXECUTABLE_PATH, source: 'env', args: [] },
-        { path: '/usr/bin/google-chrome-stable', source: 'system', args: [] },
-        { path: '/usr/bin/google-chrome', source: 'system', args: [] },
-        { path: '/usr/bin/chromium-browser', source: 'system', args: [] },
-        { path: '/usr/bin/chromium', source: 'system', args: [] },
-      ];
+      const puppeteerCore = (await import('puppeteer-core')).default;
 
-      const attempts: { path: string, existed: boolean, error?: string }[] = [];
+      const getSafeLaunchOptions = (args: string[] = []) => {
+          const safeArgs = [
+              ...new Set([ // Deduplicate
+                  ...args,
+                  '--no-sandbox',
+                  '--disable-dev-shm-usage',
+                  '--disable-gpu',
+                  '--single-process',
+                  '--no-zygote',
+              ]),
+          ];
+          return {
+              args: safeArgs,
+              headless: true,
+              defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
+          };
+      };
+      
+      const attempts: { path: string, source: string, existed: boolean, error?: string }[] = [];
       let lastError: any = null;
 
-      for (const candidate of candidates) {
-        if (!candidate.path) continue;
-        
-        let browser: any = null;
-        let fileExists = false;
-        try {
-          await stat(candidate.path);
-          fileExists = true;
-        } catch {
-          attempts.push({ path: candidate.path, existed: false, error: 'File not found' });
-          continue;
+      // --- Attempt 1: Sparticuz Chromium ---
+      try {
+        const sparticuz = (await import('@sparticuz/chromium')).default;
+        const sparticuzPath = await sparticuz.executablePath().catch(() => null);
+        if (sparticuzPath) {
+            let browser: any = null;
+            try {
+                await stat(sparticuzPath);
+                const options = { ...getSafeLaunchOptions(sparticuz.args), executablePath: sparticuzPath };
+                browser = await puppeteerCore.launch(options);
+                const version = await browser.version();
+                await browser.close();
+                return { ok: true, chosen: sparticuzPath, source: 'sparticuz', version };
+            } catch (err: any) {
+                lastError = err;
+                attempts.push({ path: sparticuzPath, source: 'sparticuz', existed: true, error: String(err.message) });
+                if (!/error while loading shared libraries|libnss|libx11|no such file or directory/i.test(String(err.message))) {
+                    throw err; // Re-throw if it's not a shared library issue
+                }
+            } finally {
+                try { await browser?.close(); } catch {}
+            }
         }
-
-        try {
-          const launchArgs = Array.from(new Set([
-            ...(candidate.args || []),
-            '--no-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--single-process',
-            '--no-zygote',
-          ]));
-
-          browser = await puppeteer.launch({
-            executablePath: candidate.path,
-            args: launchArgs,
-            headless: true,
-            defaultViewport: { width: 1280, height: 800, deviceScaleFactor: 2 },
-          });
-          
-          const page = await browser.newPage();
-          await page.close();
-          const version = await browser.version();
-          
-          return { ok: true, chosen: candidate.path, source: candidate.source, version };
-        } catch (err: any) {
-          const errorMessage = String(err.message || err);
-          lastError = err;
-          attempts.push({ path: candidate.path, existed: true, error: errorMessage });
-          
-          const isSharedLibError = /error while loading shared libraries|libnss|libx11|no such file or directory/i.test(errorMessage);
-          if (isSharedLibError) {
-             continue; // Try next candidate
+      } catch (err: any) { lastError = err; }
+      
+      // --- Attempt 2: Environment Variable ---
+      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      if (envPath) {
+          let browser: any = null;
+          try {
+              await stat(envPath);
+              const options = { ...getSafeLaunchOptions(), executablePath: envPath };
+              browser = await puppeteerCore.launch(options);
+              const version = await browser.version();
+              await browser.close();
+              return { ok: true, chosen: envPath, source: 'env', version };
+          } catch (err: any) {
+              lastError = err;
+              attempts.push({ path: envPath, source: 'env', existed: true, error: String(err.message) });
+          } finally {
+               try { await browser?.close(); } catch {}
           }
-          // For other errors, we could also decide to stop, but for diagnosis, we try all.
-        } finally {
-            try { await browser?.close(); } catch {}
-        }
       }
-      // If loop finishes without success
+      
+      // --- Attempt 3 & 4: Full Puppeteer (bundled or downloaded) ---
+      try {
+        const puppeteer = (await import('puppeteer')).default;
+        
+        // Attempt 3a: Bundled executable
+        const bundledPath = puppeteer.executablePath();
+        if (bundledPath) {
+            let browser: any = null;
+            try {
+                await stat(bundledPath);
+                const options = { ...getSafeLaunchOptions(), executablePath: bundledPath };
+                browser = await puppeteerCore.launch(options);
+                const version = await browser.version();
+                await browser.close();
+                return { ok: true, chosen: bundledPath, source: 'puppeteer', version };
+            } catch (err: any) {
+                lastError = err;
+                attempts.push({ path: bundledPath, source: 'puppeteer', existed: true, error: String(err.message) });
+            } finally {
+                try { await browser?.close(); } catch {}
+            }
+        }
+
+        // Attempt 3b: On-demand download (dev only)
+        if (process.env.NODE_ENV === 'development') {
+            let browser: any = null;
+            try {
+              const { BrowserFetcher } = await import('puppeteer');
+              const fetcher = puppeteer.createBrowserFetcher({ path: '.next/puppeteer' });
+              const revisionInfo = await fetcher.download(puppeteer.defaultBrowserRevision);
+              if (revisionInfo?.executablePath) {
+                  const options = { ...getSafeLaunchOptions(), executablePath: revisionInfo.executablePath };
+                  browser = await puppeteerCore.launch(options);
+                  const version = await browser.version();
+                  await browser.close();
+                  return { ok: true, chosen: revisionInfo.executablePath, source: 'download', version };
+              }
+            } catch (err: any) {
+              lastError = err;
+              attempts.push({ path: '.next/puppeteer', source: 'download', existed: false, error: String(err.message) });
+            } finally {
+               try { await browser?.close(); } catch {}
+            }
+        }
+      } catch (err:any) { lastError = err; }
+      
       return { ok: false, error: lastError, attempts };
     };
     
