@@ -138,7 +138,7 @@ export default function InputsPage() {
           <SectionHeader title={t.inputs.title} description={t.inputs.description} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="space-y-6 md:col-span-2">
+            <div className="space-y-6">
                 <Section 
                     title={t.inputs.products.title} 
                     icon={<Briefcase />} 
@@ -154,10 +154,7 @@ export default function InputsPage() {
                       <PlusCircle className="mr-2" size={16} /> {t.inputs.products.addProduct}
                     </Button>
                 </Section>
-            </div>
-            
-            <div className="space-y-6">
-              <Section 
+                <Section 
                   title={t.inputs.fixedCosts.title} 
                   icon={<Building />} 
                   tooltip="Add all recurring or one-time fixed costs that are not directly tied to production, such as salaries, rent, or marketing budgets."
