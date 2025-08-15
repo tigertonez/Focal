@@ -18,6 +18,8 @@ import { Separator } from '@/components/ui/separator';
 import { useForecast } from '@/context/ForecastContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HealthPanel } from '@/components/app/summary/HealthPanel';
+import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
+
 
 // =================================================================
 // Child Components
@@ -154,7 +156,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div id="report-content" className="space-y-6">
+      <div id="report-content" className="space-y-6" data-ssr-key="v1">
         <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
         
         <KPISection data={data} currency={inputs.parameters.currency} t={t} />
@@ -179,6 +181,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
+        <DownloadReportButton />
       </footer>
     </div>
   );
