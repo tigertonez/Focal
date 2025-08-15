@@ -22,7 +22,7 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
+    checkMobile(); // Check on mount
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
