@@ -45,35 +45,35 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
   );
 
   return (
-    <Card className={cn("flex-1", className)}>
-      <CardContent className="flex items-center justify-between p-3">
-        <div className="flex items-center gap-2">
-          {icon && <div className="text-muted-foreground">{icon}</div>}
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-muted-foreground">{label}</span>
-            <span className="text-base font-bold font-headline">{value}</span>
+    <Card className={cn(className)}>
+      <CardContent className="flex items-center gap-3 p-3">
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+        <div className="flex-1 space-y-0">
+          <div className="flex items-center gap-1.5">
+             <span className="text-xs font-medium text-muted-foreground">{label}</span>
+             {help && (
+                isMobile ? (
+                  <Dialog>
+                    <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{helpTitle || label}</DialogTitle>
+                        <DialogDescription as="div" className="pt-2">{help}</DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
+                      <TooltipContent className="max-w-xs p-3">{helpContent}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
+             )}
           </div>
+          <div className="text-xl font-bold font-headline">{value}</div>
         </div>
-        {help && (
-          isMobile ? (
-            <Dialog>
-              <DialogTrigger asChild>{helpTrigger}</DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{helpTitle || label}</DialogTitle>
-                  <DialogDescription as="div" className="pt-2">{help}</DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>{helpTrigger}</TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">{helpContent}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )
-        )}
       </CardContent>
     </Card>
   );
