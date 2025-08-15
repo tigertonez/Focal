@@ -26,9 +26,11 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
             setIsMobile(window.innerWidth < 768);
         }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    if (typeof window !== 'undefined') {
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }
   }, []);
   
   const helpTrigger = (
@@ -46,9 +48,9 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
 
   return (
     <Card className={cn(className)}>
-      <CardContent className="flex items-center gap-3 p-3">
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-        <div className="flex-1 space-y-0">
+      <CardContent className="flex items-center gap-4 p-3">
+        {icon && <div className="text-muted-foreground p-1">{icon}</div>}
+        <div className="flex-1 flex flex-col items-start justify-center">
           <div className="flex items-center gap-1.5">
              <span className="text-xs font-medium text-muted-foreground">{label}</span>
              {help && (
@@ -72,7 +74,7 @@ export function KpiCard({ label, value, icon, help, helpTitle, className }: KpiC
                 )
              )}
           </div>
-          <div className="text-xl font-bold font-headline">{value}</div>
+          <div className="text-lg font-bold font-headline">{value}</div>
         </div>
       </CardContent>
     </Card>
