@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { apiUrl, withQuery } from '@/lib/paths';
 
-let nextClickDebug = true; // One-time debug flag
+let nextClickDebug = true; // One-time debug flag for the session
 
 /**
  * A client-side component that handles the PDF download process.
@@ -18,14 +18,15 @@ export function DownloadReportButton() {
 
   const handleDownload = async () => {
     setIsLoading(true);
+
+    const isDebug = nextClickDebug;
+    nextClickDebug = false; // Ensure next click is not a debug run
+
     const queryParams: Record<string, any> = { title: 'Strategic Report', locale: 'en' };
-
-    // One-time debug logic
-    if (nextClickDebug) {
+    if (isDebug) {
       queryParams.debug = 1;
-      nextClickDebug = false;
     }
-
+    
     const printUrl = withQuery('/print/report', queryParams);
     
     // Abort controller for fetch timeout
@@ -44,14 +45,29 @@ export function DownloadReportButton() {
       // 2. Request the PDF from the server
       const pdfRes = await fetch(withQuery('/api/print/pdf', queryParams), {
         signal: controller.signal,
+        headers: isDebug ? { 'Accept': 'application/json' } : {},
       });
 
       console.info('[pdf]', 'pdf_fetch', { status: pdfRes.status, ok: pdfRes.ok, ct: pdfRes.headers.get('content-type') });
       clearTimeout(timeoutId); // Clear the timeout if fetch succeeds
 
       // 3. Process the response
-      const contentType = pdfRes.headers.get('content-type');
-      if (pdfRes.ok && contentType?.includes('application/pdf')) {
+      const contentType = pdfRes.headers.get('content-type') || '';
+      
+      if (isDebug || contentType.includes('application/json')) {
+        const json = await pdfRes.json();
+        console.info('[pdf:debug]', json);
+        if (process.env.NODE_ENV !== 'production') {
+            if (json.ok) {
+                alert('PDF DEBUG OK: ' + JSON.stringify(json));
+                return; // Success, stop here
+            } else {
+                 alert('PDF DEBUG FAIL: code=' + json.code + ' message=' + (json.message || ''));
+                 // Let it proceed to the catch block for fallback
+                 throw new Error(`Debug run failed with code: ${json.code}`);
+            }
+        }
+      } else if (pdfRes.ok && contentType.includes('application/pdf')) {
         const blob = await pdfRes.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -61,13 +77,6 @@ export function DownloadReportButton() {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
-      } else if (pdfRes.ok && contentType?.includes('application/json')) {
-        // Handle successful debug response
-        const json = await pdfRes.json();
-        console.info('[pdf:debug]', json);
-        if (process.env.NODE_ENV !== 'production') {
-          alert('PDF Debug: ' + JSON.stringify(json));
-        }
       } else {
         const errorText = await pdfRes.text();
         throw new Error(`PDF generation failed: ${errorText || pdfRes.statusText}`);
@@ -81,11 +90,7 @@ export function DownloadReportButton() {
         .then(res => res.json())
         .then(data => console.info('[pdf:fallback]', 'capabilities', data))
         .catch(capErr => console.warn('[pdf:fallback]', 'capabilities check failed', capErr));
-
-      if (process.env.NODE_ENV !== 'production') {
-        alert(`PDF Download Failed:\n${err.message}\n\nFalling back to print view.`);
-      }
-
+      
       clearTimeout(timeoutId);
       window.open(printUrl, '_blank', 'noopener,noreferrer');
     } finally {
