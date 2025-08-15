@@ -143,7 +143,6 @@ export default function InputsPage() {
                     title={t.inputs.products.title} 
                     icon={<Briefcase />} 
                     tooltip="Define all the products or services you plan to sell, including their costs, pricing, and sales models."
-                    defaultOpen={true}
                 >
                     <div className="space-y-6">
                       {productFields.map((field, index) => (
