@@ -10,23 +10,26 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 
-const REPORT_STORAGE_KEY = 'forecastReport';
-
 export default function LoadingPage() {
     const router = useRouter();
-    const { inputs, calculateFinancials, financials, setFinancials, t } = useForecast();
+    const { inputs, calculateFinancials, setFinancials, t } = useForecast();
     const [progress, setProgress] = useState(0);
     const [calculationError, setCalculationError] = useState<string | null>(null);
 
     useEffect(() => {
         // This effect triggers the calculation as soon as the page loads with valid inputs.
-        if (inputs && !financials.data && !financials.error) {
+        if (inputs) {
             try {
               const data = calculateFinancials(inputs);
-              // Save the successful result to localStorage
-              localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
               // Update context immediately
               setFinancials({ data, error: null, isLoading: false });
+
+              // If successful, proceed to redirect
+              setProgress(100);
+              setTimeout(() => {
+                router.replace('/revenue');
+              }, 500);
+
             } catch (e: any) {
               console.error("Error during calculation on loading page:", e);
               const errorMessage = e.message || 'An unknown error occurred.';
@@ -34,28 +37,12 @@ export default function LoadingPage() {
               setFinancials({ data: null, error: errorMessage, isLoading: false });
             }
         }
-    }, [inputs, calculateFinancials, setFinancials, financials.data, financials.error]);
-
-    useEffect(() => {
-      // Handles redirecting after calculation or on error
-      if (calculationError) {
-        // Stop progress on error
-        return;
-      }
-      
-      if (financials.data) {
-        // Finalize progress and redirect on successful calculation
-        setProgress(100);
-        setTimeout(() => {
-          router.replace('/revenue');
-        }, 500);
-      }
-    }, [financials.data, calculationError, router]);
+    }, [inputs, calculateFinancials, setFinancials, router]);
 
 
     // Effect for animating the progress bar
     useEffect(() => {
-      if (!financials.data && !calculationError) {
+      if (!calculationError) {
         const timer = setInterval(() => {
           setProgress(prev => {
             if (prev >= 95) {
@@ -68,7 +55,7 @@ export default function LoadingPage() {
 
         return () => clearInterval(timer);
       }
-    }, [financials.data, calculationError]);
+    }, [calculationError]);
 
     if (calculationError) {
         return (

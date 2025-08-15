@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
@@ -102,7 +101,7 @@ const REPORT_STORAGE_KEY = 'forecastReport';
 
 export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   const [inputs, setInputs] = useState<EngineInput>(initialInputs);
-  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: true });
+  const [financials, setFinancials] = useState<FinancialsState>({ data: null, error: null, isLoading: false });
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [proactiveAnalysis, setProactiveAnalysis] = useState<string | null>(null);
   const [locale, setLocale] = useState<'en' | 'de'>('en');
@@ -126,33 +125,46 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   // This effect runs only on the client to restore state from localStorage without causing hydration errors.
   useEffect(() => {
+    // This hook runs ONLY on the client, after the initial render, thus avoiding hydration mismatch.
     try {
-      const savedReport = localStorage.getItem(REPORT_STORAGE_KEY);
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-
-      if (savedReport) {
-        setFinancials({ data: JSON.parse(savedReport), error: null, isLoading: false });
-      } else {
-        setFinancials({ data: null, error: null, isLoading: false });
-      }
+      const savedReport = localStorage.getItem(REPORT_STORAGE_KEY);
+      
+      let inputsToUse = initialInputs;
 
       if (savedDraft) {
         const parsedDraft = JSON.parse(savedDraft);
         const result = EngineInputSchema.safeParse(parsedDraft);
         if (result.success) {
-          setInputs(result.data);
+          inputsToUse = result.data;
+          setInputs(result.data); // Update inputs state
         } else {
           console.warn("Could not parse saved draft, using initial data.", result.error);
           localStorage.removeItem(DRAFT_STORAGE_KEY);
         }
       }
+
+      if (savedReport) {
+        // If a report exists, we trust it was calculated with the correct inputs.
+        setFinancials({ data: JSON.parse(savedReport), error: null, isLoading: false });
+      } else if (savedDraft) {
+        // If only a draft exists, recalculate on load.
+        try {
+            const data = calculateFinancialsEngine(inputsToUse);
+            localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
+            setFinancials({ data, error: null, isLoading: false });
+        } catch (e: any) {
+            console.error("Error recalculating financials from draft on load:", e);
+            setFinancials({ data: null, error: e.message || "Failed to recalculate from draft.", isLoading: false });
+        }
+      }
+
     } catch (e) {
       console.error("Failed to load state from local storage", e);
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       localStorage.removeItem(REPORT_STORAGE_KEY);
-      setFinancials({ data: null, error: null, isLoading: false });
     }
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on the client.
 
   const calculateFinancials = useCallback((currentInputs: EngineInput): EngineOutput => {
     const result = EngineInputSchema.safeParse(currentInputs);
@@ -160,7 +172,10 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       const firstError = result.error.errors[0]?.message || 'Invalid input.';
       throw new Error(firstError);
     }
-    return calculateFinancialsEngine(result.data);
+    const data = calculateFinancialsEngine(result.data);
+    // Persist the successful result to localStorage
+    localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
+    return data;
   }, []);
 
   const saveDraft = (currentInputs: EngineInput) => {
