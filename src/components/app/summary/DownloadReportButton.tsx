@@ -9,16 +9,66 @@ import { toPng } from 'html-to-image';
 
 
 // =================================================================
-// Configuration
+// Configuration & Constants
 // =================================================================
 
 const FULL_REPORT_ROUTES = ['/summary', '/revenue', '/costs', '/profit', '/cash-flow'] as const;
 type AppRoute = typeof FULL_REPORT_ROUTES[number];
-type Preferences = { page: 'A4' | 'Letter' | 'auto'; fit: 'contain' | 'cover' | 'auto'; margin: number; };
+type Preferences = { page: 'A4' | 'Letter'; fit: 'contain' | 'cover'; margin: number; };
+
+// A4 points at 72 dpi
+const A4_PT = { w: 595.28, h: 841.89 }; 
+const DEFAULT_MARGIN_PT = 24; // ~8.5mm
+const TARGET_DPI = 150; // good quality vs size trade-off
 
 // =================================================================
 // Capture & Utility Functions
 // =================================================================
+
+const ptToPx = (pt: number, dpi = TARGET_DPI) => Math.round(pt * dpi / 72);
+const pxToPt = (px: number, dpi = TARGET_DPI) => px * 72 / dpi;
+
+function loadImage(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+async function sliceForA4(dataUrl: string, dpi = TARGET_DPI, marginPt = DEFAULT_MARGIN_PT) {
+  const img = await loadImage(dataUrl);
+  const contentWPt = A4_PT.w - 2 * marginPt;
+  const contentHPt = A4_PT.h - 2 * marginPt;
+
+  const contentWPx = ptToPx(contentWPt, dpi);
+  const contentHPx = ptToPx(contentHPt, dpi);
+
+  const scale = contentWPx / img.width;
+  const scaledW = Math.round(img.width * scale);
+  const scaledH = Math.round(img.height * scale);
+
+  const scaled = document.createElement('canvas');
+  scaled.width = scaledW;
+  scaled.height = scaledH;
+  const sctx = scaled.getContext('2d')!;
+  sctx.imageSmoothingEnabled = true;
+  sctx.drawImage(img, 0, 0, scaledW, scaledH);
+
+  const slices: { data: string; wPx: number; hPx: number }[] = [];
+  for (let y = 0; y < scaledH; y += contentHPx) {
+    const h = Math.min(contentHPx, scaledH - y);
+    const tile = document.createElement('canvas');
+    tile.width = contentWPx;
+    tile.height = h;
+    const tctx = tile.getContext('2d')!;
+    tctx.drawImage(scaled, 0, y, contentWPx, h, 0, 0, contentWPx, h);
+    slices.push({ data: tile.toDataURL('image/png'), wPx: contentWPx, hPx: h });
+  }
+  return { slices, dpi, marginPt, page: 'A4' as const };
+}
+
 
 async function waitForFonts() {
   try {
@@ -77,7 +127,7 @@ async function captureCurrentPage(prefs: Preferences): Promise<{ dataUrl: string
 
     try {
         const rect = el.getBoundingClientRect();
-        const tw = targetWidthPx(prefs.page, Math.round(rect.width));
+        const tw = targetWidthPx('a4', Math.round(rect.width));
         const pixelRatio = tw / rect.width;
 
         const dataUrl = await toPng(el, {
@@ -87,7 +137,7 @@ async function captureCurrentPage(prefs: Preferences): Promise<{ dataUrl: string
         
         const width = Math.round(rect.width * pixelRatio);
         const height = Math.round(rect.height * pixelRatio);
-        console.log('[PDF] capture', { pixelRatio, width, height, page: prefs.page });
+        console.log('[PDF] single page capture', { pixelRatio, width, height, page: prefs.page });
         return { dataUrl, width, height };
     } finally {
         unlock();
@@ -95,7 +145,7 @@ async function captureCurrentPage(prefs: Preferences): Promise<{ dataUrl: string
     }
 }
 
-async function captureRouteInIframe(path: AppRoute, prefs: Preferences) {
+async function captureRouteInIframe(path: AppRoute) {
     console.info(`[PDF] Starting iframe capture for: ${path}`);
     return new Promise<{ dataUrl: string; width: number; height: number }>(async (resolve, reject) => {
         const iframe = document.createElement('iframe');
@@ -114,14 +164,14 @@ async function captureRouteInIframe(path: AppRoute, prefs: Preferences) {
             try {
                 const doc = iframe.contentDocument;
                 if (!doc) return handleError(`Could not access contentDocument for ${path}`);
-
-                addFreeze(doc.documentElement);
+                
                 await (doc as any).fonts?.ready?.catch(() => {});
+                addFreeze(doc.documentElement);
                 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
                 
                 const node = doc.getElementById('report-content') || doc.body;
                 const rect = node.getBoundingClientRect();
-                const tw = targetWidthPx(prefs.page, Math.round(rect.width));
+                const tw = targetWidthPx('a4', Math.round(rect.width));
                 const pixelRatio = tw / rect.width;
 
                 const dataUrl = await toPng(node, { cacheBust: true, pixelRatio, backgroundColor: '#ffffff' });
@@ -162,35 +212,45 @@ export function DownloadReportButton() {
     
     try {
       let payload: any;
-      const toBase64 = (url: string) => url.replace(/^data:image\/png;base64,/, '');
 
       if (isFullReport) {
-          const images = [];
+          const allSlices: any[] = [];
           for (const route of FULL_REPORT_ROUTES) {
               try {
-                  const capture = await captureRouteInIframe(route, preferences);
-                  images.push({
-                      imageBase64: toBase64(capture.dataUrl),
-                      format: 'png',
-                      width: capture.width,
-                      height: capture.height,
+                  const capture = await captureRouteInIframe(route);
+                  const { slices } = await sliceForA4(capture.dataUrl);
+                  const processedSlices = slices.map(s => ({
+                      imageBase64: s.data.replace(/^data:image\/png;base64,/, ''),
+                      wPx: s.wPx,
+                      hPx: s.hPx,
                       name: route,
-                  });
+                  }));
+                  allSlices.push(...processedSlices);
               } catch(e) {
                   console.warn(`[PDF] Skipping route ${route} due to capture error:`, e);
               }
           }
-          payload = { images, ...preferences, title, mode: isProbe ? 'probe' : 'pdf' };
+          payload = { 
+            mode: isProbe ? 'probe' : 'full',
+            page: 'A4', 
+            dpi: TARGET_DPI,
+            marginPt: DEFAULT_MARGIN_PT,
+            images: allSlices,
+            title,
+          };
       } else {
           const capture = await captureCurrentPage(preferences);
           payload = {
-              imageBase64: toBase64(capture.dataUrl),
+              mode: isProbe ? 'probe' : 'pdf',
+              imageBase64: capture.dataUrl.replace(/^data:image\/png;base64,/, ''),
               format: 'png',
               width: capture.width,
               height: capture.height,
-              ...preferences,
+              page: 'A4',
+              fit: 'contain',
+              marginPt: DEFAULT_MARGIN_PT,
+              dpi: TARGET_DPI,
               title,
-              mode: isProbe ? 'probe' : 'pdf',
           };
       }
       

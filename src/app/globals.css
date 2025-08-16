@@ -67,9 +67,10 @@
   }
   
   /* Active only during capture */
-  .pdf-freeze, .pdf-freeze * {
+  .pdf-freeze, .pdf-freeze *, .pdf-freeze *::before, .pdf-freeze *::after {
     animation: none !important;
     transition: none !important;
+    transform: none !important;
     caret-color: transparent !important;
     text-shadow: none !important;
     -webkit-font-smoothing: antialiased;
