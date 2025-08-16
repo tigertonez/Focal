@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
-import { apiUrl, withQuery } from '@/lib/paths';
 import { useToast } from '@/hooks/use-toast';
 
 const FORCE_FALLBACK = true;
@@ -19,7 +18,7 @@ export function DownloadReportButton() {
   const [isProbed, setIsProbed] = useState(false); // State to track if the initial probe has been done
   const { toast } = useToast();
 
-  const captureReport = async (): Promise<{ imageBase64: string, format: 'jpeg' }> => {
+  const captureReport = async (): Promise<{ imageBase64: string, format: 'jpg' }> => {
     const html2canvas = (await import('html2canvas')).default;
     const reportNode = document.getElementById('report-content');
     if (!reportNode) throw new Error("Report content element #report-content not found.");
@@ -40,12 +39,12 @@ export function DownloadReportButton() {
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     const rawBase64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-    return { imageBase64: rawBase64, format: 'jpeg' };
+    return { imageBase64: rawBase64, format: 'jpg' };
   };
 
   const postAndHandlePdf = async (payload: { imageBase64: string, format: string, title: string, debug?: boolean }) => {
     const isDebug = payload.debug || false;
-    const res = await fetch(apiUrl('/api/print/pdf' + (isDebug ? '?debug=1' : '')), {
+    const res = await fetch('/api/print/pdf' + (isDebug ? '?debug=1' : ''), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +74,7 @@ export function DownloadReportButton() {
           const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
           const probeJson = await probeRes.json();
           
-          alert(`PDF API PROBE (this is a one-time check):\n\nStatus: ${probeJson.ok ? 'Success' : 'Failed'}\nInput Bytes: ${probeJson.inputBytes}\nPDF Bytes: ${probeJson.pdfBytes}\nFormat: ${probeJson.format}`);
+          alert(`PDF API PROBE (this is a one-time check):\n\n${JSON.stringify(probeJson, null, 2)}`);
           setIsProbed(true); // Mark probe as done so next click is a real download
         } else {
           // --- NORMAL DOWNLOAD path for subsequent clicks ---
@@ -103,14 +102,15 @@ export function DownloadReportButton() {
         }
       } else {
         // Legacy GET path is kept here but disabled by the FORCE_FALLBACK flag
-        window.open(withQuery('/print/report', { title, locale: 'en', ts: Date.now() }), '_blank');
+        // This path will not be executed.
+        console.warn('GET path is disabled by FORCE_FALLBACK flag.');
       }
     } catch (err: any) {
       console.warn('[pdf:client-error]', err.message || 'An unknown error occurred.');
       toast({
         variant: 'destructive',
         title: 'PDF Generation Failed',
-        description: `Could not generate PDF (${err.message}).`,
+        description: `Could not generate PDF (${err.message}). Please try again.`,
       });
     } finally {
       setIsLoading(false);

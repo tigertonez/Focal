@@ -11,7 +11,7 @@ export const maxDuration = 60;
  */
 export async function GET(request: Request) {
     return NextResponse.json(
-        { ok: false, code: 'GET_DISABLED', message: 'This endpoint is disabled. Use POST.' },
+        { ok: false, code: 'GET_DISABLED', message: 'This endpoint only supports POST.' },
         { status: 405 }
     );
 }
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
 
         // 2. Validate input payload
         const rawBase64 = (typeof body?.imageBase64 === 'string' ? body.imageBase64 : '').trim();
-        const format = (body?.format === 'png' ? 'png' : 'jpeg');
+        const formatIn = (body?.format || 'jpg').toLowerCase();
+        const format = formatIn === 'jpeg' ? 'jpg' : formatIn; // Normalize to 'jpg'
         const title = (typeof body?.title === 'string' && body.title.trim()) ? body.title.trim() : 'ForecastReport';
 
         const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
