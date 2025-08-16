@@ -1,21 +1,20 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const FORCE_FALLBACK = true;
+let didProbe = false; // Module-level flag for one-shot probe
 
 /**
- * A client-side component that handles the PDF download process.
- * It is forced to use an image-based fallback path that does not
- * rely on a headless browser on the server.
+ * A client-side component that handles PDF download exclusively via a POST fallback.
+ * The first click performs a silent "probe" to verify the server-side rendering,
+ * and subsequent clicks trigger the actual file download.
  */
 export function DownloadReportButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isProbed, setIsProbed] = useState(false); // State to track if the initial probe has been done
   const { toast } = useToast();
 
   const captureReport = async (): Promise<{ imageBase64: string, format: 'jpg' }> => {
@@ -33,7 +32,8 @@ export function DownloadReportButton() {
       newCanvas.width = MAX_WIDTH;
       newCanvas.height = MAX_WIDTH * aspect;
       const ctx = newCanvas.getContext('2d');
-      ctx?.drawImage(canvas, 0, 0, newCanvas.width, newCanvas.height);
+      if (!ctx) throw new Error('Could not get 2D context for canvas resizing.');
+      ctx.drawImage(canvas, 0, 0, newCanvas.width, newCanvas.height);
       canvas = newCanvas;
     }
 
@@ -54,8 +54,8 @@ export function DownloadReportButton() {
     });
 
     if (!res.ok) {
-      const errorJson = await res.json().catch(() => ({ code: 'UNKNOWN_ERROR', message: 'Failed to parse error from server.' }));
-      throw new Error(`PDF generation failed: ${errorJson.code || res.statusText}`);
+      const errorJson = await res.json().catch(() => ({ code: 'UNKNOWN_ERROR', message: `Server returned status ${res.status}` }));
+      throw new Error(errorJson.code || res.statusText);
     }
 
     return res;
@@ -66,51 +66,40 @@ export function DownloadReportButton() {
     const title = `ForecastReport-${Date.now()}`;
 
     try {
-      if (FORCE_FALLBACK) {
-        if (!isProbed) {
-          // --- ONE-SHOT JSON PROBE on first click ---
-          const { imageBase64, format } = await captureReport();
-          console.info(`[pdf:probe] Captured image. Size: ~${Math.round((imageBase64.length * 3) / 4 / 1024)} KB. Probing API...`);
-          const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
-          const probeJson = await probeRes.json();
-          
-          alert(`PDF API PROBE (this is a one-time check):\n\n${JSON.stringify(probeJson, null, 2)}`);
-          setIsProbed(true); // Mark probe as done so next click is a real download
-        } else {
-          // --- NORMAL DOWNLOAD path for subsequent clicks ---
-          const { imageBase64, format } = await captureReport();
-          const payloadBytes = Math.round((imageBase64.length * 3) / 4);
-          console.info('[pdf:download] POSTing to embed API.', {
-            path: "/api/print/pdf (POST)",
-            bytes: payloadBytes,
-            format,
-          });
-
-          const pdfRes = await postAndHandlePdf({ imageBase64, format, title });
-          const blob = await pdfRes.blob();
-          
-          console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB. Triggering download...`);
-
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${title}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        }
+      if (!didProbe) {
+        // --- ONE-SHOT JSON PROBE on first click ---
+        const { imageBase64, format } = await captureReport();
+        console.info(`[pdf:probe] Captured image. Size: ~${Math.round((imageBase64.length * 3) / 4 / 1024)} KB. Probing POST API...`);
+        const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
+        const probeJson = await probeRes.json();
+        alert(`PDF PROBE (this is a one-time check):\n\n${JSON.stringify(probeJson, null, 2)}`);
+        didProbe = true;
       } else {
-        // Legacy GET path is kept here but disabled by the FORCE_FALLBACK flag
-        // This path will not be executed.
-        console.warn('GET path is disabled by FORCE_FALLBACK flag.');
+        // --- NORMAL DOWNLOAD path for subsequent clicks ---
+        const { imageBase64, format } = await captureReport();
+        const payloadBytes = Math.round((imageBase64.length * 3) / 4);
+        console.info('[pdf:download] POSTing to embed API.', { path: "/api/print/pdf (POST)", bytes: payloadBytes, format });
+
+        const pdfRes = await postAndHandlePdf({ imageBase64, format, title });
+        const blob = await pdfRes.blob();
+        
+        console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB.`);
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
       }
     } catch (err: any) {
-      console.warn('[pdf:client-error]', err.message || 'An unknown error occurred.');
+      console.warn('[pdf:client-error]', err);
       toast({
         variant: 'destructive',
         title: 'PDF Generation Failed',
-        description: `Could not generate PDF (${err.message}). Please try again.`,
+        description: `Could not generate PDF (${err.message || 'An unknown error occurred.'}). Please try again.`,
       });
     } finally {
       setIsLoading(false);
