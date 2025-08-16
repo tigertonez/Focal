@@ -29,7 +29,7 @@ type MultiPayload = {
   title?: string;
 };
 
-type PostBody = (SinglePayload | MultiPayload) & { mode?: 'probe' | 'pdf' | 'blank' };
+type PostBody = (SinglePayload | MultiPayload) & { mode?: 'probe' | 'pdf' | 'blank' | 'full' };
 
 
 // --- Helper Functions ---
@@ -87,11 +87,11 @@ export async function POST(req: NextRequest) {
       
       const pdfBytes = await pdfDoc.save();
       if (wantsJson) {
-          return json({ ok: true, phase: 'POST_OK', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped });
+          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped });
       }
 
     } else { // Single Image
-      const { imageBase64, format, width, height, page = 'auto', fit = 'auto', marginPt = 24, dpi = 150 } = body as SinglePayload;
+      const { imageBase64, format, width, height, page = 'auto', fit = 'auto', marginPt = 36, dpi = 150 } = body as SinglePayload;
       
       if (!imageBase64) return json({ ok: false, message: 'imageBase64 missing' }, { status: 400 });
 
@@ -100,8 +100,8 @@ export async function POST(req: NextRequest) {
 
       let pageWidth: number, pageHeight: number;
       if (page === 'auto') {
-          pageWidth = pxToPt(img.width, dpi);
-          pageHeight = pxToPt(img.height, dpi);
+          pageWidth = pxToPt(img.width, dpi) + 2*marginPt;
+          pageHeight = pxToPt(img.height, dpi) + 2*marginPt;
       } else {
           const dims = page === 'A4' ? PageSizes.A4 : PageSizes.Letter;
           pageWidth = dims[0]; pageHeight = dims[1];

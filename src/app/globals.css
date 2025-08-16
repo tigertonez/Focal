@@ -78,6 +78,9 @@
     font-synthesis: none !important;
     text-rendering: geometricPrecision !important;
   }
+  .pdf-freeze {
+    background: #fff !important;
+  }
 
   /* Small helper to avoid baseline/jitter on inline text */
   .pdf-freeze .text,

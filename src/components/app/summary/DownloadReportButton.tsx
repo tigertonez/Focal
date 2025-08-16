@@ -11,15 +11,13 @@ import { toPng } from 'html-to-image';
 // =================================================================
 // Configuration & Constants
 // =================================================================
-
-const FULL_REPORT_ROUTES = ['/summary', '/revenue', '/costs', '/profit', '/cash-flow'] as const;
+const FULL_REPORT_ROUTES = ['/inputs', '/revenue', '/costs', '/profit', '/cash-flow', '/summary'] as const;
 type AppRoute = typeof FULL_REPORT_ROUTES[number];
 type Preferences = { page: 'A4' | 'Letter'; fit: 'contain' | 'cover'; margin: number; };
 
-// A4 points at 72 dpi
-const A4_PT = { w: 595.28, h: 841.89 }; 
-const DEFAULT_MARGIN_PT = 24; // ~8.5mm
-const TARGET_DPI = 150; // good quality vs size trade-off
+const A4_PT = { w: 595.28, h: 841.89 };
+const DEFAULT_MARGIN_PT = 24;
+const TARGET_DPI = 150;
 
 // =================================================================
 // Capture & Utility Functions
@@ -150,7 +148,7 @@ async function captureRouteInIframe(path: AppRoute) {
     return new Promise<{ dataUrl: string; width: number; height: number }>(async (resolve, reject) => {
         const iframe = document.createElement('iframe');
         iframe.src = `${location.origin}${path}`;
-        iframe.style.cssText = `position:fixed; left:-9999px; top:0; width:${document.documentElement.clientWidth}px; height:${window.innerHeight}px; border:0;`;
+        iframe.style.cssText = `position:fixed; left:-9999px; top:0; width:1200px; height:${window.innerHeight}px; border:0;`;
 
         const handleError = (msg: string) => {
             iframe.remove();
@@ -165,16 +163,15 @@ async function captureRouteInIframe(path: AppRoute) {
                 const doc = iframe.contentDocument;
                 if (!doc) return handleError(`Could not access contentDocument for ${path}`);
                 
-                await (doc as any).fonts?.ready?.catch(() => {});
                 addFreeze(doc.documentElement);
+                await (doc as any).fonts?.ready?.catch(() => {});
                 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
                 
                 const node = doc.getElementById('report-content') || doc.body;
                 const rect = node.getBoundingClientRect();
-                const tw = targetWidthPx('a4', Math.round(rect.width));
-                const pixelRatio = tw / rect.width;
+                const pixelRatio = Math.min(2, window.devicePixelRatio * 1.5);
 
-                const dataUrl = await toPng(node, { cacheBust: true, pixelRatio, backgroundColor: '#ffffff' });
+                const dataUrl = await toPng(node, { pixelRatio, cacheBust: true, backgroundColor: '#ffffff' });
                 const width = Math.round(rect.width * pixelRatio);
                 const height = Math.round(rect.height * pixelRatio);
                 console.info(`[PDF] Finished iframe capture for: ${path}`, { width, height });
@@ -183,6 +180,7 @@ async function captureRouteInIframe(path: AppRoute) {
             } catch (err: any) {
                 handleError(err.message || String(err));
             } finally {
+                removeFreeze(iframe.contentDocument!.documentElement);
                 iframe.remove();
             }
         };
@@ -208,7 +206,7 @@ export function DownloadReportButton() {
     const isProbe = event.shiftKey;
     const isFullReport = event.altKey || (event.metaKey && !event.shiftKey);
     const title = isFullReport ? 'FullForecastReport' : 'ForecastReport';
-    const preferences: Preferences = { page: 'A4', fit: 'contain', margin: 20 };
+    const preferences: Preferences = { page: 'A4', fit: 'contain', margin: 24 };
     
     try {
       let payload: any;
@@ -217,8 +215,10 @@ export function DownloadReportButton() {
           const allSlices: any[] = [];
           for (const route of FULL_REPORT_ROUTES) {
               try {
+                  console.log(`[PDF] Capturing route: ${route}`);
                   const capture = await captureRouteInIframe(route);
                   const { slices } = await sliceForA4(capture.dataUrl);
+                   console.log(`[PDF] Sliced ${route} into ${slices.length} pages.`);
                   const processedSlices = slices.map(s => ({
                       imageBase64: s.data.replace(/^data:image\/png;base64,/, ''),
                       wPx: s.wPx,
@@ -226,8 +226,8 @@ export function DownloadReportButton() {
                       name: route,
                   }));
                   allSlices.push(...processedSlices);
-              } catch(e) {
-                  console.warn(`[PDF] Skipping route ${route} due to capture error:`, e);
+              } catch(e: any) {
+                  console.warn(`[PDF] Skipping route ${route} due to capture error:`, e.message);
               }
           }
           payload = { 
