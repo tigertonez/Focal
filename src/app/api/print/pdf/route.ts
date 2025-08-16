@@ -23,8 +23,8 @@ export async function GET(request: Request) {
  * This method does not require a headless browser.
  */
 export async function POST(request: Request) {
-    const json = (data: any, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
     const wantsJson = (req: Request) => (req.headers.get('accept') || '').toLowerCase().includes('application/json');
+    const json = (data: any, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
     try {
         const url = new URL(request.url);
@@ -36,8 +36,6 @@ export async function POST(request: Request) {
         } catch (err) {
             return json({ ok: false, code: 'BAD_JSON', message: 'Invalid JSON body' }, 400);
         }
-
-        const title = (typeof body?.title === 'string' && body.title.trim()) ? body.title.trim() : 'ForecastReport';
 
         const { Document, Page, View, Image, Text, pdf, StyleSheet } = await import('@react-pdf/renderer');
         const React = (await import('react')).default || (await import('react'));
@@ -72,41 +70,40 @@ export async function POST(request: Request) {
 
 
         // --- IMAGE-BASED PDF ---
-        const rawBase64 = (typeof body?.imageBase64 === 'string' ? body.imageBase64 : '').trim();
-        if (!rawBase64) {
-            return json({ ok: false, code: 'BAD_IMAGE', message: 'Missing or empty imageBase64 string.' }, 400);
-        }
+        let imageDataUrl = body.imageDataUrl || '';
+        let inputBytes = 0;
+        let finalFormat = 'png';
 
-        const formatIn = (body?.format || 'jpg').toLowerCase();
-        const format = formatIn === 'jpeg' ? 'jpg' : formatIn;
-        if (format !== 'jpg' && format !== 'png') {
-            return json({ ok: false, code: 'BAD_FORMAT', message: `Unsupported format: ${format}. Must be 'jpg' or 'png'.` }, 400);
+        if (!imageDataUrl && body.imageBase64) {
+            const fmtIn = (body.format || 'png').toLowerCase();
+            finalFormat = fmtIn === 'jpeg' ? 'jpg' : fmtIn;
+            if (finalFormat !== 'png' && finalFormat !== 'jpg') {
+                return json({ ok: false, code: 'BAD_FORMAT', format: finalFormat }, 400);
+            }
+            imageDataUrl = `data:image/${finalFormat};base64,${body.imageBase64}`;
         }
         
-        const bytes = Buffer.from(rawBase64, 'base64');
-        if (bytes.length === 0) {
-            return json({ ok: false, code: 'BAD_IMAGE', message: 'Decoded image buffer is empty.' }, 400);
+        if (!imageDataUrl || !imageDataUrl.startsWith('data:image/')) {
+            return json({ ok: false, code: 'BAD_IMAGE', message: 'Expected a data:image/... URL.' }, 400);
+        }
+
+        const base64Part = imageDataUrl.split(',')[1];
+        if (base64Part) {
+            inputBytes = Buffer.from(base64Part, 'base64').length;
         }
 
         const styles = StyleSheet.create({
-            page: { padding: 24, backgroundColor: '#FFFFFF', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-            container: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-            image: { objectFit: 'contain', width: '100%', height: 'auto' },
+            page: { padding: 24, backgroundColor: '#ffffff' },
+            img: { width: '100%', height: 'auto' }
         });
-
-        const imageSrc = { data: new Uint8Array(bytes), format: format as 'jpg' | 'png' };
 
         const docElement = React.createElement(
             Document,
-            { title },
+            { title: body.title || 'ForecastReport' },
             React.createElement(
                 Page,
                 { size: 'A4', style: styles.page, orientation: 'portrait' },
-                React.createElement(
-                    View, 
-                    { style: styles.container },
-                    React.createElement(Image, { src: imageSrc, style: styles.image })
-                )
+                React.createElement(Image, { src: imageDataUrl, style: styles.img })
             )
         );
 
@@ -117,12 +114,13 @@ export async function POST(request: Request) {
                 return json({ 
                     ok: true, 
                     phase: 'POST_OK', 
-                    inputBytes: bytes.length, 
+                    inputBytes, 
                     pdfBytes: probeBuffer.length,
-                    format 
+                    format: body.format || 'png'
                 });
              } catch (e: any) {
-                return json({ ok:false, code:'EMBED_FAILED', message: String(e?.message||e), inputBytes: bytes.length, format }, 500);
+                const errorInfo = { name:e.name, message:e.message, stack:(e.stack||'').slice(0,800) };
+                return json({ ok:false, code:'EMBED_FAILED', error: errorInfo, inputBytes, format: body.format || 'png' }, 500);
              }
         }
         
@@ -134,12 +132,13 @@ export async function POST(request: Request) {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/pdf',
-                    'Content-Disposition': `attachment; filename="${title}.pdf"`,
+                    'Content-Disposition': `attachment; filename="${(body.title||'ForecastReport')}.pdf"`,
                     'Cache-Control': 'no-store',
                 },
             });
         } catch (err: any) {
-             return json({ ok:false, code:'EMBED_FAILED', message: String(err?.message||err), inputBytes: bytes.length, format }, 500);
+             const errorInfo = { name:err.name, message:err.message, stack:(err.stack||'').slice(0,800) };
+             return json({ ok:false, code:'EMBED_FAILED', error: errorInfo, inputBytes, format: body.format || 'png' }, 500);
         }
         
 

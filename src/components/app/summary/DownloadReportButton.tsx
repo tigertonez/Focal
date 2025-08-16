@@ -17,48 +17,18 @@ export function DownloadReportButton() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const captureReport = async (): Promise<{ imageBase64: string, format: 'jpg' }> => {
+  const captureReport = async (): Promise<{ imageDataUrl: string, format: 'png' }> => {
     const html2canvas = (await import('html2canvas')).default;
     const reportNode = document.getElementById('report-content');
-    if (!reportNode) throw new Error("Report content element #report-content not found.");
-
-    let canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
-
-    // Clamp image size to prevent Vercel body limit issues
-    const MAX_WIDTH = 1600;
-    if (canvas.width > MAX_WIDTH) {
-      const newCanvas = document.createElement('canvas');
-      const aspect = canvas.height / canvas.width;
-      newCanvas.width = MAX_WIDTH;
-      newCanvas.height = MAX_WIDTH * aspect;
-      const ctx = newCanvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get 2D context for canvas resizing.');
-      ctx.drawImage(canvas, 0, 0, newCanvas.width, newCanvas.height);
-      canvas = newCanvas;
+    if (!reportNode) {
+      throw new Error("Report content element #report-content not found. Cannot generate PDF.");
     }
-
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    const rawBase64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-    return { imageBase64: rawBase64, format: 'jpg' };
-  };
-
-  const postAndHandlePdf = async (payload: { imageBase64: string, format: string, title: string, debug?: boolean }) => {
-    const isDebug = payload.debug || false;
-    const res = await fetch('/api/print/pdf' + (isDebug ? '?debug=1' : ''), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': isDebug ? 'application/json' : 'application/pdf',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorJson = await res.json().catch(() => ({ code: 'UNKNOWN_ERROR', message: `Server returned status ${res.status}` }));
-      throw new Error(errorJson.code || res.statusText);
-    }
-
-    return res;
+    
+    // Prefer PNG as it has better support in some decoders
+    const canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+    const dataUrl = canvas.toDataURL('image/png'); // Full "data:image/png;base64,..." string
+    
+    return { imageDataUrl: dataUrl, format: 'png' };
   };
 
   const handleDownload = async () => {
@@ -66,23 +36,34 @@ export function DownloadReportButton() {
     const title = `ForecastReport-${Date.now()}`;
 
     try {
+      const { imageDataUrl, format } = await captureReport();
+      const payload = { imageDataUrl, format, title };
+
       if (!didProbe) {
         // --- ONE-SHOT JSON PROBE on first click ---
-        const { imageBase64, format } = await captureReport();
-        console.info(`[pdf:probe] Captured image. Size: ~${Math.round((imageBase64.length * 3) / 4 / 1024)} KB. Probing POST API...`);
-        const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
+        const probeRes = await fetch('/api/print/pdf?debug=1', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
         const probeJson = await probeRes.json();
         alert(`PDF PROBE (this is a one-time check):\n\n${JSON.stringify(probeJson, null, 2)}`);
         didProbe = true;
       } else {
         // --- NORMAL DOWNLOAD path for subsequent clicks ---
-        const { imageBase64, format } = await captureReport();
-        const payloadBytes = Math.round((imageBase64.length * 3) / 4);
-        console.info('[pdf:download] POSTing to embed API.', { path: "/api/print/pdf (POST)", bytes: payloadBytes, format });
+        const pdfRes = await fetch('/api/print/pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf' },
+          body: JSON.stringify(payload)
+        });
 
-        const pdfRes = await postAndHandlePdf({ imageBase64, format, title });
+        if (!pdfRes.ok) {
+            const errorJson = await pdfRes.json().catch(() => ({ code: pdfRes.statusText }));
+            throw new Error(`PDF generation failed: ${errorJson.code || pdfRes.status}`);
+        }
+
         const blob = await pdfRes.blob();
-        
         console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB.`);
 
         const url = window.URL.createObjectURL(blob);
@@ -99,7 +80,7 @@ export function DownloadReportButton() {
       toast({
         variant: 'destructive',
         title: 'PDF Generation Failed',
-        description: `Could not generate PDF (${err.message || 'An unknown error occurred.'}). Please try again.`,
+        description: `${err.message || 'An unknown error occurred.'} Please try again.`,
       });
     } finally {
       setIsLoading(false);
