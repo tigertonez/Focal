@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, TestTube } from 'lucide-react';
@@ -51,11 +51,19 @@ function lockHeights(root: HTMLElement) {
   };
 }
 
+// page: 'a4' | 'letter' | 'auto'; naturalWidth: DOM px (before scaling)
 function targetWidthPx(page: 'a4' | 'letter' | 'auto', naturalWidth: number) {
+  // 72 pt/inch; ~350 DPI target via factor ~1.15 over 300 DPI
+  const sharpnessFactor = 1.15; // can be tweaked later
   const pt = page === 'a4' ? 595 : page === 'letter' ? 612 : 0;
-  if (pt === 0) return Math.min(Math.max(naturalWidth, 2200), 3200); // auto: keep big, cap upper bound
-  const px = Math.round((pt * 300) / 72); // ≈ 300 DPI
-  return Math.min(Math.max(px, 2200), 3200);
+  if (pt === 0) {
+    const auto = Math.round(Math.max(naturalWidth, 2400) * sharpnessFactor);
+    return Math.min(auto, 3400);
+  }
+  const px300 = (pt * 300) / 72;
+  const px350 = Math.round(px300 * sharpnessFactor);
+  // keep within sane bounds
+  return Math.min(Math.max(px350, 2600), 3400);
 }
 
 
@@ -86,16 +94,14 @@ export function DownloadReportButton() {
 
       addFreeze(document.documentElement);
       const unlock = lockHeights(el);
-
-      let imageBase64, format, width, height;
+      
       const preferences = { page: 'a4', margin: 24, fit: 'contain' };
+      let imageBase64, format, width, height;
 
       try {
         const rect = el.getBoundingClientRect();
         const tw = targetWidthPx(preferences.page as any, Math.round(rect.width));
         const pixelRatio = tw / rect.width;
-
-        console.info(`Capturing PNG at ${tw}px width (pixelRatio: ${pixelRatio.toFixed(2)})`);
 
         const dataUrl = await toPng(el, {
             cacheBust: true,
@@ -104,6 +110,8 @@ export function DownloadReportButton() {
             filter: (n) => !(n instanceof HTMLElement && n.classList.contains('no-print')),
         });
         
+        console.log('[PDF] capture', { pixelRatio, width: Math.round(rect.width * pixelRatio), height: Math.round(rect.height * pixelRatio), page: preferences.page, margin: preferences.margin, fit: preferences.fit });
+
         const [meta, base64] = dataUrl.split(',');
         imageBase64 = base64.split('base64;').pop() || '';
         format = meta.includes('image/png') ? 'png' : 'jpeg';
@@ -127,14 +135,6 @@ export function DownloadReportButton() {
         mode: isProbe ? 'probe' : 'pdf',
       };
       
-      console.info('POST /api/print/pdf', {
-          mode: payload.mode,
-          format: payload.format,
-          width: payload.width,
-          height: payload.height,
-          approxBytes: Math.round(imageBase64.length * 0.75),
-      });
-
       const response = await fetch('/api/print/pdf', {
         method: 'POST',
         headers: {

@@ -74,6 +74,8 @@
     text-shadow: none !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none !important;
+    text-rendering: geometricPrecision !important;
   }
 
   /* Small helper to avoid baseline/jitter on inline text */
