@@ -6,75 +6,61 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-let didProbe = false; // Module-level flag for one-shot probe
+let didProbe = false;
 
-/**
- * A client-side component that handles PDF download exclusively via a POST fallback.
- * The first click performs a silent "probe" to verify the server-side rendering,
- * and subsequent clicks trigger the actual file download.
- */
 export function DownloadReportButton() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const captureReport = async (): Promise<{ imageDataUrl: string, format: 'png' }> => {
-    const html2canvas = (await import('html2canvas')).default;
-    const reportNode = document.getElementById('report-content');
-    if (!reportNode) {
-      throw new Error("Report content element #report-content not found. Cannot generate PDF.");
-    }
-    
-    // Prefer PNG as it has better support in some decoders
-    const canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
-    const dataUrl = canvas.toDataURL('image/png'); // Full "data:image/png;base64,..." string
-    
-    return { imageDataUrl: dataUrl, format: 'png' };
-  };
-
   const handleDownload = async () => {
     setIsLoading(true);
     const title = `ForecastReport-${Date.now()}`;
-
+    
     try {
-      const { imageDataUrl, format } = await captureReport();
-      const payload = { imageDataUrl, format, title };
+      const reportNode = document.getElementById('report-content');
+      if (!reportNode) {
+        throw new Error("Report content element #report-content not found. Cannot generate PDF.");
+      }
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(reportNode, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      
+      const dataUrl = canvas.toDataURL('image/png'); // use PNG for reliability
+      const imageBase64 = dataUrl.split(',')[1];     // <-- send raw base64 ONLY
 
       if (!didProbe) {
-        // --- ONE-SHOT JSON PROBE on first click ---
-        const probeRes = await fetch('/api/print/pdf?debug=1', {
+        const res = await fetch('/api/print/pdf', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(payload)
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ mode: 'image', format: 'png', imageBase64, title: 'ForecastReport' }),
         });
-        
-        const probeJson = await probeRes.json();
-        alert(`PDF PROBE (this is a one-time check):\n\n${JSON.stringify(probeJson, null, 2)}`);
+        const j = await res.json();
+        alert('PDF PROBE (one-time):\n' + JSON.stringify(j, null, 2));
         didProbe = true;
-      } else {
-        // --- NORMAL DOWNLOAD path for subsequent clicks ---
-        const pdfRes = await fetch('/api/print/pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!pdfRes.ok) {
-            const errorJson = await pdfRes.json().catch(() => ({ code: pdfRes.statusText }));
-            throw new Error(`PDF generation failed: ${errorJson.code || pdfRes.status}`);
-        }
-
-        const blob = await pdfRes.blob();
-        console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB.`);
-
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${title}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        return;
       }
+
+      const res = await fetch('/api/print/pdf', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' }, // no JSON accept -> returns application/pdf
+        body: JSON.stringify({ mode: 'image', format: 'png', imageBase64, title: 'ForecastReport' }),
+      });
+
+      if (!res.ok || (res.headers.get('content-type') || '').indexOf('application/pdf') === -1) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error('PDF download failed: ' + JSON.stringify(j));
+      }
+      
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ForecastReport-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      
     } catch (err: any) {
       console.warn('[pdf:client-error]', err);
       toast({
