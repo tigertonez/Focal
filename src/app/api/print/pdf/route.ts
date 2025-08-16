@@ -1,25 +1,46 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type PostBody = {
-  mode?: 'probe' | 'pdf' | 'blank';
-  imageBase64?: string;
-  format?: 'png' | 'jpg' | 'jpeg';
-  width?: number;
-  height?: number;
-  page?: 'auto' | 'A4' | 'Letter';
-  fit?: 'auto' | 'contain' | 'cover';
-  margin?: number;
-  title?: string;
+// --- Type Definitions ---
+type ImagePart = {
+  imageBase64: string;
+  format: 'png' | 'jpg' | 'jpeg';
+  width: number;
+  height: number;
+  name?: string;
 };
 
-// Helper to safely construct a JSON response
-const json = (data: any, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+type SinglePayload = {
+  images?: never; // Ensure 'images' is not present
+  imageBase64: string;
+} & Omit<ImagePart, 'imageBase64'>;
 
+type MultiPayload = {
+  images: ImagePart[];
+  imageBase64?: never; // Ensure 'imageBase64' is not present
+};
+
+type SharedPayload = {
+  page?: 'auto' | 'A4' | 'Letter';
+  fit?: 'contain' | 'cover' | 'auto';
+  margin?: number;
+  title?: string;
+  mode?: 'probe' | 'pdf' | 'blank';
+};
+
+type PostBody = (SinglePayload | MultiPayload) & SharedPayload;
+
+
+// --- Helper Functions ---
+const json = (data: any, status = 200) => new NextResponse(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+
+// --- Route Handlers ---
 export async function GET() {
   return json({ ok: false, code: 'GET_DISABLED', message: 'This endpoint only supports POST.' }, 405);
 }
@@ -27,22 +48,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as PostBody;
-    const {
-      mode = 'pdf',
-      imageBase64 = '',
-      format = 'png',
-      width: imgW = 0,
-      height: imgH = 0,
-      page: pageSize = 'auto',
-      fit: fitMode = 'auto',
-      margin = 24,
-      title = 'ForecastReport',
-    } = body;
-    
-    const wantsJson = (req.headers.get('accept') || '').includes('application/json') || mode === 'probe';
+    const wantsJson = (req.headers.get('accept') || '').includes('application/json') || body.mode === 'probe';
 
-    // --- Diagnostic "blank" probe ---
-    if (mode === 'blank') {
+    // Diagnostic "blank" probe
+    if (body.mode === 'blank') {
       const pdfDoc = await PDFDocument.create();
       pdfDoc.addPage([200, 100]).drawText('Blank PDF OK', { x: 20, y: 50 });
       const pdfBytes = await pdfDoc.save();
@@ -50,72 +59,92 @@ export async function POST(req: NextRequest) {
       return new NextResponse(Buffer.from(pdfBytes), { headers: { 'Content-Type': 'application/pdf' } });
     }
 
-    // --- Validation for image-based PDF ---
-    if (!imageBase64) return json({ ok: false, code: 'BAD_INPUT', message: 'imageBase64 is required.' }, 400);
+    const isMulti = Array.isArray(body.images);
+    const imagesToProcess: ImagePart[] = isMulti ? body.images : [body as SinglePayload];
+    const skipped: { name?: string; reason: string }[] = [];
 
-    const fmtIn = format.toLowerCase();
-    const fmt = fmtIn === 'jpeg' ? 'jpg' : fmtIn;
-    if (fmt !== 'png' && fmt !== 'jpg') return json({ ok: false, code: 'BAD_FORMAT', message: `Unsupported format: ${fmt}` }, 400);
-
-    const bytes = Buffer.from(imageBase64, 'base64');
-    if (bytes.length === 0) return json({ ok: false, code: 'BAD_INPUT', message: 'Decoded image buffer is empty.' }, 400);
-
-    // --- PDF Creation ---
     const pdfDoc = await PDFDocument.create();
-    pdfDoc.setTitle(title, { showInWindowTitleBar: true });
-    
-    const img = await (fmt === 'png' ? pdfDoc.embedPng(bytes) : pdfDoc.embedJpg(bytes));
+    pdfDoc.setTitle(body.title || 'ForecastReport', { showInWindowTitleBar: true });
 
-    let page;
-    let pageWidth, pageHeight;
-    const pageMargin = Math.max(0, margin);
-
-    if (pageSize === 'A4' || pageSize === 'Letter') {
-      const dims = pageSize === 'A4' ? PageSizes.A4 : PageSizes.Letter;
-      pageWidth = dims[0];
-      pageHeight = dims[1];
-      
-      const frameW = pageWidth - pageMargin * 2;
-      const frameH = pageHeight - pageMargin * 2;
-      
-      let fit = fitMode;
-      if (fit === 'auto') {
-        fit = (img.width > frameW || img.height > frameH) ? 'contain' : 'cover';
+    for (const imagePart of imagesToProcess) {
+      if (!imagePart.imageBase64 || imagePart.imageBase64.length < 10) {
+        skipped.push({ name: imagePart.name, reason: 'Missing or empty imageBase64' });
+        continue;
       }
+      try {
+        const imgBytes = Buffer.from(imagePart.imageBase64, 'base64');
+        const img = imagePart.format === 'png'
+          ? await pdfDoc.embedPng(imgBytes)
+          : await pdfDoc.embedJpg(imgBytes);
 
-      const scaleContain = Math.min(frameW / img.width, frameH / img.height);
-      const scaleCover = Math.max(frameW / img.width, frameH / img.height);
-      const s = fit === 'cover' ? scaleCover : scaleContain;
+        const pagePrefs = {
+          page: body.page || 'auto',
+          fit: body.fit || 'auto',
+          margin: body.margin ?? 24,
+        };
+        
+        let pageWidth: number, pageHeight: number;
+        if (pagePrefs.page === 'A4' || pagePrefs.page === 'Letter') {
+            const dims = pagePrefs.page === 'A4' ? PageSizes.A4 : PageSizes.Letter;
+            pageWidth = dims[0];
+            pageHeight = dims[1];
+        } else { // 'auto'
+            pageWidth = img.width + pagePrefs.margin * 2;
+            pageHeight = img.height + pagePrefs.margin * 2;
+        }
+        
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
-      const drawW = img.width * s;
-      const drawH = img.height * s;
-      
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
-      page.drawImage(img, {
-        x: pageMargin + (frameW - drawW) / 2,
-        y: pageMargin + (frameH - drawH) / 2,
-        width: drawW,
-        height: drawH,
-      });
+        const frameW = pageWidth - pagePrefs.margin * 2;
+        const frameH = pageHeight - pagePrefs.margin * 2;
+        
+        let fit = pagePrefs.fit;
+        if (fit === 'auto') {
+          fit = (img.width > frameW || img.height > frameH) ? 'contain' : 'cover';
+        }
 
-    } else { // 'auto' page size
-      pageWidth = img.width + pageMargin * 2;
-      pageHeight = img.height + pageMargin * 2;
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
-      page.drawImage(img, { x: pageMargin, y: pageMargin });
+        const scaleContain = Math.min(frameW / img.width, frameH / img.height);
+        const scaleCover = Math.max(frameW / img.width, frameH / img.height);
+        const s = fit === 'cover' ? scaleCover : scaleContain;
+
+        const drawW = img.width * s;
+        const drawH = img.height * s;
+        
+        page.drawImage(img, {
+          x: pagePrefs.margin + (frameW - drawW) / 2,
+          y: pagePrefs.margin + (frameH - drawH) / 2,
+          width: drawW,
+          height: drawH,
+        });
+
+      } catch (err: any) {
+        skipped.push({ name: imagePart.name, reason: err.message || 'Embedding failed' });
+      }
     }
 
     const pdfBytes = await pdfDoc.save();
 
     if (wantsJson) {
-      return json({ ok: true, phase: 'POST_OK', format: fmt, inputBytes: bytes.length, pdfBytes: pdfBytes.length, width: imgW, height: imgH, page: pageSize, fit: fitMode, margin: pageMargin, title });
+      const probeResponse: any = { ok: true, phase: 'POST_OK', pdfBytes: pdfBytes.length, pages: pdfDoc.getPageCount(), skipped };
+      if (isMulti) {
+        probeResponse.pageSizes = pdfDoc.getPages().map(p => p.getSize());
+      } else if (imagesToProcess.length > 0) {
+        probeResponse.format = imagesToProcess[0].format;
+        probeResponse.width = imagesToProcess[0].width;
+        probeResponse.height = imagesToProcess[0].height;
+      }
+      return json(probeResponse);
+    }
+    
+    if (pdfDoc.getPageCount() === 0) {
+        return json({ ok: false, code: 'NO_PAGES_GENERATED', message: 'Could not generate any PDF pages from the provided images.' }, 500);
     }
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${title}-${Date.now()}.pdf"`,
+        'Content-Disposition': `attachment; filename="${(body.title || 'ForecastReport')}-${Date.now()}.pdf"`,
         'Cache-Control': 'no-store',
       },
     });
