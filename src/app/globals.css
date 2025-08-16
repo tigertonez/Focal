@@ -66,27 +66,13 @@
       border-color: hsl(var(--border) / var(--tw-border-opacity));
   }
   
-  /* Active only during capture */
-  .pdf-freeze, .pdf-freeze *, .pdf-freeze *::before, .pdf-freeze *::after {
-    animation: none !important;
-    transition: none !important;
+  html.pdf-mode, body.pdf-mode { background:#fff !important; }
+  .pdf-mode *{ animation:none !important; transition:none !important; }
+  .pdf-mode{ font-synthesis:none !important; text-rendering:geometricPrecision !important;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  .pdf-mode, .pdf-mode * {
     transform: none !important;
     caret-color: transparent !important;
-    text-shadow: none !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-synthesis: none !important;
-    text-rendering: geometricPrecision !important;
-  }
-  .pdf-freeze {
-    background: #fff !important;
-  }
-
-  /* Small helper to avoid baseline/jitter on inline text */
-  .pdf-freeze .text,
-  .pdf-freeze [class*="text-"] {
-    line-height: 1.25 !important; /* fixed numeric line-height for consistency */
-    letter-spacing: 0 !important;
   }
 }
 

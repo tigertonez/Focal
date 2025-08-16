@@ -64,7 +64,7 @@ export function Header() {
     const appLogo = '/logo-dark.png?v=2'; // Hardcoded app logo with cache-busting
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
+        <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6" data-hide-in-pdf="true">
             {/* Left Section: Brand */}
             <div className="flex h-full items-center gap-4">
                 <Link href="/" className="flex items-center gap-3 h-full">

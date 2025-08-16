@@ -13,181 +13,166 @@ import { toPng } from 'html-to-image';
 // =================================================================
 const FULL_REPORT_ROUTES = ['/inputs', '/revenue', '/costs', '/profit', '/cash-flow', '/summary'] as const;
 type AppRoute = typeof FULL_REPORT_ROUTES[number];
-type Preferences = { page: 'A4' | 'Letter'; fit: 'contain' | 'cover'; margin: number; };
-
-const A4_PT = { w: 595.28, h: 841.89 };
-const DEFAULT_MARGIN_PT = 24;
-const TARGET_DPI = 150;
 
 // =================================================================
 // Capture & Utility Functions
 // =================================================================
 
-const ptToPx = (pt: number, dpi = TARGET_DPI) => Math.round(pt * dpi / 72);
-const pxToPt = (px: number, dpi = TARGET_DPI) => px * 72 / dpi;
+// Wait helpers
+const raf2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const sleep = (ms:number) => new Promise(r => setTimeout(r, ms));
 
-function loadImage(dataUrl: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = dataUrl;
+// Wait for fonts, images, and an optional page readiness flag
+async function waitForStable(win: Window, maxMs = 6000) {
+  const d = win.document;
+
+  // fonts
+  if ('fonts' in d) { try { await (d as any).fonts.ready; } catch {} }
+
+  // images
+  const imgs = Array.from(d.images || []);
+  await Promise.all(imgs.map(img => (img.decode?.() ?? Promise.resolve()).catch(()=>{})));
+
+  // settle layout: watch scrollHeight stabilize
+  const start = Date.now();
+  let last = d.documentElement.scrollHeight;
+  for (;;) {
+    await sleep(150);
+    const nowH = d.documentElement.scrollHeight;
+    const stable = Math.abs(nowH - last) < 2;
+    last = nowH;
+
+    // allow pages to signal "I finished populating dynamic data"
+    const readyFlag = (win as any).__PDF_READY__ === true;
+
+    if (stable && readyFlag) break;
+    if (Date.now() - start > maxMs) break;
+  }
+
+  // extra 2 RAFs to flush layout
+  await raf2();
+}
+
+// Put the page into "print mode" inside the iframe
+function enablePdfMode(d: Document) {
+  d.documentElement.classList.add('pdf-mode');
+  if (!d.head.querySelector('style[data-injected="pdf-mode"]')) {
+    const style = d.createElement('style');
+    style.setAttribute('data-injected', 'pdf-mode');
+    style.textContent = `
+      .pdf-mode *{animation:none!important;transition:none!important}
+      .pdf-mode{font-synthesis:none!important;text-rendering:geometricPrecision!important;
+        -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      /* hide chrome */
+      .pdf-mode header,.pdf-mode nav,.pdf-mode footer,[data-hide-in-pdf="true"]{display:none!important}
+      /* unstick */
+      .pdf-mode [style*="position:sticky"],.pdf-mode .sticky{position:static!important;top:auto!important}
+      .pdf-mode [style*="position:fixed"]{position:static!important}
+      /* overflow -> visible so nothing is clipped */
+      .pdf-mode .overflow-auto,.pdf-mode .overflow-y-auto,.pdf-mode .overflow-hidden{overflow:visible!important}
+      /* try to open common collapsibles */
+      .pdf-mode details{open:true!important}
+      .pdf-mode [data-state="closed"]{display:block!important;height:auto!important;opacity:1!important}
+      .pdf-mode [data-accordion-content],[data-collapsible-content]{display:block!important;height:auto!important}
+      /* full width containers for clean slicing */
+      .pdf-mode .container{max-width:100%!important}
+    `;
+    d.head.appendChild(style);
+  }
+}
+
+// Best-effort: open toggles from common libs (HeadlessUI/Radix/custom)
+function forceOpenToggles(d: Document) {
+  d.querySelectorAll<HTMLElement>('[aria-expanded="false"],[data-state="closed"]').forEach(el => {
+    if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+      try { (el as HTMLButtonElement).click(); } catch {}
+    }
+  });
+  d.querySelectorAll('details').forEach((dtl:any)=> dtl.open = true);
+}
+
+// Capture a route inside an iframe that remains visible to layout (opacity:0 instead of visibility:hidden).
+async function captureRouteInIframe(route: string, pxWidth = 1440): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.src = `${route}${route.includes('?') ? '&' : '?'}pdf=1`;
+    Object.assign(iframe.style, {
+      position:'fixed', left:'0', top:'0',
+      width:`${pxWidth}px`, height:'100vh',
+      opacity:'0', pointerEvents:'none', border:'0', zIndex:'-1', display:'block',
+    });
+    document.body.appendChild(iframe);
+
+    const cleanup = () => { try { document.body.removeChild(iframe); } catch {} };
+
+    iframe.onload = async () => {
+      try {
+        const win = iframe.contentWindow!;
+        const d = win.document;
+
+        enablePdfMode(d);
+        forceOpenToggles(d);
+
+        // Scroll to bottom then top to trigger lazy/virtualized content
+        win.scrollTo(0, d.documentElement.scrollHeight);
+        await raf2();
+        win.scrollTo(0, 0);
+
+        // Expand iframe to full doc height for capture
+        iframe.style.height = `${d.documentElement.scrollHeight}px`;
+
+        await waitForStable(win);
+
+        // HiDPI capture
+        const node = d.documentElement;
+        const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor:'#fff' });
+
+        const img = new Image();
+        img.onload = () => { cleanup(); resolve(img); };
+        img.onerror = (e) => { cleanup(); reject(e); };
+        img.src = dataUrl;
+      } catch (e) {
+        cleanup(); reject(e);
+      }
+    };
+    iframe.onerror = (e) => { cleanup(); reject(e); };
   });
 }
 
-async function sliceForA4(dataUrl: string, dpi = TARGET_DPI, marginPt = DEFAULT_MARGIN_PT) {
-  const img = await loadImage(dataUrl);
-  const contentWPt = A4_PT.w - 2 * marginPt;
-  const contentHPt = A4_PT.h - 2 * marginPt;
+// Slice tall image to A4 content slices
+function sliceForA4(img: HTMLImageElement, opts: { marginMm?: number, dpi?: number } = {}) {
+  const marginMm = opts.marginMm ?? 12;
+  const dpi = opts.dpi ?? 300;
+  const mmToPx = (mm:number) => Math.round((mm/25.4)*dpi);
+  const A4W = mmToPx(210), A4H = mmToPx(297);
+  const contentW = A4W - 2*mmToPx(marginMm);
+  const contentH = A4H - 2*mmToPx(marginMm);
 
-  const contentWPx = ptToPx(contentWPt, dpi);
-  const contentHPx = ptToPx(contentHPt, dpi);
-
-  const scale = contentWPx / img.width;
-  const scaledW = Math.round(img.width * scale);
-  const scaledH = Math.round(img.height * scale);
+  const scale = contentW / img.naturalWidth;
+  const scaledW = Math.round(img.naturalWidth * scale);
+  const scaledH = Math.round(img.naturalHeight * scale);
 
   const scaled = document.createElement('canvas');
-  scaled.width = scaledW;
-  scaled.height = scaledH;
+  scaled.width = scaledW; scaled.height = scaledH;
   const sctx = scaled.getContext('2d')!;
   sctx.imageSmoothingEnabled = true;
+  sctx.imageSmoothingQuality = 'high';
   sctx.drawImage(img, 0, 0, scaledW, scaledH);
 
-  const slices: { data: string; wPx: number; hPx: number }[] = [];
-  for (let y = 0; y < scaledH; y += contentHPx) {
-    const h = Math.min(contentHPx, scaledH - y);
-    const tile = document.createElement('canvas');
-    tile.width = contentWPx;
-    tile.height = h;
-    const tctx = tile.getContext('2d')!;
-    tctx.drawImage(scaled, 0, y, contentWPx, h, 0, 0, contentWPx, h);
-    slices.push({ data: tile.toDataURL('image/png'), wPx: contentWPx, hPx: h });
+  const out: string[] = [];
+  for (let y=0; y<scaledH; y += contentH) {
+    const h = Math.min(contentH, scaledH - y);
+    const c = document.createElement('canvas');
+    c.width = contentW; c.height = h;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(scaled, 0, y, contentW, h, 0, 0, contentW, h);
+    out.push(c.toDataURL('image/png'));
   }
-  return { slices, dpi, marginPt, page: 'A4' as const };
+  return { slices: out, page:'A4' };
 }
 
-
-async function waitForFonts() {
-  try {
-    const weights = [400, 500, 600, 700];
-    await Promise.all(weights.map(w => document.fonts.load(`1rem Inter, sans-serif`, { weight: w })));
-    await document.fonts.ready;
-    console.info("All relevant fonts are loaded and ready.");
-  } catch (err) {
-    console.warn("Could not wait for fonts, capture may be imperfect.", err);
-  }
-}
-
-function addFreeze(el: HTMLElement) { el.classList.add('pdf-freeze'); }
-function removeFreeze(el: HTMLElement) { el.classList.remove('pdf-freeze'); }
-
-function lockHeights(root: HTMLElement) {
-  const locked: Array<{el: HTMLElement; style: string | null}> = [];
-  root.querySelectorAll<HTMLElement>('*').forEach(el => {
-    const cs = getComputedStyle(el);
-    if (cs.display === 'inline') return;
-    const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.height > 0) {
-      locked.push({ el, style: el.getAttribute('style') });
-      el.style.minHeight = `${r.height}px`;
-      el.style.height = `${r.height}px`;
-    }
-  });
-  return () => {
-    for (const {el, style} of locked) {
-      if (style === null) el.removeAttribute('style'); else el.setAttribute('style', style);
-    }
-  };
-}
-
-function targetWidthPx(page: 'a4' | 'letter' | 'auto', naturalWidth: number) {
-  const sharpnessFactor = 1.15;
-  const pt = page === 'a4' ? 595 : page === 'letter' ? 612 : 0;
-  if (pt === 0) {
-    const auto = Math.round(Math.max(naturalWidth, 2400) * sharpnessFactor);
-    return Math.min(auto, 3400);
-  }
-  const px300 = (pt * 300) / 72;
-  const px350 = Math.round(px300 * sharpnessFactor);
-  return Math.min(Math.max(px350, 2600), 3400);
-}
-
-async function captureCurrentPage(prefs: Preferences): Promise<{ dataUrl: string; width: number; height: number; }> {
-    const el = document.getElementById('report-content');
-    if (!el) throw new Error('Report content container (#report-content) not found.');
-
-    await waitForFonts();
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    
-    addFreeze(document.documentElement);
-    const unlock = lockHeights(el);
-
-    try {
-        const rect = el.getBoundingClientRect();
-        const tw = targetWidthPx('a4', Math.round(rect.width));
-        const pixelRatio = tw / rect.width;
-
-        const dataUrl = await toPng(el, {
-            cacheBust: true, pixelRatio, backgroundColor: '#ffffff',
-            filter: (n) => !(n instanceof HTMLElement && n.classList.contains('no-print')),
-        });
-        
-        const width = Math.round(rect.width * pixelRatio);
-        const height = Math.round(rect.height * pixelRatio);
-        console.log('[PDF] single page capture', { pixelRatio, width, height, page: prefs.page });
-        return { dataUrl, width, height };
-    } finally {
-        unlock();
-        removeFreeze(document.documentElement);
-    }
-}
-
-async function captureRouteInIframe(path: AppRoute) {
-    console.info(`[PDF] Starting iframe capture for: ${path}`);
-    return new Promise<{ dataUrl: string; width: number; height: number }>(async (resolve, reject) => {
-        const iframe = document.createElement('iframe');
-        iframe.src = `${location.origin}${path}`;
-        iframe.style.cssText = `position:fixed; left:-9999px; top:0; width:1200px; height:${window.innerHeight}px; border:0;`;
-
-        const handleError = (msg: string) => {
-            iframe.remove();
-            reject(new Error(msg));
-        };
-
-        const timeout = setTimeout(() => handleError(`Iframe load timed out for ${path}`), 15000);
-
-        iframe.onload = async () => {
-            clearTimeout(timeout);
-            try {
-                const doc = iframe.contentDocument;
-                if (!doc) return handleError(`Could not access contentDocument for ${path}`);
-                
-                addFreeze(doc.documentElement);
-                await (doc as any).fonts?.ready?.catch(() => {});
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-                
-                const node = doc.getElementById('report-content') || doc.body;
-                const rect = node.getBoundingClientRect();
-                const pixelRatio = Math.min(2, window.devicePixelRatio * 1.5);
-
-                const dataUrl = await toPng(node, { pixelRatio, cacheBust: true, backgroundColor: '#ffffff' });
-                const width = Math.round(rect.width * pixelRatio);
-                const height = Math.round(rect.height * pixelRatio);
-                console.info(`[PDF] Finished iframe capture for: ${path}`, { width, height });
-                resolve({ dataUrl, width, height });
-
-            } catch (err: any) {
-                handleError(err.message || String(err));
-            } finally {
-                removeFreeze(iframe.contentDocument!.documentElement);
-                iframe.remove();
-            }
-        };
-
-        iframe.onerror = () => handleError(`Iframe failed to load for ${path}`);
-        document.body.appendChild(iframe);
-    });
+function dataUrlToBase64(dataUrl: string) {
+    return dataUrl.split(',')[1];
 }
 
 
@@ -206,52 +191,70 @@ export function DownloadReportButton() {
     const isProbe = event.shiftKey;
     const isFullReport = event.altKey || (event.metaKey && !event.shiftKey);
     const title = isFullReport ? 'FullForecastReport' : 'ForecastReport';
-    const preferences: Preferences = { page: 'A4', fit: 'contain', margin: 24 };
     
     try {
       let payload: any;
 
       if (isFullReport) {
-          const allSlices: any[] = [];
+          const allSlices: { base64: string, width: number, height: number }[] = [];
+          const slicesPerRoute: Record<string, number> = {};
+
           for (const route of FULL_REPORT_ROUTES) {
               try {
                   console.log(`[PDF] Capturing route: ${route}`);
-                  const capture = await captureRouteInIframe(route);
-                  const { slices } = await sliceForA4(capture.dataUrl);
-                   console.log(`[PDF] Sliced ${route} into ${slices.length} pages.`);
-                  const processedSlices = slices.map(s => ({
-                      imageBase64: s.data.replace(/^data:image\/png;base64,/, ''),
-                      wPx: s.wPx,
-                      hPx: s.hPx,
-                      name: route,
-                  }));
-                  allSlices.push(...processedSlices);
+                  const capturedImg = await captureRouteInIframe(route);
+                  const { slices } = sliceForA4(capturedImg);
+                  console.log(`[PDF] Sliced ${route} into ${slices.length} pages.`);
+                  slicesPerRoute[route] = slices.length;
+
+                  slices.forEach(sliceDataUrl => {
+                     const img = new Image();
+                     img.src = sliceDataUrl;
+                     allSlices.push({
+                         base64: dataUrlToBase64(sliceDataUrl),
+                         width: img.width,
+                         height: img.height
+                     });
+                  });
               } catch(e: any) {
                   console.warn(`[PDF] Skipping route ${route} due to capture error:`, e.message);
+                  slicesPerRoute[route] = 0;
               }
           }
           payload = { 
-            mode: isProbe ? 'probe' : 'full',
-            page: 'A4', 
-            dpi: TARGET_DPI,
-            marginPt: DEFAULT_MARGIN_PT,
             images: allSlices,
+            page: 'A4',
+            margin: 36,
+            mode: 'full',
             title,
           };
-      } else {
-          const capture = await captureCurrentPage(preferences);
+          if (isProbe) {
+            payload.debug = true;
+            payload.slicesPerRoute = slicesPerRoute;
+          }
+      } else { // Single page
+          const node = document.getElementById('report-content');
+          if (!node) throw new Error("Could not find #report-content element.");
+          
+          enablePdfMode(document);
+          forceOpenToggles(document);
+          await raf2();
+
+          const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor:'#fff' });
+          const img = new Image();
+          img.src = dataUrl;
+          await new Promise(r => img.onload = r);
+          
           payload = {
-              mode: isProbe ? 'probe' : 'pdf',
-              imageBase64: capture.dataUrl.replace(/^data:image\/png;base64,/, ''),
-              format: 'png',
-              width: capture.width,
-              height: capture.height,
-              page: 'A4',
+              imageBase64: dataUrlToBase64(dataUrl),
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+              page: 'auto',
               fit: 'contain',
-              marginPt: DEFAULT_MARGIN_PT,
-              dpi: TARGET_DPI,
+              margin: 36,
               title,
           };
+           if (isProbe) payload.debug = true;
       }
       
       const response = await fetch('/api/print/pdf', {
@@ -262,8 +265,6 @@ export function DownloadReportButton() {
         },
         body: JSON.stringify(payload),
       });
-
-      console.log('PDF response status:', response.status, { headers: Object.fromEntries(response.headers.entries()) });
       
       if (isProbe) {
         const jsonData = await response.json();

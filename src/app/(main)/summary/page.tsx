@@ -156,7 +156,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div id="report-content" className="space-y-6" data-ssr-key="v1">
+      <div id="report-content" className="space-y-6">
         <SectionHeader title={t.pages.summary.title} description={t.pages.summary.description} />
         
         <KPISection data={data} currency={inputs.parameters.currency} t={t} />
@@ -177,7 +177,7 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
         </div>
       </div>
 
-      <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4">
+      <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4" data-hide-in-pdf="true">
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>

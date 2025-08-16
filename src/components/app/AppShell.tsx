@@ -50,7 +50,7 @@ function MobileNav() {
     ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-card border-t">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-card border-t" data-hide-in-pdf="true">
       <div className="grid h-full grid-cols-6 max-w-lg mx-auto">
         {navItems.map(item => <MobileNavLink key={item.href} {...item} />)}
       </div>
