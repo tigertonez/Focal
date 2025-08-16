@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       width: imgW = 0,
       height: imgH = 0,
       page: pageSize = 'auto',
-      fit = 'auto',
+      fit: fitMode = 'auto',
       margin = 24,
       title = 'ForecastReport',
     } = body;
@@ -74,38 +74,26 @@ export async function POST(req: NextRequest) {
       const dims = pageSize === 'A4' ? PageSizes.A4 : PageSizes.Letter;
       pageWidth = dims[0];
       pageHeight = dims[1];
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
       
       const frameW = pageWidth - pageMargin * 2;
       const frameH = pageHeight - pageMargin * 2;
-      const aspectImg = img.width / img.height;
-      const aspectFrame = frameW / frameH;
       
-      let drawW, drawH;
-      let effectiveFit = fit;
+      let fit = fitMode;
       if (fit === 'auto') {
-        effectiveFit = (img.width > frameW || img.height > frameH) ? 'contain' : 'cover';
+        fit = (img.width > frameW || img.height > frameH) ? 'contain' : 'cover';
       }
 
-      if (effectiveFit === 'cover') { // Fit to fill frame
-        drawW = frameW;
-        drawH = frameW / aspectImg;
-        if (drawH < frameH) {
-            drawH = frameH;
-            drawW = frameH * aspectImg;
-        }
-      } else { // 'contain'
-        drawH = frameH;
-        drawW = frameH * aspectImg;
-        if (drawW > frameW) {
-            drawW = frameW;
-            drawH = frameW / aspectImg;
-        }
-      }
+      const scaleContain = Math.min(frameW / img.width, frameH / img.height);
+      const scaleCover = Math.max(frameW / img.width, frameH / img.height);
+      const s = fit === 'cover' ? scaleCover : scaleContain;
+
+      const drawW = img.width * s;
+      const drawH = img.height * s;
       
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
       page.drawImage(img, {
-        x: (pageWidth - drawW) / 2,
-        y: (pageHeight - drawH) / 2,
+        x: pageMargin + (frameW - drawW) / 2,
+        y: pageMargin + (frameH - drawH) / 2,
         width: drawW,
         height: drawH,
       });
@@ -120,7 +108,7 @@ export async function POST(req: NextRequest) {
     const pdfBytes = await pdfDoc.save();
 
     if (wantsJson) {
-      return json({ ok: true, phase: 'POST_OK', format: fmt, inputBytes: bytes.length, pdfBytes: pdfBytes.length, width: imgW, height: imgH, page: pageSize, fit, margin: pageMargin, title });
+      return json({ ok: true, phase: 'POST_OK', format: fmt, inputBytes: bytes.length, pdfBytes: pdfBytes.length, width: imgW, height: imgH, page: pageSize, fit: fitMode, margin: pageMargin, title });
     }
 
     return new NextResponse(Buffer.from(pdfBytes), {
@@ -133,7 +121,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err: any) {
-    console.error('[PDF_API_ERROR]', err);
     return json({
         ok: false,
         code: err.code || 'UNKNOWN_ERROR',

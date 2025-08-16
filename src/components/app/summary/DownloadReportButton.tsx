@@ -1,66 +1,61 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, TestTube } from 'lucide-react';
+import { toPng } from 'html-to-image';
+
 
 // =================================================================
-// Helper Functions
+// Capture & Utility Functions
 // =================================================================
 
-/**
- * Captures a DOM element and returns its PNG representation.
- * @param el The HTMLElement to capture.
- * @returns A promise that resolves with the image data.
- */
-async function captureReport(el: HTMLElement): Promise<{ imageBase64: string; format: 'png'; width: number; height: number }> {
-  const html2canvas = (await import('html2canvas')).default;
-  const scale = Math.min(2, window.devicePixelRatio || 1);
-
-  // Apply a class to freeze animations/transitions during capture
-  document.documentElement.classList.add('pdf-freeze');
-
-  // Wait for fonts and for the DOM to settle after class application
-  await document.fonts?.ready;
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  
-  let canvas: HTMLCanvasElement;
+async function waitForFonts() {
   try {
-    canvas = await html2canvas(el, {
-      scale,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-    });
-  } finally {
-    // Always remove the freeze class
-    document.documentElement.classList.remove('pdf-freeze');
+    const weights = [400, 500, 600, 700];
+    await Promise.all(weights.map(w => document.fonts.load(`1rem Inter, sans-serif`, { weight: w })));
+    await document.fonts.ready;
+    console.info("All relevant fonts are loaded and ready.");
+  } catch (err) {
+    console.warn("Could not wait for fonts, capture may be imperfect.", err);
   }
+}
 
-  // Downscale very large images to keep PDF size reasonable
-  const maxW = 1800;
-  let finalCanvas = canvas;
-  if (canvas.width > maxW) {
-    const s = maxW / canvas.width;
-    const downscaledCanvas = document.createElement('canvas');
-    downscaledCanvas.width = Math.round(canvas.width * s);
-    downscaledCanvas.height = Math.round(canvas.height * s);
-    const ctx = downscaledCanvas.getContext('2d')!;
-    ctx.drawImage(canvas, 0, 0, downscaledCanvas.width, downscaledCanvas.height);
-    finalCanvas = downscaledCanvas;
-  }
-  
-  const dataUrl = finalCanvas.toDataURL('image/png');
-  const imageBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+function addFreeze(root: HTMLElement) {
+  root.classList.add('pdf-freeze');
+}
+function removeFreeze(root: HTMLElement) {
+  root.classList.remove('pdf-freeze');
+}
 
-  return {
-    imageBase64,
-    format: 'png',
-    width: finalCanvas.width,
-    height: finalCanvas.height,
+function lockHeights(root: HTMLElement) {
+  const locked: Array<{el: HTMLElement; style: string | null}> = [];
+  const all = root.querySelectorAll<HTMLElement>('*');
+  all.forEach(el => {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'inline') return;
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      locked.push({ el, style: el.getAttribute('style') });
+      el.style.minHeight = `${r.height}px`;
+      el.style.height = `${r.height}px`;
+    }
+  });
+  return () => {
+    for (const {el, style} of locked) {
+      if (style === null) el.removeAttribute('style');
+      else el.setAttribute('style', style);
+    }
   };
+}
+
+function targetWidthPx(page: 'a4' | 'letter' | 'auto', naturalWidth: number) {
+  const pt = page === 'a4' ? 595 : page === 'letter' ? 612 : 0;
+  if (pt === 0) return Math.min(Math.max(naturalWidth, 2200), 3200); // auto: keep big, cap upper bound
+  const px = Math.round((pt * 300) / 72); // ≈ 300 DPI
+  return Math.min(Math.max(px, 2200), 3200);
 }
 
 
@@ -75,27 +70,61 @@ export function DownloadReportButton() {
   const handleDownload = async (event: React.MouseEvent<HTMLButtonElement>) => {
     if (isBusy) return;
     setIsBusy(true);
-
+    
+    const isProbe = event.shiftKey;
+    
+    const el = document.getElementById('report-content');
+    if (!el) {
+        toast({ variant: 'destructive', title: 'PDF Capture Failed', description: 'Report content container (#report-content) not found.' });
+        setIsBusy(false);
+        return;
+    }
+    
     try {
-      const el = document.getElementById('report-content');
-      if (!el) {
-        throw new Error('Report content container (#report-content) not found.');
+      await waitForFonts();
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      addFreeze(document.documentElement);
+      const unlock = lockHeights(el);
+
+      let imageBase64, format, width, height;
+      const preferences = { page: 'a4', margin: 24, fit: 'contain' };
+
+      try {
+        const rect = el.getBoundingClientRect();
+        const tw = targetWidthPx(preferences.page as any, Math.round(rect.width));
+        const pixelRatio = tw / rect.width;
+
+        console.info(`Capturing PNG at ${tw}px width (pixelRatio: ${pixelRatio.toFixed(2)})`);
+
+        const dataUrl = await toPng(el, {
+            cacheBust: true,
+            pixelRatio,
+            backgroundColor: '#ffffff',
+            filter: (n) => !(n instanceof HTMLElement && n.classList.contains('no-print')),
+        });
+        
+        const [meta, base64] = dataUrl.split(',');
+        imageBase64 = base64.split('base64;').pop() || '';
+        format = meta.includes('image/png') ? 'png' : 'jpeg';
+        width = Math.round(rect.width * pixelRatio);
+        height = Math.round(rect.height * pixelRatio);
+      } finally {
+        unlock();
+        removeFreeze(document.documentElement);
       }
       
-      const { imageBase64, format, width, height } = await captureReport(el);
       const title = 'ForecastReport';
-      const isProbe = event.shiftKey;
-
       const payload = {
-        mode: isProbe ? 'probe' : 'pdf',
         imageBase64,
         format,
         width,
         height,
+        page: preferences.page,
+        margin: preferences.margin,
+        fit: preferences.fit,
         title,
-        page: 'auto',
-        margin: 24,
-        fit: 'auto',
+        mode: isProbe ? 'probe' : 'pdf',
       };
       
       console.info('POST /api/print/pdf', {
@@ -115,7 +144,8 @@ export function DownloadReportButton() {
         body: JSON.stringify(payload),
       });
       
-      console.info(`Response: ${response.status}`, { headers: Object.fromEntries(response.headers.entries()) });
+      const responseHeaders = Object.fromEntries(response.headers.entries());
+      console.info(`Response: ${response.status}`, { headers: responseHeaders });
 
       if (isProbe) {
         const jsonData = await response.json();
@@ -145,7 +175,6 @@ export function DownloadReportButton() {
         title: 'PDF Generation Failed',
         description: err.message || 'An unknown error occurred. Please try again.',
       });
-       // Last resort fallback
       window.open(`/print/report?title=${encodeURIComponent('Forecast Report')}`, '_blank', 'noopener,noreferrer');
     } finally {
       setIsBusy(false);
@@ -153,7 +182,7 @@ export function DownloadReportButton() {
   };
 
   return (
-    <Button onClick={handleDownload} disabled={isBusy} data-testid="download-report">
+    <Button onClick={handleDownload} disabled={isBusy} data-testid="download-report" className="group">
       {isBusy ? (
         <Loader2 className="mr-2 animate-spin" />
       ) : (

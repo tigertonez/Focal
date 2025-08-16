@@ -66,11 +66,21 @@
       border-color: hsl(var(--border) / var(--tw-border-opacity));
   }
   
-  /* Class to freeze animations/transitions during PDF capture */
+  /* Active only during capture */
   .pdf-freeze, .pdf-freeze * {
     animation: none !important;
     transition: none !important;
     caret-color: transparent !important;
+    text-shadow: none !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Small helper to avoid baseline/jitter on inline text */
+  .pdf-freeze .text,
+  .pdf-freeze [class*="text-"] {
+    line-height: 1.25 !important; /* fixed numeric line-height for consistency */
+    letter-spacing: 0 !important;
   }
 }
 
