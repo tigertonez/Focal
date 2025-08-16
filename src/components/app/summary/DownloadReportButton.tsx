@@ -67,38 +67,43 @@ export function DownloadReportButton() {
     const title = `ForecastReport-${Date.now()}`;
 
     try {
-      if (!isProbed) {
-        // --- ONE-SHOT JSON PROBE on first click ---
-        const { imageBase64, format } = await captureReport();
-        console.info(`[pdf:probe] Captured image. Size: ~${Math.round((imageBase64.length * 3) / 4 / 1024)} KB. Probing API...`);
-        const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
-        const probeJson = await probeRes.json();
-        
-        alert(`PDF API PROBE (this is a one-time check):\n\nStatus: ${probeJson.ok ? 'Success' : 'Failed'}\nInput Bytes: ${probeJson.inputBytes}\nPDF Bytes: ${probeJson.pdfBytes}\nFormat: ${probeJson.format}`);
-        setIsProbed(true); // Mark probe as done
+      if (FORCE_FALLBACK) {
+        if (!isProbed) {
+          // --- ONE-SHOT JSON PROBE on first click ---
+          const { imageBase64, format } = await captureReport();
+          console.info(`[pdf:probe] Captured image. Size: ~${Math.round((imageBase64.length * 3) / 4 / 1024)} KB. Probing API...`);
+          const probeRes = await postAndHandlePdf({ imageBase64, format, title, debug: true });
+          const probeJson = await probeRes.json();
+          
+          alert(`PDF API PROBE (this is a one-time check):\n\nStatus: ${probeJson.ok ? 'Success' : 'Failed'}\nInput Bytes: ${probeJson.inputBytes}\nPDF Bytes: ${probeJson.pdfBytes}\nFormat: ${probeJson.format}`);
+          setIsProbed(true); // Mark probe as done so next click is a real download
+        } else {
+          // --- NORMAL DOWNLOAD path for subsequent clicks ---
+          const { imageBase64, format } = await captureReport();
+          const payloadBytes = Math.round((imageBase64.length * 3) / 4);
+          console.info('[pdf:download] POSTing to embed API.', {
+            path: "/api/print/pdf (POST)",
+            bytes: payloadBytes,
+            format,
+          });
+
+          const pdfRes = await postAndHandlePdf({ imageBase64, format, title });
+          const blob = await pdfRes.blob();
+          
+          console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB. Triggering download...`);
+
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${title}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        }
       } else {
-        // --- NORMAL DOWNLOAD path for subsequent clicks ---
-        const { imageBase64, format } = await captureReport();
-        const payloadBytes = Math.round((imageBase64.length * 3) / 4);
-        console.info('[pdf:download] POSTing to embed API.', {
-          path: "/api/print/pdf (POST)",
-          bytes: payloadBytes,
-          format,
-        });
-
-        const pdfRes = await postAndHandlePdf({ imageBase64, format, title });
-        const blob = await pdfRes.blob();
-        
-        console.info(`[pdf:download] PDF blob received. Status=${pdfRes.status}, Content-Type=${pdfRes.headers.get('content-type')}, Size=${(blob.size / 1024).toFixed(1)} KB. Triggering download...`);
-
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${title}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        // Legacy GET path is kept here but disabled by the FORCE_FALLBACK flag
+        window.open(withQuery('/print/report', { title, locale: 'en', ts: Date.now() }), '_blank');
       }
     } catch (err: any) {
       console.warn('[pdf:client-error]', err.message || 'An unknown error occurred.');
