@@ -76,9 +76,30 @@ export function DownloadReportButton() {
             const reportNode = document.getElementById('report-content');
             if (!reportNode) throw new Error("Report content element #report-content not found.");
 
-            const canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
-            const imageDataUri = canvas.toDataURL('image/jpeg', 0.92);
-            console.info('[pdf:client] Image captured. POSTing to embed API...');
+            let canvas = await html2canvas(reportNode, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+
+            // Clamp image size to prevent Vercel body limit issues
+            const MAX_WIDTH = 1600;
+            if (canvas.width > MAX_WIDTH) {
+                const newCanvas = document.createElement('canvas');
+                const aspect = canvas.height / canvas.width;
+                newCanvas.width = MAX_WIDTH;
+                newCanvas.height = MAX_WIDTH * aspect;
+                const ctx = newCanvas.getContext('2d');
+                ctx?.drawImage(canvas, 0, 0, newCanvas.width, newCanvas.height);
+                canvas = newCanvas;
+            }
+
+            const imageDataUri = canvas.toDataURL('image/jpeg', 0.85);
+            const imageBase64 = imageDataUri.split(',')[1];
+            
+            // Log payload info
+            const payloadBytes = Math.round((imageBase64.length * 3) / 4);
+            console.info('[pdf:client] POSTing to embed API.', {
+              path: "/api/print/pdf (POST)",
+              bytes: payloadBytes,
+              format: "jpeg",
+            });
 
             const embedController = new AbortController();
             const embedTimeoutId = setTimeout(() => embedController.abort(), 60000);
@@ -86,17 +107,16 @@ export function DownloadReportButton() {
             const embedRes = await fetch(apiUrl('/api/print/pdf'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf' },
-                body: JSON.stringify({ imageDataUri, title: 'ForecastReport' }),
+                body: JSON.stringify({ imageBase64, format: 'jpeg', title: 'ForecastReport' }),
                 signal: embedController.signal,
             });
             
             clearTimeout(embedTimeoutId);
             const contentType = embedRes.headers.get('content-type') || '';
-            console.info(`[pdf:client] POST response: status=${embedRes.status}, content-type=${contentType}`);
-
+            
             if (embedRes.ok && contentType.includes('application/pdf')) {
                 const blob = await embedRes.blob();
-                console.info(`[pdf:client] PDF blob received (${(blob.size / 1024).toFixed(1)} KB). Triggering download...`);
+                console.info(`[pdf:client] PDF blob received. Status=${embedRes.status}, Content-Type=${contentType}, Size=${(blob.size / 1024).toFixed(1)} KB. Triggering download...`);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -107,7 +127,7 @@ export function DownloadReportButton() {
                 window.URL.revokeObjectURL(url);
             } else {
                 const errorJson = await embedRes.json().catch(() => ({ message: 'Failed to parse error response from embed fallback.' }));
-                 throw new Error(`PDF Fallback failed: ${errorJson.code || embedRes.statusText}`);
+                throw new Error(`PDF Fallback failed: ${errorJson.code || embedRes.statusText}`);
             }
 
         } catch (embedErr: any) {

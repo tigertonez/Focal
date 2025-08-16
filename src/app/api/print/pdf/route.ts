@@ -222,35 +222,37 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let body;
   try {
-    body = await request.json();
-  } catch (err) {
-    return NextResponse.json({ ok: false, code: 'BAD_JSON', message: 'Invalid JSON body' }, { status: 400 });
-  }
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (err) {
+      return NextResponse.json({ ok: false, code: 'BAD_JSON', message: 'Invalid JSON body' }, { status: 400 });
+    }
 
-  // Validate payload
-  const imageDataUri = typeof body?.imageDataUri === 'string' ? body.imageDataUri : '';
-  const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : 'ForecastReport';
-  if (!/^data:image\/(png|jpeg|jpg);base64,/.test(imageDataUri)) {
-    return NextResponse.json(
-      { ok: false, code: 'BAD_IMAGE', message: "Expected data:image/(png|jpeg|jpg);base64,..." },
-      { status: 400 }
-    );
-  }
-  
-  const accept = (request.headers.get('accept') || '').toLowerCase();
-  const url = new URL(request.url);
-  const isDebug = url.searchParams.get('debug') === '1' || accept.includes('application/json');
-
-  try {
-    const React = await import('react');
-    const { pdf, Document, Page, Image, View, StyleSheet } = await import('@react-pdf/renderer');
+    const { imageBase64, format = 'jpeg', title = 'ForecastReport' } = body;
+    const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+    if (!imageBase64 || typeof imageBase64 !== 'string' || !base64Regex.test(imageBase64.trim())) {
+      return NextResponse.json(
+        { ok: false, code: 'BAD_IMAGE', message: 'Missing or invalid imageBase64 string.' },
+        { status: 400 }
+      );
+    }
     
+    const url = new URL(request.url);
+    const accept = (request.headers.get('accept') || '').toLowerCase();
+    const isDebug = url.searchParams.get('debug') === '1' || accept.includes('application/json');
+
+    const React = await import('react');
+    const pdfMod = await import('@react-pdf/renderer');
+    const { pdf, Document, Page, Image, View, StyleSheet } = pdfMod as any;
+    
+    const imageBytes = Buffer.from(imageBase64, 'base64');
+
     const styles = StyleSheet.create({
-      page: { padding: 0, backgroundColor: '#ffffff' },
-      wrap: { width: '100%', height: '100%' },
-      img: { width: '100%', height: '100%', objectFit: 'contain' }
+      page: { padding: 24, backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+      imageContainer: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      image: { objectFit: 'contain', width: '100%', height: '100%' }
     });
 
     const doc = React.createElement(
@@ -259,13 +261,13 @@ export async function POST(request: Request) {
       React.createElement(
         Page,
         { size: 'A4', style: styles.page, orientation: 'portrait' },
-        React.createElement(View, { style: styles.wrap },
-          React.createElement(Image, { style: styles.img, src: imageDataUri })
+        React.createElement(View, { style: styles.imageContainer },
+          React.createElement(Image, { style: styles.image, src: { data: imageBytes, format } })
         )
       )
     );
     
-    const instance = (pdf as any)(doc);
+    const instance = pdf(doc);
     const buffer: Uint8Array = await instance.toBuffer();
     
     if (isDebug) {
