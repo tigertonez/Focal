@@ -3,88 +3,122 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, TestTube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-let didProbe = false;
+// Helper function to convert a Data URL to a raw base64 string
+function toBase64FromDataUrl(dataUrl: string): string {
+  const i = dataUrl.indexOf('base64,');
+  return i >= 0 ? dataUrl.slice(i + 7) : dataUrl; // strip prefix if present
+}
+
+// Helper function to capture the report content as a PNG
+async function captureReportAsPng(): Promise<{ imageBase64: string; format: 'png' }> {
+  const node = document.getElementById('report-content');
+  if (!node) {
+    throw new Error('Could not find the report content element (#report-content).');
+  }
+
+  const html2canvas = (await import('html2canvas')).default;
+  const canvas = await html2canvas(node, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+  });
+  
+  const dataUrl = canvas.toDataURL('image/png'); // Use PNG for reliability
+  const imageBase64 = toBase64FromDataUrl(dataUrl);
+
+  return { imageBase64, format: 'png' };
+}
+
 
 export function DownloadReportButton() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const { toast } = useToast();
 
-  const handleDownload = async () => {
-    setIsLoading(true);
-    const title = `ForecastReport-${Date.now()}`;
+  const handleDownload = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (isBusy) return;
+
+    const isProbe = event.shiftKey;
+    setIsBusy(true);
     
+    const title = 'ForecastReport';
+
     try {
-      const reportNode = document.getElementById('report-content');
-      if (!reportNode) {
-        throw new Error("Report content element #report-content not found. Cannot generate PDF.");
-      }
+      const { imageBase64, format } = await captureReportAsPng();
       
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(reportNode, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
-      
-      const dataUrl = canvas.toDataURL('image/png'); // use PNG for reliability
-      const imageBase64 = dataUrl.split(',')[1];     // <-- send raw base64 ONLY
+      const payload = {
+          mode: 'image',
+          format,
+          imageBase64,
+          title,
+      };
 
-      if (!didProbe) {
-        const res = await fetch('/api/print/pdf', {
+      if (isProbe) {
+        // --- PROBE PATH (Shift+Click) ---
+        console.info('Performing PDF probe (Shift+Click)...');
+        const response = await fetch('/api/print/pdf', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', accept: 'application/json' },
-          body: JSON.stringify({ mode: 'image', format: 'png', imageBase64, title: 'ForecastReport' }),
+          headers: { 'content-type': 'application/json', 'accept': 'application/json' },
+          body: JSON.stringify(payload),
         });
-        const j = await res.json();
-        alert('PDF PROBE (one-time):\n' + JSON.stringify(j, null, 2));
-        didProbe = true;
-        return;
+        
+        const responseJson = await response.json();
+        alert(`PDF PROBE RESULT:\n\n${JSON.stringify(responseJson, null, 2)}`);
+
+      } else {
+        // --- REAL DOWNLOAD PATH (Normal Click) ---
+        console.info('Requesting PDF download...');
+        const response = await fetch('/api/print/pdf', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' }, // Server defaults to PDF without 'accept: application/json'
+          body: JSON.stringify(payload),
+        });
+
+        console.info(`PDF response status: ${response.status}`, { headers: Object.fromEntries(response.headers.entries()) });
+
+        if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) {
+            const errorJson = await response.json().catch(() => ({}));
+            throw new Error(`PDF generation failed: ${errorJson.code || response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title}-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
-      const res = await fetch('/api/print/pdf', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' }, // no JSON accept -> returns application/pdf
-        body: JSON.stringify({ mode: 'image', format: 'png', imageBase64, title: 'ForecastReport' }),
-      });
-
-      if (!res.ok || (res.headers.get('content-type') || '').indexOf('application/pdf') === -1) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error('PDF download failed: ' + JSON.stringify(j));
-      }
-      
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ForecastReport-${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      
     } catch (err: any) {
-      console.warn('[pdf:client-error]', err);
+      console.error('PDF download error:', err);
       toast({
         variant: 'destructive',
         title: 'PDF Generation Failed',
-        description: `${err.message || 'An unknown error occurred.'} Please try again.`,
+        description: err.message || 'An unknown error occurred. Please try again.',
       });
     } finally {
-      setIsLoading(false);
+      setIsBusy(false);
     }
   };
 
   return (
     <Button
       onClick={handleDownload}
-      disabled={isLoading}
+      disabled={isBusy}
       data-testid="download-report"
     >
-      {isLoading ? (
+      {isBusy ? (
         <Loader2 className="mr-2 animate-spin" />
       ) : (
         <Download className="mr-2" />
       )}
-      {isLoading ? 'Generating...' : 'Download Report'}
+      {isBusy ? 'Generating...' : 'Download Report'}
     </Button>
   );
 }
