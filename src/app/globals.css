@@ -65,6 +65,13 @@
       --tw-border-opacity: 1;
       border-color: hsl(var(--border) / var(--tw-border-opacity));
   }
+  
+  /* Class to freeze animations/transitions during PDF capture */
+  .pdf-freeze, .pdf-freeze * {
+    animation: none !important;
+    transition: none !important;
+    caret-color: transparent !important;
+  }
 }
 
 @layer components {

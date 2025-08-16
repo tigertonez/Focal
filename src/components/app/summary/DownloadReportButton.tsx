@@ -1,99 +1,142 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Loader2, Download, TestTube } from 'lucide-react';
+import React from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Download, Loader2, TestTube } from 'lucide-react';
 
-// Helper function to convert a Data URL to a raw base64 string
-function toBase64FromDataUrl(dataUrl: string): string {
-  const i = dataUrl.indexOf('base64,');
-  return i >= 0 ? dataUrl.slice(i + 7) : dataUrl; // strip prefix if present
-}
+// =================================================================
+// Helper Functions
+// =================================================================
 
-// Helper function to capture the report content as a PNG
-async function captureReportAsPng(): Promise<{ imageBase64: string; format: 'png' }> {
-  const node = document.getElementById('report-content');
-  if (!node) {
-    throw new Error('Could not find the report content element (#report-content).');
+/**
+ * Captures a DOM element and returns its PNG representation.
+ * @param el The HTMLElement to capture.
+ * @returns A promise that resolves with the image data.
+ */
+async function captureReport(el: HTMLElement): Promise<{ imageBase64: string; format: 'png'; width: number; height: number }> {
+  const html2canvas = (await import('html2canvas')).default;
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+
+  // Apply a class to freeze animations/transitions during capture
+  document.documentElement.classList.add('pdf-freeze');
+
+  // Wait for fonts and for the DOM to settle after class application
+  await document.fonts?.ready;
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(el, {
+      scale,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    });
+  } finally {
+    // Always remove the freeze class
+    document.documentElement.classList.remove('pdf-freeze');
   }
 
-  const html2canvas = (await import('html2canvas')).default;
-  const canvas = await html2canvas(node, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-    logging: false,
-  });
+  // Downscale very large images to keep PDF size reasonable
+  const maxW = 1800;
+  let finalCanvas = canvas;
+  if (canvas.width > maxW) {
+    const s = maxW / canvas.width;
+    const downscaledCanvas = document.createElement('canvas');
+    downscaledCanvas.width = Math.round(canvas.width * s);
+    downscaledCanvas.height = Math.round(canvas.height * s);
+    const ctx = downscaledCanvas.getContext('2d')!;
+    ctx.drawImage(canvas, 0, 0, downscaledCanvas.width, downscaledCanvas.height);
+    finalCanvas = downscaledCanvas;
+  }
   
-  const dataUrl = canvas.toDataURL('image/png'); // Use PNG for reliability
-  const imageBase64 = toBase64FromDataUrl(dataUrl);
+  const dataUrl = finalCanvas.toDataURL('image/png');
+  const imageBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
 
-  return { imageBase64, format: 'png' };
+  return {
+    imageBase64,
+    format: 'png',
+    width: finalCanvas.width,
+    height: finalCanvas.height,
+  };
 }
 
 
+// =================================================================
+// Main Component
+// =================================================================
+
 export function DownloadReportButton() {
-  const [isBusy, setIsBusy] = useState(false);
+  const [isBusy, setIsBusy] = React.useState(false);
   const { toast } = useToast();
 
   const handleDownload = async (event: React.MouseEvent<HTMLButtonElement>) => {
     if (isBusy) return;
-
-    const isProbe = event.shiftKey;
     setIsBusy(true);
-    
-    const title = 'ForecastReport';
 
     try {
-      const { imageBase64, format } = await captureReportAsPng();
+      const el = document.getElementById('report-content');
+      if (!el) {
+        throw new Error('Report content container (#report-content) not found.');
+      }
       
+      const { imageBase64, format, width, height } = await captureReport(el);
+      const title = 'ForecastReport';
+      const isProbe = event.shiftKey;
+
       const payload = {
-          mode: 'image',
-          format,
-          imageBase64,
-          title,
+        mode: isProbe ? 'probe' : 'pdf',
+        imageBase64,
+        format,
+        width,
+        height,
+        title,
+        page: 'auto',
+        margin: 24,
+        fit: 'auto',
       };
+      
+      console.info('POST /api/print/pdf', {
+          mode: payload.mode,
+          format: payload.format,
+          width: payload.width,
+          height: payload.height,
+          approxBytes: Math.round(imageBase64.length * 0.75),
+      });
+
+      const response = await fetch('/api/print/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(isProbe && { 'Accept': 'application/json' }),
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      console.info(`Response: ${response.status}`, { headers: Object.fromEntries(response.headers.entries()) });
 
       if (isProbe) {
-        // --- PROBE PATH (Shift+Click) ---
-        console.info('Performing PDF probe (Shift+Click)...');
-        const response = await fetch('/api/print/pdf', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'accept': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        
-        const responseJson = await response.json();
-        alert(`PDF PROBE RESULT:\n\n${JSON.stringify(responseJson, null, 2)}`);
-
-      } else {
-        // --- REAL DOWNLOAD PATH (Normal Click) ---
-        console.info('Requesting PDF download...');
-        const response = await fetch('/api/print/pdf', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' }, // Server defaults to PDF without 'accept: application/json'
-          body: JSON.stringify(payload),
-        });
-
-        console.info(`PDF response status: ${response.status}`, { headers: Object.fromEntries(response.headers.entries()) });
-
-        if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) {
-            const errorJson = await response.json().catch(() => ({}));
-            throw new Error(`PDF generation failed: ${errorJson.code || response.status}`);
-        }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${title}-${Date.now()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const jsonData = await response.json();
+        alert(`PDF PROBE:\n${JSON.stringify(jsonData, null, 2)}`);
+        return;
       }
+      
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) {
+        const errorJson = await response.json().catch(() => ({}));
+        throw new Error(`PDF generation failed: ${errorJson.code || response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
     } catch (err: any) {
       console.error('PDF download error:', err);
@@ -102,23 +145,22 @@ export function DownloadReportButton() {
         title: 'PDF Generation Failed',
         description: err.message || 'An unknown error occurred. Please try again.',
       });
+       // Last resort fallback
+      window.open(`/print/report?title=${encodeURIComponent('Forecast Report')}`, '_blank', 'noopener,noreferrer');
     } finally {
       setIsBusy(false);
     }
   };
 
   return (
-    <Button
-      onClick={handleDownload}
-      disabled={isBusy}
-      data-testid="download-report"
-    >
+    <Button onClick={handleDownload} disabled={isBusy} data-testid="download-report">
       {isBusy ? (
         <Loader2 className="mr-2 animate-spin" />
       ) : (
         <Download className="mr-2" />
       )}
       {isBusy ? 'Generating...' : 'Download Report'}
+      <TestTube className="ml-2 h-3 w-3 opacity-60 group-hover:opacity-100" title="Hold Shift+Click for probe" />
     </Button>
   );
 }
