@@ -84,3 +84,15 @@
         background-repeat: no-repeat;
     }
 }
+
+html[data-print="1"] *,
+html[data-print="1"] {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+  text-rendering: geometricPrecision !important;
+  font-synthesis: none !important;
+}
+html[data-print="1"] [data-no-print="true"] { display: none !important; }
+html[data-print="1"] [style*="position:sticky"],
+html[data-print="1"] [style*="position: fixed"] { position: static !important; }
