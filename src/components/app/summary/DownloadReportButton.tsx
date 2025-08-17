@@ -5,8 +5,9 @@ import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Download, Loader2, FileJson, FileText, ChevronDown } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { Download, Loader2, FileJson, FileText } from 'lucide-react';
+import { toPng } from 'html-to-image';
+
 
 // --- Capture & Utility Helpers ---
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -31,14 +32,11 @@ async function waitReady(win: Window, timeout = 8000) {
 }
 
 async function captureNodePng(node: HTMLElement, scale = 2): Promise<string> {
-  const canvas = await html2canvas(node, {
-    backgroundColor: '#fff',
-    scale,
-    useCORS: true,
-    allowTaint: false,
-    imageTimeout: 0
-  });
-  return canvas.toDataURL('image/png');
+    return toPng(node, {
+        backgroundColor: '#fff',
+        pixelRatio: scale,
+        cacheBust: true,
+    });
 }
 
 async function captureFullReport(): Promise<HTMLImageElement> {
@@ -74,17 +72,15 @@ async function captureFullReport(): Promise<HTMLImageElement> {
 
         const root = win.document.getElementById('full-report-root') || win.document.documentElement;
         
-        const canvas = await html2canvas(root as any, {
+        const dataUrl = await toPng(root as any, {
             backgroundColor: '#fff',
-            scale: 2,
-            useCORS: true,
-            allowTaint: false,
-            imageTimeout: 0,
+            pixelRatio: 2,
+            cacheBust: true,
+            width: root.scrollWidth,
+            height: root.scrollHeight,
             windowWidth: root.scrollWidth,
-            windowHeight: root.scrollHeight
+            windowHeight: root.scrollHeight,
         });
-        const dataUrl = canvas.toDataURL('image/png');
-
         const img = new Image();
         img.onload = () => {
           cleanup();
@@ -107,10 +103,9 @@ async function captureFullReport(): Promise<HTMLImageElement> {
   });
 }
 
-function sliceToA4(img: HTMLImageElement, marginMm = 12, dpi = 300) {
+function sliceToA4(img: HTMLImageElement, dpi=150, marginMm=12) {
   const mmToPx = (mm: number) => Math.round((mm / 25.4) * dpi);
-  const A4W = mmToPx(210),
-    A4H = mmToPx(297);
+  const A4W = mmToPx(210), A4H = mmToPx(297);
   const contentW = A4W - 2 * mmToPx(marginMm);
   const contentH = A4H - 2 * mmToPx(marginMm);
 
@@ -126,19 +121,21 @@ function sliceToA4(img: HTMLImageElement, marginMm = 12, dpi = 300) {
   sctx.imageSmoothingQuality = 'high';
   sctx.drawImage(img, 0, 0, scaledW, scaledH);
 
-  const slices: string[] = [];
+  const slices: { imageBase64: string; wPx: number; hPx: number }[] = [];
   for (let y = 0; y < scaledH; y += contentH) {
     const h = Math.min(contentH, scaledH - y);
     const c = document.createElement('canvas');
     c.width = contentW;
     c.height = h;
     c.getContext('2d')!.drawImage(scaled, 0, y, contentW, h, 0, 0, contentW, h);
-    slices.push(c.toDataURL('image/png'));
+    
+    const base64 = c.toDataURL('image/png').split(',')[1];
+    if (base64 && base64.length > 1000) {
+        slices.push({ imageBase64: base64, wPx: contentW, hPx: h });
+    }
   }
   return slices;
 }
-
-const dataUrlToBase64 = (dataUrl: string) => dataUrl.split(',')[1];
 
 
 // --- Main Component ---
@@ -162,7 +159,7 @@ export function DownloadReportButton() {
         if (isFullReport) {
             const img = await captureFullReport();
             const slices = sliceToA4(img);
-            payload = { images: slices.map(s => dataUrlToBase64(s)), page: 'A4' };
+            payload = { images: slices, page: 'A4', dpi: 150, marginPt: 24, title };
         } else {
             const node = document.getElementById('report-content');
             if (!node) throw new Error("Could not find #report-content element.");
@@ -170,7 +167,7 @@ export function DownloadReportButton() {
             const img = new Image();
             img.src = dataUrl;
             await new Promise(r=>img.onload=r);
-            payload = { imageBase64: dataUrlToBase64(dataUrl), width: img.naturalWidth, height: img.naturalHeight, page:'A4', fit:'contain', margin:12 };
+            payload = { imageBase64: dataUrl.split(',')[1], width: img.naturalWidth, height: img.naturalHeight, page:'A4', fit:'contain', marginPt: 36, dpi: 150, title };
         }
 
         const response = await fetch('/api/print/pdf', {

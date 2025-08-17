@@ -9,12 +9,12 @@ export const dynamic = 'force-dynamic';
 type SinglePayload = {
   images?: never;
   imageBase64: string;
-  format: 'png' | 'jpg' | 'jpeg';
+  format?: 'png' | 'jpg' | 'jpeg';
   width: number;
   height: number;
   page?: 'auto' | 'A4' | 'Letter';
   fit?: 'contain' | 'cover' | 'auto';
-  margin?: number; // Kept for legacy single-image calls
+  margin?: number;
   marginPt?: number;
   dpi?: number;
   title?: string;
@@ -64,21 +64,22 @@ export async function POST(req: NextRequest) {
       const { images, page, dpi, marginPt } = body as MultiPayload;
       const pageSizePt = page === 'Letter' ? { w: 612, h: 792 } : { w: 595.28, h: 841.89 }; // A4 default
       
-      for (const slice of images) {
+      for (const slice of images.filter(Boolean)) {
         try {
           const imgBytes = Buffer.from(slice.imageBase64, 'base64');
           const img = await pdfDoc.embedPng(imgBytes);
+          
+          const contentW = pageSizePt.w - (marginPt * 2);
+          const scale = contentW / img.width;
+          const drawH = img.height * scale;
+          
           const pdfPage = pdfDoc.addPage([pageSizePt.w, pageSizePt.h]);
-
-          const contentWPt = pageSizePt.w - 2 * marginPt;
-          const scale = contentWPt / img.width; // Scale by width only
-          const drawHeight = img.height * scale;
-
+          
           pdfPage.drawImage(img, {
             x: marginPt,
-            y: pageSizePt.h - marginPt - drawHeight, // Position from top
-            width: contentWPt,
-            height: drawHeight,
+            y: pageSizePt.h - marginPt - drawH,
+            width: contentW,
+            height: drawH,
           });
         } catch (err: any) {
           skipped.push({ name: slice.name, reason: err.message || 'Embedding failed' });
@@ -91,12 +92,12 @@ export async function POST(req: NextRequest) {
       }
 
     } else { // Single Image
-      const { imageBase64, format, width, height, page = 'auto', fit = 'auto', marginPt = 36, dpi = 150 } = body as SinglePayload;
+      const { imageBase64, width, height, page = 'auto', fit = 'auto', marginPt = 36, dpi = 150 } = body as SinglePayload;
       
       if (!imageBase64) return json({ ok: false, message: 'imageBase64 missing' }, { status: 400 });
 
       const imgBytes = Buffer.from(imageBase64, 'base64');
-      const img = format === 'png' ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
+      const img = await pdfDoc.embedPng(imgBytes);
 
       let pageWidth: number, pageHeight: number;
       if (page === 'auto') {
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
 
        const pdfBytes = await pdfDoc.save();
        if (wantsJson) {
-           return json({ ok: true, phase: 'POST_OK', format, inputBytes: imgBytes.length, pdfBytes: pdfBytes.length, width, height, page, fit, margin: marginPt });
+           return json({ ok: true, phase: 'POST_OK', format: 'png', inputBytes: imgBytes.length, pdfBytes: pdfBytes.length, width, height, page, fit, margin: marginPt });
        }
     }
     
