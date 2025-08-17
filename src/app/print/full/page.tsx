@@ -14,11 +14,9 @@ import CostsPage from '@/app/(main)/costs/page';
 import ProfitPage from '@/app/(main)/profit/page';
 import CashFlowPage from '@/app/(main)/cash-flow/page';
 import SummaryPage from '@/app/(main)/summary/page';
-import { AppShell } from '@/components/app/AppShell';
-
 
 const PrintSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="py-8 px-4 border-b last:border-b-0">
+  <section className="py-8 px-4 border-b last:border-b-0" style={{ pageBreakInside: 'avoid' }}>
     <h2 className="text-2xl font-bold mb-4 text-center">{title}</h2>
     {children}
   </section>
@@ -35,7 +33,7 @@ function FullReportContent() {
                 document.querySelectorAll('details').forEach((d: any) => (d.open = true));
                 document.querySelectorAll<HTMLElement>('[aria-expanded="false"]').forEach(btn => btn.click?.());
                  setTimeout(() => {
-                    (window as any).__PDF_READY__ = true;
+                    (window as any).__PRINT_READY__ = true;
                 }, 1000); // Give a bit of time for things to open
             });
         })();
@@ -58,7 +56,7 @@ function FullReportContent() {
     }
 
     return (
-        <main id="full-report-root">
+        <main id="full-report-root" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', color: '#000' }}>
           <PrintSection title="Inputs"><InputsPage /></PrintSection>
           <PrintSection title="Revenue"><RevenuePage /></PrintSection>
           <PrintSection title="Costs"><CostsPage /></PrintSection>
@@ -82,6 +80,14 @@ export default function FullReportPage() {
         [style*="position:fixed"] { position: static !important; }
         .overflow-hidden, .overflow-auto, .overflow-y-auto { overflow: visible !important; }
         .container { max-width: 100% !important; }
+        html.pdf-mode, body.pdf-mode { background:#fff !important; }
+        .pdf-mode *{ animation:none !important; transition:none !important; }
+        .pdf-mode{ font-synthesis:none !important; text-rendering:geometricPrecision !important;
+          -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+        .pdf-mode, .pdf-mode * {
+          transform: none !important;
+          caret-color: transparent !important;
+        }
       `}</style>
       <Suspense fallback={<SummaryPageSkeleton t={{}} />}>
          <FullReportContent />

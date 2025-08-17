@@ -13,6 +13,7 @@ import { toPng } from 'html-to-image';
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const raf2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+
 async function waitReady(win: Window, timeout = 8000) {
   try {
     await (win.document as any).fonts?.ready;
@@ -24,18 +25,19 @@ async function waitReady(win: Window, timeout = 8000) {
     const now = win.document.documentElement.scrollHeight;
     const stable = Math.abs(now - last) < 2;
     last = now;
-    const readyFlag = (win as any).__PDF_READY__ === true;
+    const readyFlag = (win as any).__PDF_READY__ === true || (win as any).__PRINT_READY__ === true;
     if (stable && readyFlag) break;
     if (Date.now() - start > timeout) break;
   }
   await raf2();
 }
 
-async function captureNodePng(node: HTMLElement, scale = 2): Promise<string> {
+async function captureNodePng(node: HTMLElement, pixelRatio = 2): Promise<string> {
     return toPng(node, {
         backgroundColor: '#fff',
-        pixelRatio: scale,
+        pixelRatio,
         cacheBust: true,
+        skipFonts: false,
     });
 }
 
@@ -44,7 +46,7 @@ async function captureFullReport(): Promise<HTMLImageElement> {
   ifr.src = '/print/full?pdf=1';
   Object.assign(ifr.style, {
     position: 'fixed',
-    left: '0',
+    left: '-9999px',
     top: '0',
     width: '1280px',
     height: '100vh',
@@ -72,7 +74,7 @@ async function captureFullReport(): Promise<HTMLImageElement> {
 
         const root = win.document.getElementById('full-report-root') || win.document.documentElement;
         
-        const dataUrl = await toPng(root as any, {
+        const dataUrl = await toPng(root, {
             backgroundColor: '#fff',
             pixelRatio: 2,
             cacheBust: true,
@@ -103,39 +105,56 @@ async function captureFullReport(): Promise<HTMLImageElement> {
   });
 }
 
-function sliceToA4(img: HTMLImageElement, dpi=150, marginMm=12) {
-  const mmToPx = (mm: number) => Math.round((mm / 25.4) * dpi);
-  const A4W = mmToPx(210), A4H = mmToPx(297);
-  const contentW = A4W - 2 * mmToPx(marginMm);
-  const contentH = A4H - 2 * mmToPx(marginMm);
+function sliceToA4(dataUrl: string, opts?: { dpi?: number; marginPt?: number }) {
+  const dpi = opts?.dpi ?? 150;
+  const marginPt = opts?.marginPt ?? 24;
+  const pxPerPt = dpi / 72;
 
-  const scale = contentW / img.naturalWidth;
-  const scaledW = Math.round(img.naturalWidth * scale);
-  const scaledH = Math.round(img.naturalHeight * scale);
+  const a4WidthPx  = Math.round(8.27 * dpi);
+  const a4HeightPx = Math.round(11.69 * dpi);
+  const marginPx   = Math.round(marginPt * pxPerPt);
+  const contentW   = a4WidthPx - marginPx * 2;
+  const contentH   = a4HeightPx - marginPx * 2;
 
-  const scaled = document.createElement('canvas');
-  scaled.width = scaledW;
-  scaled.height = scaledH;
-  const sctx = scaled.getContext('2d')!;
-  sctx.imageSmoothingEnabled = true;
-  sctx.imageSmoothingQuality = 'high';
-  sctx.drawImage(img, 0, 0, scaledW, scaledH);
+  const img = new Image();
+  img.src = dataUrl;
+  return new Promise<string[]>((resolve, reject) => {
+    img.onload = () => {
+      const scale = contentW / img.width;
+      const scaledW = Math.round(img.width * scale);
+      const scaledH = Math.round(img.height * scale);
 
-  const slices: { imageBase64: string; wPx: number; hPx: number }[] = [];
-  for (let y = 0; y < scaledH; y += contentH) {
-    const h = Math.min(contentH, scaledH - y);
-    const c = document.createElement('canvas');
-    c.width = contentW;
-    c.height = h;
-    c.getContext('2d')!.drawImage(scaled, 0, y, contentW, h, 0, 0, contentW, h);
-    
-    const base64 = c.toDataURL('image/png').split(',')[1];
-    if (base64 && base64.length > 1000) {
-        slices.push({ imageBase64: base64, wPx: contentW, hPx: h });
-    }
-  }
-  return slices;
+      const scaled = document.createElement('canvas');
+      scaled.width = scaledW; scaled.height = scaledH;
+      const sctx = scaled.getContext('2d')!;
+      sctx.fillStyle = '#fff'; sctx.fillRect(0,0,scaledW,scaledH);
+      sctx.drawImage(img, 0, 0, scaledW, scaledH);
+
+      const slices: string[] = [];
+      for (let y = 0; y < scaledH; y += contentH) {
+        const h = Math.min(contentH, scaledH - y);
+        const page = document.createElement('canvas');
+        page.width = a4WidthPx; page.height = a4HeightPx;
+        const pctx = page.getContext('2d')!;
+        pctx.fillStyle = '#fff'; pctx.fillRect(0,0,page.width,page.height);
+        
+        const xOff = Math.round((a4WidthPx - (marginPx*2) - contentW)/2) + marginPx;
+        pctx.drawImage(scaled, 0, y, contentW, h, xOff, marginPx, contentW, h);
+        slices.push(page.toDataURL('image/png'));
+      }
+      resolve(slices);
+    };
+    img.onerror = reject;
+  });
 }
+
+const stopAll = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if ((e.nativeEvent as any)?.stopImmediatePropagation) {
+      (e.nativeEvent as any).stopImmediatePropagation();
+    }
+};
 
 
 // --- Main Component ---
@@ -143,12 +162,6 @@ export function DownloadReportButton() {
   const [isBusy, setIsBusy] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
-  
-  const stopAll = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    (e.nativeEvent as any).stopImmediatePropagation?.();
-  };
   
   const handleDownload = async (isProbe: boolean, isFullReport: boolean) => {
     setIsBusy(true);
@@ -158,8 +171,10 @@ export function DownloadReportButton() {
         let payload: any;
         if (isFullReport) {
             const img = await captureFullReport();
-            const slices = sliceToA4(img);
-            payload = { images: slices, page: 'A4', dpi: 150, marginPt: 24, title };
+            const slices = await sliceToA4(img.src, {dpi: 150, marginPt: 24});
+            const images = slices.map(s => s.replace(/^data:image\/\w+;base64,/, '')).filter(Boolean);
+            if(images.length === 0) throw new Error("Slicing failed to produce images.");
+            payload = { images, page: 'A4', dpi: 150, marginPt: 24, title };
         } else {
             const node = document.getElementById('report-content');
             if (!node) throw new Error("Could not find #report-content element.");
@@ -220,7 +235,7 @@ export function DownloadReportButton() {
                 Download Report
             </Button>
         </DialogTrigger>
-        <DialogContent onPointerDown={e=>e.stopPropagation()} className="sm:max-w-[425px]">
+        <DialogContent onPointerDown={(e) => e.stopPropagation()} className="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Download Options</DialogTitle>
                 <DialogDescription>
@@ -242,7 +257,7 @@ export function DownloadReportButton() {
                </Button>
             </div>
             <DialogFooter>
-                <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+                <Button variant="secondary" onClick={(e) => { stopAll(e); setModalOpen(false); }}>Cancel</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

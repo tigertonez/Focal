@@ -36,6 +36,20 @@ type PostBody = (SinglePayload | MultiPayload) & { mode?: 'probe' | 'pdf' | 'bla
 const json = (data: any, status = 200) => new NextResponse(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 const pxToPt = (px: number, dpi = 150) => (px * 72) / dpi;
 
+function decodeImageBase64(input: string): { bytes: Uint8Array; type: 'png' | 'jpg' } {
+  // accept raw base64 or full data URL
+  const m = input.match(/^data:image\/(png|jpeg);base64,(.*)$/i);
+  const b64 = m ? m[2] : input.trim();
+  const bytes = Uint8Array.from(Buffer.from(b64, 'base64'));
+
+  // magic bytes: PNG = 89 50 4E 47 ; JPEG = FF D8 FF
+  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
+  const isJpg = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+
+  return { bytes, type: isPng ? 'png' : isJpg ? 'jpg' : 'png' }; // default to png for safety
+}
+
+
 // --- Route Handlers ---
 export async function GET() {
   return json({ ok: false, code: 'GET_DISABLED', message: 'This endpoint only supports POST.' }, { status: 405 });
@@ -58,17 +72,20 @@ export async function POST(req: NextRequest) {
     pdfDoc.setTitle(body.title || 'ForecastReport', { showInWindowTitleBar: true });
 
     const isMulti = 'images' in body && Array.isArray(body.images);
-    const skipped: { name?: string; reason: string }[] = [];
+    const skipped: { index: number; reason: string }[] = [];
 
     if (isMulti) {
       const { images, page, dpi, marginPt } = body as MultiPayload;
       const pageSizePt = page === 'Letter' ? { w: 612, h: 792 } : { w: 595.28, h: 841.89 }; // A4 default
       
-      for (const slice of images.filter(Boolean)) {
+      for (const [i, slice] of images.filter(Boolean).entries()) {
         try {
-          const imgBytes = Buffer.from(slice.imageBase64, 'base64');
-          const img = await pdfDoc.embedPng(imgBytes);
-          
+          if (!slice.imageBase64 || slice.imageBase64.length < 1000) {
+            throw new Error('Invalid or empty image data');
+          }
+          const { bytes, type } = decodeImageBase64(slice.imageBase64);
+          const img = type === 'png' ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+
           const contentW = pageSizePt.w - (marginPt * 2);
           const scale = contentW / img.width;
           const drawH = img.height * scale;
@@ -82,7 +99,7 @@ export async function POST(req: NextRequest) {
             height: drawH,
           });
         } catch (err: any) {
-          skipped.push({ name: slice.name, reason: err.message || 'Embedding failed' });
+          skipped.push({ index: i, reason: err.message || 'Embedding failed' });
         }
       }
       
@@ -96,8 +113,9 @@ export async function POST(req: NextRequest) {
       
       if (!imageBase64) return json({ ok: false, message: 'imageBase64 missing' }, { status: 400 });
 
-      const imgBytes = Buffer.from(imageBase64, 'base64');
-      const img = await pdfDoc.embedPng(imgBytes);
+      const { bytes, type } = decodeImageBase64(imageBase64);
+      const img = type === 'png' ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+
 
       let pageWidth: number, pageHeight: number;
       if (page === 'auto') {
@@ -134,7 +152,7 @@ export async function POST(req: NextRequest) {
 
        const pdfBytes = await pdfDoc.save();
        if (wantsJson) {
-           return json({ ok: true, phase: 'POST_OK', format: 'png', inputBytes: imgBytes.length, pdfBytes: pdfBytes.length, width, height, page, fit, margin: marginPt });
+           return json({ ok: true, phase: 'POST_OK', format: type, inputBytes: bytes.length, pdfBytes: pdfBytes.length, width, height, page, fit, margin: marginPt, skipped });
        }
     }
     
