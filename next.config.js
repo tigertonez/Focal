@@ -19,7 +19,7 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer'],
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer', 'handlebars'],
   env: {
     NEXT_PUBLIC_BASE_PATH: '',
   },
