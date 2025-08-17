@@ -10,144 +10,6 @@ import { toPng } from 'html-to-image';
 
 
 // --- Capture & Utility Helpers ---
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-const raf2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-
-async function waitReady(win: Window, timeout = 8000) {
-  try {
-    await (win.document as any).fonts?.ready;
-  } catch {}
-  let last = win.document.documentElement.scrollHeight;
-  const start = Date.now();
-  for (;;) {
-    await sleep(120);
-    const now = win.document.documentElement.scrollHeight;
-    const stable = Math.abs(now - last) < 2;
-    last = now;
-    const readyFlag = (win as any).__PDF_READY__ === true || (win as any).__PRINT_READY__ === true;
-    if (stable && readyFlag) break;
-    if (Date.now() - start > timeout) break;
-  }
-  await raf2();
-}
-
-async function captureNodePng(node: HTMLElement, pixelRatio = 2): Promise<string> {
-    return toPng(node, {
-        backgroundColor: '#fff',
-        pixelRatio,
-        cacheBust: true,
-        skipFonts: false,
-    });
-}
-
-async function captureFullReport(): Promise<HTMLImageElement> {
-  const ifr = document.createElement('iframe');
-  ifr.src = '/print/full?pdf=1';
-  Object.assign(ifr.style, {
-    position: 'fixed',
-    left: '-9999px',
-    top: '0',
-    width: '1280px',
-    height: '100vh',
-    opacity: '0',
-    pointerEvents: 'none',
-    border: '0',
-    zIndex: '-1'
-  });
-  document.body.appendChild(ifr);
-
-  const cleanup = () => {
-    try {
-      document.body.removeChild(ifr);
-    } catch {}
-  };
-
-  return new Promise((resolve, reject) => {
-    ifr.onload = async () => {
-      try {
-        const win = ifr.contentWindow!;
-        await waitReady(win);
-        const h = win.document.documentElement.scrollHeight;
-        ifr.style.height = `${h}px`;
-        await raf2();
-
-        const root = win.document.getElementById('full-report-root') || win.document.documentElement;
-        
-        const dataUrl = await toPng(root, {
-            backgroundColor: '#fff',
-            pixelRatio: 2,
-            cacheBust: true,
-            width: root.scrollWidth,
-            height: root.scrollHeight,
-            windowWidth: root.scrollWidth,
-            windowHeight: root.scrollHeight,
-        });
-        const img = new Image();
-        img.onload = () => {
-          cleanup();
-          resolve(img);
-        };
-        img.onerror = e => {
-          cleanup();
-          reject(e);
-        };
-        img.src = dataUrl;
-      } catch (e) {
-        cleanup();
-        reject(e);
-      }
-    };
-    ifr.onerror = e => {
-      cleanup();
-      reject(e);
-    };
-  });
-}
-
-function sliceToA4(dataUrl: string, opts?: { dpi?: number; marginPt?: number }) {
-  const dpi = opts?.dpi ?? 150;
-  const marginPt = opts?.marginPt ?? 24;
-  const pxPerPt = dpi / 72;
-
-  const a4WidthPx  = Math.round(8.27 * dpi);
-  const a4HeightPx = Math.round(11.69 * dpi);
-  const marginPx   = Math.round(marginPt * pxPerPt);
-  const contentW   = a4WidthPx - marginPx * 2;
-  const contentH   = a4HeightPx - marginPx * 2;
-
-  const img = new Image();
-  img.src = dataUrl;
-  return new Promise<string[]>((resolve, reject) => {
-    img.onload = () => {
-      const scale = contentW / img.width;
-      const scaledW = Math.round(img.width * scale);
-      const scaledH = Math.round(img.height * scale);
-
-      const scaled = document.createElement('canvas');
-      scaled.width = scaledW; scaled.height = scaledH;
-      const sctx = scaled.getContext('2d')!;
-      sctx.fillStyle = '#fff'; sctx.fillRect(0,0,scaledW,scaledH);
-      sctx.drawImage(img, 0, 0, scaledW, scaledH);
-
-      const slices: string[] = [];
-      for (let y = 0; y < scaledH; y += contentH) {
-        const h = Math.min(contentH, scaledH - y);
-        const page = document.createElement('canvas');
-        page.width = a4WidthPx; page.height = a4HeightPx;
-        const pctx = page.getContext('2d')!;
-        pctx.fillStyle = '#fff'; pctx.fillRect(0,0,page.width,page.height);
-        
-        const xOff = Math.round((a4WidthPx - (marginPx*2) - contentW)/2) + marginPx;
-        pctx.drawImage(scaled, 0, y, contentW, h, xOff, marginPx, contentW, h);
-        slices.push(page.toDataURL('image/png'));
-      }
-      resolve(slices);
-    };
-    img.onerror = reject;
-  });
-}
-
 const stopAll = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -156,6 +18,143 @@ const stopAll = (e: React.MouseEvent) => {
     }
 };
 
+const raf2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+async function captureNodePng(node: HTMLElement, pixelRatio = 2): Promise<string> {
+    return await toPng(node, {
+        cacheBust: true,
+        pixelRatio,
+        backgroundColor: '#fff',
+        skipFonts: false,
+        style: {
+            transform: 'none',
+            animation: 'none',
+            transition: 'none',
+            filter: 'none',
+        },
+        filter: (el) => {
+            if (el.tagName === 'IMG' && el.src.startsWith('http') && !el.crossOrigin) {
+                console.warn('[PDF Capture] Skipping cross-origin image:', el.src);
+                return false;
+            }
+            return true;
+        }
+    });
+}
+
+async function captureFullReport(): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.src = '/print/full?pdf=1';
+    Object.assign(iframe.style, {
+      position: 'fixed',
+      left: '-10000px',
+      top: '0',
+      width: '1280px',
+      height: '10px', // Start small, will grow
+      opacity: '0',
+      visibility: 'hidden',
+      pointerEvents: 'none',
+      border: '0',
+    });
+    document.body.appendChild(iframe);
+    
+    const cleanup = () => { try { document.body.removeChild(iframe); } catch {} };
+
+    iframe.onload = async () => {
+      try {
+        const win = iframe.contentWindow!;
+        if (!win) throw new Error("Iframe content window not available.");
+
+        // Wait for the page to prep itself (expand accordions, load fonts)
+        if (typeof win.__PRINT_PREP__ === 'function') {
+            await win.__PRINT_PREP__();
+        }
+
+        await raf2();
+        
+        iframe.style.height = `${win.document.documentElement.scrollHeight}px`;
+        
+        const root = win.document.getElementById('full-report-root') || win.document.documentElement;
+        
+        const dataUrl = await toPng(root, {
+            pixelRatio: 2,
+            cacheBust: true,
+            backgroundColor: '#fff',
+            skipFonts: false,
+            style: { transform: 'none', animation: 'none', transition: 'none', filter: 'none' },
+            filter: (el) => {
+                if (el.tagName === 'IMG' && el.src.startsWith('http') && !el.crossOrigin) return false;
+                return true;
+            }
+        });
+        
+        if (!dataUrl || dataUrl.length < 1000 || !dataUrl.startsWith('data:image/png;base64,')) {
+            throw new Error('Invalid or empty data URL returned from capture.');
+        }
+
+        const img = new Image();
+        img.onload = () => { cleanup(); resolve(img); };
+        img.onerror = e => { cleanup(); reject(new Error('Failed to load captured image.')); };
+        img.src = dataUrl;
+
+      } catch (e) {
+        cleanup();
+        reject(e);
+      }
+    };
+    iframe.onerror = e => { cleanup(); reject(new Error('Iframe failed to load /print/full.')); };
+  });
+}
+
+function slicePngToA4(dataUrl: string, dpi = 150, marginMm = 10): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+        const pxPerMm = dpi / 25.4;
+        const a4WidthPx = Math.round(210 * pxPerMm);
+        const a4HeightPx = Math.round(297 * pxPerMm);
+        const marginPx = Math.round(marginMm * pxPerMm);
+        const contentW = a4WidthPx - (2 * marginPx);
+        const contentH = a4HeightPx - (2 * marginPx);
+        
+        const img = new Image();
+        img.onload = () => {
+            const scale = contentW / img.width;
+            const scaledW = Math.round(img.width * scale);
+            const scaledH = Math.round(img.height * scale);
+
+            const scaledCanvas = document.createElement('canvas');
+            scaledCanvas.width = scaledW;
+            scaledCanvas.height = scaledH;
+            const sctx = scaledCanvas.getContext('2d')!;
+            sctx.imageSmoothingEnabled = true;
+            sctx.imageSmoothingQuality = 'high';
+            sctx.drawImage(img, 0, 0, scaledW, scaledH);
+
+            const slices: string[] = [];
+            for (let y = 0; y < scaledH; y += contentH) {
+                const h = Math.min(contentH, scaledH - y);
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = a4WidthPx;
+                pageCanvas.height = a4HeightPx;
+                const pctx = pageCanvas.getContext('2d')!;
+                pctx.fillStyle = '#fff';
+                pctx.fillRect(0, 0, a4WidthPx, a4HeightPx);
+                pctx.drawImage(scaledCanvas, 0, y, contentW, h, marginPx, marginPx, contentW, h);
+                const sliceDataUrl = pageCanvas.toDataURL('image/png');
+                const rawBase64 = sliceDataUrl.split(',')[1];
+                if (rawBase64 && rawBase64.length > 1000) {
+                    slices.push(rawBase64);
+                } else {
+                    console.warn(`[PDF Slice] Skipping empty or invalid slice at y=${y}. Length: ${rawBase64?.length || 0}`);
+                }
+            }
+            resolve(slices);
+        };
+        img.onerror = () => reject(new Error("Failed to load image for slicing."));
+        img.src = dataUrl;
+    });
+}
+
 
 // --- Main Component ---
 export function DownloadReportButton() {
@@ -163,28 +162,9 @@ export function DownloadReportButton() {
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   
-  const handleDownload = async (isProbe: boolean, isFullReport: boolean) => {
+  const handlePdfRequest = async (payload: any, isProbe: boolean, title: string) => {
     setIsBusy(true);
-    const title = isFullReport ? 'FullForecastReport' : 'ForecastReport';
-
     try {
-        let payload: any;
-        if (isFullReport) {
-            const img = await captureFullReport();
-            const slices = await sliceToA4(img.src, {dpi: 150, marginPt: 24});
-            const images = slices.map(s => s.replace(/^data:image\/\w+;base64,/, '')).filter(Boolean);
-            if(images.length === 0) throw new Error("Slicing failed to produce images.");
-            payload = { images, page: 'A4', dpi: 150, marginPt: 24, title };
-        } else {
-            const node = document.getElementById('report-content');
-            if (!node) throw new Error("Could not find #report-content element.");
-            const dataUrl = await captureNodePng(node);
-            const img = new Image();
-            img.src = dataUrl;
-            await new Promise(r=>img.onload=r);
-            payload = { imageBase64: dataUrl.split(',')[1], width: img.naturalWidth, height: img.naturalHeight, page:'A4', fit:'contain', marginPt: 36, dpi: 150, title };
-        }
-
         const response = await fetch('/api/print/pdf', {
             method: 'POST',
             headers: {
@@ -226,6 +206,38 @@ export function DownloadReportButton() {
     }
   }
 
+  const handleSummary = async (isProbe: boolean) => {
+    const node = document.getElementById('report-content');
+    if (!node) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Report content not found.'});
+        return;
+    }
+    const dataUrl = await captureNodePng(node);
+    const rawBase64 = dataUrl.split(',')[1];
+    if (!rawBase64 || rawBase64.length < 1000) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to capture summary content.'});
+        return;
+    }
+    console.log('[PDF Summary]', { len: rawBase64.length, dataUrlLen: dataUrl.length });
+    const payload = { imageBase64: rawBase64, format:'png', page:'A4', dpi:150, fit:'contain', marginMm:10 };
+    await handlePdfRequest(payload, isProbe, 'ForecastSummary');
+  };
+
+  const handleFullReport = async (isProbe: boolean) => {
+    try {
+        const img = await captureFullReport();
+        const slices = await slicePngToA4(img.src);
+        console.log('[PDF Full Report]', { slices: slices.length, lengths: slices.map(s => s.length) });
+        if (slices.length === 0) {
+            throw new Error("Slicing failed to produce any valid pages.");
+        }
+        const payload = { images: slices, format:'png', page:'A4', dpi:150, marginMm:10 };
+        await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+    } catch (err: any) {
+        toast({ variant: 'destructive', title: 'Full Report Error', description: err.message });
+    }
+  };
+
 
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -239,25 +251,25 @@ export function DownloadReportButton() {
             <DialogHeader>
                 <DialogTitle>Download Options</DialogTitle>
                 <DialogDescription>
-                    Choose the report you want to download or probe. Probes return technical data instead of a file.
+                    Choose the report you want to download as PDF or inspect with a JSON probe.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-               <Button type="button" disabled={isBusy} onClick={(e) => { stopAll(e); handleDownload(false, false); }}>
+               <Button type="button" disabled={isBusy} onClick={(e) => { stopAll(e); handleSummary(false); }}>
                  {isBusy ? <Loader2 className="mr-2 animate-spin"/> : <FileText className="mr-2"/>} Download Summary (PDF)
                </Button>
-               <Button type="button" disabled={isBusy} onClick={(e) => { stopAll(e); handleDownload(false, true); }}>
+               <Button type="button" disabled={isBusy} onClick={(e) => { stopAll(e); handleFullReport(false); }}>
                  {isBusy ? <Loader2 className="mr-2 animate-spin"/> : <FileText className="mr-2"/>} Download Full Report (PDF)
                </Button>
-                <Button type="button" variant="outline" disabled={isBusy} onClick={(e) => { stopAll(e); handleDownload(true, false); }}>
+                <Button type="button" variant="outline" disabled={isBusy} onClick={(e) => { stopAll(e); handleSummary(true); }}>
                  {isBusy ? <Loader2 className="mr-2 animate-spin"/> : <FileJson className="mr-2"/>} Probe Summary (JSON)
                </Button>
-                <Button type="button" variant="outline" disabled={isBusy} onClick={(e) => { stopAll(e); handleDownload(true, true); }}>
+                <Button type="button" variant="outline" disabled={isBusy} onClick={(e) => { stopAll(e); handleFullReport(true); }}>
                  {isBusy ? <Loader2 className="mr-2 animate-spin"/> : <FileJson className="mr-2"/>} Probe Full Report (JSON)
                </Button>
             </div>
             <DialogFooter>
-                <Button variant="secondary" onClick={(e) => { stopAll(e); setModalOpen(false); }}>Cancel</Button>
+                <Button variant="secondary" type="button" onClick={(e) => { stopAll(e); setModalOpen(false); }}>Cancel</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

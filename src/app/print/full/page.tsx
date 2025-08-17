@@ -26,17 +26,24 @@ function FullReportContent() {
     const { financials, inputs, t } = useForecast();
 
     useEffect(() => {
-        (async () => {
-            document.documentElement.classList.add('print-freeze');
-            await document.fonts?.ready?.catch(() => {});
-            requestAnimationFrame(() => {
-                document.querySelectorAll('details').forEach((d: any) => (d.open = true));
-                document.querySelectorAll<HTMLElement>('[aria-expanded="false"]').forEach(btn => btn.click?.());
-                 setTimeout(() => {
-                    (window as any).__PRINT_READY__ = true;
-                }, 1000); // Give a bit of time for things to open
+        // Expose a preparation function on the window object for the parent to call.
+        (window as any).__PRINT_PREP__ = async () => {
+            console.log('[PDF PREP] Starting preparation...');
+            // Force open common collapsible components
+            document.querySelectorAll('details').forEach((d: any) => (d.open = true));
+            document.querySelectorAll<HTMLElement>('[aria-expanded="false"]').forEach(btn => {
+                if (btn.tagName === 'BUTTON' || btn.getAttribute('role') === 'button') {
+                    btn.click?.();
+                }
             });
-        })();
+            // Wait for fonts to be ready
+            await document.fonts?.ready?.catch((err) => console.warn('[PDF PREP] Font ready error:', err));
+            console.log('[PDF PREP] Preparation complete.');
+        };
+
+        // Also set a simple flag for older polling logic, and after prep is done.
+        (window as any).__PRINT_READY__ = true;
+        
     }, []);
 
     if (financials.isLoading) return <SummaryPageSkeleton t={t} />;
