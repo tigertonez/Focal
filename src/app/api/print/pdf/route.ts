@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 
@@ -75,10 +74,17 @@ export async function POST(req: NextRequest) {
     const skipped: { index: number; reason: string }[] = [];
 
     if (isMulti) {
-      const { images, page, dpi, marginPt } = body as MultiPayload;
+      const { images: rawImages, page, dpi, marginPt } = body as any;
       const pageSizePt = page === 'Letter' ? { w: 612, h: 792 } : { w: 595.28, h: 841.89 }; // A4 default
+
+      // Accept both string[] and object[]; normalize
+      const images = Array.isArray(rawImages)
+        ? rawImages
+            .map((it: any) => (typeof it === 'string' ? { imageBase64: it } : it))
+            .filter((it: any) => it && typeof it.imageBase64 === 'string' && it.imageBase64.length > 0)
+        : [];
       
-      for (const [i, slice] of images.filter(Boolean).entries()) {
+      for (const [i, slice] of images.entries()) {
         try {
           if (!slice.imageBase64 || slice.imageBase64.length < 1000) {
             throw new Error('Invalid or empty image data');
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
           const { bytes, type } = decodeImageBase64(slice.imageBase64);
           const img = type === 'png' ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
 
-          const contentW = pageSizePt.w - (marginPt * 2);
+          const contentW = pageSizePt.w - marginPt * 2;
           const scale = contentW / img.width;
           const drawH = img.height * scale;
           

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Download, Loader2, FileJson, FileText } from 'lucide-react';
-import { captureSummaryNodeRaw, captureRouteAsA4Pages, DEFAULT_A4 } from '@/lib/pdfCapture';
+import { captureSummaryNodeRaw, captureRouteAsA4Pages, DEFAULT_A4, type ImageSlice } from '@/lib/pdfCapture';
 
 const stopAll = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -16,7 +15,7 @@ const stopAll = (e: React.MouseEvent) => {
     }
 };
 
-const FULL_REPORT_ROUTES = ['/inputs', '/revenue', '/costs', '/profit', '/cashflow', '/summary'];
+const FULL_REPORT_ROUTES = ['/inputs', '/revenue', '/costs', '/profit', '/cash-flow', '/summary'];
 
 export function DownloadReportButton() {
   const [isBusy, setIsBusy] = React.useState(false);
@@ -81,10 +80,13 @@ export function DownloadReportButton() {
     try {
         const { raw, w, h } = await captureSummaryNodeRaw(node);
         const payload = { 
-            imageBase64: raw, 
+            imageBase64: raw,
+            width: w,
+            height: h,
             page: 'A4', 
             fit: 'contain', 
-            ...DEFAULT_A4 
+            ...DEFAULT_A4,
+            title: 'ForecastSummary'
         };
         await handlePdfRequest(payload, isProbe, 'ForecastSummary');
     } catch (err: any) {
@@ -96,29 +98,32 @@ export function DownloadReportButton() {
   const handleFullReport = async (isProbe: boolean) => {
     setIsBusy(true);
     try {
-        let allSlices: string[] = [];
-        for (const route of FULL_REPORT_ROUTES) {
-            const pages = await captureRouteAsA4Pages(route, DEFAULT_A4);
-            allSlices.push(...pages);
-        }
-        
-        const validSlices = allSlices.filter(s => s && s.length > 2000);
-        if (validSlices.length === 0) {
-            toast({ variant: "destructive", title: "Empty Report", description: "Could not capture any content for the report." });
-            setIsBusy(false);
-            return;
-        }
-
-        const payload = { 
-            images: validSlices, 
-            page: 'A4', 
-            fit: 'contain',
-            ...DEFAULT_A4 
-        };
-        await handlePdfRequest(payload, isProbe, 'FullForecastReport');
-    } catch (err: any) {
-        toast({ variant: 'destructive', title: 'Full Report Error', description: err.message });
+      const allSlices: ImageSlice[] = [];
+      for (const route of FULL_REPORT_ROUTES) {
+        const pages = await captureRouteAsA4Pages(route, DEFAULT_A4);
+        allSlices.push(...pages);
+      }
+  
+      const valid = allSlices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
+      if (valid.length === 0) {
+        toast({ variant: 'destructive', title: 'Empty Report', description: 'Could not capture any content for the report.' });
         setIsBusy(false);
+        return;
+      }
+  
+      // *** IMPORTANT ***  Send objects, not strings
+      const payload = {
+        images: valid,             // [{ imageBase64, wPx, hPx, name? }, ...]
+        page: 'A4',
+        dpi: DEFAULT_A4.dpi,
+        marginPt: DEFAULT_A4.marginPt,
+        title: 'FullForecastReport',
+      };
+  
+      await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Full Report Error', description: err.message });
+      setIsBusy(false);
     }
   };
 
