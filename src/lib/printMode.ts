@@ -1,4 +1,4 @@
-
+// src/lib/printMode.ts
 'use client';
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';

@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -82,11 +81,11 @@ export function DownloadReportButton() {
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="download-report-trigger" variant="default" className="group" data-no-print="true">
+        <Button data-testid="download-report-trigger" variant="default" className="group">
           <Download className="mr-2" /> Download Report
         </Button>
       </DialogTrigger>
-      <DialogContent onPointerDown={(e)=>e.stopPropagation()} className="sm:max-w-[425px]" data-no-print="true">
+      <DialogContent onPointerDown={(e)=>e.stopPropagation()} className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Download Options</DialogTitle>
           <DialogDescription>Choose the report to download as PDF or inspect the payload.</DialogDescription>
