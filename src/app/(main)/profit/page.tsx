@@ -120,19 +120,19 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
 }
 
 export default function ProfitPage() {
-  const { t, financials, inputs } = useForecast();
-  const { isPrint } = usePrintMode();
+  const { t, financials, inputs, ensureForecastReady } = useForecast();
+  const { isPrint, lang } = usePrintMode();
 
   React.useEffect(() => {
     if (!isPrint) return;
-    signalWhenReady(document);
-  }, [isPrint]);
+    signalWhenReady({ lang, ensureForecastReady });
+  }, [isPrint, lang, ensureForecastReady]);
 
   if (financials.isLoading && !isPrint) {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  if (financials.error) {
+  if (financials.error && !isPrint) {
     return (
       <div className="p-4 md:p-8" data-report-root>
         <Alert variant="destructive">
@@ -147,10 +147,11 @@ export default function ProfitPage() {
   }
 
   if (!financials.data || !inputs) {
-    if (isPrint) {
-        return <div data-report-root><p>No data available for print.</p></div>
-    }
-    return <ProfitPageSkeleton t={t} />;
+    return (
+        <div className="p-4 md:p-8 text-center" data-report-root>
+            <Alert><AlertTitle>{t.errors.noData}</AlertTitle></Alert>
+        </div>
+    );
   }
 
   return (

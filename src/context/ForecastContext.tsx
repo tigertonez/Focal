@@ -13,8 +13,10 @@ interface FinancialsState {
   isLoading: boolean;
 }
 
-// Promise to ensure only one calculation is in flight
 let calculationPromise: Promise<EngineOutput> | null = null;
+let readyPromise: Promise<void> | null = null;
+let readyResolve: (() => void) | null = null;
+
 
 interface ForecastContextType {
   inputs: EngineInput;
@@ -132,6 +134,11 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }
     const data = calculateFinancialsEngine(result.data);
     localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
+    if (readyResolve) {
+      readyResolve();
+      readyPromise = null;
+      readyResolve = null;
+    }
     return data;
   }, []);
 
@@ -139,6 +146,21 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     if (financials.data && !financials.isLoading) {
         return;
     }
+    if (readyPromise) {
+        return readyPromise;
+    }
+    
+    readyPromise = new Promise((resolve, reject) => {
+      readyResolve = resolve;
+      // Timeout to prevent infinite waiting
+      const timeoutId = setTimeout(() => {
+        reject(new Error("FORECAST_NOT_READY_TIMEOUT: Forecast calculation took too long."));
+      }, 10000);
+
+      // Clean up timeout when the promise settles
+      readyPromise?.finally(() => clearTimeout(timeoutId));
+    });
+
     if (calculationPromise) {
         await calculationPromise;
         return;
@@ -168,15 +190,18 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
             return data;
         } catch (e: any) {
             setFinancials({ data: null, error: e.message, isLoading: false });
-            throw e; // rethrow to reject the promise
+            throw e;
         } finally {
             calculationPromise = null;
         }
     };
     
-    calculationPromise = calculation();
-    await calculationPromise;
-
+    // If not already loading, start the calculation.
+    if (!financials.isLoading) {
+       calculationPromise = calculation();
+    }
+    
+    return readyPromise;
   }, [financials, inputs, calculateFinancials]);
 
   const saveDraft = (currentInputs: EngineInput) => {

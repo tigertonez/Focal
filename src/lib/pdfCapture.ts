@@ -1,5 +1,5 @@
 'use client';
-
+import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
@@ -55,7 +55,7 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   await waitIframeReady(win);
   const doc = iframe.contentDocument!;
   doc.documentElement.setAttribute('data-print','1');
-  if (document.documentElement.className) { // copy theme class (e.g. "dark")
+  if (document.documentElement.className) {
     doc.documentElement.className = document.documentElement.className;
   }
   return { win, doc, cleanup: () => iframe.remove() };
@@ -63,19 +63,14 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
 
 /** Build A4 pages INSIDE the DOM so measurements are correct. */
 function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:number,h:number}) {
-  // Stage holds the printable pages; keep original content hidden but in DOM.
-  let stage = doc.getElementById('__print_stage__') as HTMLElement | null;
-  if (stage) stage.remove(); // clear from previous runs
-  
-  stage = doc.createElement('div');
+  const stage = doc.createElement('div');
   stage.id = '__print_stage__';
   doc.body.appendChild(stage);
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
 
-  // Clone content into the stage to avoid mutating live components
-  const cloned = sourceRoot.cloneNode(true) as HTMLElement;
-  cloned.querySelectorAll('[data-no-print="true"]').forEach(el => el.remove());
-  stage.appendChild(cloned);
+  const working = sourceRoot.cloneNode(true) as HTMLElement;
+  working.querySelectorAll('[data-no-print="true"]').forEach(el => el.remove());
+  stage.appendChild(working);
 
   const container = doc.createElement('div');
   stage.appendChild(container);
@@ -84,8 +79,6 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
     const p = doc.createElement('div');
     Object.assign(p.style, {
       width: `${a4Px.w}px`,
-      minHeight: `${a4Px.h}px`,
-      height: `${a4Px.h}px`, // fixed height for page
       overflow: 'hidden',
       boxSizing: 'border-box',
       backgroundColor: '#fff',
@@ -96,61 +89,82 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
     return p;
   };
   
-  const pages: HTMLElement[] = [];
-  let currentPage = newPage();
-  pages.push(currentPage);
+  let page = newPage();
+  let usedHeight = 0;
 
-  const walkAndSplit = (node: HTMLElement, currentY: number) => {
+  const getOuterHeight = (el: HTMLElement) => {
+    const style = doc.defaultView!.getComputedStyle(el);
+    return el.offsetHeight + parseInt(style.marginTop) + parseInt(style.marginBottom);
+  };
+
+  const splitNode = (node: HTMLElement) => {
     if (node.tagName === 'TABLE') {
-      const head = node.querySelector('thead');
-      const body = node.querySelector('tbody');
-      if (body) {
-        const rows = Array.from(body.rows) as HTMLElement[];
-        let tableOnPage = currentPage.querySelector(`[data-table-id="${node.id}"]`) as HTMLElement | null;
+      const table = node;
+      const head = table.tHead ? table.tHead.cloneNode(true) : null;
+      const rows = Array.from((table.tBodies[0] || table).rows);
+      
+      const newTable = () => {
+        const tbl = table.cloneNode(false) as HTMLTableElement;
+        if (head) tbl.appendChild(head.cloneNode(true));
+        tbl.appendChild(doc.createElement('tbody'));
+        page.appendChild(tbl);
+        return tbl.tBodies[0];
+      };
 
-        rows.forEach(row => {
-          if (!tableOnPage) {
-            tableOnPage = node.cloneNode(false) as HTMLElement;
-            if(head) tableOnPage.appendChild(head.cloneNode(true));
-            tableOnPage.appendChild(doc.createElement('tbody'));
-            tableOnPage.setAttribute('data-table-id', node.id || `tbl-${Math.random()}`);
-            currentPage.appendChild(tableOnPage);
-          }
-          const tableBody = tableOnPage.querySelector('tbody')!;
-          tableBody.appendChild(row);
-
-          if (currentPage.scrollHeight > a4Px.h) {
-            tableBody.removeChild(row);
-            currentPage = newPage();
-            pages.push(currentPage);
-            tableOnPage = null; // force new table on new page
-            // Re-add row to new page
-            tableOnPage = node.cloneNode(false) as HTMLElement;
-            if(head) tableOnPage.appendChild(head.cloneNode(true));
-            tableOnPage.appendChild(doc.createElement('tbody'));
-            tableOnPage.setAttribute('data-table-id', node.id || `tbl-${Math.random()}`);
-            currentPage.appendChild(tableOnPage);
-            tableOnPage.querySelector('tbody')!.appendChild(row);
-          }
-        });
+      let currentBody = newTable();
+      for (const row of rows) {
+        const rowHeight = getOuterHeight(row as HTMLElement);
+        if (usedHeight + rowHeight > a4Px.h && usedHeight > 0) {
+          page.style.height = `${a4Px.h}px`;
+          page = newPage();
+          usedHeight = 0;
+          currentBody = newTable();
+        }
+        currentBody.appendChild(row);
+        usedHeight += rowHeight;
       }
     } else {
+      // Generic deep node split
+      const shell = node.cloneNode(false) as HTMLElement;
+      page.appendChild(shell);
       const children = Array.from(node.children) as HTMLElement[];
       for (const child of children) {
-          const childHeight = child.offsetHeight;
-          if ((currentPage.scrollHeight + childHeight) > a4Px.h && currentPage.childNodes.length > 0) {
-              currentPage = newPage();
-              pages.push(currentPage);
+          const childHeight = getOuterHeight(child);
+          if(usedHeight + childHeight > a4Px.h && usedHeight > 0) {
+              page.style.height = `${a4Px.h}px`;
+              page = newPage();
+              usedHeight = 0;
+              const nextShell = node.cloneNode(false) as HTMLElement;
+              page.appendChild(nextShell);
+              nextShell.appendChild(child);
+          } else {
+              shell.appendChild(child);
+              usedHeight += childHeight;
           }
-          currentPage.appendChild(child);
       }
     }
+  };
+
+  const blocks = Array.from(working.children) as HTMLElement[];
+  for (const block of blocks) {
+    const blockHeight = getOuterHeight(block);
+    if (usedHeight > 0 && usedHeight + blockHeight > a4Px.h) {
+        page.style.height = `${a4Px.h}px`;
+        page = newPage();
+        usedHeight = 0;
+    }
+    if (blockHeight > a4Px.h) {
+        splitNode(block);
+    } else {
+        page.appendChild(block);
+        usedHeight += blockHeight;
+    }
   }
-
-  walkAndSplit(cloned, 0);
-
+  
+  const pages = Array.from(container.children) as HTMLElement[];
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
-  return { pages, stage, sourceRoot: cloned };
+  pages.forEach(p => p.style.height = `${a4Px.h}px`);
+  return { pages, stage };
 }
 
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}): Promise<ImageSlice[]> {
@@ -164,63 +178,52 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
-    if (!root) {
-      root = doc.createElement('div');
-      root.setAttribute('data-report-root','1');
-      while (doc.body.firstChild) root.appendChild(doc.body.firstChild);
-      doc.body.appendChild(root);
-    }
+    if (!root) throw new Error(`[data-report-root] not found on route: ${path}`);
     
+    const { pages, stage } = paginateAttached(doc, root, a4Px);
     await waitIframeReady(win);
-    
-    const { pages } = paginateAttached(doc, root, a4Px);
 
     const slices: ImageSlice[] = [];
-    const { toPng } = await import('html-to-image');
-
     for (const p of pages) {
-      let url: string | undefined;
+      let url = '';
       try {
-        url = await toPng(p, { cacheBust: true, pixelRatio: 2, useCORS:true, style:{transform:'none'}, skipFonts: false });
-      } catch(e) {
-        console.warn('html-to-image failed, trying html2canvas', e);
+        url = await toPng(p, {
+          cacheBust: true, pixelRatio: 2, style: { transform: 'none' },
+          skipFonts: false, useCORS: true,
+          filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
+        });
+      } catch (e) {
+        console.warn('html-to-image failed, falling back to html2canvas', e);
         try {
-          const canvas = await html2canvas(p, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-          url = canvas.toDataURL('image/png');
+            const canvas = await html2canvas(p, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            url = canvas.toDataURL('image/png');
         } catch (e2) {
-          console.error('html2canvas also failed', e2);
+             console.error('html2canvas also failed', e2);
         }
       }
 
       if (!url || !url.startsWith('data:image/png;base64,') || url.length < 10000) continue;
-      
       const raw = rawFromDataUrl(url);
-      const img = new Image();
-      img.src = url;
-      try { await img.decode(); } catch {}
+      if (raw.length < 2000) continue;
+      const img = new Image(); img.src = url; await img.decode().catch(()=>{});
       slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h });
     }
     
-    if(slices.length === 0) throw new Error("No printable content was captured (0 slices).");
-
+    stage.remove();
+    if (slices.length === 0) throw new Error('No printable content was captured (0 slices).');
     return slices;
   } finally {
     cleanup();
   }
 }
 
-/** Single-page capture for Summary (unchanged): */
 export async function captureSummaryNodeRaw(node: HTMLElement): Promise<{raw:string; w:number; h:number}> {
-  const { toPng } = await import('html-to-image');
   const url = await toPng(node, {
-    cacheBust: true,
-    pixelRatio: 2,
-    style: { transform:'none' },
-    skipFonts: false,
-    useCORS: true,
+    cacheBust: true, pixelRatio: 2, style: { transform:'none' },
+    skipFonts: false, useCORS: true,
     filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
   });
   if (!url?.startsWith('data:image/png;base64,')) throw new Error('Summary capture failed');
-  const img = new Image(); img.src = url; await img.decode().catch(()=>{});
+  const img = new Image(); img.src = url; await img.decode();
   return { raw: rawFromDataUrl(url), w: img.naturalWidth, h: img.naturalHeight };
 }

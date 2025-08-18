@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Download, Loader2, FileJson, FileText } from 'lucide-react';
-import { captureSummaryNodeRaw, captureRouteAsA4Pages, DEFAULT_A4, ImageSlice } from '@/lib/pdfCapture';
+import { captureSummaryNodeRaw, captureRouteAsA4Pages, DEFAULT_A4, type ImageSlice } from '@/lib/pdfCapture';
 import { useForecast } from '@/context/ForecastContext';
 
 const stopAll = (e: React.MouseEvent) => {
@@ -71,12 +71,14 @@ export function DownloadReportButton() {
       }
       const valid = slices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
       if (valid.length === 0) throw new Error('No printable content was captured (0 slices).');
+      
       if (isProbe) {
-        console.log(`Probing ${valid.length} slices...`, {
-          sizes: valid.map(s => s.imageBase64.length),
-          total: valid.reduce((acc, s) => acc + s.imageBase64.length, 0),
-        });
+          console.log(`Probing ${valid.length} slices...`, {
+              sizes: valid.map(s => s.imageBase64.length),
+              total: valid.reduce((acc, s) => acc + s.imageBase64.length, 0),
+          });
       }
+      
       await handlePdfRequest({ images: valid, page:'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt }, isProbe, 'FullForecastReport');
       setModalOpen(false);
     } catch (err:any) {
@@ -87,7 +89,7 @@ export function DownloadReportButton() {
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="download-report-trigger" variant="default" className="group">
+        <Button data-testid="download-report-trigger" variant="default" className="group" data-no-print="true">
           <Download className="mr-2" /> Download Report
         </Button>
       </DialogTrigger>

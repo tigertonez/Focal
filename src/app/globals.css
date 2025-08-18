@@ -95,9 +95,6 @@ html[data-print="1"] *, html[data-print="1"] {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-html[data-print="1"] header,
-html[data-print="1"] nav,
-html[data-print="1"] [data-app-chrome="1"],
 html[data-print="1"] [data-no-print="true"] { display: none !important; }
 
 /* Make SVG charts render sharply */
@@ -116,3 +113,11 @@ html[data-print="1"] [style*="position:sticky"],
 html[data-print="1"] [style*="position: fixed"] {
   position: static !important;
 }
+
+html[data-print="1"] header,
+html[data-print="1"] nav,
+html[data-print="1"] [data-app-chrome="1"],
+html[data-print="1"] [data-no-print="true"] { display: none !important; }
+
+html[data-print="1"] .fixed,
+html[data-print="1"] .sticky { position: static !important; }

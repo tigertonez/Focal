@@ -239,12 +239,13 @@ function InputsPageContent() {
   }
 
 export default function InputsPage() {
-    const { isPrint } = usePrintMode();
+    const { isPrint, lang } = usePrintMode();
+    const { ensureForecastReady } = useForecast();
 
     React.useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady(document);
-    }, [isPrint]);
+        signalWhenReady({ lang, ensureForecastReady });
+    }, [isPrint, lang, ensureForecastReady]);
 
     return (
         <div data-report-root>

@@ -24,30 +24,6 @@ export function signalPrintReady() {
   }
 }
 
-/** Waits for at least one Recharts SVG to have a measurable size */
-async function waitForVisibleCharts(root: HTMLElement): Promise<void> {
-  return new Promise((resolve) => {
-    let attempts = 0;
-    const interval = setInterval(() => {
-      const svgs = Array.from(root.querySelectorAll<SVGSVGElement>('.recharts-surface, .recharts-wrapper svg'));
-      const hasVisibleChart = svgs.some(svg => {
-        try {
-          const box = svg.getBBox();
-          return box.width > 0 && box.height > 0;
-        } catch {
-          return false; // getBBox can fail if element is not rendered
-        }
-      });
-
-      if (hasVisibleChart || attempts >= 40) { // 40 * 50ms = 2 seconds timeout
-        clearInterval(interval);
-        resolve();
-      }
-      attempts++;
-    }, 50);
-  });
-}
-
 export function usePrintMode() {
   const params = useSearchParams();
   const isPrint = params.get('print') === '1';
@@ -91,11 +67,53 @@ export async function settleLayout(doc: Document) {
   await new Promise(r => setTimeout(r, 120));
 }
 
-/** Awaits data, expands UI, waits for layout/charts, then signals ready */
-export async function signalWhenReady(root: Document | HTMLElement) {
-    const doc = root.ownerDocument || document;
-    await expandAllInteractive(doc);
-    await settleLayout(doc);
-    await waitForVisibleCharts(doc.body); // Check the whole body for SVGs
+/** Waits for at least one Recharts SVG to have a measurable size */
+export async function waitForVisibleCharts(doc: Document, { timeoutMs = 8000 } = {}): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const svgs = Array.from(doc.querySelectorAll<SVGSVGElement>('svg.recharts-surface'));
+        if (svgs.length === 0) {
+            resolve();
+            return;
+        }
+
+        let attempts = 0;
+        const interval = 100;
+        const maxAttempts = timeoutMs / interval;
+
+        const checkCharts = () => {
+            const allVisible = svgs.every(svg => {
+                try {
+                    const box = svg.getBBox();
+                    return box.width > 0 && box.height > 0;
+                } catch {
+                    return false;
+                }
+            });
+
+            if (allVisible) {
+                clearInterval(timer);
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                reject(new Error("CHARTS_NOT_VISIBLE_TIMEOUT: Charts did not become visible in time."));
+            }
+            attempts++;
+        };
+
+        const timer = setInterval(checkCharts, interval);
+    });
+}
+
+/** New orchestrator for routes in print mode */
+export async function signalWhenReady(opts?: {
+  lang?: 'en'|'de';
+  ensureForecastReady?: () => Promise<void>;
+}): Promise<void> {
+    if (opts?.ensureForecastReady) {
+        await opts.ensureForecastReady();
+    }
+    await expandAllInteractive(document);
+    await settleLayout(document);
+    await waitForVisibleCharts(document);
     signalPrintReady();
 }
