@@ -17,8 +17,9 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
+import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
 
-function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: EngineInput, t: any }) {
+function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue, monthlyUnitsSold } = data;
@@ -87,7 +88,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} />
+                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} isAnimationActive={!isPrint} />
                         </CardContent>
                     </Card>
                     <Card>
@@ -95,7 +96,7 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" />
+                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" isAnimationActive={!isPrint} />
                         </CardContent>
                     </Card>
                 </div>
@@ -146,11 +147,11 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
                 </Card>
             </section>
 
-            <section className="pt-4">
+            <section className="pt-4" data-no-print={isPrint}>
               <RevenueInsights revenueSummary={revenueSummary} currency={currency} />
             </section>
 
-            <footer className="flex justify-between mt-8 pt-6 border-t">
+            <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
                <Button variant="outline" onClick={() => router.push('/inputs')}>
                   <ArrowLeft className="mr-2" /> Back to Inputs
               </Button>
@@ -165,14 +166,25 @@ function RevenuePageContent({ data, inputs, t }: { data: EngineOutput; inputs: E
 export default function RevenuePage() {
     const { t, financials, inputs } = useForecast();
     const router = useRouter();
+    const { isPrint } = usePrintMode();
 
-    if (financials.isLoading) {
+    React.useEffect(() => {
+        if (!isPrint) return;
+        const doc = document;
+        (async () => {
+            await expandAllInteractive(doc);
+            await settleLayout(doc);
+            signalPrintReady();
+        })();
+    }, [isPrint]);
+
+    if (financials.isLoading && !isPrint) {
         return <RevenuePageSkeleton t={t} />;
     }
 
     if (financials.error) {
         return (
-            <div className="p-4 md:p-8">
+            <div className="p-4 md:p-8" data-report-root>
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -190,12 +202,12 @@ export default function RevenuePage() {
 
     if (financials.data.revenueSummary.totalRevenue === 0) {
         return (
-             <div className="p-4 md:p-8">
+             <div className="p-4 md:p-8" data-report-root>
                 <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
                 <div className="text-center text-muted-foreground mt-16">
                     <p>{t.errors.noRevenue}</p>
                     <p className="text-sm">{t.errors.noRevenueDescription}</p>
-                     <Button onClick={() => router.push('/costs')} className="mt-4">
+                     <Button onClick={() => router.push('/costs')} className="mt-4" data-no-print="true">
                         {t.errors.continueToCosts} <ArrowRight className="ml-2" />
                     </Button>
                 </div>
@@ -203,5 +215,9 @@ export default function RevenuePage() {
         )
     }
 
-    return <RevenuePageContent data={financials.data} inputs={inputs} t={t} />;
+    return (
+        <div data-report-root>
+            <RevenuePageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
+        </div>
+    );
 }

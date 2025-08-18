@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -21,19 +20,16 @@ interface MonthlyTimelineChartProps {
   currency?: string;
   configOverrides?: Record<string, { label: string }>;
   formatAs?: 'currency' | 'number';
+  isAnimationActive?: boolean;
 }
 
-export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency' }: MonthlyTimelineChartProps) {
+export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true }: MonthlyTimelineChartProps) {
   const { inputs, t } = useForecast();
   
   const { chartConfig, costKeys, styleContent } = React.useMemo(() => {
     const newConfig: ChartConfig = {};
     const styleLines: string[] = [];
     
-    // Add a default for "Planning Buffer" if it exists in the data
-    const hasPlanningBuffer = data.some(month => month['Planning Buffer'] > 0);
-    const planningBufferCost = inputs.fixedCosts.find(fc => fc.name.toLowerCase().includes('planning buffer'));
-
     const allItems = [
       ...inputs.products, 
       ...inputs.fixedCosts, 
@@ -55,7 +51,6 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
         styleLines.push(`--color-${cssId}: ${color};`);
     });
 
-    // Apply any specific overrides for things like units sold charts
     if (configOverrides) {
         Object.keys(configOverrides).forEach(key => {
             if (newConfig[key]) {
@@ -152,6 +147,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
                     stackId="a"
                     name={itemConfig?.label || key}
                     barSize={20}
+                    isAnimationActive={isAnimationActive}
                   />
               )
           })}
@@ -161,5 +157,3 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
     </>
   )
 }
-
-    

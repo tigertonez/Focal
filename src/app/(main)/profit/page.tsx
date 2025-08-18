@@ -18,8 +18,9 @@ import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreak
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
+import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
 
-function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
+function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
   const { profitSummary } = data;
   const currency = inputs.parameters.currency;
@@ -87,7 +88,7 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} currency={currency} />
+               <ProfitBreakdownChart data={data} currency={currency} isAnimationActive={!isPrint} />
             </CardContent>
         </Card>
       </section>
@@ -103,11 +104,11 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
           </Card>
         </section>
 
-        <section className="pt-4">
+        <section className="pt-4" data-no-print={isPrint}>
             <ProfitInsights data={data} currency={currency} />
         </section>
 
-      <footer className="flex justify-between mt-8 pt-6 border-t">
+      <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
         <Button variant="outline" onClick={() => router.push('/costs')}>
             <ArrowLeft className="mr-2" /> Back to Costs
         </Button>
@@ -121,14 +122,25 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
 
 export default function ProfitPage() {
   const { t, financials, inputs } = useForecast();
+  const { isPrint } = usePrintMode();
 
-  if (financials.isLoading) {
+  React.useEffect(() => {
+    if (!isPrint) return;
+    const doc = document;
+    (async () => {
+        await expandAllInteractive(doc);
+        await settleLayout(doc);
+        signalPrintReady();
+    })();
+  }, [isPrint]);
+
+  if (financials.isLoading && !isPrint) {
     return <ProfitPageSkeleton t={t} />;
   }
 
   if (financials.error) {
     return (
-      <div className="p-4 md:p-8">
+      <div className="p-4 md:p-8" data-report-root>
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
           <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -144,5 +156,9 @@ export default function ProfitPage() {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  return <ProfitPageContent data={financials.data} inputs={inputs} t={t} />;
+  return (
+    <div data-report-root>
+      <ProfitPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
+    </div>
+  );
 }

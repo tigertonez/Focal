@@ -54,12 +54,14 @@ export const HealthPanel = ({
   healthData,
   financialSummaries,
   onRecalculate,
-  t
+  t,
+  isPrint = false
 }: { 
   healthData?: BusinessHealth,
   financialSummaries: { revenue: RevenueSummary, cost: CostSummary, profit: ProfitSummary },
   onRecalculate: () => void,
-  t: any
+  t: any,
+  isPrint?: boolean
 }) => {
     const { inputs, locale } = useForecast();
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
@@ -182,66 +184,68 @@ export const HealthPanel = ({
                     </div>
                 </div>
                 
-                <Separator className="my-6" />
+                <div data-no-print={isPrint}>
+                    <Separator className="my-6" />
 
-                {error && (
-                    <Alert variant="destructive" className="mt-4">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>{t.insights.summary.strategize.error}</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-                
-                {!aiInsights && !isLoading && (
-                    <div className="text-center">
-                        <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
-                        <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
-                        <Button onClick={handleStrategize} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            {t.insights.summary.strategize.button}
-                        </Button>
-                    </div>
-                )}
-                
-                {isLoading && (
-                   <div className="text-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                        <p className="text-muted-foreground">{t.insights.summary.strategize.loaderText}</p>
-                   </div>
-                )}
-                
-                {aiInsights && (
-                     <div className="space-y-6">
-                        <div className="flex justify-between items-start">
-                             <div>
-                                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.summary.strategize.reportTitle}</CardTitle>
-                                <CardDescription>
-                                  {t.insights.summary.strategize.reportDescription}
-                                </CardDescription>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading}>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                {t.insights.regenerate}
+                    {error && (
+                        <Alert variant="destructive" className="mt-4">
+                            <ShieldAlert className="h-4 w-4" />
+                            <AlertTitle>{t.insights.summary.strategize.error}</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    
+                    {!aiInsights && !isLoading && (
+                        <div className="text-center">
+                            <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
+                            <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
+                            <Button onClick={handleStrategize} disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                {t.insights.summary.strategize.button}
                             </Button>
                         </div>
-                        
-                        <InsightSection title={t.insights.summary.strategize.summary} icon={<Lightbulb className="text-amber-500" />}>
-                           <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(aiInsights.summary)} />
-                        </InsightSection>
-
-                        <InsightSection title={t.insights.summary.strategize.strengths} icon={<CheckCircle className="text-green-500" />}>
-                          {renderContent(aiInsights.strengths)}
-                        </InsightSection>
-                        
-                        <InsightSection title={t.insights.summary.strategize.opportunities} icon={<TrendingUp className="text-blue-500" />}>
-                          {renderContent(aiInsights.opportunities)}
-                        </InsightSection>
-
-                        <InsightSection title={t.insights.summary.strategize.risks} icon={<ShieldAlert className="text-red-500" />}>
-                           {renderContent(aiInsights.risks)}
-                        </InsightSection>
-                     </div>
-                )}
+                    )}
+                    
+                    {isLoading && (
+                       <div className="text-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                            <p className="text-muted-foreground">{t.insights.summary.strategize.loaderText}</p>
+                       </div>
+                    )}
+                    
+                    {aiInsights && (
+                         <div className="space-y-6">
+                            <div className="flex justify-between items-start">
+                                 <div>
+                                     <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.summary.strategize.reportTitle}</CardTitle>
+                                    <CardDescription>
+                                      {t.insights.summary.strategize.reportDescription}
+                                    </CardDescription>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading}>
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    {t.insights.regenerate}
+                                </Button>
+                            </div>
+                            
+                            <InsightSection title={t.insights.summary.strategize.summary} icon={<Lightbulb className="text-amber-500" />}>
+                               <p className="leading-relaxed" dangerouslySetInnerHTML={createMarkup(aiInsights.summary)} />
+                            </InsightSection>
+    
+                            <InsightSection title={t.insights.summary.strategize.strengths} icon={<CheckCircle className="text-green-500" />}>
+                              {renderContent(aiInsights.strengths)}
+                            </InsightSection>
+                            
+                            <InsightSection title={t.insights.summary.strategize.opportunities} icon={<TrendingUp className="text-blue-500" />}>
+                              {renderContent(aiInsights.opportunities)}
+                            </InsightSection>
+    
+                            <InsightSection title={t.insights.summary.strategize.risks} icon={<ShieldAlert className="text-red-500" />}>
+                               {renderContent(aiInsights.risks)}
+                            </InsightSection>
+                         </div>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );

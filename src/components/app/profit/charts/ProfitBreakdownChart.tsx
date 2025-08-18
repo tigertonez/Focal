@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react"
@@ -19,9 +18,10 @@ import { useForecast } from "@/context/ForecastContext";
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
   currency: string;
+  isAnimationActive?: boolean;
 }
 
-export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, currency, isAnimationActive = true }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({
@@ -100,14 +100,15 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
+          isAnimationActive={isAnimationActive}
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="revenue" stackId="stack" fill="hsl(var(--primary))" />
-        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(0, 70%, 70%)" />
-        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--destructive))" />
+        <Bar dataKey="revenue" stackId="stack" fill="hsl(var(--primary))" isAnimationActive={isAnimationActive} />
+        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(0, 70%, 70%)" isAnimationActive={isAnimationActive} />
+        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--destructive))" isAnimationActive={isAnimationActive} />
 
         <Line 
           type="monotone" 
@@ -116,6 +117,7 @@ export function ProfitBreakdownChart({ data, currency }: ProfitBreakdownChartPro
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 
+          isAnimationActive={isAnimationActive}
         />
 
       </ComposedChart>

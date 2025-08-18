@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useCallback } from 'react';
@@ -19,6 +18,7 @@ import { useForecast } from '@/context/ForecastContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HealthPanel } from '@/components/app/summary/HealthPanel';
 import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
+import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
 
 
 // =================================================================
@@ -147,7 +147,7 @@ const FinancialWaterfall = ({ data, inputs, currency, t }: { data: EngineOutput,
 // MAIN PAGE COMPONENT
 // =================================================================
 
-function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
+function SummaryPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
 
   const handleRecalculate = useCallback(() => {
@@ -171,13 +171,14 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
               }}
               onRecalculate={handleRecalculate}
               t={t}
+              isPrint={isPrint}
           />
 
           <FinancialWaterfall data={data} inputs={inputs} currency={inputs.parameters.currency} t={t} />
         </div>
       </div>
 
-      <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4" data-hide-in-pdf="true">
+      <footer className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t gap-4" data-no-print="true">
         <Button variant="outline" onClick={() => router.push('/cash-flow')}>
           <ArrowLeft className="mr-2" /> Back to Cash Flow
         </Button>
@@ -189,14 +190,25 @@ function SummaryPageContent({ data, inputs, t }: { data: EngineOutput, inputs: E
 
 export default function SummaryPage() {
     const { t, financials, inputs } = useForecast();
+    const { isPrint } = usePrintMode();
 
-    if (financials.isLoading) {
+    React.useEffect(() => {
+        if (!isPrint) return;
+        const doc = document;
+        (async () => {
+            await expandAllInteractive(doc);
+            await settleLayout(doc);
+            signalPrintReady();
+        })();
+    }, [isPrint]);
+
+    if (financials.isLoading && !isPrint) {
         return <SummaryPageSkeleton t={t} />;
     }
 
     if (financials.error) {
         return (
-            <div className="p-4 md:p-8">
+            <div className="p-4 md:p-8" data-report-root>
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -210,7 +222,7 @@ export default function SummaryPage() {
 
     if (!financials.data || !inputs) {
         return (
-            <div className="p-4 md:p-8 text-center">
+            <div className="p-4 md:p-8 text-center" data-report-root>
                  <Alert>
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.noData}</AlertTitle>
@@ -222,5 +234,9 @@ export default function SummaryPage() {
         );
     }
 
-    return <SummaryPageContent data={financials.data} inputs={inputs} t={t} />;
+    return (
+        <div data-report-root>
+            <SummaryPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
+        </div>
+    );
 }

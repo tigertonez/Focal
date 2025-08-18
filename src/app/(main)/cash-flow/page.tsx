@@ -18,8 +18,9 @@ import { CashFlowTable } from '@/app/(main)/cash-flow/CashFlowTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
+import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
 
-function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
+function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
   const { cashFlowSummary } = data;
   const currency = inputs.parameters.currency;
@@ -81,19 +82,19 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
                 <CardTitle>{t.pages.cashFlow.charts.cumulative}</CardTitle>
             </CardHeader>
             <CardContent className="h-[400px] w-full pl-0">
-               <CashFlowChart data={data} currency={currency} />
+               <CashFlowChart data={data} currency={currency} isAnimationActive={!isPrint} />
             </CardContent>
         </Card>
         
         <CashFlowTable data={data} currency={currency} t={t} />
         
-        <div className="pt-4">
+        <div className="pt-4" data-no-print={isPrint}>
           <CashFlowInsights />
         </div>
       </section>
 
 
-      <footer className="flex justify-between mt-8 pt-6 border-t">
+      <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
         <Button variant="outline" onClick={() => router.push('/profit')}>
           <ArrowLeft className="mr-2" /> {t.pages.cashFlow.footer.back}
         </Button>
@@ -108,14 +109,25 @@ function CashFlowPageContent({ data, inputs, t }: { data: EngineOutput, inputs: 
 
 export default function CashFlowPage() {
     const { t, financials, inputs } = useForecast();
+    const { isPrint } = usePrintMode();
 
-    if (financials.isLoading) {
+    React.useEffect(() => {
+        if (!isPrint) return;
+        const doc = document;
+        (async () => {
+            await expandAllInteractive(doc);
+            await settleLayout(doc);
+            signalPrintReady();
+        })();
+    }, [isPrint]);
+
+    if (financials.isLoading && !isPrint) {
         return <CashFlowPageSkeleton t={t} />;
     }
 
     if (financials.error) {
         return (
-            <div className="p-4 md:p-8">
+            <div className="p-4 md:p-8" data-report-root>
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -131,5 +143,9 @@ export default function CashFlowPage() {
         return <CashFlowPageSkeleton t={t} />;
     }
 
-    return <CashFlowPageContent data={financials.data} inputs={inputs} t={t} />;
+    return (
+        <div data-report-root>
+            <CashFlowPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
+        </div>
+    );
 }

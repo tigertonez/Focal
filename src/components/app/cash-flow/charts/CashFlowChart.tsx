@@ -18,9 +18,10 @@ import { useForecast } from "@/context/ForecastContext";
 interface CashFlowChartProps {
   data: EngineOutput;
   currency: string;
+  isAnimationActive?: boolean;
 }
 
-export function CashFlowChart({ data, currency }: CashFlowChartProps) {
+export function CashFlowChart({ data, currency, isAnimationActive = true }: CashFlowChartProps) {
   const { t } = useForecast();
 
   const chartConfig = React.useMemo(() => ({
@@ -101,13 +102,14 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
+          isAnimationActive={isAnimationActive}
         />
         <ChartLegend content={<ChartLegendContent className="text-sm" />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="cashIn" stackId="stack" fill="hsl(var(--primary))" />
-        <Bar dataKey="cashOut" stackId="stack" fill="hsl(var(--destructive))" />
+        <Bar dataKey="cashIn" stackId="stack" fill="hsl(var(--primary))" isAnimationActive={isAnimationActive} />
+        <Bar dataKey="cashOut" stackId="stack" fill="hsl(var(--destructive))" isAnimationActive={isAnimationActive} />
 
         <Line 
           type="monotone" 
@@ -116,6 +118,7 @@ export function CashFlowChart({ data, currency }: CashFlowChartProps) {
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 
+          isAnimationActive={isAnimationActive}
         />
 
       </ComposedChart>

@@ -19,8 +19,9 @@ import { useRouter } from 'next/navigation';
 import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
 import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
+import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
 
-function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
+function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
     const isManualMode = inputs.realtime.dataSource === 'Manual';
     const currency = inputs.parameters.currency;
@@ -98,7 +99,7 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                         <CardTitle>{t.pages.costs.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
-                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} />
+                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} isAnimationActive={!isPrint} />
                     </CardContent>
                 </Card>
             </section>
@@ -168,11 +169,11 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
                 </div>
             </section>
 
-            <section className="pt-4">
+            <section className="pt-4" data-no-print={isPrint}>
               <CostsInsights costSummary={costSummary} revenueSummary={revenueSummary} currency={currency} />
             </section>
 
-            <footer className="flex justify-between mt-8 pt-6 border-t">
+            <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
               <Button variant="outline" onClick={() => router.push('/revenue')}>
                   <ArrowLeft className="mr-2" /> Back to Revenue
               </Button>
@@ -186,14 +187,26 @@ function CostsPageContent({ data, inputs, t }: { data: EngineOutput, inputs: Eng
 
 export default function CostsPage() {
     const { t, financials, inputs } = useForecast();
+    const { isPrint } = usePrintMode();
 
-    if (financials.isLoading) {
+    React.useEffect(() => {
+        if (!isPrint) return;
+        const doc = document;
+        (async () => {
+            await expandAllInteractive(doc);
+            await settleLayout(doc);
+            signalPrintReady();
+        })();
+    }, [isPrint]);
+
+
+    if (financials.isLoading && !isPrint) {
         return <CostsPageSkeleton t={t} />;
     }
 
     if (financials.error) {
         return (
-            <div className="p-4 md:p-8">
+            <div className="p-4 md:p-8" data-report-root>
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -209,5 +222,9 @@ export default function CostsPage() {
         return <CostsPageSkeleton t={t} />;
     }
 
-    return <CostsPageContent data={financials.data} inputs={inputs} t={t} />;
+    return (
+        <div data-report-root>
+            <CostsPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
+        </div>
+    );
 }

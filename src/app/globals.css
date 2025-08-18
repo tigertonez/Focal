@@ -85,14 +85,27 @@
     }
 }
 
-html[data-print="1"] *,
-html[data-print="1"] {
+html[data-print="1"], html[data-print="1"] body {
+  background: #fff !important;
+}
+html[data-print="1"] *, html[data-print="1"] {
   animation: none !important;
   transition: none !important;
-  scroll-behavior: auto !important;
   text-rendering: geometricPrecision !important;
   font-synthesis: none !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 html[data-print="1"] [data-no-print="true"] { display: none !important; }
+
+/* Make SVG charts render sharply */
+html[data-print="1"] svg * {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+/* Neutralize sticky/fixed inside print capture */
 html[data-print="1"] [style*="position:sticky"],
-html[data-print="1"] [style*="position: fixed"] { position: static !important; }
+html[data-print="1"] [style*="position: fixed"] {
+  position: static !important;
+}
