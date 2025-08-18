@@ -17,7 +17,7 @@ import { useForecast } from '@/context/ForecastContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HealthPanel } from '@/components/app/summary/HealthPanel';
 import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
-import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 
 
 // =================================================================
@@ -193,12 +193,7 @@ export default function SummaryPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        const doc = document;
-        (async () => {
-            await expandAllInteractive(doc);
-            await settleLayout(doc);
-            signalPrintReady();
-        })();
+        signalWhenReady(document);
     }, [isPrint]);
 
     if (financials.isLoading && !isPrint) {
@@ -220,6 +215,9 @@ export default function SummaryPage() {
     }
 
     if (!financials.data || !inputs) {
+         if (isPrint) {
+            return <div data-report-root><p>No data available for print.</p></div>
+        }
         return (
             <div className="p-4 md:p-8 text-center" data-report-root>
                  <Alert>

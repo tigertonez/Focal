@@ -84,6 +84,12 @@ export async function POST(req: NextRequest) {
             .filter((it: any) => it && typeof it.imageBase64 === 'string' && it.imageBase64.length > 0)
         : [];
       
+      const diag = {
+        count: images.length,
+        sizes: images.map((img: any) => img.imageBase64.length),
+        firstK: images.slice(0, 12).map((img: any) => img.imageBase64.length),
+      };
+
       for (const [i, slice] of images.entries()) {
         try {
           if (!slice.imageBase64 || slice.imageBase64.length < 1000) {
@@ -111,7 +117,7 @@ export async function POST(req: NextRequest) {
       
       const pdfBytes = await pdfDoc.save();
       if (wantsJson) {
-          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped });
+          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped, diag });
       }
 
     } else { // Single Image

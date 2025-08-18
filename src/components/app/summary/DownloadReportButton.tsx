@@ -71,6 +71,12 @@ export function DownloadReportButton() {
       }
       const valid = slices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
       if (valid.length === 0) throw new Error('No printable content was captured (0 slices).');
+      if (isProbe) {
+        console.log(`Probing ${valid.length} slices...`, {
+          sizes: valid.map(s => s.imageBase64.length),
+          total: valid.reduce((acc, s) => acc + s.imageBase64.length, 0),
+        });
+      }
       await handlePdfRequest({ images: valid, page:'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt }, isProbe, 'FullForecastReport');
       setModalOpen(false);
     } catch (err:any) {

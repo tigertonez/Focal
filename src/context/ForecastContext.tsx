@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, type ReactNode, useEffect, useCallback } from 'react';
@@ -14,12 +13,16 @@ interface FinancialsState {
   isLoading: boolean;
 }
 
+// Promise to ensure only one calculation is in flight
+let calculationPromise: Promise<EngineOutput> | null = null;
+
 interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
   financials: FinancialsState;
   setFinancials: React.Dispatch<React.SetStateAction<FinancialsState>>;
   calculateFinancials: (inputs: EngineInput) => EngineOutput;
+  ensureForecastReady: () => Promise<void>;
   saveDraft: (inputs: EngineInput) => void;
   isCopilotOpen: boolean;
   setIsCopilotOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -30,6 +33,7 @@ interface ForecastContextType {
   locale: 'en' | 'de';
   setLocale: React.Dispatch<React.SetStateAction<'en' | 'de'>>;
   t: Translations['en'];
+  getLocale: () => 'en' | 'de';
 }
 
 const ForecastContext = createContext<ForecastContextType | undefined>(undefined);
@@ -127,10 +131,53 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       throw new Error(firstError);
     }
     const data = calculateFinancialsEngine(result.data);
-    // Persist the successful result to localStorage
     localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
     return data;
   }, []);
+
+  const ensureForecastReady = useCallback(async () => {
+    if (financials.data && !financials.isLoading) {
+        return;
+    }
+    if (calculationPromise) {
+        await calculationPromise;
+        return;
+    }
+
+    const calculation = async () => {
+        let currentInputs = inputs;
+        // Load from storage if state is initial
+        if (!financials.data && !financials.error) {
+            try {
+                const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+                if (savedDraft) {
+                    const parsed = JSON.parse(savedDraft);
+                    const result = EngineInputSchema.safeParse(parsed);
+                    if (result.success) {
+                        currentInputs = result.data;
+                        setInputs(result.data);
+                    }
+                }
+            } catch (e) { console.error("Failed to load draft for readiness check", e); }
+        }
+        
+        try {
+            setFinancials(f => ({ ...f, isLoading: true }));
+            const data = calculateFinancials(currentInputs);
+            setFinancials({ data, error: null, isLoading: false });
+            return data;
+        } catch (e: any) {
+            setFinancials({ data: null, error: e.message, isLoading: false });
+            throw e; // rethrow to reject the promise
+        } finally {
+            calculationPromise = null;
+        }
+    };
+    
+    calculationPromise = calculation();
+    await calculationPromise;
+
+  }, [financials, inputs, calculateFinancials]);
 
   const saveDraft = (currentInputs: EngineInput) => {
      try {
@@ -160,12 +207,15 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
+  const getLocale = useCallback(() => locale, [locale]);
+
   const value = useMemo(() => ({
     inputs,
     setInputs,
     financials,
     setFinancials,
     calculateFinancials,
+    ensureForecastReady,
     saveDraft,
     isCopilotOpen,
     setIsCopilotOpen,
@@ -176,7 +226,8 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     locale,
     setLocale,
     t,
-  }), [inputs, financials, calculateFinancials, isCopilotOpen, proactiveAnalysis, messages, locale, t]);
+    getLocale,
+  }), [inputs, financials, calculateFinancials, ensureForecastReady, isCopilotOpen, proactiveAnalysis, messages, locale, t, getLocale]);
 
   return (
     <ForecastContext.Provider value={value}>

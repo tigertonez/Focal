@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 
 function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -169,12 +169,7 @@ export default function RevenuePage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        const doc = document;
-        (async () => {
-            await expandAllInteractive(doc);
-            await settleLayout(doc);
-            signalPrintReady();
-        })();
+        signalWhenReady(document);
     }, [isPrint]);
 
     if (financials.isLoading && !isPrint) {
@@ -196,6 +191,9 @@ export default function RevenuePage() {
     }
     
     if (!financials.data || !inputs) {
+        if (isPrint) {
+            return <div data-report-root><p>No data available for print.</p></div>
+        }
         return <RevenuePageSkeleton t={t} />;
     }
 

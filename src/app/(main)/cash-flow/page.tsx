@@ -17,7 +17,7 @@ import { CashFlowTable } from '@/app/(main)/cash-flow/CashFlowTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 
 function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -112,12 +112,7 @@ export default function CashFlowPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        const doc = document;
-        (async () => {
-            await expandAllInteractive(doc);
-            await settleLayout(doc);
-            signalPrintReady();
-        })();
+        signalWhenReady(document);
     }, [isPrint]);
 
     if (financials.isLoading && !isPrint) {
@@ -139,6 +134,9 @@ export default function CashFlowPage() {
     }
 
     if (!financials.data || !inputs) {
+        if (isPrint) {
+            return <div data-report-root><p>No data available for print.</p></div>
+        }
         return <CashFlowPageSkeleton t={t} />;
     }
 

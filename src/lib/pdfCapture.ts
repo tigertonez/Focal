@@ -1,5 +1,6 @@
-// src/lib/pdfCapture.ts
 'use client';
+
+import html2canvas from 'html2canvas';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
@@ -17,10 +18,13 @@ const rawFromDataUrl = (url:string)=> {
 /** Wait until iframe has a body and the route signalled readiness. */
 async function waitIframeReady(win: Window) {
   let tries = 0;
-  while ((!win.document || !win.document.body) && tries < 50) {
+  while ((!win.document || win.document.readyState !== 'complete' || !win.document.body) && tries < 60) {
     await sleep(50); tries++;
   }
+  if (!win.document.body) throw new Error('Iframe document body not found after timeout.');
+
   try { await (win.document as any).fonts?.ready; } catch {}
+  
   // route may set window.__PRINT_READY__ via signalPrintReady()
   if ((win as any).__PRINT_READY__) {
     await (win as any).__PRINT_READY__;
@@ -42,7 +46,7 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   document.body.appendChild(iframe);
 
   await new Promise<void>(res => {
-    const failover = setTimeout(res, 2000); // continue even if onload is slow
+    const failover = setTimeout(res, 5000); // safety timeout
     iframe.onload = () => { clearTimeout(failover); res(); };
   });
 
@@ -51,6 +55,9 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   await waitIframeReady(win);
   const doc = iframe.contentDocument!;
   doc.documentElement.setAttribute('data-print','1');
+  if (document.documentElement.className) { // copy theme class (e.g. "dark")
+    doc.documentElement.className = document.documentElement.className;
+  }
   return { win, doc, cleanup: () => iframe.remove() };
 }
 
@@ -58,24 +65,18 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
 function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:number,h:number}) {
   // Stage holds the printable pages; keep original content hidden but in DOM.
   let stage = doc.getElementById('__print_stage__') as HTMLElement | null;
-  if (!stage) {
-    stage = doc.createElement('div');
-    stage.id = '__print_stage__';
-    doc.body.appendChild(stage);
-  }
-  Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box' });
+  if (stage) stage.remove(); // clear from previous runs
+  
+  stage = doc.createElement('div');
+  stage.id = '__print_stage__';
+  doc.body.appendChild(stage);
+  Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
 
-  // Hide original root so it doesn’t interfere with layout.
-  sourceRoot.style.visibility = 'hidden';
-  sourceRoot.style.position = 'absolute';
-  sourceRoot.style.left = '-999999px';
-
-  // Clone content to avoid mutating live components.
+  // Clone content into the stage to avoid mutating live components
   const cloned = sourceRoot.cloneNode(true) as HTMLElement;
-  stage.innerHTML = ''; // fresh run
+  cloned.querySelectorAll('[data-no-print="true"]').forEach(el => el.remove());
   stage.appendChild(cloned);
 
-  // Container that will hold page DIVs (attached to DOM!)
   const container = doc.createElement('div');
   stage.appendChild(container);
 
@@ -84,86 +85,72 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
     Object.assign(p.style, {
       width: `${a4Px.w}px`,
       minHeight: `${a4Px.h}px`,
+      height: `${a4Px.h}px`, // fixed height for page
+      overflow: 'hidden',
       boxSizing: 'border-box',
+      backgroundColor: '#fff',
       margin: '0 auto',
       padding: '0'
     });
     container.appendChild(p);
     return p;
   };
+  
+  const pages: HTMLElement[] = [];
+  let currentPage = newPage();
+  pages.push(currentPage);
 
-  let page = newPage();
-  let used = 0;
+  const walkAndSplit = (node: HTMLElement, currentY: number) => {
+    if (node.tagName === 'TABLE') {
+      const head = node.querySelector('thead');
+      const body = node.querySelector('tbody');
+      if (body) {
+        const rows = Array.from(body.rows) as HTMLElement[];
+        let tableOnPage = currentPage.querySelector(`[data-table-id="${node.id}"]`) as HTMLElement | null;
 
-  const push = (el: HTMLElement) => {
-    el.style.breakInside = 'avoid';
-    el.style.pageBreakInside = 'avoid';
-    page.appendChild(el);
-    used = page.offsetHeight;
-  };
+        rows.forEach(row => {
+          if (!tableOnPage) {
+            tableOnPage = node.cloneNode(false) as HTMLElement;
+            if(head) tableOnPage.appendChild(head.cloneNode(true));
+            tableOnPage.appendChild(doc.createElement('tbody'));
+            tableOnPage.setAttribute('data-table-id', node.id || `tbl-${Math.random()}`);
+            currentPage.appendChild(tableOnPage);
+          }
+          const tableBody = tableOnPage.querySelector('tbody')!;
+          tableBody.appendChild(row);
 
-  const splitTable = (table: HTMLTableElement) => {
-    const rows = Array.from((table.tBodies[0] ?? table).rows) as HTMLElement[];
-    const head = table.tHead ? (table.tHead.cloneNode(true) as HTMLElement) : null;
-
-    let cur = doc.createElement('table');
-    cur.className = table.className;
-    cur.style.width = '100%';
-    if (head) cur.appendChild(head.cloneNode(true));
-    page.appendChild(cur);
-
-    const body = doc.createElement('tbody');
-    cur.appendChild(body);
-
-    for (const row of rows) {
-      body.appendChild(row);
-      if (page.offsetHeight > a4Px.h) {
-        // move row to next page
-        body.removeChild(row);
-        page = newPage();
-        used = 0;
-        cur = doc.createElement('table');
-        cur.className = table.className;
-        cur.style.width = '100%';
-        if (head) cur.appendChild(head.cloneNode(true));
-        page.appendChild(cur);
-        const nb = doc.createElement('tbody'); cur.appendChild(nb);
-        nb.appendChild(row);
+          if (currentPage.scrollHeight > a4Px.h) {
+            tableBody.removeChild(row);
+            currentPage = newPage();
+            pages.push(currentPage);
+            tableOnPage = null; // force new table on new page
+            // Re-add row to new page
+            tableOnPage = node.cloneNode(false) as HTMLElement;
+            if(head) tableOnPage.appendChild(head.cloneNode(true));
+            tableOnPage.appendChild(doc.createElement('tbody'));
+            tableOnPage.setAttribute('data-table-id', node.id || `tbl-${Math.random()}`);
+            currentPage.appendChild(tableOnPage);
+            tableOnPage.querySelector('tbody')!.appendChild(row);
+          }
+        });
+      }
+    } else {
+      const children = Array.from(node.children) as HTMLElement[];
+      for (const child of children) {
+          const childHeight = child.offsetHeight;
+          if ((currentPage.scrollHeight + childHeight) > a4Px.h && currentPage.childNodes.length > 0) {
+              currentPage = newPage();
+              pages.push(currentPage);
+          }
+          currentPage.appendChild(child);
       }
     }
-  };
-
-  const splitDeep = (node: HTMLElement) => {
-    if (node.tagName === 'TABLE') return splitTable(node as HTMLTableElement);
-
-    const shell = node.cloneNode(false) as HTMLElement;
-    push(shell);
-    const kids = Array.from(node.children) as HTMLElement[];
-    for (const k of kids) {
-      shell.appendChild(k);
-      if (page.offsetHeight > a4Px.h) {
-        shell.removeChild(k);
-        page = newPage();
-        used = 0;
-        const nextShell = node.cloneNode(false) as HTMLElement;
-        page.appendChild(nextShell);
-        nextShell.appendChild(k);
-      }
-    }
-  };
-
-  const blocks = Array.from(cloned.children) as HTMLElement[];
-  for (const b of blocks) {
-    const h = (b.getBoundingClientRect().height || b.offsetHeight || 0);
-    if (used > 0 && (used + h) > a4Px.h) {
-      page = newPage(); used = 0;
-    }
-    if (h > a4Px.h) splitDeep(b); else push(b);
   }
 
-  const pages = Array.from(container.children) as HTMLElement[];
+  walkAndSplit(cloned, 0);
+
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
-  return { pages, stage, sourceRoot };
+  return { pages, stage, sourceRoot: cloned };
 }
 
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}): Promise<ImageSlice[]> {
@@ -176,7 +163,6 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
-    // Find capture root; if missing, wrap body children
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
     if (!root) {
       root = doc.createElement('div');
@@ -184,37 +170,38 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
       while (doc.body.firstChild) root.appendChild(doc.body.firstChild);
       doc.body.appendChild(root);
     }
+    
+    await waitIframeReady(win);
+    
+    const { pages } = paginateAttached(doc, root, a4Px);
 
-    const { pages, stage, sourceRoot } = paginateAttached(doc, root, a4Px);
-
-    // Capture attached pages
-    const { toPng } = await import('html-to-image');
     const slices: ImageSlice[] = [];
-    for (const p of pages) {
-      const url = await toPng(p, {
-        cacheBust: true,
-        pixelRatio: 2,
-        style: { transform: 'none' },
-        skipFonts: false,
-        useCORS: true,
-        filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
-      }).catch(async () => {
-        await waitIframeReady(win);
-        return toPng(p, { cacheBust:true, pixelRatio:2, style:{transform:'none'}, skipFonts:false, useCORS:true });
-      });
+    const { toPng } = await import('html-to-image');
 
-      if (!url || !url.startsWith('data:image/png;base64,')) continue;
+    for (const p of pages) {
+      let url: string | undefined;
+      try {
+        url = await toPng(p, { cacheBust: true, pixelRatio: 2, useCORS:true, style:{transform:'none'}, skipFonts: false });
+      } catch(e) {
+        console.warn('html-to-image failed, trying html2canvas', e);
+        try {
+          const canvas = await html2canvas(p, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+          url = canvas.toDataURL('image/png');
+        } catch (e2) {
+          console.error('html2canvas also failed', e2);
+        }
+      }
+
+      if (!url || !url.startsWith('data:image/png;base64,') || url.length < 10000) continue;
+      
       const raw = rawFromDataUrl(url);
-      if (raw.length < 2000) continue;
-      const img = new Image(); img.src = url; await img.decode().catch(()=>{});
+      const img = new Image();
+      img.src = url;
+      try { await img.decode(); } catch {}
       slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h });
     }
-
-    // restore visibility then cleanup
-    sourceRoot.style.visibility = '';
-    sourceRoot.style.position = '';
-    sourceRoot.style.left = '';
-    stage.remove();
+    
+    if(slices.length === 0) throw new Error("No printable content was captured (0 slices).");
 
     return slices;
   } finally {

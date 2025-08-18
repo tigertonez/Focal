@@ -32,7 +32,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { EngineInputSchema, type EngineInput } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import InputsSnapshot from '@/components/print/InputsSnapshot';
 
 
@@ -243,12 +243,7 @@ export default function InputsPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        const doc = document;
-        (async () => {
-            await expandAllInteractive(doc);
-            await settleLayout(doc);
-            signalPrintReady();
-        })();
+        signalWhenReady(document);
     }, [isPrint]);
 
     return (

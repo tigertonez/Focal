@@ -17,7 +17,7 @@ import { ProfitBreakdownChart } from '@/components/app/profit/charts/ProfitBreak
 import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { usePrintMode, expandAllInteractive, settleLayout, signalPrintReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 
 function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -125,12 +125,7 @@ export default function ProfitPage() {
 
   React.useEffect(() => {
     if (!isPrint) return;
-    const doc = document;
-    (async () => {
-        await expandAllInteractive(doc);
-        await settleLayout(doc);
-        signalPrintReady();
-    })();
+    signalWhenReady(document);
   }, [isPrint]);
 
   if (financials.isLoading && !isPrint) {
@@ -152,6 +147,9 @@ export default function ProfitPage() {
   }
 
   if (!financials.data || !inputs) {
+    if (isPrint) {
+        return <div data-report-root><p>No data available for print.</p></div>
+    }
     return <ProfitPageSkeleton t={t} />;
   }
 

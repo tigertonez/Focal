@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,12 +95,20 @@ html[data-print="1"] *, html[data-print="1"] {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+html[data-print="1"] header,
+html[data-print="1"] nav,
+html[data-print="1"] [data-app-chrome="1"],
 html[data-print="1"] [data-no-print="true"] { display: none !important; }
 
 /* Make SVG charts render sharply */
 html[data-print="1"] svg * {
   shape-rendering: geometricPrecision;
   text-rendering: geometricPrecision;
+}
+
+html[data-print="1"] .recharts-wrapper * {
+  animation: none !important;
+  transition: none !important;
 }
 
 /* Neutralize sticky/fixed inside print capture */

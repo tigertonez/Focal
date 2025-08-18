@@ -17,7 +17,10 @@ export default function InputsSnapshot() {
   return (
     <section data-section="inputs" className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>{t.inputs.company.title}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>{t.inputs.company.title}</CardTitle>
+          <p className="text-sm text-muted-foreground pt-1">Company Context</p>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableBody>
@@ -32,21 +35,27 @@ export default function InputsSnapshot() {
       </Card>
       
       <Card>
-        <CardHeader><CardTitle>{t.inputs.parameters.title}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>{t.inputs.parameters.title}</CardTitle>
+          <p className="text-sm text-muted-foreground pt-1">General Parameters</p>
+        </CardHeader>
         <CardContent>
             <Table>
                 <TableBody>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.forecastMonths.label}</TableCell><TableCell>{parameters.forecastMonths} months</TableCell></TableRow>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.taxRate.label}</TableCell><TableCell>{parameters.taxRate}%</TableCell></TableRow>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.currency}</TableCell><TableCell>{parameters.currency}</TableCell></TableRow>
-                    <TableRow><TableCell className="font-semibold">{t.inputs.parameters.accountingMethod.label}</TableCell><TableCell>{parameters.accountingMethod}</TableCell></TableRow>
+                    <TableRow><TableCell className="font-semibold">{t.inputs.parameters.accountingMethod.label}</TableCell><TableCell>{t.inputs.parameters.accountingMethod[parameters.accountingMethod as keyof typeof t.inputs.parameters.accountingMethod]}</TableCell></TableRow>
                 </TableBody>
             </Table>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>{t.inputs.products.title}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>{t.inputs.products.title}</CardTitle>
+          <p className="text-sm text-muted-foreground pt-1">Products & Services</p>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -74,7 +83,10 @@ export default function InputsSnapshot() {
       </Card>
       
       <Card>
-        <CardHeader><CardTitle>{t.inputs.fixedCosts.title}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>{t.inputs.fixedCosts.title}</CardTitle>
+           <p className="text-sm text-muted-foreground pt-1">Fixed Costs</p>
+        </CardHeader>
         <CardContent>
           <Table>
               <TableHeader>
@@ -91,7 +103,7 @@ export default function InputsSnapshot() {
                           <TableCell>{fc.name}</TableCell>
                           <TableCell>{fc.costType}</TableCell>
                           <TableCell className="text-right">{formatCurrency(fc.amount, parameters.currency)}</TableCell>
-                          <TableCell>{fc.paymentSchedule}</TableCell>
+                          <TableCell>{fc.paymentSchedule.replace(/_/g, ' ')}</TableCell>
                       </TableRow>
                   ))}
               </TableBody>
