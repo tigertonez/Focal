@@ -143,13 +143,16 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const ensureForecastReady = useCallback(async () => {
+    // If we have data and we are not in a loading state, we are ready.
     if (financials.data && !financials.isLoading) {
         return;
     }
+    // If there's already a promise, await it.
     if (readyPromise) {
         return readyPromise;
     }
     
+    // Create a new promise for this readiness check.
     readyPromise = new Promise((resolve, reject) => {
       readyResolve = resolve;
       // Timeout to prevent infinite waiting
@@ -161,11 +164,13 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
       readyPromise?.finally(() => clearTimeout(timeoutId));
     });
 
+    // If a calculation is already running, the new promise will be resolved when it finishes.
     if (calculationPromise) {
         await calculationPromise;
         return;
     }
 
+    // Start a new calculation if one isn't running.
     const calculation = async () => {
         let currentInputs = inputs;
         // Load from storage if state is initial

@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { StaticProgress } from '@/components/print/StaticProgress';
 
 function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -70,7 +71,7 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
                  {formatCurrency(cashFlowSummary.endingCashBalance, currency)} of {formatCurrency(potentialCashPosition, currency)}
               </span>
             </div>
-            <Progress value={cashProgress} className="h-2" />
+            {isPrint ? <StaticProgress value={cashProgress} /> : <Progress value={cashProgress} className="h-2" />}
           </div>
         )}
       </section>

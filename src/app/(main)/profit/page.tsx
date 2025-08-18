@@ -18,6 +18,7 @@ import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { StaticProgress } from '@/components/print/StaticProgress';
 
 function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -76,7 +77,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
                  {formatCurrency(achievedGrossProfit, currency)} of {formatCurrency(potentialGrossProfit, currency)}
               </span>
             </div>
-            <Progress value={profitProgress} className="h-2" />
+            {isPrint ? <StaticProgress value={profitProgress} /> : <Progress value={profitProgress} className="h-2" />}
           </div>
         )}
       </section>

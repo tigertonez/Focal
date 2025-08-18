@@ -141,7 +141,7 @@ function InputsPageContent() {
                   <Section 
                       title={t.inputs.products.title} 
                       icon={<Briefcase />} 
-                      defaultOpen={false}
+                      defaultOpen={true}
                   >
                       <div className="space-y-6">
                         {productFields.map((field, index) => (
@@ -155,6 +155,7 @@ function InputsPageContent() {
                   <Section 
                     title={t.inputs.fixedCosts.title} 
                     icon={<Building />} 
+                    defaultOpen={true}
                 >
                     <div className="space-y-3">
                       {fixedCostFields.map((field, index) => (
@@ -171,6 +172,7 @@ function InputsPageContent() {
                   <Section 
                       title={t.inputs.company.title} 
                       icon={<Wrench />}
+                      defaultOpen={true}
                   >
                       <div className="space-y-4">
                           <InputField name="company.brand" label="Brand Name" placeholder="e.g., Plaza" />
@@ -205,6 +207,7 @@ function InputsPageContent() {
                   <Section 
                       title={t.inputs.parameters.title} 
                       icon={<Settings />}
+                      defaultOpen={true}
                   >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                           <InputField name="parameters.forecastMonths" label={t.inputs.parameters.forecastMonths.label} type="number" tooltipTitle={t.inputs.parameters.forecastMonths.label} tooltip={t.inputs.parameters.forecastMonths.tooltip} layout="vertical" />

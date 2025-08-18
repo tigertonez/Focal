@@ -16,10 +16,10 @@ export default function InputsSnapshot() {
 
   return (
     <section data-section="inputs" className="space-y-6">
+      <h1 className="text-2xl font-bold">Company Data — {company.brand || 'Your Brand'}</h1>
       <Card>
         <CardHeader>
-          <CardTitle>{t.inputs.company.title}</CardTitle>
-          <p className="text-sm text-muted-foreground pt-1">Company Context</p>
+          <CardTitle>Company Context</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -36,8 +36,7 @@ export default function InputsSnapshot() {
       
       <Card>
         <CardHeader>
-          <CardTitle>{t.inputs.parameters.title}</CardTitle>
-          <p className="text-sm text-muted-foreground pt-1">General Parameters</p>
+          <CardTitle>General Parameters</CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
@@ -53,8 +52,7 @@ export default function InputsSnapshot() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t.inputs.products.title}</CardTitle>
-          <p className="text-sm text-muted-foreground pt-1">Products & Services</p>
+          <CardTitle>Products</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -84,8 +82,7 @@ export default function InputsSnapshot() {
       
       <Card>
         <CardHeader>
-          <CardTitle>{t.inputs.fixedCosts.title}</CardTitle>
-           <p className="text-sm text-muted-foreground pt-1">Fixed Costs</p>
+          <CardTitle>Fixed Costs</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
