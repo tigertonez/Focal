@@ -193,8 +193,10 @@ export default function SummaryPage() {
 
     useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady({ lang, ensureForecastReady });
-    }, [isPrint, lang, ensureForecastReady]);
+        (async () => {
+            await signalWhenReady({ ensureForecastReady, root: document });
+        })();
+    }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
         return <SummaryPageSkeleton t={t} />;

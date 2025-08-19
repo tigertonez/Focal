@@ -89,7 +89,7 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
         <CashFlowTable data={data} currency={currency} t={t} />
         
         <div className="pt-4" data-no-print={isPrint}>
-          <CashFlowInsights />
+          <CashFlowInsights isPrint={isPrint} />
         </div>
       </section>
 
@@ -113,8 +113,10 @@ export default function CashFlowPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady({ lang, ensureForecastReady });
-    }, [isPrint, lang, ensureForecastReady]);
+        (async () => {
+            await signalWhenReady({ ensureForecastReady, root: document });
+        })();
+    }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
         return <CashFlowPageSkeleton t={t} />;

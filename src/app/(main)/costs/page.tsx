@@ -19,6 +19,7 @@ import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieC
 import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { StaticProgress } from '@/components/print/StaticProgress';
 
 function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -87,7 +88,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
                                 {formatCurrency(costSummary.totalDepositsPaid, currency)} of {formatCurrency(costSummary.totalVariable, currency)}
                             </span>
                         </div>
-                        <Progress value={depositProgress} />
+                        {isPrint ? <StaticProgress value={depositProgress} /> : <Progress value={depositProgress} />}
                     </div>
                 )}
             </section>
@@ -109,7 +110,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
                          <h2 className="text-xl font-semibold">{t.pages.costs.charts.investment}</h2>
                          <Card>
                             <CardContent className="h-[300px] w-full">
-                                <InvestmentPieChart data={investmentData} currency={currency} />
+                                <InvestmentPieChart data={investmentData} currency={currency} isPrint={isPrint} />
                             </CardContent>
                          </Card>
                     </div>
@@ -169,7 +170,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
             </section>
 
             <section className="pt-4" data-no-print={isPrint}>
-              <CostsInsights costSummary={costSummary} revenueSummary={revenueSummary} currency={currency} />
+              <CostsInsights costSummary={costSummary} revenueSummary={revenueSummary} currency={currency} isPrint={isPrint} />
             </section>
 
             <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
@@ -190,8 +191,10 @@ export default function CostsPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady({ lang, ensureForecastReady });
-    }, [isPrint, lang, ensureForecastReady]);
+        (async () => {
+            await signalWhenReady({ ensureForecastReady, root: document });
+        })();
+    }, [isPrint, ensureForecastReady]);
 
 
     if (financials.isLoading && !isPrint) {

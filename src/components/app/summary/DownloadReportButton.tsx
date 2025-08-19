@@ -12,7 +12,7 @@ const stopAll = (e: React.MouseEvent) => {
   (e.nativeEvent as any)?.stopImmediatePropagation?.();
 };
 
-const FULL_ROUTES = ['/inputs','/revenue','/costs','/profit','/cash-flow','/summary'];
+const FULL_ROUTES = ['/inputs','/revenue','/costs','/profit','/cash-flow','/summary'] as const;
 
 export function DownloadReportButton() {
   const [isBusy, setIsBusy] = React.useState(false);
@@ -66,26 +66,23 @@ export function DownloadReportButton() {
       const slices: ImageSlice[] = [];
       const lang = (locale ?? 'en') as 'en'|'de';
       for (const route of FULL_ROUTES) {
-        let pages: ImageSlice[] = [];
-        try {
-           pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
-        } catch(e: any) {
-            console.warn(`Initial capture for ${route} failed, retrying once...`, e);
-            await new Promise(r => setTimeout(r, 250));
-            pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+        const pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+        if (pages.length === 0) {
+            console.warn(`Route ${route} produced 0 slices.`);
         }
-        slices.push(...pages.map(p => ({...p, name: route})));
+        slices.push(...pages);
       }
       const valid = slices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
-      if (valid.length === 0) throw new Error('No printable content was captured (0 slices).');
+      if (valid.length === 0) throw new Error('No printable content was captured across all routes (0 slices).');
       
-      const payload = {
-        images: valid,
-        page: 'A4',
-        dpi: DEFAULT_A4.dpi,
+      const payload = { 
+        images: valid, 
+        page:'A4', 
+        dpi: DEFAULT_A4.dpi, 
         marginPt: DEFAULT_A4.marginPt,
+        title: 'FullForecastReport'
       };
-      
+
       await handlePdfRequest(payload, isProbe, 'FullForecastReport');
       setModalOpen(false);
     } catch (err:any) {

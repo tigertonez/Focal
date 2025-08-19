@@ -134,28 +134,35 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
 
   const ensureForecastReady = useCallback(async (): Promise<void> => {
     return new Promise((resolve, reject) => {
-        const check = () => {
-            if (financials.data && !financials.isLoading) {
-                resolve();
-                return true;
-            }
-            return false;
-        };
+        // If data is already loaded and not in an error state, resolve immediately.
+        if (financials.data && !financials.isLoading && !financials.error) {
+            resolve();
+            return;
+        }
 
-        if (check()) return;
-
+        // If loading, poll until it's done.
         let attempts = 0;
         const interval = setInterval(() => {
-            if (check()) {
-                clearInterval(interval);
-            } else if (attempts > 200) { // 10 seconds timeout
+            attempts++;
+            if (attempts > 200) { // 10-second timeout
                 clearInterval(interval);
                 reject(new Error("FORECAST_NOT_READY_TIMEOUT: Financial data did not become available in time."));
+                return;
             }
-            attempts++;
+
+            // Check the current state of financials directly from the provider's state
+            if (financials.data && !financials.isLoading) {
+                if (financials.error) {
+                    clearInterval(interval);
+                    reject(new Error(`Forecast calculation failed: ${financials.error}`));
+                } else {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }
         }, 50);
     });
-}, [financials.data, financials.isLoading]);
+  }, [financials]);
 
 
   const saveDraft = (currentInputs: EngineInput) => {

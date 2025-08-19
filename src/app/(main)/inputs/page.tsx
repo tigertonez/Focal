@@ -247,8 +247,10 @@ export default function InputsPage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady({ lang, ensureForecastReady });
-    }, [isPrint, lang, ensureForecastReady]);
+        (async () => {
+            await signalWhenReady({ ensureForecastReady, root: document });
+        })();
+    }, [isPrint, ensureForecastReady]);
 
     return (
         <div data-report-root>

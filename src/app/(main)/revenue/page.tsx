@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { StaticProgress } from '@/components/print/StaticProgress';
 
 function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -74,7 +75,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                                 {formatCurrency(revenueSummary.totalRevenue, currency)} of {formatCurrency(potentialRevenue, currency)}
                             </span>
                         </div>
-                        <Progress value={revenueProgress} className="h-2" />
+                        {isPrint ? <StaticProgress value={revenueProgress} /> : <Progress value={revenueProgress} className="h-2" />}
                     </div>
                 )}
             </section>
@@ -147,7 +148,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
             </section>
 
             <section className="pt-4" data-no-print={isPrint}>
-              <RevenueInsights revenueSummary={revenueSummary} currency={currency} />
+              <RevenueInsights revenueSummary={revenueSummary} currency={currency} isPrint={isPrint} />
             </section>
 
             <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
@@ -169,8 +170,10 @@ export default function RevenuePage() {
 
     React.useEffect(() => {
         if (!isPrint) return;
-        signalWhenReady({ lang, ensureForecastReady });
-    }, [isPrint, lang, ensureForecastReady]);
+        (async () => {
+            await signalWhenReady({ ensureForecastReady, root: document });
+        })();
+    }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
         return <RevenuePageSkeleton t={t} />;

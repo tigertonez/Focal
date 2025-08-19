@@ -99,13 +99,13 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
               <CardTitle>{t.pages.profit.table.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProductProfitTable data={data} inputs={inputs} t={t} />
+              <ProductProfitTable data={data} inputs={inputs} t={t} isPrint={isPrint} />
             </CardContent>
           </Card>
         </section>
 
         <section className="pt-4" data-no-print={isPrint}>
-            <ProfitInsights data={data} currency={currency} />
+            <ProfitInsights data={data} currency={currency} isPrint={isPrint} />
         </section>
 
       <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
@@ -126,8 +126,10 @@ export default function ProfitPage() {
 
   React.useEffect(() => {
     if (!isPrint) return;
-    signalWhenReady({ lang, ensureForecastReady });
-  }, [isPrint, lang, ensureForecastReady]);
+    (async () => {
+        await signalWhenReady({ ensureForecastReady, root: document });
+    })();
+  }, [isPrint, ensureForecastReady]);
 
   if (financials.isLoading && !isPrint) {
     return <ProfitPageSkeleton t={t} />;

@@ -28,7 +28,7 @@ export function usePrintMode() {
   const params = useSearchParams();
   const isPrint = params.get('print') === '1';
   const lang = params.get('lang') || undefined;
-  const { locale, setLocale, ensureForecastReady } = useForecast();
+  const { locale, setLocale } = useForecast();
   
   React.useLayoutEffect(() => {
     if (!isPrint) return;
@@ -110,12 +110,14 @@ export async function signalWhenReady(opts: {
     await opts.ensureForecastReady();
     await expandAllInteractive(opts.root);
     await opts.root.fonts.ready.catch(()=>{});
-    await waitForVisibleCharts(opts.root);
+    
     // Dispatch resize events and wait for layout to settle
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    
+    await waitForVisibleCharts(opts.root);
     await settleLayout(opts.root);
     signalPrintReady();
 }
