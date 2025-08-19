@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from "react"
@@ -14,6 +15,7 @@ import {
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
+import { getPrintPalette } from "@/lib/printColors";
 
 interface CashFlowChartProps {
   data: EngineOutput;
@@ -23,21 +25,22 @@ interface CashFlowChartProps {
 
 export function CashFlowChart({ data, currency, isAnimationActive = true }: CashFlowChartProps) {
   const { t } = useForecast();
+  const printPalette = getPrintPalette();
 
   const chartConfig = React.useMemo(() => ({
     cashIn: {
       label: t.insights.charts.cashIn,
-      color: "hsl(var(--primary))",
+      color: isAnimationActive ? "hsl(var(--primary))" : printPalette.primary,
     },
     cashOut: {
       label: t.insights.charts.cashOut,
-      color: "hsl(var(--destructive))",
+      color: isAnimationActive ? "hsl(var(--destructive))" : printPalette.destructive,
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
-      color: "hsl(140, 70%, 40%)", // Green for profit/positive trends
+      color: isAnimationActive ? "hsl(140, 70%, 40%)" : printPalette.green,
     }
-  }), [t]) satisfies ChartConfig;
+  }), [t, isAnimationActive, printPalette]) satisfies ChartConfig;
 
 
   const chartData = React.useMemo(() => {
@@ -100,21 +103,22 @@ export function CashFlowChart({ data, currency, isAnimationActive = true }: Cash
           tickFormatter={(value) => valueFormatter(Number(value))}
         />
         <ChartTooltip
-          cursor={true}
+          cursor={!isAnimationActive ? false : true}
+          wrapperStyle={!isAnimationActive ? { display: 'none' } : {}}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
           isAnimationActive={isAnimationActive}
         />
-        <ChartLegend content={<ChartLegendContent className="text-sm" />} />
+        <ChartLegend content={<ChartLegendContent className="text-sm" wrapperStyle={{ width: '100%', textAlign: 'center', bottom: -10 }} />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="cashIn" stackId="stack" fill="hsl(var(--primary))" isAnimationActive={isAnimationActive} />
-        <Bar dataKey="cashOut" stackId="stack" fill="hsl(var(--destructive))" isAnimationActive={isAnimationActive} />
+        <Bar dataKey="cashIn" stackId="stack" fill={chartConfig.cashIn.color} isAnimationActive={isAnimationActive} />
+        <Bar dataKey="cashOut" stackId="stack" fill={chartConfig.cashOut.color} isAnimationActive={isAnimationActive} />
 
         <Line 
           type="monotone" 
           dataKey="cumulativeCash" 
-          stroke="hsl(140, 70%, 40%)" 
+          stroke={chartConfig.cumulativeCash.color}
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 

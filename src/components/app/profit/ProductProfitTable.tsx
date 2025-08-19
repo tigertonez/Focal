@@ -8,22 +8,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, getProductColor, formatNumber } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight, TrendingUp, Briefcase, Landmark } from "lucide-react";
-import { useForecast } from "@/context/ForecastContext";
 
 interface ProductProfitTableProps {
     data: EngineOutput;
     inputs: EngineInput;
     t: any;
+    isPrint?: boolean;
 }
 
-const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { title: string, icon: React.ReactNode, children: React.ReactNode, defaultOpen?: boolean }) => (
-    <Collapsible defaultOpen={defaultOpen}>
+const ProfitLevelSection = ({ title, icon, children, defaultOpen = false, isPrint = false }: { title: string, icon: React.ReactNode, children: React.ReactNode, defaultOpen?: boolean, isPrint?: boolean }) => (
+    <Collapsible defaultOpen={defaultOpen || isPrint}>
         <CollapsibleTrigger asChild>
-            <div className="flex w-full items-center justify-between rounded-t-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer">
-                <div className="flex items-center gap-3">
-                    {icon}
-                    <span>{title}</span>
-                </div>
+             <div className="flex w-full items-center justify-between rounded-t-lg border bg-muted/50 px-4 py-3 text-left text-sm font-semibold shadow-sm hover:bg-muted/80 cursor-pointer" data-no-print={isPrint}>
+                 <div className="flex items-center gap-3">
+                     {icon}
+                     <span>{title}</span>
+                 </div>
                 <ChevronRight className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-90" />
             </div>
         </CollapsibleTrigger>
@@ -34,7 +34,7 @@ const ProfitLevelSection = ({ title, icon, children, defaultOpen = false }: { ti
 );
 
 
-export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps) {
+export function ProductProfitTable({ data, inputs, t, isPrint = false }: ProductProfitTableProps) {
     const { productProfitability } = data;
     const { currency } = inputs.parameters;
 
@@ -44,7 +44,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
 
     return (
         <div className="space-y-4">
-            <ProfitLevelSection title={t.pages.profit.table.grossProfit} icon={<TrendingUp className="text-primary" />} defaultOpen={true}>
+            <ProfitLevelSection title={t.pages.profit.table.grossProfit} icon={<TrendingUp className="text-primary" />} defaultOpen={true} isPrint={isPrint}>
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -72,7 +72,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  </Table>
             </ProfitLevelSection>
             
-            <ProfitLevelSection title={t.pages.profit.table.opProfit} icon={<Briefcase className="text-primary" />}>
+            <ProfitLevelSection title={t.pages.profit.table.opProfit} icon={<Briefcase className="text-primary" />} isPrint={isPrint}>
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -100,7 +100,7 @@ export function ProductProfitTable({ data, inputs, t }: ProductProfitTableProps)
                  </Table>
             </ProfitLevelSection>
             
-            <ProfitLevelSection title={t.pages.profit.table.netProfit} icon={<Landmark className="text-primary" />}>
+            <ProfitLevelSection title={t.pages.profit.table.netProfit} icon={<Landmark className="text-primary" />} isPrint={isPrint}>
                  <Table>
                     <TableHeader>
                         <TableRow>

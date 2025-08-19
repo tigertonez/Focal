@@ -35,6 +35,7 @@ export function DownloadReportButton() {
     }
     if (isProbe) {
       const jsonData = await response.json();
+      console.log('Probe Data:', jsonData);
       alert(`PROBE DATA:\n${JSON.stringify(jsonData, null, 2)}`);
       return;
     }
@@ -63,27 +64,34 @@ export function DownloadReportButton() {
   const handleFullReport = async (isProbe: boolean) => {
     setIsBusy(true);
     try {
-      const slices: ImageSlice[] = [];
+      const allSlices: ImageSlice[] = [];
       const lang = (locale ?? 'en') as 'en'|'de';
-      for (const route of FULL_ROUTES) {
-        const pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
-        if (pages.length === 0) {
-            console.warn(`Route ${route} produced 0 slices.`);
-        }
-        slices.push(...pages);
-      }
-      const valid = slices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
-      if (valid.length === 0) throw new Error('No printable content was captured across all routes (0 slices).');
       
-      const payload = { 
-        images: valid, 
-        page:'A4', 
-        dpi: DEFAULT_A4.dpi, 
-        marginPt: DEFAULT_A4.marginPt,
-        title: 'FullForecastReport'
-      };
+      for (const route of FULL_ROUTES) {
+        let pages: ImageSlice[] = [];
+        try {
+          pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+          if (pages.length === 0) {
+            // Retry once
+            console.warn(`Retrying capture for route: ${route}`);
+            await new Promise(r => setTimeout(r, 250));
+            pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+          }
+        } catch (e: any) {
+            console.error(`Failed to capture ${route}:`, e.message);
+        }
+        
+        if (pages.length === 0) {
+           toast({ variant: 'destructive', title: 'Capture Failed', description: `Route produced no printable content: ${route}` });
+        }
+        
+        allSlices.push(...pages);
+      }
+      
+      const valid = allSlices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
+      if (valid.length === 0) throw new Error('No printable content was captured (0 slices).');
 
-      await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+      await handlePdfRequest({ images: valid, page:'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt }, isProbe, 'FullForecastReport');
       setModalOpen(false);
     } catch (err:any) {
       toast({ variant:'destructive', title:'Full Report Error', description: err.message });

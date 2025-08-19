@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, PageSizes } from 'pdf-lib';
-import crypto from 'crypto';
+import {Md5} from 'ts-md5';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ type SinglePayload = {
 };
 
 type MultiPayload = {
-  images: { imageBase64: string; wPx: number; hPx: number; name?: string }[];
+  images: { imageBase64: string; wPx: number; hPx: number; name?: string; routeName?: string; pageIndex?: number; md5?: string }[];
   imageBase64?: never;
   page: 'A4' | 'Letter';
   dpi: number;
@@ -85,11 +85,14 @@ export async function POST(req: NextRequest) {
             .filter((it: any) => it && typeof it.imageBase64 === 'string' && it.imageBase64.length > 0)
         : [];
       
-      const diag = {
-        count: images.length,
-        sizes: images.map((img: any) => img.imageBase64.length),
-        firstK: images.slice(0, 12).map((img: any) => img.imageBase64.length),
-      };
+      const diagnostics = images.map((slice: any, i: number) => ({
+          idx: i,
+          kb: Math.round(slice.imageBase64.length * 3 / 4 / 1024),
+          w: slice.wPx,
+          h: slice.hPx,
+          md5: slice.md5,
+          route: slice.routeName,
+      }));
 
       for (const [i, slice] of images.entries()) {
         try {
@@ -118,7 +121,7 @@ export async function POST(req: NextRequest) {
       
       const pdfBytes = await pdfDoc.save();
       if (wantsJson) {
-          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped, diag });
+          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped, diag: diagnostics });
       }
 
     } else { // Single Image

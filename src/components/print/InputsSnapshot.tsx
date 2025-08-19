@@ -13,16 +13,18 @@ export default function InputsSnapshot() {
   }
 
   const { company, parameters, products, fixedCosts } = inputs;
+  const brandName = company?.brand || 'Your Brand';
 
   return (
     <section data-section="inputs" className="space-y-6">
-      <h1 className="text-2xl font-bold">Company Data — {company.brand || 'Your Brand'}</h1>
+      <h1 className="text-2xl font-bold">Company Data — {brandName}</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Company Context</CardTitle>
+          <CardTitle>{t.inputs.company.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
+             <caption>Company Context</caption>
             <TableBody>
               <TableRow><TableCell className="font-semibold">Brand Name</TableCell><TableCell>{company?.brand}</TableCell></TableRow>
               <TableRow><TableCell className="font-semibold">{t.inputs.company.industry.title}</TableCell><TableCell>{company?.industry}</TableCell></TableRow>
@@ -36,10 +38,11 @@ export default function InputsSnapshot() {
       
       <Card>
         <CardHeader>
-          <CardTitle>General Parameters</CardTitle>
+          <CardTitle>{t.inputs.parameters.title}</CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
+                 <caption>General Parameters</caption>
                 <TableBody>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.forecastMonths.label}</TableCell><TableCell>{parameters.forecastMonths} months</TableCell></TableRow>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.taxRate.label}</TableCell><TableCell>{parameters.taxRate}%</TableCell></TableRow>
@@ -52,10 +55,11 @@ export default function InputsSnapshot() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Products & Services</CardTitle>
+          <CardTitle>{t.inputs.products.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
+            <caption>Products & Services</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
@@ -82,10 +86,11 @@ export default function InputsSnapshot() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Fixed Costs</CardTitle>
+          <CardTitle>{t.inputs.fixedCosts.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
+              <caption>Fixed Costs</caption>
               <TableHeader>
                   <TableRow>
                       <TableHead>Cost Name</TableHead>

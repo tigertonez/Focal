@@ -67,6 +67,7 @@ export function ProfitInsights({
   const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInsights = insights && Object.values(insights).some(v => !!v);
 
   const getInsights = useCallback(async () => {
     setIsLoading(true);
@@ -138,7 +139,6 @@ export function ProfitInsights({
       );
     }
     
-    // Check for bullet points (•)
     if (content.includes('•')) {
       return (
         <ul className="list-none space-y-3">
@@ -162,9 +162,9 @@ export function ProfitInsights({
     );
   }
 
-  if (!insights && !isLoading && !error) {
+  if (!hasInsights && !isLoading && !isPrint) {
      return (
-        <Card data-no-print={isPrint}>
+        <Card data-no-print="true">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.profit.title}</CardTitle>
                 <CardDescription>{t.insights.profit.description}</CardDescription>

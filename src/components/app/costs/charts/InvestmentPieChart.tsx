@@ -6,11 +6,13 @@ import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import { getProductColor } from "@/lib/utils";
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { getPrintPalette } from "@/lib/printColors";
 
 
 interface InvestmentPieChartProps {
     data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
     currency: string;
+    isPrint?: boolean;
 }
 
 const RADIAN = Math.PI / 180;
@@ -30,13 +32,13 @@ const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: an
 };
 
 
-export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) {
+export function InvestmentPieChart({ data, currency, isPrint = false }: InvestmentPieChartProps) {
     
     if (!data || data.length === 0) {
         return <div className="h-full w-full flex items-center justify-center text-muted-foreground">No investment data.</div>;
     }
     
-    const isMobile = (typeof window !== 'undefined') && window.innerWidth < 768;
+    const isMobile = !isPrint && (typeof window !== 'undefined') && window.innerWidth < 768;
     const manyItems = data.length > 4;
     
     const legendStyle: React.CSSProperties = {
@@ -49,13 +51,17 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
       width: '100%',
       gap: manyItems ? '0.25rem 0.5rem' : '0.5rem',
       fontSize: manyItems && isMobile ? '11px' : '12px',
+      textAlign: 'center',
     };
+    
+    const printPalette = isPrint ? getPrintPalette() : null;
 
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
+                    wrapperStyle={isPrint ? { display: 'none' } : {}}
                     contentStyle={{
                         background: "hsl(var(--background))",
                         border: "1px solid hsl(var(--border))",
@@ -70,14 +76,16 @@ export function InvestmentPieChart({ data, currency }: InvestmentPieChartProps) 
                     cy="45%"
                     labelLine={false}
                     label={<CustomLabel />}
-                    outerRadius={100}
+                    outerRadius="80%"
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
                 >
                     {data.map((entry, index) => {
                         let color;
-                        if (entry.color) {
+                        if (isPrint && printPalette) {
+                             color = entry.name === 'Total Variable Costs' ? printPalette.primary : printPalette.categorical[index % printPalette.categorical.length];
+                        } else if (entry.color) {
                             color = entry.color;
                         } else if (entry.item) {
                             color = getProductColor(entry.item);

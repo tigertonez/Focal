@@ -52,6 +52,7 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
   const [insights, setInsights] = useState<AnalyzeRevenueOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInsights = insights && (insights.insights.length > 0 || insights.recommendations.length > 0);
 
   const getInsights = useCallback(async () => {
     setIsLoading(true);
@@ -138,9 +139,9 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
     );
   }
 
-  if (!insights) {
+  if (!hasInsights) {
      return (
-        <Card data-no-print={isPrint}>
+        <Card data-no-print="true">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.revenue.title}</CardTitle>
                 <CardDescription>{t.insights.revenue.description}</CardDescription>
@@ -173,10 +174,10 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
       </CardHeader>
       <CardContent className="space-y-6">
         <InsightSection title={t.insights.revenue.insights} icon={<Lightbulb className="text-amber-500" />}>
-          {renderList(insights.insights)}
+          {renderList(insights!.insights)}
         </InsightSection>
         <InsightSection title={t.insights.revenue.recommendations} icon={<TrendingUp className="text-blue-500" />}>
-          {renderList(insights.recommendations)}
+          {renderList(insights!.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>

@@ -53,6 +53,7 @@ export function CostsInsights({ costSummary, revenueSummary, currency, isPrint =
   const [insights, setInsights] = useState<AnalyzeCostsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInsights = insights && (insights.insights.length > 0 || insights.recommendations.length > 0);
 
   const getInsights = useCallback(async () => {
     setIsLoading(true);
@@ -139,9 +140,9 @@ export function CostsInsights({ costSummary, revenueSummary, currency, isPrint =
     );
   }
 
-  if (!insights) {
+  if (!hasInsights) {
      return (
-        <Card data-no-print={isPrint}>
+        <Card data-no-print="true">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.costs.title}</CardTitle>
                 <CardDescription>{t.insights.costs.description}</CardDescription>
@@ -174,10 +175,10 @@ export function CostsInsights({ costSummary, revenueSummary, currency, isPrint =
       </CardHeader>
       <CardContent className="space-y-6">
         <InsightSection title={t.insights.costs.insights} icon={<Lightbulb className="text-amber-500" />}>
-          {renderList(insights.insights)}
+          {renderList(insights!.insights)}
         </InsightSection>
         <InsightSection title={t.insights.costs.recommendations} icon={<TrendingUp className="text-blue-500" />}>
-          {renderList(insights.recommendations)}
+          {renderList(insights!.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>

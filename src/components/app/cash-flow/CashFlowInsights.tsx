@@ -45,6 +45,7 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
   const [insights, setInsights] = useState<AnalyzeCashFlowOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInsights = insights && (insights.insights.length > 0 || insights.recommendations.length > 0);
 
   const cashFlowSummary = financials?.data?.cashFlowSummary;
   const currency = inputs.parameters.currency;
@@ -136,9 +137,9 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
     );
   }
 
-  if (!insights) {
+  if (!hasInsights) {
      return (
-        <Card data-no-print={isPrint}>
+        <Card data-no-print="true">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.cashFlow.title}</CardTitle>
                 <CardDescription>{t.insights.cashFlow.description}</CardDescription>
@@ -172,7 +173,7 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
       <CardContent className="space-y-6">
         <InsightSection title={t.insights.cashFlow.insights} icon={<Lightbulb className="text-amber-500" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              {insights.insights.map((item, i) => (
+              {insights!.insights.map((item, i) => (
                   <div key={i} className="text-sm">
                       <p className="leading-relaxed">
                         <strong className="font-semibold text-foreground/90">{item.label}: </strong>
@@ -183,7 +184,7 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
             </div>
         </InsightSection>
         <InsightSection title={t.insights.cashFlow.recommendations} icon={<TrendingUp className="text-blue-500" />}>
-          {renderList(insights.recommendations)}
+          {renderList(insights!.recommendations)}
         </InsightSection>
       </CardContent>
     </Card>

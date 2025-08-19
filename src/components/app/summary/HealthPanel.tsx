@@ -29,7 +29,7 @@ const HealthBar = ({ label, value, tooltip, isPrint = false }: { label: string, 
                             <span className="text-muted-foreground">{label}</span>
                             <span className="font-semibold">{value.toFixed(0)} / 100</span>
                         </div>
-                        {isPrint ? <StaticProgress value={value} /> : <Progress value={value} indicatorClassName={getColor(value)} />}
+                        {isPrint ? <StaticProgress value={value} indicatorClassName={getColor(value)} /> : <Progress value={value} indicatorClassName={getColor(value)} />}
                     </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs p-3" data-no-print="true">
@@ -67,6 +67,7 @@ export const HealthPanel = ({
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const hasAiInsights = aiInsights && Object.values(aiInsights).some(v => Array.isArray(v) ? v.length > 0 : !!v);
     
     const handleStrategize = useCallback(async () => {
         if (!healthData) return;
@@ -142,7 +143,7 @@ export const HealthPanel = ({
 
     if (!healthData) {
         return (
-            <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center" data-no-print="true">
+            <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center" data-no-print={isPrint}>
                  <CardTitle className="mb-2">{t.insights.summary.title}</CardTitle>
                  <p className="text-muted-foreground mb-4 text-sm">{t.pages.summary.health.new}</p>
                  <Button onClick={onRecalculate}>
@@ -197,14 +198,14 @@ export const HealthPanel = ({
                     <Separator className="my-6" />
 
                     {error && (
-                        <Alert variant="destructive" className="mt-4">
+                        <Alert variant="destructive" className="mt-4" data-no-print="true">
                             <ShieldAlert className="h-4 w-4" />
                             <AlertTitle>{t.insights.summary.strategize.error}</AlertTitle>
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     )}
                     
-                    {!aiInsights && !isLoading && (
+                    {!hasAiInsights && !isLoading && !isPrint && (
                         <div className="text-center" data-no-print="true">
                             <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
                             <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
@@ -222,7 +223,7 @@ export const HealthPanel = ({
                        </div>
                     )}
                     
-                    {aiInsights && (
+                    {hasAiInsights && (
                          <div className="space-y-6">
                             <div className="flex justify-between items-start">
                                  <div>

@@ -64,15 +64,6 @@
       --tw-border-opacity: 1;
       border-color: hsl(var(--border) / var(--tw-border-opacity));
   }
-  
-  html.pdf-mode, body.pdf-mode { background:#fff !important; }
-  .pdf-mode *{ animation:none !important; transition:none !important; }
-  .pdf-mode{ font-synthesis:none !important; text-rendering:geometricPrecision !important;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-  .pdf-mode, .pdf-mode * {
-    transform: none !important;
-    caret-color: transparent !important;
-  }
 }
 
 @layer components {
@@ -110,7 +101,9 @@ html[data-print="1"] .recharts-wrapper * {
 
 /* Neutralize sticky/fixed inside print capture */
 html[data-print="1"] [style*="position:sticky"],
-html[data-print="1"] [style*="position: fixed"] {
+html[data-print="1"] [style*="position: fixed"],
+html[data-print="1"] .fixed,
+html[data-print="1"] .sticky { 
   position: static !important;
 }
 
@@ -118,6 +111,3 @@ html[data-print="1"] header,
 html[data-print="1"] nav,
 html[data-print="1"] [data-app-chrome="1"],
 html[data-print="1"] [data-no-print="true"] { display: none !important; }
-
-html[data-print="1"] .fixed,
-html[data-print="1"] .sticky { position: static !important; }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from "react"
@@ -12,8 +13,9 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import type { EngineOutput, EngineInput } from "@/lib/types"
+import type { EngineOutput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
+import { getPrintPalette } from "@/lib/printColors";
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
@@ -23,25 +25,26 @@ interface ProfitBreakdownChartProps {
 
 export function ProfitBreakdownChart({ data, currency, isAnimationActive = true }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
+  const printPalette = getPrintPalette();
 
   const chartConfig = React.useMemo(() => ({
     revenue: {
       label: t.insights.charts.revenue,
-      color: "hsl(var(--primary))",
+      color: isAnimationActive ? "hsl(var(--primary))" : printPalette.primary,
     },
     variableCosts: {
         label: "Variable Costs",
-        color: "hsl(0, 70%, 70%)", // Lighter Red
+        color: isAnimationActive ? "hsl(0, 70%, 70%)" : printPalette.lightRed,
     },
     fixedCosts: {
         label: "Fixed Costs",
-        color: "hsl(var(--destructive))", // Main Red
+        color: isAnimationActive ? "hsl(var(--destructive))" : printPalette.destructive,
     },
     cumulativeOperatingProfit: {
       label: t.insights.charts.cumulativeProfit,
-      color: "hsl(140, 70%, 40%)", // Green
+      color: isAnimationActive ? "hsl(140, 70%, 40%)" : printPalette.green,
     }
-  }), [t]) satisfies ChartConfig;
+  }), [t, isAnimationActive, printPalette]) satisfies ChartConfig;
 
 
   const chartData = React.useMemo(() => {
@@ -98,22 +101,23 @@ export function ProfitBreakdownChart({ data, currency, isAnimationActive = true 
           tickFormatter={(value) => valueFormatter(Number(value))}
         />
         <ChartTooltip
-          cursor={true}
+          cursor={!isAnimationActive ? false : true}
+          wrapperStyle={!isAnimationActive ? { display: 'none' } : {}}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
           isAnimationActive={isAnimationActive}
         />
-        <ChartLegend content={<ChartLegendContent className="text-sm" />} />
+        <ChartLegend content={<ChartLegendContent className="text-sm" wrapperStyle={{ width: '100%', textAlign: 'center', bottom: -10 }} />} />
         
         <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
         
-        <Bar dataKey="revenue" stackId="stack" fill="hsl(var(--primary))" isAnimationActive={isAnimationActive} />
-        <Bar dataKey="variableCosts" stackId="stack" fill="hsl(0, 70%, 70%)" isAnimationActive={isAnimationActive} />
-        <Bar dataKey="fixedCosts" stackId="stack" fill="hsl(var(--destructive))" isAnimationActive={isAnimationActive} />
+        <Bar dataKey="revenue" stackId="stack" fill={chartConfig.revenue.color} isAnimationActive={isAnimationActive} />
+        <Bar dataKey="variableCosts" stackId="stack" fill={chartConfig.variableCosts.color} isAnimationActive={isAnimationActive} />
+        <Bar dataKey="fixedCosts" stackId="stack" fill={chartConfig.fixedCosts.color} isAnimationActive={isAnimationActive} />
 
         <Line 
           type="monotone" 
           dataKey="cumulativeOperatingProfit" 
-          stroke="hsl(140, 70%, 40%)" 
+          stroke={chartConfig.cumulativeOperatingProfit.color} 
           strokeWidth={3} 
           dot={{ r: 4 }} 
           activeDot={{ r: 6 }} 

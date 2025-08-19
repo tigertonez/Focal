@@ -1,10 +1,11 @@
 'use client';
 import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
+import {Md5} from 'ts-md5';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
-export type ImageSlice = { imageBase64: string; wPx: number; hPx: number };
+export type ImageSlice = { imageBase64: string; wPx: number; hPx: number; routeName: string; pageIndex: number; md5: string };
 
 const A4_PT = { w: 595.28, h: 841.89 };
 const PT_PER_IN = 72;
@@ -25,12 +26,12 @@ async function waitIframeReady(win: Window) {
 
   try { await (win.document as any).fonts?.ready; } catch {}
   
-  // route may set window.__PRINT_READY__ via signalPrintReady()
   if ((win as any).__PRINT_READY__) {
     await (win as any).__PRINT_READY__;
   } else {
+    // Fallback if the page doesn't signal readiness
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    await sleep(120);
+    await sleep(250);
   }
 }
 
@@ -115,7 +116,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
       for (const row of rows) {
         const rowHeight = getOuterHeight(row as HTMLElement);
         if (usedHeight + rowHeight > a4Px.h && usedHeight > 0) {
-          page.style.height = `${a4Px.h}px`;
+          page.style.height = `${usedHeight}px`; // Finalize height of completed page
           page = newPage();
           usedHeight = 0;
           currentBody = newTable();
@@ -124,19 +125,19 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
         usedHeight += rowHeight;
       }
     } else {
-      // Generic deep node split
       const shell = node.cloneNode(false) as HTMLElement;
       page.appendChild(shell);
       const children = Array.from(node.children) as HTMLElement[];
       for (const child of children) {
           const childHeight = getOuterHeight(child);
           if(usedHeight + childHeight > a4Px.h && usedHeight > 0) {
-              page.style.height = `${a4Px.h}px`;
+              page.style.height = `${usedHeight}px`;
               page = newPage();
               usedHeight = 0;
               const nextShell = node.cloneNode(false) as HTMLElement;
               page.appendChild(nextShell);
               nextShell.appendChild(child);
+              usedHeight += childHeight;
           } else {
               shell.appendChild(child);
               usedHeight += childHeight;
@@ -149,7 +150,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   for (const block of blocks) {
     const blockHeight = getOuterHeight(block);
     if (usedHeight > 0 && usedHeight + blockHeight > a4Px.h) {
-        page.style.height = `${a4Px.h}px`;
+        page.style.height = `${usedHeight}px`;
         page = newPage();
         usedHeight = 0;
     }
@@ -163,7 +164,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   
   const pages = Array.from(container.children) as HTMLElement[];
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
-  pages.forEach(p => p.style.height = `${a4Px.h}px`);
+  pages.forEach(p => { if (!p.style.height) p.style.height = `${a4Px.h}px`; });
   return { pages, stage };
 }
 
@@ -180,11 +181,17 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
     if (!root) throw new Error(`[data-report-root] not found on route: ${path}`);
     
+    // Resize event to help Recharts measure correctly
+    win.dispatchEvent(new Event('resize'));
+    await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
+
     const { pages, stage } = paginateAttached(doc, root, a4Px);
     await waitIframeReady(win);
 
     const slices: ImageSlice[] = [];
-    for (const p of pages) {
+    const seenHashes = new Set<string>();
+
+    for (const [i, p] of pages.entries()) {
       let url = '';
       try {
         url = await toPng(p, {
@@ -193,24 +200,29 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
           filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
         });
       } catch (e) {
-        console.warn('html-to-image failed, falling back to html2canvas', e);
+        console.warn(`html-to-image failed for ${path} page ${i}, falling back to html2canvas`, e);
         try {
             const canvas = await html2canvas(p, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             url = canvas.toDataURL('image/png');
         } catch (e2) {
-             console.error('html2canvas also failed', e2);
+             console.error(`html2canvas also failed for ${path} page ${i}`, e2);
+             continue;
         }
       }
 
-      if (!url || !url.startsWith('data:image/png;base64,') || url.length < 10000) continue;
+      if (!url || !url.startsWith('data:image/png;base64,') || url.length < 2000) continue;
+      
       const raw = rawFromDataUrl(url);
-      if (raw.length < 2000) continue;
+      const md5 = Md5.hashStr(raw);
+
+      if (seenHashes.has(md5)) continue;
+      seenHashes.add(md5);
+      
       const img = new Image(); img.src = url; await img.decode().catch(()=>{});
-      slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h });
+      slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
     }
     
     stage.remove();
-    if (slices.length === 0) throw new Error('No printable content was captured (0 slices).');
     return slices;
   } finally {
     cleanup();
@@ -218,6 +230,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 }
 
 export async function captureSummaryNodeRaw(node: HTMLElement): Promise<{raw:string; w:number; h:number}> {
+  const { toPng } = await import('html-to-image');
   const url = await toPng(node, {
     cacheBust: true, pixelRatio: 2, style: { transform:'none' },
     skipFonts: false, useCORS: true,
