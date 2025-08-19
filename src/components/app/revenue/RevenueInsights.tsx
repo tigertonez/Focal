@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -45,10 +44,11 @@ const InsightsLoader: React.FC<{ t: any }> = ({ t }) => (
 interface RevenueInsightsProps {
     revenueSummary: RevenueSummary;
     currency: string;
+    isPrint?: boolean;
 }
 
-export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsProps) {
-  const { inputs, t, locale } = useForecast();
+export function RevenueInsights({ revenueSummary, currency, isPrint = false }: RevenueInsightsProps) {
+  const { inputs, t, locale, ensureForecastReady } = useForecast();
   const [insights, setInsights] = useState<AnalyzeRevenueOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +57,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
     setIsLoading(true);
     setError(null);
     try {
+      await ensureForecastReady();
       const result = await analyzeRevenue({
         revenueSummary,
         products: inputs.products,
@@ -70,7 +71,13 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
     } finally {
       setIsLoading(false);
     }
-  }, [revenueSummary, currency, locale, inputs]);
+  }, [revenueSummary, currency, locale, inputs, ensureForecastReady]);
+
+  useEffect(() => {
+    if (isPrint && !insights) {
+      getInsights();
+    }
+  }, [isPrint, insights, getInsights]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -111,7 +118,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
 
   if (error) {
     return (
-      <Card>
+      <Card data-no-print={isPrint}>
         <CardHeader>
           <CardTitle>{t.insights.revenue.title}</CardTitle>
         </CardHeader>
@@ -133,7 +140,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
 
   if (!insights) {
      return (
-        <Card>
+        <Card data-no-print={isPrint}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.revenue.title}</CardTitle>
                 <CardDescription>{t.insights.revenue.description}</CardDescription>
@@ -158,7 +165,7 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
                 {t.insights.revenue.description}
               </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
+            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading} data-no-print="true">
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 {t.insights.regenerate}
             </Button>
@@ -175,5 +182,3 @@ export function RevenueInsights({ revenueSummary, currency }: RevenueInsightsPro
     </Card>
   );
 }
-
-    

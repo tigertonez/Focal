@@ -30,24 +30,22 @@ export function usePrintMode() {
   const lang = params.get('lang') || undefined;
   const { locale, setLocale, ensureForecastReady } = useForecast();
   
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!isPrint) return;
     document.documentElement.setAttribute('data-print', '1');
     document.documentElement.classList.add('pdf-mode');
     
-    (async () => {
-        if (lang && lang !== locale && typeof setLocale === 'function') {
-            await setLocale(lang as any);
-        }
-        await ensureForecastReady();
-        initPrintReadyPromise();
-    })();
+    if (lang && lang !== locale && typeof setLocale === 'function') {
+        setLocale(lang as any);
+    }
+    
+    initPrintReadyPromise();
 
     return () => {
       document.documentElement.removeAttribute('data-print');
       document.documentElement.classList.remove('pdf-mode');
     };
-  }, [isPrint, lang, locale, setLocale, ensureForecastReady]);
+  }, [isPrint, lang, locale, setLocale]);
 
   return { isPrint, lang: (lang ?? locale ?? 'en') as 'en' | 'de' };
 }
@@ -84,7 +82,7 @@ export async function waitForVisibleCharts(doc: Document, { timeoutMs = 8000 } =
             const allVisible = svgs.every(svg => {
                 try {
                     const box = svg.getBBox();
-                    return box.width > 0 && box.height > 0;
+                    return box.width > 0 && box.height > 0 && svg.querySelector('path');
                 } catch {
                     return false;
                 }
@@ -105,15 +103,19 @@ export async function waitForVisibleCharts(doc: Document, { timeoutMs = 8000 } =
 }
 
 /** New orchestrator for routes in print mode */
-export async function signalWhenReady(opts?: {
-  lang?: 'en'|'de';
-  ensureForecastReady?: () => Promise<void>;
+export async function signalWhenReady(opts: {
+  ensureForecastReady: () => Promise<void>;
+  root: Document;
 }): Promise<void> {
-    if (opts?.ensureForecastReady) {
-        await opts.ensureForecastReady();
-    }
-    await expandAllInteractive(document);
-    await settleLayout(document);
-    await waitForVisibleCharts(document);
+    await opts.ensureForecastReady();
+    await expandAllInteractive(opts.root);
+    await opts.root.fonts.ready.catch(()=>{});
+    await waitForVisibleCharts(opts.root);
+    // Dispatch resize events and wait for layout to settle
+    window.dispatchEvent(new Event('resize'));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    window.dispatchEvent(new Event('resize'));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await settleLayout(opts.root);
     signalPrintReady();
 }

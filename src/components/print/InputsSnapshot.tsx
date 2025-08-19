@@ -52,7 +52,7 @@ export default function InputsSnapshot() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Products</CardTitle>
+          <CardTitle>Products & Services</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

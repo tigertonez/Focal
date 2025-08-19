@@ -13,11 +13,6 @@ interface FinancialsState {
   isLoading: boolean;
 }
 
-let calculationPromise: Promise<EngineOutput> | null = null;
-let readyPromise: Promise<void> | null = null;
-let readyResolve: (() => void) | null = null;
-
-
 interface ForecastContextType {
   inputs: EngineInput;
   setInputs: React.Dispatch<React.SetStateAction<EngineInput>>;
@@ -134,80 +129,34 @@ export const ForecastProvider = ({ children }: { children: ReactNode }) => {
     }
     const data = calculateFinancialsEngine(result.data);
     localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(data));
-    if (readyResolve) {
-      readyResolve();
-      readyPromise = null;
-      readyResolve = null;
-    }
     return data;
   }, []);
 
-  const ensureForecastReady = useCallback(async () => {
-    // If we have data and we are not in a loading state, we are ready.
-    if (financials.data && !financials.isLoading) {
-        return;
-    }
-    // If there's already a promise, await it.
-    if (readyPromise) {
-        return readyPromise;
-    }
-    
-    // Create a new promise for this readiness check.
-    readyPromise = new Promise((resolve, reject) => {
-      readyResolve = resolve;
-      // Timeout to prevent infinite waiting
-      const timeoutId = setTimeout(() => {
-        reject(new Error("FORECAST_NOT_READY_TIMEOUT: Forecast calculation took too long."));
-      }, 10000);
+  const ensureForecastReady = useCallback(async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const check = () => {
+            if (financials.data && !financials.isLoading) {
+                resolve();
+                return true;
+            }
+            return false;
+        };
 
-      // Clean up timeout when the promise settles
-      readyPromise?.finally(() => clearTimeout(timeoutId));
+        if (check()) return;
+
+        let attempts = 0;
+        const interval = setInterval(() => {
+            if (check()) {
+                clearInterval(interval);
+            } else if (attempts > 200) { // 10 seconds timeout
+                clearInterval(interval);
+                reject(new Error("FORECAST_NOT_READY_TIMEOUT: Financial data did not become available in time."));
+            }
+            attempts++;
+        }, 50);
     });
+}, [financials.data, financials.isLoading]);
 
-    // If a calculation is already running, the new promise will be resolved when it finishes.
-    if (calculationPromise) {
-        await calculationPromise;
-        return;
-    }
-
-    // Start a new calculation if one isn't running.
-    const calculation = async () => {
-        let currentInputs = inputs;
-        // Load from storage if state is initial
-        if (!financials.data && !financials.error) {
-            try {
-                const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-                if (savedDraft) {
-                    const parsed = JSON.parse(savedDraft);
-                    const result = EngineInputSchema.safeParse(parsed);
-                    if (result.success) {
-                        currentInputs = result.data;
-                        setInputs(result.data);
-                    }
-                }
-            } catch (e) { console.error("Failed to load draft for readiness check", e); }
-        }
-        
-        try {
-            setFinancials(f => ({ ...f, isLoading: true }));
-            const data = calculateFinancials(currentInputs);
-            setFinancials({ data, error: null, isLoading: false });
-            return data;
-        } catch (e: any) {
-            setFinancials({ data: null, error: e.message, isLoading: false });
-            throw e;
-        } finally {
-            calculationPromise = null;
-        }
-    };
-    
-    // If not already loading, start the calculation.
-    if (!financials.isLoading) {
-       calculationPromise = calculation();
-    }
-    
-    return readyPromise;
-  }, [financials, inputs, calculateFinancials]);
 
   const saveDraft = (currentInputs: EngineInput) => {
      try {

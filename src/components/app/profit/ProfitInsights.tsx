@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -58,11 +57,13 @@ const ProfitInsightsLoader: React.FC<{ t: any }> = ({ t }) => (
 export function ProfitInsights({
   data,
   currency,
+  isPrint = false,
 }: {
   data: EngineOutput;
   currency: string;
+  isPrint?: boolean;
 }) {
-  const { inputs, t, locale } = useForecast();
+  const { inputs, t, locale, ensureForecastReady } = useForecast();
   const [insights, setInsights] = useState<AnalyzeProfitabilityOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,12 +72,14 @@ export function ProfitInsights({
     setIsLoading(true);
     setError(null);
     try {
+      await ensureForecastReady();
       const result = await analyzeProfitability({
           revenueSummary: data.revenueSummary,
           costSummary: data.costSummary,
           profitSummary: data.profitSummary,
           currency,
           language: locale,
+          companyContext: inputs.company,
       });
       setInsights(result);
     } catch (e: any) {
@@ -85,7 +88,13 @@ export function ProfitInsights({
     } finally {
       setIsLoading(false);
     }
-  }, [data, currency, locale]);
+  }, [data, currency, locale, inputs, ensureForecastReady]);
+
+  useEffect(() => {
+    if (isPrint && !insights) {
+      getInsights();
+    }
+  }, [isPrint, insights, getInsights]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -155,7 +164,7 @@ export function ProfitInsights({
 
   if (!insights && !isLoading && !error) {
      return (
-        <Card>
+        <Card data-no-print={isPrint}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.profit.title}</CardTitle>
                 <CardDescription>{t.insights.profit.description}</CardDescription>
@@ -176,7 +185,7 @@ export function ProfitInsights({
 
   if (error || !insights) {
     return (
-      <Card>
+      <Card data-no-print={isPrint}>
         <CardHeader>
           <CardTitle>{t.insights.loaderTitle}</CardTitle>
         </CardHeader>
@@ -206,7 +215,7 @@ export function ProfitInsights({
                   {t.insights.profit.description}
                 </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
+            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading} data-no-print="true">
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 {t.insights.regenerate}
             </Button>

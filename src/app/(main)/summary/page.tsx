@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import type { EngineOutput, EngineInput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -191,7 +191,7 @@ export default function SummaryPage() {
     const { t, financials, inputs, ensureForecastReady } = useForecast();
     const { isPrint, lang } = usePrintMode();
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isPrint) return;
         signalWhenReady({ lang, ensureForecastReady });
     }, [isPrint, lang, ensureForecastReady]);

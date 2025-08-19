@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -46,10 +45,11 @@ interface CostsInsightsProps {
     costSummary: CostSummary;
     revenueSummary: RevenueSummary;
     currency: string;
+    isPrint?: boolean;
 }
 
-export function CostsInsights({ costSummary, revenueSummary, currency }: CostsInsightsProps) {
-  const { inputs, t, locale } = useForecast();
+export function CostsInsights({ costSummary, revenueSummary, currency, isPrint = false }: CostsInsightsProps) {
+  const { inputs, t, locale, ensureForecastReady } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCostsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,14 +58,27 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeCosts({ costSummary, revenueSummary, currency, language: locale });
+      await ensureForecastReady();
+      const result = await analyzeCosts({ 
+        costSummary, 
+        revenueSummary, 
+        currency, 
+        language: locale, 
+        companyContext: inputs.company 
+      });
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
-  }, [costSummary, revenueSummary, currency, locale]);
+  }, [costSummary, revenueSummary, currency, locale, inputs.company, ensureForecastReady]);
+
+  useEffect(() => {
+    if (isPrint && !insights) {
+      getInsights();
+    }
+  }, [isPrint, insights, getInsights]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -106,7 +119,7 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
 
   if (error) {
     return (
-      <Card>
+      <Card data-no-print={isPrint}>
         <CardHeader>
           <CardTitle>{t.insights.costs.title}</CardTitle>
         </CardHeader>
@@ -128,7 +141,7 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
 
   if (!insights) {
      return (
-        <Card>
+        <Card data-no-print={isPrint}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.costs.title}</CardTitle>
                 <CardDescription>{t.insights.costs.description}</CardDescription>
@@ -153,7 +166,7 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
                 {t.insights.costs.description}
               </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
+            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading} data-no-print="true">
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 {t.insights.regenerate}
             </Button>
@@ -170,5 +183,3 @@ export function CostsInsights({ costSummary, revenueSummary, currency }: CostsIn
     </Card>
   );
 }
-
-    

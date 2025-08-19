@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -41,8 +40,8 @@ const InsightsLoader: React.FC<{ t: any }> = ({ t }) => (
   </Card>
 );
 
-export function CashFlowInsights() {
-  const { inputs, financials, t, locale } = useForecast();
+export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
+  const { inputs, financials, t, locale, ensureForecastReady } = useForecast();
   const [insights, setInsights] = useState<AnalyzeCashFlowOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,14 +55,26 @@ export function CashFlowInsights() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeCashFlow({ cashFlowSummary, currency, language: locale });
+      await ensureForecastReady();
+      const result = await analyzeCashFlow({ 
+        cashFlowSummary, 
+        currency, 
+        language: locale,
+        companyContext: inputs.company 
+      });
       setInsights(result);
     } catch (e: any) {
       setError(e.message || 'Failed to generate insights.');
     } finally {
       setIsLoading(false);
     }
-  }, [cashFlowSummary, currency, locale]);
+  }, [cashFlowSummary, currency, locale, inputs.company, ensureForecastReady]);
+  
+  useEffect(() => {
+    if (isPrint && !insights) {
+      getInsights();
+    }
+  }, [isPrint, insights, getInsights]);
   
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -105,7 +116,7 @@ export function CashFlowInsights() {
 
   if (error) {
     return (
-      <Card>
+      <Card data-no-print={isPrint}>
         <CardHeader>
           <CardTitle>{t.insights.cashFlow.title}</CardTitle>
         </CardHeader>
@@ -127,7 +138,7 @@ export function CashFlowInsights() {
 
   if (!insights) {
      return (
-        <Card>
+        <Card data-no-print={isPrint}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> {t.insights.cashFlow.title}</CardTitle>
                 <CardDescription>{t.insights.cashFlow.description}</CardDescription>
@@ -152,7 +163,7 @@ export function CashFlowInsights() {
                 {t.insights.cashFlow.description}
               </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading}>
+            <Button variant="ghost" size="sm" onClick={getInsights} disabled={isLoading} data-no-print="true">
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 {t.insights.regenerate}
             </Button>
@@ -178,5 +189,3 @@ export function CashFlowInsights() {
     </Card>
   );
 }
-
-    

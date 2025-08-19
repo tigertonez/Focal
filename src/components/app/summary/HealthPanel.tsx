@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -7,14 +6,15 @@ import { type BusinessHealth, type BusinessHealthScoreKpi, type RevenueSummary, 
 import { strategizeHealthScore } from '@/ai/flows/strategize-health-score';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { cn, getProductColor } from '@/lib/utils';
 import { RefreshCw, Sparkles, Loader2, Lightbulb, CheckCircle, TrendingUp, ShieldAlert } from 'lucide-react';
+import { StaticProgress } from '@/components/print/StaticProgress';
+import { Progress } from '@/components/ui/progress';
 
-const HealthBar = ({ label, value, tooltip }: { label: string, value: number, tooltip: string }) => {
+const HealthBar = ({ label, value, tooltip, isPrint = false }: { label: string, value: number, tooltip: string, isPrint?: boolean }) => {
     const getColor = (v: number) => {
         if (v < 40) return 'bg-destructive';
         if (v < 70) return 'bg-yellow-500';
@@ -29,10 +29,10 @@ const HealthBar = ({ label, value, tooltip }: { label: string, value: number, to
                             <span className="text-muted-foreground">{label}</span>
                             <span className="font-semibold">{value.toFixed(0)} / 100</span>
                         </div>
-                        <Progress value={value} indicatorClassName={getColor(value)} />
+                        {isPrint ? <StaticProgress value={value} /> : <Progress value={value} indicatorClassName={getColor(value)} />}
                     </div>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">
+                <TooltipContent className="max-w-xs p-3" data-no-print="true">
                     <p className="text-muted-foreground text-xs">{tooltip}</p>
                 </TooltipContent>
             </Tooltip>
@@ -63,7 +63,7 @@ export const HealthPanel = ({
   t: any,
   isPrint?: boolean
 }) => {
-    const { inputs, locale } = useForecast();
+    const { inputs, locale, ensureForecastReady } = useForecast();
     const [aiInsights, setAiInsights] = useState<StrategizeHealthScoreOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -74,6 +74,7 @@ export const HealthPanel = ({
         setError(null);
         setAiInsights(null);
         try {
+            await ensureForecastReady();
             const result = await strategizeHealthScore({
                 businessHealth: healthData,
                 revenueSummary: financialSummaries.revenue,
@@ -89,7 +90,14 @@ export const HealthPanel = ({
         } finally {
             setIsLoading(false);
         }
-    }, [healthData, financialSummaries, inputs, locale]);
+    }, [healthData, financialSummaries, inputs, locale, ensureForecastReady]);
+
+    useEffect(() => {
+        if (isPrint && !aiInsights && healthData) {
+            handleStrategize();
+        }
+    }, [isPrint, aiInsights, healthData, handleStrategize]);
+
 
     const itemColorMap = useMemo(() => {
         const map = new Map<string, string>();
@@ -134,7 +142,7 @@ export const HealthPanel = ({
 
     if (!healthData) {
         return (
-            <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center">
+            <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center" data-no-print="true">
                  <CardTitle className="mb-2">{t.insights.summary.title}</CardTitle>
                  <p className="text-muted-foreground mb-4 text-sm">{t.pages.summary.health.new}</p>
                  <Button onClick={onRecalculate}>
@@ -179,12 +187,13 @@ export const HealthPanel = ({
                                 label={t.pages.summary.health.kpis[kpi.labelKey as keyof typeof t.pages.summary.health.kpis]} 
                                 value={kpi.value} 
                                 tooltip={t.pages.summary.health[kpi.tooltipKey as keyof typeof t.pages.summary.health]}
+                                isPrint={isPrint}
                             />)}
                         </div>
                     </div>
                 </div>
                 
-                <div data-no-print={isPrint}>
+                <div>
                     <Separator className="my-6" />
 
                     {error && (
@@ -196,7 +205,7 @@ export const HealthPanel = ({
                     )}
                     
                     {!aiInsights && !isLoading && (
-                        <div className="text-center">
+                        <div className="text-center" data-no-print="true">
                             <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
                             <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
                             <Button onClick={handleStrategize} disabled={isLoading}>
@@ -222,7 +231,7 @@ export const HealthPanel = ({
                                       {t.insights.summary.strategize.reportDescription}
                                     </CardDescription>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading}>
+                                <Button variant="ghost" size="sm" onClick={handleStrategize} disabled={isLoading} data-no-print="true">
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     {t.insights.regenerate}
                                 </Button>
