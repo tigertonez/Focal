@@ -30,70 +30,32 @@ export function formatNumber(value: number) {
     }).format(value);
 }
 
-// --- Centralized Product Color Assignment ---
-const assignedColors: Record<string, string> = {};
-let usedColorIndex = 0; // Use a simple index to cycle through colors for more reliable uniqueness
-
-// A simple hashing function to get a deterministic index from a string.
-const simpleHash = (str: string): number => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-};
-
-// New semantic color map for products
-const productSemanticColors: Record<string, string[]> = {
-    "gold": ["hsl(45, 74%, 55%)", "hsl(45, 74%, 65%)", "hsl(45, 74%, 45%)"],
-    "silber": ["hsl(220, 13%, 85%)", "hsl(220, 13%, 75%)", "hsl(220, 13%, 65%)"],
-    "silver": ["hsl(220, 13%, 85%)", "hsl(220, 13%, 75%)", "hsl(220, 13%, 65%)"],
-};
 
 /**
- * Assigns a consistent color to a product or fixed cost item.
- * This function is now deterministic and stateless.
- * @param item The product or fixed cost item object.
- * @returns A CSS color string (hex or HSL).
+ * Returns the color for a given product or fixed cost item.
+ * It prioritizes the color set on the item object itself.
+ * If no color is set, it assigns a deterministic color from a predefined palette
+ * based on a hash of the item's ID.
+ * @param item The product or fixed cost item.
+ * @returns A CSS color string.
  */
-export function getProductColor(item: Product | FixedCostItem | { id: string, name: string, color?: string }): string {
-    const isProduct = 'productName' in item;
-    const name = isProduct ? item.productName : item.name;
-    const id = item.id;
-
-    if (item.color) return item.color;
-    if (assignedColors[id]) return assignedColors[id];
-
-    const lowerName = name.toLowerCase();
-    
-    // Check for direct semantic matches first (like "Deposits")
-    for (const key in semanticColorMap) {
-        if (lowerName === key.toLowerCase()) {
-            const color = semanticColorMap[key];
-            assignedColors[id] = color;
-            return color;
-        }
-    }
-    
-    const hash = simpleHash(id);
-    let color: string;
-
-    // Check for keyword-based semantic matches
-    let foundSemantic = false;
-    for (const key in semanticColorMap) {
-        if (lowerName.includes(key.toLowerCase())) {
-            color = semanticColorMap[key];
-            assignedColors[id] = color;
-            foundSemantic = true;
-            return color;
-        }
+export function getProductColor(item: { id: string, color?: string, name?: string, productName?: string }): string {
+    if (item.color) {
+        return item.color;
     }
 
-    const palette = isProduct ? productColorVars : chartColorVars;
-    color = palette[hash % palette.length];
+    // Fallback to a deterministic color based on the ID if no color is specified.
+    const palette = [
+        "#2563eb", "#d946ef", "#f97316", "#0d9488",
+        "#ec4899", "#8b5cf6", "#65a30d", "#f59e0b"
+    ];
     
-    assignedColors[id] = color;
-    return color;
+    let hash = 0;
+    for (let i = 0; i < item.id.length; i++) {
+        const char = item.id.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    
+    return palette[Math.abs(hash) % palette.length];
 }
