@@ -58,17 +58,23 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   const win = iframe.contentWindow;
   await waitIframeReady(win);
   const doc = iframe.contentDocument!;
+  
+  // WIDTH FREEZE — deterministic 1280px viewport for print
   doc.documentElement.setAttribute('data-print','1');
+  doc.documentElement.style.width = `${CAPTURE_WIDTH}px`;
+  doc.body.style.width = `${CAPTURE_WIDTH}px`;
+  doc.body.style.margin = '0 auto';
+  doc.body.style.backgroundColor = '#fff';
 
-  // INJECT a small stylesheet to lock layout and remove scrollbars in print
   const style = doc.createElement('style');
+  style.id = '__print_width_freeze__';
   style.textContent = `
-    html, body { width: ${CAPTURE_WIDTH}px !important; margin: 0 auto !important; background: #fff !important; overflow: visible !important; }
-    .container { max-width: ${CAPTURE_WIDTH}px !important; }
-    [data-no-print="true"] { display: none !important; }
-    .overflow-auto, .overflow-y-auto, .overflow-x-auto { overflow: visible !important; }
+    :root, html, body { max-width:${CAPTURE_WIDTH}px !important; }
+    .container { max-width:${CAPTURE_WIDTH}px !important; width:${CAPTURE_WIDTH}px !important; }
+    [data-report-root] { max-width:${CAPTURE_WIDTH}px !important; width:${CAPTURE_WIDTH}px !important; }
   `;
   doc.head.appendChild(style);
+
 
   // also mirror app classes if present
   if (document.documentElement.className) {
@@ -233,7 +239,6 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     win.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
 
-    console.debug('[PDF DIAG]', { route: path, width: CAPTURE_WIDTH, recharts: doc.querySelectorAll('svg.recharts-surface').length, rootW: root?.offsetWidth, rootH: root?.offsetHeight });
     const { pages, stage } = paginateAttached(doc, root, a4Px);
     await waitIframeReady(win);
 
