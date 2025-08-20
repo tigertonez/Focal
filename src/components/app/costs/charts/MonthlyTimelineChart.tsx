@@ -12,13 +12,12 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber } from "@/lib/utils"
-import { useForecast } from "@/context/ForecastContext"
 import { colorFor, palette, seedPrintColorMap } from "@/lib/printColorMap";
 
 interface MonthlyTimelineChartProps {
   data: any[];
   currency?: string;
-  configOverrides?: Record<string, { label: string }>;
+  configOverrides?: Record<string, { label: string, color?: string }>;
   formatAs?: 'currency' | 'number';
   isAnimationActive?: boolean;
   isPrint?: boolean;
@@ -26,7 +25,6 @@ interface MonthlyTimelineChartProps {
 }
 
 export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [] }: MonthlyTimelineChartProps) {
-  const { inputs, t } = useForecast();
   
   React.useEffect(() => {
     if (isPrint && seriesKeys.length > 0) {
@@ -34,32 +32,18 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
     }
   }, [isPrint, seriesKeys]);
 
-  const { chartConfig, costKeys } = React.useMemo(() => {
+  const chartConfig = React.useMemo(() => {
     const newConfig: ChartConfig = {};
-    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month' && data.some(d => d[key] > 0)) : [];
     
-    allKeys.forEach((key) => {
+    seriesKeys.forEach(key => {
         newConfig[key] = {
-            label: key,
-            color: isPrint ? colorFor(key) : `hsl(var(--${key}))`, // Fallback for non-print
+            label: configOverrides?.[key]?.label || key,
+            color: configOverrides?.[key]?.color || colorFor(key),
         };
     });
 
-    if (configOverrides) {
-        Object.keys(configOverrides).forEach(key => {
-            if (newConfig[key]) {
-                newConfig[key].label = configOverrides[key].label;
-            } else if (t.insights.charts[key as keyof typeof t.insights.charts]) {
-                 newConfig[key] = { label: t.insights.charts[key as keyof typeof t.insights.charts] };
-            }
-        });
-    }
-
-    return { 
-        chartConfig: newConfig, 
-        costKeys: allKeys,
-    };
-  }, [data, configOverrides, t, isPrint]);
+    return newConfig;
+  }, [seriesKeys, configOverrides]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
@@ -136,7 +120,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
           />
           <ChartLegend {...(isPrint ? { layout: "horizontal", align: "center", verticalAlign: "bottom", wrapperStyle: legendWrapperStylePrint } : {})} />
           
-          {costKeys.map((key) => {
+          {seriesKeys.map((key) => {
               const itemConfig = chartConfig[key];
               return (
                  <Bar

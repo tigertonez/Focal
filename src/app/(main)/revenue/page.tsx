@@ -9,7 +9,7 @@ import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
-import type { EngineOutput, EngineInput } from '@/lib/types';
+import type { EngineOutput, EngineInput, Product } from '@/lib/types';
 import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimelineChart';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -26,9 +26,12 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue, monthlyUnitsSold } = data;
 
-    const productChartConfig: Record<string, { label: string }> = {};
-    inputs.products.forEach((p) => {
-        productChartConfig[p.productName] = { label: p.productName };
+    const productChartConfig: Record<string, { label: string, color: string }> = {};
+    inputs.products.forEach((p: Product) => {
+        productChartConfig[p.productName] = { 
+            label: p.productName,
+            color: getProductColor(p),
+        };
     });
     
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
