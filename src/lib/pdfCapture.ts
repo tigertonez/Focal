@@ -1,11 +1,15 @@
+// src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
-import {Md5} from 'ts-md5';
+import { Md5 } from 'ts-md5';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
-export type ImageSlice = { imageBase64: string; wPx: number; hPx: number; routeName: string; pageIndex: number; md5: string };
+export type ImageSlice = {
+  imageBase64: string; wPx: number; hPx: number;
+  routeName: string; pageIndex: number; md5: string;
+};
 
 const A4_PT = { w: 595.28, h: 841.89 };
 const PT_PER_IN = 72;
@@ -17,29 +21,52 @@ const rawFromDataUrl = (url:string)=> {
   return url.slice(i+7);
 };
 
-/** Wait until iframe has a body and the route signalled readiness. */
+// ---------- DIAG ------------
+type RouteDiag = {
+  route: string;
+  usedFallback: 'none' | 'tall' | 'html2canvas';
+  missingRoot: boolean;
+  contentWidthPx: number;
+  rechartsCount: number;
+  toggleClicks: number;
+  durationMs: number;
+  pages: number;
+  slices: number;
+  sliceDims: Array<{w:number;h:number;kb:number;md5:string}>;
+  errors: string[];
+};
+let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
+export function popLastRouteDiag(): RouteDiag | null {
+  const d = __LAST_ROUTE_DIAG__;
+  __LAST_ROUTE_DIAG__ = null;
+  return d;
+}
+// ----------------------------
+
 async function waitIframeReady(win: Window) {
   let tries = 0;
   while ((!win.document || win.document.readyState !== 'complete' || !win.document.body) && tries < 80) {
     await sleep(50); tries++;
   }
-  if (!win.document?.body) throw new Error('Iframe document body not found after timeout.');
-
+  if (!win.document?.body) throw new Error('Iframe body timeout');
   try { await (win.document as any).fonts?.ready; } catch {}
-
-  const maybe = (win as any).__PRINT_READY__;
-  if (maybe && typeof (maybe as Promise<any>).then === 'function') {
-    // IMPORTANT: never hang forever – proceed after 6s
-    await Promise.race([maybe, sleep(6000)]);
-  } else {
-    // Fallback if page doesn't expose __PRINT_READY__
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await sleep(250);
-  }
 }
 
-/** Load route in same-origin iframe with print flags; guarantee body exists. */
-export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promise<{win:Window,doc:Document,cleanup:()=>void}> {
+function injectPrintCSS(doc: Document) {
+  const style = doc.createElement('style');
+  style.textContent = `
+    html,body{width:${CAPTURE_WIDTH}px!important; margin:0 auto!important; background:#fff!important;}
+    [data-report-root]{width:${CAPTURE_WIDTH}px!important; margin:0 auto!important;}
+    .container{max-width:${CAPTURE_WIDTH}px!important;}
+    .overflow-auto,.overflow-y-auto{overflow:visible!important;}
+    [data-no-print="true"]{display:none!important;}
+  `;
+  doc.head.appendChild(style);
+}
+
+/** Load route in same-origin iframe; set print flags + width */
+export async function loadRouteInIframe(path: string, locale: 'en'|'de'):
+Promise<{win:Window,doc:Document,cleanup:()=>void}> {
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.left = '-10000px';
@@ -50,50 +77,32 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   document.body.appendChild(iframe);
 
   await new Promise<void>(res => {
-    const failover = setTimeout(res, 5000); // safety timeout
-    iframe.onload = () => { clearTimeout(failover); res(); };
+    const t = setTimeout(res, 6000);
+    iframe.onload = () => { clearTimeout(t); res(); };
   });
 
-  if (!iframe.contentWindow) throw new Error('Iframe window unavailable');
+  if (!iframe.contentWindow) throw new Error('iframe window unavailable');
   const win = iframe.contentWindow;
   await waitIframeReady(win);
+
   const doc = iframe.contentDocument!;
-  
-  // WIDTH FREEZE — deterministic 1280px viewport for print
+  injectPrintCSS(doc);
   doc.documentElement.setAttribute('data-print','1');
-  doc.documentElement.style.width = `${CAPTURE_WIDTH}px`;
-  doc.body.style.width = `${CAPTURE_WIDTH}px`;
-  doc.body.style.margin = '0 auto';
-  doc.body.style.backgroundColor = '#fff';
+  doc.documentElement.classList.add('pdf-mode');
 
-  const style = doc.createElement('style');
-  style.id = '__print_width_freeze__';
-  style.textContent = `
-    :root, html, body { max-width:${CAPTURE_WIDTH}px !important; }
-    .container { max-width:${CAPTURE_WIDTH}px !important; width:${CAPTURE_WIDTH}px !important; }
-    [data-report-root] { max-width:${CAPTURE_WIDTH}px !important; width:${CAPTURE_WIDTH}px !important; }
-  `;
-  doc.head.appendChild(style);
-
-
-  // also mirror app classes if present
+  // sync className from host (for theme)
   if (document.documentElement.className) {
     doc.documentElement.className = document.documentElement.className;
   }
-  
-  // kick layout so Recharts can remeasure in the live route BEFORE we clone
-  doc.defaultView?.dispatchEvent(new Event('resize'));
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
   return { win, doc, cleanup: () => iframe.remove() };
 }
 
-/** Build A4 pages INSIDE the DOM so measurements are correct. */
+/** Attached pagination to keep Recharts measurements correct */
 function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:number,h:number}) {
   const stage = doc.createElement('div');
   stage.id = '__print_stage__';
-  doc.body.appendChild(stage);
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
+  doc.body.appendChild(stage);
 
   const working = sourceRoot.cloneNode(true) as HTMLElement;
   working.querySelectorAll('[data-no-print="true"]').forEach(el => el.remove());
@@ -106,121 +115,110 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
     const p = doc.createElement('div');
     Object.assign(p.style, {
       width: `${a4Px.w}px`,
-      overflow: 'hidden',
-      boxSizing: 'border-box',
       backgroundColor: '#fff',
       margin: '0 auto',
-      padding: '0'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     });
     container.appendChild(p);
     return p;
   };
-  
+
   let page = newPage();
   let usedHeight = 0;
 
   const getOuterHeight = (el: HTMLElement) => {
-    const style = doc.defaultView!.getComputedStyle(el);
-    return el.offsetHeight + parseInt(style.marginTop) + parseInt(style.marginBottom);
+    const cs = doc.defaultView!.getComputedStyle(el);
+    return el.offsetHeight + parseInt(cs.marginTop) + parseInt(cs.marginBottom);
   };
 
   const splitNode = (node: HTMLElement) => {
     if (node.tagName === 'TABLE') {
-      const table = node;
+      const table = node as HTMLTableElement;
       const head = table.tHead ? table.tHead.cloneNode(true) : null;
       const rows = Array.from((table.tBodies[0] || table).rows);
-      
       const newTable = () => {
         const tbl = table.cloneNode(false) as HTMLTableElement;
         if (head) tbl.appendChild(head.cloneNode(true));
-        tbl.appendChild(doc.createElement('tbody'));
+        const tb = doc.createElement('tbody'); tbl.appendChild(tb);
         page.appendChild(tbl);
-        return tbl.tBodies[0];
+        return tb;
       };
-
-      let currentBody = newTable();
+      let body = newTable();
       for (const row of rows) {
-        const rowHeight = getOuterHeight(row as HTMLElement);
-        if (usedHeight + rowHeight > a4Px.h && usedHeight > 0) {
-          page.style.height = `${usedHeight}px`; // Finalize height of completed page
-          page = newPage();
-          usedHeight = 0;
-          currentBody = newTable();
+        const h = getOuterHeight(row as any);
+        if (usedHeight > 0 && usedHeight + h > a4Px.h) {
+          page.style.height = `${usedHeight}px`; page = newPage(); usedHeight = 0; body = newTable();
         }
-        currentBody.appendChild(row);
-        usedHeight += rowHeight;
+        body.appendChild(row); usedHeight += h;
       }
     } else {
       const shell = node.cloneNode(false) as HTMLElement;
       page.appendChild(shell);
       const children = Array.from(node.children) as HTMLElement[];
       for (const child of children) {
-          const childHeight = getOuterHeight(child);
-          if(usedHeight + childHeight > a4Px.h && usedHeight > 0) {
-              page.style.height = `${usedHeight}px`;
-              page = newPage();
-              usedHeight = 0;
-              const nextShell = node.cloneNode(false) as HTMLElement;
-              page.appendChild(nextShell);
-              nextShell.appendChild(child);
-              usedHeight += childHeight;
-          } else {
-              shell.appendChild(child);
-              usedHeight += childHeight;
-          }
+        const h = getOuterHeight(child);
+        if (usedHeight > 0 && usedHeight + h > a4Px.h) {
+          page.style.height = `${usedHeight}px`; page = newPage(); usedHeight = 0;
+          const nextShell = node.cloneNode(false) as HTMLElement;
+          page.appendChild(nextShell);
+          nextShell.appendChild(child);
+          usedHeight += h;
+        } else {
+          shell.appendChild(child); usedHeight += h;
+        }
       }
     }
   };
 
   const blocks = Array.from(working.children) as HTMLElement[];
   for (const block of blocks) {
-    const blockHeight = getOuterHeight(block);
-    if (usedHeight > 0 && usedHeight + blockHeight > a4Px.h) {
-        page.style.height = `${usedHeight}px`;
-        page = newPage();
-        usedHeight = 0;
+    const h = getOuterHeight(block);
+    if (usedHeight > 0 && usedHeight + h > a4Px.h) {
+      page.style.height = `${usedHeight}px`; page = newPage(); usedHeight = 0;
     }
-    if (blockHeight > a4Px.h) {
-        splitNode(block);
-    } else {
-        page.appendChild(block);
-        usedHeight += blockHeight;
-    }
+    if (h > a4Px.h) splitNode(block);
+    else { page.appendChild(block); usedHeight += h; }
   }
-  
+
   const pages = Array.from(container.children) as HTMLElement[];
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
   pages.forEach(p => { if (!p.style.height) p.style.height = `${a4Px.h}px`; });
   return { pages, stage };
 }
 
-async function captureTallFallback(root: HTMLElement, doc: Document, a4Px: {w:number,h:number}) {
-  const url = await toPng(root, {
-    cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff',
-    filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
-  });
-  const img = new Image(); img.src = url; await img.decode();
-
-  const slices: ImageSlice[] = [];
-  const canvas = doc.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  canvas.width = img.naturalWidth;
-
-  let y = 0, idx = 0;
-  while (y < img.naturalHeight) {
-    const h = Math.min(a4Px.h, img.naturalHeight - y);
-    canvas.height = h;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img, 0, y, img.naturalWidth, h, 0, 0, img.naturalWidth, h);
-    const sliceUrl = canvas.toDataURL('image/png');
-    const raw = sliceUrl.substring(sliceUrl.indexOf('base64,') + 7);
-    const md5 = Md5.hashStr(raw);
-    slices.push({ imageBase64: raw, wPx: canvas.width, hPx: h, routeName: location.pathname, pageIndex: idx, md5 });
-    y += h; idx++;
+async function captureElementToPng(el: HTMLElement): Promise<string> {
+  try {
+    return await toPng(el, {
+      cacheBust: true, pixelRatio: 2, style: { transform: 'none' },
+      skipFonts: false, useCORS: true,
+      filter: (node) => !(node as HTMLElement).closest?.('[data-no-print="true"]'),
+    });
+  } catch (e) {
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    return canvas.toDataURL('image/png');
   }
-  return slices;
 }
 
+async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:number}) {
+  const url = await captureElementToPng(root);
+  const img = new Image();
+  img.src = url; await img.decode().catch(()=>{});
+  const canvas = doc.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  const sliceH = a4Px.h;
+  canvas.width = img.naturalWidth || a4Px.w;
+  canvas.height = sliceH;
+
+  const out: {url:string; h:number}[] = [];
+  for (let y = 0; y < (img.naturalHeight || a4Px.h); y += sliceH) {
+    const h = Math.min(sliceH, (img.naturalHeight || a4Px.h) - y);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+    out.push({ url: canvas.toDataURL('image/png'), h });
+  }
+  return out;
+}
 
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}): Promise<ImageSlice[]> {
   const o = { ...DEFAULT_A4, ...opts };
@@ -230,91 +228,82 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     h: Math.floor((A4_PT.h - o.marginPt * 2) * pxPerPt),
   };
 
+  const started = performance.now();
+  const diag: RouteDiag = {
+    route: path, usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
+    rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [], errors: [],
+  };
+
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
-    let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
-    if (!root) throw new Error(`[data-report-root] not found on route: ${path}`);
-    
-    // Resize event to help Recharts measure correctly
-    win.dispatchEvent(new Event('resize'));
-    await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
-
-    const { pages, stage } = paginateAttached(doc, root, a4Px);
-    await waitIframeReady(win);
-
-    const slices: ImageSlice[] = [];
-    const seenHashes = new Set<string>();
-
-    for (const [i, p] of pages.entries()) {
-      let url = '';
-      try {
-        url = await toPng(p, {
-          cacheBust: true, pixelRatio: 2, style: { transform: 'none' },
-          skipFonts: false, useCORS: true,
-          filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
-        });
-      } catch (e) {
-        console.warn(`html-to-image failed for ${path} page ${i}, falling back to html2canvas`, e);
-        try {
-            const canvas = await html2canvas(p, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-            url = canvas.toDataURL('image/png');
-        } catch (e2) {
-             console.error(`html2canvas also failed for ${path} page ${i}`, e2);
-             continue;
-        }
-      }
-
-      if (!url || !url.startsWith('data:image/png;base64,') || url.length < 2000) continue;
-      
-      const raw = rawFromDataUrl(url);
-      const md5 = Md5.hashStr(raw);
-
-      if (seenHashes.has(md5)) continue;
-      seenHashes.add(md5);
-      
-      const img = new Image(); img.src = url; await img.decode().catch(()=>{});
-      slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
-    }
-
-    if (slices.length === 0) {
-      console.warn(`Route ${path} produced 0 slices. Using tall-capture fallback.`);
-      const rootForFallback = doc.querySelector('[data-report-root]') as HTMLElement | null;
-      if (rootForFallback) {
-        const fallbackSlices = await captureTallFallback(rootForFallback, doc, a4Px);
-        stage.remove();
-        cleanup();
-        return fallbackSlices;
-      }
-    }
-    
-    const svgCount = doc.querySelectorAll('svg.recharts-surface').length;
-    const rootEl = doc.querySelector('[data-report-root]') as HTMLElement | null;
-    const rootWidth = rootEl?.getBoundingClientRect().width ?? 0;
-    const narrow = rootWidth > 0 && rootWidth < 1100;
-
-    ((window as any).__CAPTURE_DIAG__ ??= []).push({
-      route: path,
-      slices: slices.length,
-      svgCount,
-      rootWidth,
-      narrow,
+    // Try open toggles (best-effort)
+    doc.querySelectorAll('details').forEach((d: any) => { if (!d.open) { d.open = true; diag.toggleClicks++; } });
+    doc.querySelectorAll<HTMLElement>('[aria-expanded="false"],[data-state="closed"]').forEach(btn => {
+      try { (btn as any).click?.(); diag.toggleClicks++; } catch {}
     });
 
-    stage.remove();
+    // Count Recharts
+    diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
+
+    // Root lookup
+    let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
+    if (!root) { diag.missingRoot = true; root = doc.body; }
+
+    // Resize handshake
+    win.dispatchEvent(new Event('resize'));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    let pagesEl: HTMLElement[] = [];
+    let stage: HTMLElement | null = null;
+    try {
+      const pg = paginateAttached(doc, root!, a4Px);
+      pagesEl = pg.pages; stage = pg.stage;
+    } catch (e:any) {
+      diag.errors.push(`paginate: ${e.message||String(e)}`);
+    }
+
+    let slices: ImageSlice[] = [];
+    const seen = new Set<string>();
+
+    if (pagesEl.length === 0) {
+      // Tall fallback
+      diag.usedFallback = 'tall';
+      const chunks = await tallFallback(doc, root!, a4Px);
+      for (let i=0;i<chunks.length;i++) {
+        const url = chunks[i].url;
+        if (!url?.startsWith('data:image/png;base64,')) continue;
+        const raw = rawFromDataUrl(url);
+        const md5 = Md5.hashStr(raw);
+        const tmpImg = new Image(); tmpImg.src = url; await tmpImg.decode().catch(()=>{});
+        if (seen.has(md5)) continue; seen.add(md5);
+        slices.push({ imageBase64: raw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: chunks[i].h, routeName: path, pageIndex: i, md5 });
+        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: chunks[i].h, kb: Math.round(raw.length*3/4/1024), md5 });
+      }
+    } else {
+      // Normal per-page capture
+      for (const [i,p] of pagesEl.entries()) {
+        let url = '';
+        try { url = await captureElementToPng(p); }
+        catch (e:any) { diag.errors.push(`capture:${i} ${e.message||String(e)}`); diag.usedFallback = 'html2canvas'; continue; }
+        if (!url?.startsWith('data:image/png;base64,')) continue;
+        const raw = rawFromDataUrl(url);
+        const md5 = Md5.hashStr(raw);
+        if (seen.has(md5)) continue; seen.add(md5);
+        const tmpImg = new Image(); tmpImg.src = url; await tmpImg.decode().catch(()=>{});
+        slices.push({ imageBase64: raw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: tmpImg.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
+        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: tmpImg.naturalHeight||a4Px.h, kb: Math.round(raw.length*3/4/1024), md5 });
+      }
+    }
+
+    if (stage) stage.remove();
+
+    diag.pages = pagesEl.length || slices.length;
+    diag.slices = slices.length;
+    diag.durationMs = Math.round(performance.now() - started);
+    __LAST_ROUTE_DIAG__ = diag;
+
     return slices;
   } finally {
     cleanup();
   }
-}
-
-export async function captureSummaryNodeRaw(node: HTMLElement): Promise<{raw:string; w:number; h:number}> {
-  const { toPng } = await import('html-to-image');
-  const url = await toPng(node, {
-    cacheBust: true, pixelRatio: 2, style: { transform:'none' },
-    skipFonts: false, useCORS: true,
-    filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
-  });
-  if (!url?.startsWith('data:image/png;base64,')) throw new Error('Summary capture failed');
-  const img = new Image(); img.src = url; await img.decode();
-  return { raw: rawFromDataUrl(url), w: img.naturalWidth, h: img.naturalHeight };
 }
