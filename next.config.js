@@ -27,7 +27,7 @@ const nextConfig = {
     config.watchOptions = {
       ...config.watchOptions,
       ignored: [
-        ...config.watchOptions.ignored,
+        ...(config.watchOptions.ignored || []),
         '**/next.config.js',
       ]
     }
