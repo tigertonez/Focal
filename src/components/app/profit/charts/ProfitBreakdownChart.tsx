@@ -14,17 +14,17 @@ import {
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
+import { ResponsiveContainer } from "recharts";
 import { palette } from "@/lib/printColorMap";
 
 
 interface ProfitBreakdownChartProps {
   data: EngineOutput;
   currency: string;
-  isAnimationActive?: boolean;
   isPrint?: boolean;
 }
 
-export function ProfitBreakdownChart({ data, currency, isAnimationActive = true, isPrint = false }: ProfitBreakdownChartProps) {
+export function ProfitBreakdownChart({ data, currency, isPrint = false }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
   const p = palette();
 
@@ -83,7 +83,7 @@ export function ProfitBreakdownChart({ data, currency, isAnimationActive = true,
  const legendWrapperStylePrint = { width:'100%', textAlign:'center', whiteSpace:'nowrap' } as const;
 
   return (
-    <ChartContainer config={chartConfig} className="h-full w-full">
+    <ResponsiveContainer width="100%" height="100%">
       <ComposedChart 
         accessibilityLayer 
         data={chartData}
@@ -125,12 +125,12 @@ export function ProfitBreakdownChart({ data, currency, isAnimationActive = true,
           dataKey="cumulativeOperatingProfit" 
           stroke={chartConfig.cumulativeOperatingProfit.color} 
           strokeWidth={3} 
-          dot={{ r: isPrint ? 0 : 4, strokeWidth: 0 }} 
+          dot={false}
           activeDot={{ r: 6 }} 
           isAnimationActive={!isPrint}
         />
 
       </ComposedChart>
-    </ChartContainer>
+    </ResponsiveContainer>
   )
 }

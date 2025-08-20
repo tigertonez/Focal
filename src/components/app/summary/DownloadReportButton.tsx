@@ -55,7 +55,15 @@ export function DownloadReportButton() {
       return;
     }
     const blob = await response.blob();
-    if (blob.size < 16_000) throw new Error('Generated PDF is too small.');
+    if (blob.size < 16_000) {
+        if(isProbe) {
+            const json = await response.json();
+            const text = JSON.stringify(json, null, 2);
+            setJsonText(text);
+            setJsonOpen(true);
+        }
+        throw new Error('Generated PDF is too small.');
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `${title}-${Date.now()}.pdf`;
@@ -114,7 +122,13 @@ export function DownloadReportButton() {
       clientDiag.totals.slices = valid.length;
       clientDiag.totals.kb = Math.round(valid.reduce((a,s)=>a + s.imageBase64.length,0) * 3/4/1024);
 
-      if (valid.length === 0) throw new Error('No printable content captured from any route.');
+      if (valid.length === 0) {
+        if(isProbe) {
+          const payload = { images: valid, page: 'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt, clientDiag };
+          await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+        }
+        throw new Error('No printable content captured from any route.');
+      }
 
       const payload = { images: valid, page: 'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt, clientDiag };
       await handlePdfRequest(payload, isProbe, 'FullForecastReport');

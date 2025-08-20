@@ -24,6 +24,7 @@ const rawFromDataUrl = (url:string)=> {
 // ---------- DIAG ------------
 type RouteDiag = {
   route: string;
+  usedDom: 'clone' | 'original'; // Track if we used a clone or original DOM
   usedFallback: 'none' | 'tall' | 'html2canvas';
   missingRoot: boolean;
   contentWidthPx: number;
@@ -33,6 +34,8 @@ type RouteDiag = {
   pages: number;
   slices: number;
   sliceDims: Array<{w:number;h:number;kb:number;md5:string}>;
+  colorsFrozen: boolean;
+  frozenNodeCount: number;
   errors: string[];
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
@@ -60,9 +63,45 @@ function injectPrintCSS(doc: Document) {
     .container{max-width:${CAPTURE_WIDTH}px!important;}
     .overflow-auto,.overflow-y-auto{overflow:visible!important;}
     [data-no-print="true"]{display:none!important;}
+    html[data-print="1"] .hidden { display: block !important; }
   `;
   doc.head.appendChild(style);
 }
+
+/**
+ * Freezes computed SVG styles as inline attributes to ensure they are captured by html-to-image.
+ * @param doc The document or root element to process.
+ * @returns The number of nodes that were modified.
+ */
+function freezeSvgColors(doc: Document | HTMLElement): number {
+  let frozenNodeCount = 0;
+  const svgs = doc.querySelectorAll('svg.recharts-surface');
+  svgs.forEach(svg => {
+    const elements = svg.querySelectorAll('path, rect, circle, line, text');
+    elements.forEach(el => {
+      const element = el as HTMLElement;
+      const computed = getComputedStyle(element);
+      const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
+      const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
+      const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
+
+      if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') {
+        element.setAttribute('stroke', finalStroke);
+        frozenNodeCount++;
+      }
+      if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') {
+        element.setAttribute('fill', finalFill);
+        frozenNodeCount++;
+      }
+      if (finalOpacity) {
+        element.setAttribute('opacity', finalOpacity);
+        frozenNodeCount++;
+      }
+    });
+  });
+  return frozenNodeCount;
+}
+
 
 /** Load route in same-origin iframe; set print flags + width */
 export async function loadRouteInIframe(path: string, locale: 'en'|'de'):
@@ -104,8 +143,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
   doc.body.appendChild(stage);
 
-  const working = sourceRoot.cloneNode(true) as HTMLElement;
-  working.querySelectorAll('[data-no-print="true"]').forEach(el => el.remove());
+  const working = sourceRoot; // Use the original node to preserve chart state
   stage.appendChild(working);
 
   const container = doc.createElement('div');
@@ -184,7 +222,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   const pages = Array.from(container.children) as HTMLElement[];
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
   pages.forEach(p => { if (!p.style.height) p.style.height = `${a4Px.h}px`; });
-  return { pages, stage };
+  return { pages, stage, usedDom: 'original' as const };
 }
 
 async function captureElementToPng(el: HTMLElement): Promise<string> {
@@ -230,8 +268,9 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
   const started = performance.now();
   const diag: RouteDiag = {
-    route: path, usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
-    rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [], errors: [],
+    route: path, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
+    rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
+    colorsFrozen: false, frozenNodeCount: 0, errors: [],
   };
 
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
@@ -242,6 +281,19 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
       try { (btn as any).click?.(); diag.toggleClicks++; } catch {}
     });
 
+    // Resize-Handshake to settle layout
+    win.dispatchEvent(new Event('resize'));
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    await sleep(120);
+
+    // Freeze computed colors into inline attributes
+    try {
+        diag.frozenNodeCount = freezeSvgColors(doc);
+        diag.colorsFrozen = diag.frozenNodeCount > 0;
+    } catch (e: any) {
+        diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
+    }
+
     // Count Recharts
     diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
 
@@ -249,15 +301,13 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
     if (!root) { diag.missingRoot = true; root = doc.body; }
 
-    // Resize handshake
-    win.dispatchEvent(new Event('resize'));
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
     let pagesEl: HTMLElement[] = [];
     let stage: HTMLElement | null = null;
+    let usedDom: 'clone' | 'original' = 'clone';
     try {
       const pg = paginateAttached(doc, root!, a4Px);
-      pagesEl = pg.pages; stage = pg.stage;
+      pagesEl = pg.pages; stage = pg.stage; usedDom = pg.usedDom;
+      diag.usedDom = usedDom;
     } catch (e:any) {
       diag.errors.push(`paginate: ${e.message||String(e)}`);
     }

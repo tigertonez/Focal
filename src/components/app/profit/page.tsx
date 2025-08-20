@@ -20,7 +20,7 @@ import { ProductProfitTable } from '@/components/app/profit/ProductProfitTable';
 import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
 
-function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: EngineInput, t: any }) {
+function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
   const { profitSummary, revenueSummary, costSummary } = data;
   const currency = inputs.parameters.currency;
@@ -33,6 +33,8 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
+  
+  const chartHeight = isPrint ? 380 : 350;
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -87,8 +89,8 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
             <CardHeader>
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
-            <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} currency={currency} />
+            <CardContent style={{ height: chartHeight, overflow: isPrint ? 'visible' : 'hidden' }} className="w-full pl-0">
+               <ProfitBreakdownChart data={data} currency={currency} isPrint={isPrint} />
             </CardContent>
         </Card>
       </section>
@@ -105,10 +107,10 @@ function ProfitPageContent({ data, inputs, t }: { data: EngineOutput, inputs: En
         </section>
 
         <section className="pt-4">
-            <ProfitInsights data={data} currency={currency} />
+            <ProfitInsights data={data} currency={currency} isPrint={isPrint} />
         </section>
 
-      <footer className="flex justify-between mt-8 pt-6 border-t">
+      <footer className="flex justify-between mt-8 pt-6 border-t" data-no-print="true">
         <Button variant="outline" onClick={() => router.push('/costs')}>
             <ArrowLeft className="mr-2" /> Back to Costs
         </Button>
@@ -145,5 +147,8 @@ export default function ProfitPage() {
     return <ProfitPageSkeleton t={t} />;
   }
 
-  return <ProfitPageContent data={financials.data} inputs={contextInputs} t={t} />;
+  // Assuming usePrintMode hook exists and works as intended
+  const isPrint = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('print') === '1';
+
+  return <ProfitPageContent data={financials.data} inputs={contextInputs} t={t} isPrint={isPrint} />;
 }

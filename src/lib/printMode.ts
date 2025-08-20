@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -7,6 +8,7 @@ declare global {
   interface Window {
     __PRINT_READY_RESOLVE__?: () => void;
     __PRINT_READY__?: Promise<void>;
+    __COLOR_DIAG__?: { runs: any[], ts: string };
   }
 }
 
@@ -24,12 +26,62 @@ export function signalPrintReady() {
   }
 }
 
+function collectChartColorDiag(root: Document | HTMLElement, runName: string) {
+    if (typeof window === 'undefined') return;
+    const surfaces = root.querySelectorAll('svg.recharts-surface');
+    const results: any[] = [];
+    surfaces.forEach((svg, chartIndex) => {
+        const shapes = svg.querySelectorAll('path, rect, circle, g.recharts-legend-item text');
+        shapes.forEach(el => {
+            const computed = getComputedStyle(el);
+            results.push({
+                chart: chartIndex,
+                shape: el.tagName,
+                selectorHint: el.getAttribute('class') || el.getAttribute('name'),
+                computedFill: computed.fill,
+                computedStroke: computed.stroke,
+                attrFill: el.getAttribute('fill'),
+                attrStroke: el.getAttribute('stroke'),
+                opacity: computed.opacity,
+            });
+        });
+    });
+
+    if (!window.__COLOR_DIAG__) window.__COLOR_DIAG__ = { runs: [], ts: '' };
+    window.__COLOR_DIAG__.runs.push({ name: runName, ts: new Date().toISOString(), results });
+    window.__COLOR_DIAG__.ts = new Date().toISOString();
+    console.groupCollapsed(`[ColorDiag] ${runName} - ${results.length} shapes`);
+    console.table(results);
+    console.groupEnd();
+}
+
 export function usePrintMode() {
   const params = useSearchParams();
   const isPrint = params.get('print') === '1';
+  const isDebug = params.get('debugColors') === '1';
   const lang = params.get('lang') || undefined;
   const { locale, setLocale } = useForecast();
   
+  React.useLayoutEffect(() => {
+    if (isDebug) {
+        const runDiag = (name: string) => collectChartColorDiag(document.body, name);
+        runDiag('mount');
+        const handleResize = () => runDiag('resize');
+        window.addEventListener('resize', handleResize);
+        
+        requestAnimationFrame(() => {
+            runDiag('raf_1');
+            requestAnimationFrame(() => runDiag('raf_2'));
+        });
+        const timer = setTimeout(() => runDiag('idle_1s'), 1000);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(timer);
+        };
+    }
+  }, [isDebug]);
+
   React.useLayoutEffect(() => {
     if (!isPrint) return;
     document.documentElement.setAttribute('data-print', '1');

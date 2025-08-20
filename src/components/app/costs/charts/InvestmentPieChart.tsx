@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
+import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, LabelList } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
 import { palette, colorFor } from "@/lib/printColorMap";
@@ -73,13 +73,14 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cx="50%"
                     cy="45%"
                     labelLine={false}
-                    label={isPrint ? ({percent}) => `${Math.round(percent*100)}%` : <CustomLabel />}
+                    label={isPrint ? undefined : <CustomLabel />}
                     outerRadius={isPrint ? "80%" : 100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
                     isAnimationActive={!isPrint}
                 >
+                    {isPrint && <LabelList dataKey="value" formatter={(v:any, it:any) => `${Math.round(it.percent*100)}%`} position="outside" />}
                     {data.map((entry, index) => {
                         let color;
                         if (isPrint) {
