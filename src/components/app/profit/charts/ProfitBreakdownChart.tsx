@@ -84,53 +84,55 @@ export function ProfitBreakdownChart({ data, currency, isPrint = false }: Profit
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart 
-        accessibilityLayer 
-        data={chartData}
-        margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
-        stackOffset="sign"
-      >
-        <CartesianGrid vertical={false} stroke={isPrint ? p.grid : undefined} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          stroke={isPrint ? p.text : undefined}
-          tick={isPrint ? { fill: p.text } : {}}
-        />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={10}
-          tickFormatter={(value) => valueFormatter(Number(value))}
-          stroke={isPrint ? p.text : undefined}
-          tick={isPrint ? { fill: p.text } : {}}
-        />
-        <ChartTooltip
-          cursor={!isPrint}
-          wrapperStyle={isPrint ? { display: 'none' } : {}}
-          content={<ChartTooltipContent formatter={tooltipFormatter} />}
-        />
-        <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? legendWrapperStylePrint : undefined} />
-        
-        <ReferenceLine y={0} stroke={isPrint ? p.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
-        
-        <Bar dataKey="revenue" stackId="stack" fill={chartConfig.revenue.color} isAnimationActive={!isPrint} />
-        <Bar dataKey="variableCosts" stackId="stack" fill={chartConfig.variableCosts.color} isAnimationActive={!isPrint} />
-        <Bar dataKey="fixedCosts" stackId="stack" fill={chartConfig.fixedCosts.color} isAnimationActive={!isPrint} />
+      <ChartContainer config={chartConfig} className="h-full w-full">
+        <ComposedChart 
+          accessibilityLayer 
+          data={chartData}
+          margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+          stackOffset="sign"
+        >
+          <CartesianGrid vertical={false} stroke={isPrint ? p.grid : undefined} />
+          <XAxis
+            dataKey="month"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            stroke={isPrint ? p.text : undefined}
+            tick={isPrint ? { fill: p.text } : {}}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tickFormatter={(value) => valueFormatter(Number(value))}
+            stroke={isPrint ? p.text : undefined}
+            tick={isPrint ? { fill: p.text } : {}}
+          />
+          <ChartTooltip
+            cursor={!isPrint}
+            wrapperStyle={isPrint ? { display: 'none' } : {}}
+            content={<ChartTooltipContent formatter={tooltipFormatter} />}
+          />
+          <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? legendWrapperStylePrint : undefined} />
+          
+          <ReferenceLine y={0} stroke={isPrint ? p.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
+          
+          <Bar dataKey="revenue" stackId="stack" fill={chartConfig.revenue.color} isAnimationActive={!isPrint} />
+          <Bar dataKey="variableCosts" stackId="stack" fill={chartConfig.variableCosts.color} isAnimationActive={!isPrint} />
+          <Bar dataKey="fixedCosts" stackId="stack" fill={chartConfig.fixedCosts.color} isAnimationActive={!isPrint} />
 
-        <Line 
-          type="monotone" 
-          dataKey="cumulativeOperatingProfit" 
-          stroke={chartConfig.cumulativeOperatingProfit.color} 
-          strokeWidth={3} 
-          dot={false}
-          activeDot={{ r: 6 }} 
-          isAnimationActive={!isPrint}
-        />
+          <Line 
+            type="monotone" 
+            dataKey="cumulativeOperatingProfit" 
+            stroke={chartConfig.cumulativeOperatingProfit.color} 
+            strokeWidth={3} 
+            dot={false}
+            activeDot={{ r: 6 }} 
+            isAnimationActive={!isPrint}
+          />
 
-      </ComposedChart>
+        </ComposedChart>
+      </ChartContainer>
     </ResponsiveContainer>
   )
 }
