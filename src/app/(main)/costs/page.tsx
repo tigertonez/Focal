@@ -47,7 +47,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
     ].filter(item => item.value > 0);
     
     const seriesKeys = [
-        ...inputs.products.map(p => p.productName), 
+        ...inputs.products.map(p => p.productName).filter(name => monthlyCosts.some(mc => (mc[name] ?? 0) > 0)), 
         'Deposits', 'Final Payments', 
         ...inputs.fixedCosts.map(fc => fc.name)
     ];
@@ -113,7 +113,14 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
                         <CardTitle>{t.pages.costs.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
-                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
+                       <MonthlyTimelineChart 
+                            data={monthlyCosts} 
+                            currency={currency} 
+                            isAnimationActive={!isPrint} 
+                            isPrint={isPrint} 
+                            seriesKeys={seriesKeys} 
+                            inputs={inputs} 
+                        />
                     </CardContent>
                 </Card>
             </section>

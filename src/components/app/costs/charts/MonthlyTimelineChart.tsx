@@ -11,8 +11,9 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency, formatNumber } from "@/lib/utils"
+import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
 import { colorFor, palette, seedPrintColorMap } from "@/lib/printColorMap";
+import { EngineInput } from "@/lib/types";
 
 interface MonthlyTimelineChartProps {
   data: any[];
@@ -22,34 +23,43 @@ interface MonthlyTimelineChartProps {
   isAnimationActive?: boolean;
   isPrint?: boolean;
   seriesKeys?: string[];
+  inputs?: EngineInput;
 }
 
-export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [] }: MonthlyTimelineChartProps) {
+export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [], inputs }: MonthlyTimelineChartProps) {
   
   React.useEffect(() => {
     if (isPrint && seriesKeys.length > 0) {
       seedPrintColorMap(seriesKeys);
     }
   }, [isPrint, seriesKeys]);
+  
+  const p = palette();
 
   const chartConfig = React.useMemo(() => {
     const newConfig: ChartConfig = {};
     
     seriesKeys.forEach(key => {
+        let color;
+        if (inputs) {
+            const product = inputs.products.find(p => p.productName === key);
+            const fixedCost = inputs.fixedCosts.find(fc => fc.name === key);
+            if (product) color = getProductColor(product);
+            else if (fixedCost) color = getProductColor(fixedCost);
+        }
+
         newConfig[key] = {
             label: configOverrides?.[key]?.label || key,
-            color: configOverrides?.[key]?.color || colorFor(key),
+            color: color || colorFor(key),
         };
     });
 
     return newConfig;
-  }, [seriesKeys, configOverrides]);
+  }, [seriesKeys, configOverrides, inputs]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
   }
-  
-  const p = palette();
 
   const valueFormatter = (value: number) => {
     if (formatAs === 'number') {
