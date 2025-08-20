@@ -94,6 +94,12 @@ export async function POST(req: NextRequest) {
           route: slice.routeName,
       }));
 
+      const routesSeen = new Map<string, number>();
+      images.forEach((slice:any) => {
+        const key = slice.routeName || 'unknown';
+        routesSeen.set(key, (routesSeen.get(key) || 0) + 1);
+      });
+
       for (const [i, slice] of images.entries()) {
         try {
           if (!slice.imageBase64 || slice.imageBase64.length < 1000) {
@@ -121,7 +127,19 @@ export async function POST(req: NextRequest) {
       
       const pdfBytes = await pdfDoc.save();
       if (wantsJson) {
-          return json({ ok: true, phase: 'POST_OK_MULTI', pages: pdfDoc.getPageCount(), slices: images.length, pdfBytes: pdfBytes.length, page, dpi, marginPt, skipped, diag: diagnostics });
+          return json({ 
+              ok: true, 
+              phase: 'POST_OK_MULTI', 
+              pages: pdfDoc.getPageCount(), 
+              slices: images.length, 
+              pdfBytes: pdfBytes.length, 
+              page, 
+              dpi, 
+              marginPt, 
+              skipped, 
+              diag: diagnostics,
+              routesSeen: Object.fromEntries(routesSeen),
+          });
       }
 
     } else { // Single Image

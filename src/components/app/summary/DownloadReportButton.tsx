@@ -34,9 +34,15 @@ export function DownloadReportButton() {
       throw new Error(errorJson.message || `PDF generation failed (${response.status})`);
     }
     if (isProbe) {
-      const jsonData = await response.json();
-      console.log('Probe Data:', jsonData);
-      alert(`PROBE DATA:\n${JSON.stringify(jsonData, null, 2)}`);
+      const server = await response.json();
+      const client = (window as any).__CAPTURE_DIAG__ ?? [];
+
+      console.group('[PROBE] Full Report');
+      console.table(client);
+      console.log('Server:', server);
+      console.groupEnd();
+
+      alert(`PROBE DATA:\n${JSON.stringify({ server, client }, null, 2)}`);
       return;
     }
     const blob = await response.blob();
@@ -63,6 +69,7 @@ export function DownloadReportButton() {
 
   const handleFullReport = async (isProbe: boolean) => {
     setIsBusy(true);
+    (window as any).__CAPTURE_DIAG__ = [];
     try {
       const allSlices: ImageSlice[] = [];
       const lang = (locale ?? 'en') as 'en'|'de';

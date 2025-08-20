@@ -188,6 +188,34 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   return { pages, stage };
 }
 
+async function captureTallFallback(root: HTMLElement, doc: Document, a4Px: {w:number,h:number}) {
+  const url = await toPng(root, {
+    cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff',
+    filter: (el) => !(el as HTMLElement).closest?.('[data-no-print="true"]'),
+  });
+  const img = new Image(); img.src = url; await img.decode();
+
+  const slices: ImageSlice[] = [];
+  const canvas = doc.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  canvas.width = img.naturalWidth;
+
+  let y = 0, idx = 0;
+  while (y < img.naturalHeight) {
+    const h = Math.min(a4Px.h, img.naturalHeight - y);
+    canvas.height = h;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, y, img.naturalWidth, h, 0, 0, img.naturalWidth, h);
+    const sliceUrl = canvas.toDataURL('image/png');
+    const raw = sliceUrl.substring(sliceUrl.indexOf('base64,') + 7);
+    const md5 = Md5.hashStr(raw);
+    slices.push({ imageBase64: raw, wPx: canvas.width, hPx: h, routeName: location.pathname, pageIndex: idx, md5 });
+    y += h; idx++;
+  }
+  return slices;
+}
+
+
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}): Promise<ImageSlice[]> {
   const o = { ...DEFAULT_A4, ...opts };
   const pxPerPt = o.dpi / PT_PER_IN;
@@ -242,7 +270,31 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
       const img = new Image(); img.src = url; await img.decode().catch(()=>{});
       slices.push({ imageBase64: raw, wPx: img.naturalWidth || a4Px.w, hPx: img.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
     }
+
+    if (slices.length === 0) {
+      console.warn(`Route ${path} produced 0 slices. Using tall-capture fallback.`);
+      const rootForFallback = doc.querySelector('[data-report-root]') as HTMLElement | null;
+      if (rootForFallback) {
+        const fallbackSlices = await captureTallFallback(rootForFallback, doc, a4Px);
+        stage.remove();
+        cleanup();
+        return fallbackSlices;
+      }
+    }
     
+    const svgCount = doc.querySelectorAll('svg.recharts-surface').length;
+    const rootEl = doc.querySelector('[data-report-root]') as HTMLElement | null;
+    const rootWidth = rootEl?.getBoundingClientRect().width ?? 0;
+    const narrow = rootWidth > 0 && rootWidth < 1100;
+
+    ((window as any).__CAPTURE_DIAG__ ??= []).push({
+      route: path,
+      slices: slices.length,
+      svgCount,
+      rootWidth,
+      narrow,
+    });
+
     stage.remove();
     return slices;
   } finally {

@@ -93,7 +93,8 @@ export async function waitForVisibleCharts(doc: Document, { timeoutMs = 8000 } =
                 resolve();
             } else if (attempts >= maxAttempts) {
                 clearInterval(timer);
-                reject(new Error("CHARTS_NOT_VISIBLE_TIMEOUT: Charts did not become visible in time."));
+                console.warn("CHARTS_NOT_VISIBLE_TIMEOUT: Charts did not become visible in time.");
+                resolve(); // DO NOT reject
             }
             attempts++;
         };
