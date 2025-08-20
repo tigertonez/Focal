@@ -24,7 +24,6 @@ export default function InputsSnapshot() {
         </CardHeader>
         <CardContent>
           <Table>
-             <caption>Company Context</caption>
             <TableBody>
               <TableRow><TableCell className="font-semibold">Brand Name</TableCell><TableCell>{company?.brand}</TableCell></TableRow>
               <TableRow><TableCell className="font-semibold">{t.inputs.company.industry.title}</TableCell><TableCell>{company?.industry}</TableCell></TableRow>
@@ -42,7 +41,6 @@ export default function InputsSnapshot() {
         </CardHeader>
         <CardContent>
             <Table>
-                 <caption>General Parameters</caption>
                 <TableBody>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.forecastMonths.label}</TableCell><TableCell>{parameters.forecastMonths} months</TableCell></TableRow>
                     <TableRow><TableCell className="font-semibold">{t.inputs.parameters.taxRate.label}</TableCell><TableCell>{parameters.taxRate}%</TableCell></TableRow>
@@ -59,7 +57,6 @@ export default function InputsSnapshot() {
         </CardHeader>
         <CardContent>
           <Table>
-            <caption>Products & Services</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
@@ -90,7 +87,6 @@ export default function InputsSnapshot() {
         </CardHeader>
         <CardContent>
           <Table>
-              <caption>Fixed Costs</caption>
               <TableHeader>
                   <TableRow>
                       <TableHead>Cost Name</TableHead>

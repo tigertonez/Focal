@@ -194,7 +194,7 @@ export const HealthPanel = ({
                     </div>
                 </div>
                 
-                <div>
+                <div data-no-print={isPrint}>
                     <Separator className="my-6" />
 
                     {error && (
@@ -216,8 +216,8 @@ export const HealthPanel = ({
                         </div>
                     )}
                     
-                    {isLoading && (
-                       <div className="text-center">
+                    {isLoading && !isPrint && (
+                       <div className="text-center" data-no-print="true">
                             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                             <p className="text-muted-foreground">{t.insights.summary.strategize.loaderText}</p>
                        </div>

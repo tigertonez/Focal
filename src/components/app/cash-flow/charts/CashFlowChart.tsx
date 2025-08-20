@@ -26,21 +26,22 @@ interface CashFlowChartProps {
 export function CashFlowChart({ data, currency, isAnimationActive = true }: CashFlowChartProps) {
   const { t } = useForecast();
   const printPalette = getPrintPalette();
+  const isPrint = !isAnimationActive;
 
   const chartConfig = React.useMemo(() => ({
     cashIn: {
       label: t.insights.charts.cashIn,
-      color: isAnimationActive ? "hsl(var(--primary))" : printPalette.primary,
+      color: isPrint ? printPalette.primary : "hsl(var(--primary))",
     },
     cashOut: {
       label: t.insights.charts.cashOut,
-      color: isAnimationActive ? "hsl(var(--destructive))" : printPalette.destructive,
+      color: isPrint ? printPalette.destructive : "hsl(var(--destructive))",
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
-      color: isAnimationActive ? "hsl(140, 70%, 40%)" : printPalette.green,
+      color: isPrint ? printPalette.green : "hsl(140, 70%, 40%)",
     }
-  }), [t, isAnimationActive, printPalette]) satisfies ChartConfig;
+  }), [t, isPrint, printPalette]) satisfies ChartConfig;
 
 
   const chartData = React.useMemo(() => {
@@ -89,28 +90,29 @@ export function CashFlowChart({ data, currency, isAnimationActive = true }: Cash
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
         stackOffset="sign"
       >
-        <CartesianGrid vertical={false} />
+        <CartesianGrid vertical={false} stroke={isPrint ? printPalette.muted : undefined} />
         <XAxis
           dataKey="month"
           tickLine={false}
           tickMargin={10}
           axisLine={false}
+          stroke={isPrint ? '#0F172A' : undefined}
         />
         <YAxis
           tickLine={false}
           axisLine={false}
           tickMargin={10}
           tickFormatter={(value) => valueFormatter(Number(value))}
+          stroke={isPrint ? '#0F172A' : undefined}
         />
         <ChartTooltip
           cursor={!isAnimationActive ? false : true}
           wrapperStyle={!isAnimationActive ? { display: 'none' } : {}}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
-          isAnimationActive={isAnimationActive}
         />
-        <ChartLegend content={<ChartLegendContent className="text-sm" wrapperStyle={{ width: '100%', textAlign: 'center', bottom: -10 }} />} />
+        <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? { width: '100%', textAlign: 'center', bottom: -10 } : undefined} />
         
-        <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
+        <ReferenceLine y={0} stroke={isPrint ? printPalette.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
         
         <Bar dataKey="cashIn" stackId="stack" fill={chartConfig.cashIn.color} isAnimationActive={isAnimationActive} />
         <Bar dataKey="cashOut" stackId="stack" fill={chartConfig.cashOut.color} isAnimationActive={isAnimationActive} />

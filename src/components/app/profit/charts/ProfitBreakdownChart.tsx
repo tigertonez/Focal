@@ -26,25 +26,26 @@ interface ProfitBreakdownChartProps {
 export function ProfitBreakdownChart({ data, currency, isAnimationActive = true }: ProfitBreakdownChartProps) {
   const { t } = useForecast();
   const printPalette = getPrintPalette();
+  const isPrint = !isAnimationActive;
 
   const chartConfig = React.useMemo(() => ({
     revenue: {
       label: t.insights.charts.revenue,
-      color: isAnimationActive ? "hsl(var(--primary))" : printPalette.primary,
+      color: isPrint ? printPalette.primary : "hsl(var(--primary))",
     },
     variableCosts: {
         label: "Variable Costs",
-        color: isAnimationActive ? "hsl(0, 70%, 70%)" : printPalette.lightRed,
+        color: isPrint ? printPalette.lightRed : "hsl(0, 70%, 70%)",
     },
     fixedCosts: {
         label: "Fixed Costs",
-        color: isAnimationActive ? "hsl(var(--destructive))" : printPalette.destructive,
+        color: isPrint ? printPalette.destructive : "hsl(var(--destructive))",
     },
     cumulativeOperatingProfit: {
       label: t.insights.charts.cumulativeProfit,
-      color: isAnimationActive ? "hsl(140, 70%, 40%)" : printPalette.green,
+      color: isPrint ? printPalette.green : "hsl(140, 70%, 40%)",
     }
-  }), [t, isAnimationActive, printPalette]) satisfies ChartConfig;
+  }), [t, isPrint, printPalette]) satisfies ChartConfig;
 
 
   const chartData = React.useMemo(() => {
@@ -87,28 +88,29 @@ export function ProfitBreakdownChart({ data, currency, isAnimationActive = true 
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
         stackOffset="sign"
       >
-        <CartesianGrid vertical={false} />
+        <CartesianGrid vertical={false} stroke={isPrint ? printPalette.muted : undefined} />
         <XAxis
           dataKey="month"
           tickLine={false}
           tickMargin={10}
           axisLine={false}
+          stroke={isPrint ? '#0F172A' : undefined}
         />
         <YAxis
           tickLine={false}
           axisLine={false}
           tickMargin={10}
           tickFormatter={(value) => valueFormatter(Number(value))}
+          stroke={isPrint ? '#0F172A' : undefined}
         />
         <ChartTooltip
           cursor={!isAnimationActive ? false : true}
           wrapperStyle={!isAnimationActive ? { display: 'none' } : {}}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
-          isAnimationActive={isAnimationActive}
         />
-        <ChartLegend content={<ChartLegendContent className="text-sm" wrapperStyle={{ width: '100%', textAlign: 'center', bottom: -10 }} />} />
+        <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? { width: '100%', textAlign: 'center', bottom: -10 } : undefined} />
         
-        <ReferenceLine y={0} stroke="hsl(var(--foreground) / 0.5)" strokeDasharray="3 3" />
+        <ReferenceLine y={0} stroke={isPrint ? printPalette.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
         
         <Bar dataKey="revenue" stackId="stack" fill={chartConfig.revenue.color} isAnimationActive={isAnimationActive} />
         <Bar dataKey="variableCosts" stackId="stack" fill={chartConfig.variableCosts.color} isAnimationActive={isAnimationActive} />

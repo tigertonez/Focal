@@ -80,10 +80,11 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
+                    isAnimationActive={!isPrint}
                 >
                     {data.map((entry, index) => {
                         let color;
-                        if (isPrint && printPalette) {
+                        if (printPalette) {
                              color = entry.name === 'Total Variable Costs' ? printPalette.primary : printPalette.categorical[index % printPalette.categorical.length];
                         } else if (entry.color) {
                             color = entry.color;
@@ -100,7 +101,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={legendStyle}
+                    wrapperStyle={isPrint ? { width: '100%', textAlign: 'center' } : legendStyle}
                 />
             </PieChart>
         </ResponsiveContainer>

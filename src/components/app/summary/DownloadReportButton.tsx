@@ -97,7 +97,14 @@ export function DownloadReportButton() {
         setProgress(p => Math.min(100, p + routeWeight));
       }
 
-      const valid = allSlices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
+      const seen = new Set<string>();
+      const deduped: ImageSlice[] = [];
+      for (const s of allSlices) {
+        if (!s?.md5 || seen.has(s.md5)) continue;
+        seen.add(s.md5);
+        deduped.push(s);
+      }
+      const valid = deduped.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
       clientDiag.totals.slices = valid.length;
       clientDiag.totals.kb = Math.round(valid.reduce((a,s)=>a + s.imageBase64.length,0) * 3/4/1024);
 
