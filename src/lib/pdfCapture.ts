@@ -20,18 +20,20 @@ const rawFromDataUrl = (url:string)=> {
 /** Wait until iframe has a body and the route signalled readiness. */
 async function waitIframeReady(win: Window) {
   let tries = 0;
-  while ((!win.document || win.document.readyState !== 'complete' || !win.document.body) && tries < 60) {
+  while ((!win.document || win.document.readyState !== 'complete' || !win.document.body) && tries < 80) {
     await sleep(50); tries++;
   }
-  if (!win.document.body) throw new Error('Iframe document body not found after timeout.');
+  if (!win.document?.body) throw new Error('Iframe document body not found after timeout.');
 
   try { await (win.document as any).fonts?.ready; } catch {}
-  
-  if ((win as any).__PRINT_READY__) {
-    await (win as any).__PRINT_READY__;
+
+  const maybe = (win as any).__PRINT_READY__;
+  if (maybe && typeof (maybe as Promise<any>).then === 'function') {
+    // IMPORTANT: never hang forever – proceed after 6s
+    await Promise.race([maybe, sleep(6000)]);
   } else {
-    // Fallback if the page doesn't signal readiness
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    // Fallback if page doesn't expose __PRINT_READY__
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     await sleep(250);
   }
 }
@@ -56,19 +58,27 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   const win = iframe.contentWindow;
   await waitIframeReady(win);
   const doc = iframe.contentDocument!;
-  doc.documentElement.style.backgroundColor = '#fff';
-  doc.body.style.backgroundColor = '#fff';
-  doc.documentElement.style.width = `${CAPTURE_WIDTH}px`;
-  doc.body.style.width = `${CAPTURE_WIDTH}px`;
-  doc.body.style.margin = '0 auto';
-  doc.body.style.overflow = 'visible';
-  const style = doc.createElement('style');
-  style.textContent = `::-webkit-scrollbar{display:none} *{scrollbar-width:none !important}`;
-  doc.head.appendChild(style);
   doc.documentElement.setAttribute('data-print','1');
+
+  // INJECT a small stylesheet to lock layout and remove scrollbars in print
+  const style = doc.createElement('style');
+  style.textContent = `
+    html, body { width: ${CAPTURE_WIDTH}px !important; margin: 0 auto !important; background: #fff !important; overflow: visible !important; }
+    .container { max-width: ${CAPTURE_WIDTH}px !important; }
+    [data-no-print="true"] { display: none !important; }
+    .overflow-auto, .overflow-y-auto, .overflow-x-auto { overflow: visible !important; }
+  `;
+  doc.head.appendChild(style);
+
+  // also mirror app classes if present
   if (document.documentElement.className) {
     doc.documentElement.className = document.documentElement.className;
   }
+  
+  // kick layout so Recharts can remeasure in the live route BEFORE we clone
+  doc.defaultView?.dispatchEvent(new Event('resize'));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
   return { win, doc, cleanup: () => iframe.remove() };
 }
 
@@ -195,6 +205,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     win.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
 
+    console.debug('[PDF DIAG]', { route: path, width: CAPTURE_WIDTH, recharts: doc.querySelectorAll('svg.recharts-surface').length, rootW: root?.offsetWidth, rootH: root?.offsetHeight });
     const { pages, stage } = paginateAttached(doc, root, a4Px);
     await waitIframeReady(win);
 

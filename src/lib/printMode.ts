@@ -110,19 +110,17 @@ export async function signalWhenReady(opts: {
   try {
     await opts.ensureForecastReady();
     await expandAllInteractive(opts.root);
-    await opts.root.fonts.ready.catch(()=>{});
 
-    // Resize-Handshake
+    // two resizes + 2×RAF help ResponsiveContainer remeasure
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // Charts prüfen – darf NICHT blockieren
     try {
-      await waitForVisibleCharts(opts.root, { timeoutMs: 8000 });
+      await waitForVisibleCharts(opts.root, { timeoutMs: 6000 });
     } catch (e) {
-      console.warn('[print] waitForVisibleCharts timeout – continue anyway:', (e as Error).message);
+      console.warn('waitForVisibleCharts timeout – proceeding anyway', e);
     }
   } finally {
     await settleLayout(opts.root);
