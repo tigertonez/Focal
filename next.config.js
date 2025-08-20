@@ -23,6 +23,16 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: '',
   },
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        ...config.watchOptions.ignored,
+        '**/next.config.js',
+      ]
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
