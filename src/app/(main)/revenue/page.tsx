@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -18,6 +19,7 @@ import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -31,6 +33,15 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
+    
+    const seriesKeys = inputs.products.map(p => p.productName);
+    
+    useEffect(() => {
+        if (isPrint) {
+            seedPrintColorMap(seriesKeys);
+        }
+    }, [isPrint, seriesKeys]);
+
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -88,7 +99,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} isAnimationActive={!isPrint} />
+                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
                         </CardContent>
                     </Card>
                     <Card>
@@ -96,7 +107,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" isAnimationActive={!isPrint} />
+                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
                         </CardContent>
                     </Card>
                 </div>

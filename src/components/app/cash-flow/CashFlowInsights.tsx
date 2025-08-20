@@ -106,7 +106,9 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
     </ul>
   );
   
-  if (isPrint) return null;
+  if (isPrint && (!insights || !hasInsights)) {
+    return null;
+  }
 
   if (isLoading) {
     return <InsightsLoader t={t} />;

@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CostsPageSkeleton } from '@/components/app/costs/CostsPageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -20,6 +21,7 @@ import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -43,6 +45,18 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
           item: cost,
       })),
     ].filter(item => item.value > 0);
+    
+    const seriesKeys = [
+        ...inputs.products.map(p => p.productName), 
+        'Deposits', 'Final Payments', 
+        ...inputs.fixedCosts.map(fc => fc.name)
+    ];
+
+    useEffect(() => {
+        if (isPrint) {
+          seedPrintColorMap(seriesKeys);
+        }
+    }, [isPrint, seriesKeys]);
 
 
     return (
@@ -99,7 +113,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
                         <CardTitle>{t.pages.costs.charts.timeline}</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px] w-full pl-0">
-                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} isAnimationActive={!isPrint} />
+                       <MonthlyTimelineChart data={monthlyCosts} currency={currency} isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
                     </CardContent>
                 </Card>
             </section>

@@ -135,6 +135,10 @@ export const HealthPanel = ({
         );
     }
 
+    if (isPrint && !healthData) {
+        return null;
+    }
+
     if (!healthData) {
         return (
             <Card className="flex flex-col items-center justify-center rounded-lg p-8 text-center" data-no-print={isPrint}>
@@ -188,7 +192,7 @@ export const HealthPanel = ({
                     </div>
                 </div>
                 
-                <div data-no-print={isPrint}>
+                <div data-no-print="true">
                     <Separator className="my-6" />
 
                     {error && (
@@ -199,7 +203,7 @@ export const HealthPanel = ({
                         </Alert>
                     )}
                     
-                    {!hasAiInsights && !isLoading && !isPrint && (
+                    {!hasAiInsights && !isLoading && (
                         <div className="text-center" data-no-print="true">
                             <h3 className="text-lg font-semibold mb-2">{t.insights.summary.strategize.title}</h3>
                             <p className="text-muted-foreground mb-4">{t.insights.summary.strategize.description}</p>
@@ -210,14 +214,14 @@ export const HealthPanel = ({
                         </div>
                     )}
                     
-                    {isLoading && !isPrint && (
+                    {isLoading && (
                        <div className="text-center" data-no-print="true">
                             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                             <p className="text-muted-foreground">{t.insights.summary.strategize.loaderText}</p>
                        </div>
                     )}
                     
-                    {hasAiInsights && !isPrint && (
+                    {hasAiInsights && (
                          <div className="space-y-6">
                             <div className="flex justify-between items-start">
                                  <div>

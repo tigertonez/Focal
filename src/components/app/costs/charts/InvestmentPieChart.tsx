@@ -5,7 +5,7 @@ import * as React from "react"
 import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
-import { getPrintPalette, legendWrapperStylePrint } from "@/lib/printColors";
+import { palette, colorFor } from "@/lib/printColorMap";
 
 interface InvestmentPieChartProps {
     data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
@@ -39,23 +39,23 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     const isMobile = !isPrint && (typeof window !== 'undefined') && window.innerWidth < 768;
     const manyItems = data.length > 4;
     
-    const legendStyle: React.CSSProperties = {
-      lineHeight: '1.5',
-      bottom: 0,
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '100%',
-      gap: manyItems ? '0.25rem 0.5rem' : '0.5rem',
-      fontSize: manyItems && isMobile ? '11px' : '12px',
-      textAlign: 'center',
+    const legendStyle: React.CSSProperties = isPrint ? 
+        { width:'100%', textAlign:'center', fontSize:12, lineHeight:'16px', whiteSpace:'nowrap', overflow: 'hidden' }
+      : {
+          lineHeight: '1.5',
+          bottom: 0,
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          gap: manyItems ? '0.25rem 0.5rem' : '0.5rem',
+          fontSize: manyItems && isMobile ? '11px' : '12px',
+          textAlign: 'center',
     };
-    
-    const printPalette = isPrint ? getPrintPalette() : null;
 
     return (
-        <ResponsiveContainer width="100%" height="100%" style={{minHeight: isPrint ? 380 : undefined, overflow: isPrint ? 'visible' : 'hidden'}}>
+        <ResponsiveContainer width="100%" height="100%" style={{minHeight: isPrint ? 400 : undefined, overflow: isPrint ? 'visible' : 'hidden'}}>
             <PieChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
@@ -73,7 +73,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cx="50%"
                     cy="45%"
                     labelLine={false}
-                    label={<CustomLabel />}
+                    label={isPrint ? ({percent}) => `${Math.round(percent*100)}%` : <CustomLabel />}
                     outerRadius={isPrint ? "80%" : 100}
                     innerRadius={0}
                     dataKey="value"
@@ -82,8 +82,8 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                 >
                     {data.map((entry, index) => {
                         let color;
-                        if (printPalette) {
-                             color = entry.name === 'Total Variable Costs' ? printPalette.primary : printPalette.categorical[index % printPalette.categorical.length];
+                        if (isPrint) {
+                            color = entry.name === 'Total Variable Costs' ? palette().primary : colorFor(entry.name);
                         } else if (entry.color) {
                             color = entry.color;
                         } else if (entry.item) {
@@ -99,7 +99,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={isPrint ? legendWrapperStylePrint : legendStyle}
+                    wrapperStyle={legendStyle}
                 />
             </PieChart>
         </ResponsiveContainer>

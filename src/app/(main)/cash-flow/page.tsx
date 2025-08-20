@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { CashFlowPageSkeleton } from '@/components/app/cash-flow/CashFlowPageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { CashFlowInsights } from '@/components/app/cash-flow/CashFlowInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -27,6 +29,12 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
 
   const potentialCashPosition = cashFlowSummary.potentialCashBalance;
   const cashProgress = potentialCashPosition > 0 ? (cashFlowSummary.endingCashBalance / potentialCashPosition) * 100 : 0;
+  
+  useEffect(() => {
+    if (isPrint) {
+      seedPrintColorMap(inputs.products.map(p => p.productName));
+    }
+  }, [isPrint, inputs.products]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -82,7 +90,7 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
                 <CardTitle>{t.pages.cashFlow.charts.cumulative}</CardTitle>
             </CardHeader>
             <CardContent className="h-[400px] w-full pl-0">
-               <CashFlowChart data={data} currency={currency} isAnimationActive={!isPrint} />
+               <CashFlowChart data={data} currency={currency} isAnimationActive={!isPrint} isPrint={isPrint} />
             </CardContent>
         </Card>
         

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react"
@@ -15,33 +14,33 @@ import {
 import { formatCurrency } from "@/lib/utils"
 import type { EngineOutput } from "@/lib/types"
 import { useForecast } from "@/context/ForecastContext";
-import { getPrintPalette } from "@/lib/printColors";
+import { palette } from "@/lib/printColorMap";
 
 interface CashFlowChartProps {
   data: EngineOutput;
   currency: string;
   isAnimationActive?: boolean;
+  isPrint?: boolean;
 }
 
-export function CashFlowChart({ data, currency, isAnimationActive = true }: CashFlowChartProps) {
+export function CashFlowChart({ data, currency, isAnimationActive = true, isPrint = false }: CashFlowChartProps) {
   const { t } = useForecast();
-  const printPalette = getPrintPalette();
-  const isPrint = !isAnimationActive;
+  const p = palette();
 
   const chartConfig = React.useMemo(() => ({
     cashIn: {
       label: t.insights.charts.cashIn,
-      color: isPrint ? printPalette.primary : "hsl(var(--primary))",
+      color: isPrint ? p.primary : "hsl(var(--primary))",
     },
     cashOut: {
       label: t.insights.charts.cashOut,
-      color: isPrint ? printPalette.destructive : "hsl(var(--destructive))",
+      color: isPrint ? p.destructive : "hsl(var(--destructive))",
     },
     cumulativeCash: {
       label: t.insights.charts.cumulativeCash,
-      color: isPrint ? printPalette.green : "hsl(140, 70%, 40%)",
+      color: isPrint ? "#10B981" : "hsl(140, 70%, 40%)", // green-500
     }
-  }), [t, isPrint, printPalette]) satisfies ChartConfig;
+  }), [t, isPrint, p]) satisfies ChartConfig;
 
 
   const chartData = React.useMemo(() => {
@@ -82,6 +81,8 @@ export function CashFlowChart({ data, currency, isAnimationActive = true }: Cash
    )
  };
 
+ const legendWrapperStylePrint = { width:'100%', textAlign:'center', whiteSpace:'nowrap' } as const;
+
   return (
     <ChartContainer config={chartConfig} className="h-full w-full">
       <ComposedChart 
@@ -90,41 +91,43 @@ export function CashFlowChart({ data, currency, isAnimationActive = true }: Cash
         margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
         stackOffset="sign"
       >
-        <CartesianGrid vertical={false} stroke={isPrint ? printPalette.muted : undefined} />
+        <CartesianGrid vertical={false} stroke={isPrint ? p.grid : undefined} />
         <XAxis
           dataKey="month"
           tickLine={false}
           tickMargin={10}
           axisLine={false}
-          stroke={isPrint ? '#0F172A' : undefined}
+          stroke={isPrint ? p.text : undefined}
+          tick={isPrint ? { fill: p.text } : {}}
         />
         <YAxis
           tickLine={false}
           axisLine={false}
           tickMargin={10}
           tickFormatter={(value) => valueFormatter(Number(value))}
-          stroke={isPrint ? '#0F172A' : undefined}
+          stroke={isPrint ? p.text : undefined}
+          tick={isPrint ? { fill: p.text } : {}}
         />
         <ChartTooltip
-          cursor={!isAnimationActive ? false : true}
-          wrapperStyle={!isAnimationActive ? { display: 'none' } : {}}
+          cursor={!isPrint}
+          wrapperStyle={isPrint ? { display: 'none' } : {}}
           content={<ChartTooltipContent formatter={tooltipFormatter} />}
         />
-        <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? { width: '100%', textAlign: 'center', bottom: -10 } : undefined} />
+        <ChartLegend content={<ChartLegendContent className="text-sm" />} wrapperStyle={isPrint ? legendWrapperStylePrint : undefined} />
         
-        <ReferenceLine y={0} stroke={isPrint ? printPalette.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
+        <ReferenceLine y={0} stroke={isPrint ? p.muted : "hsl(var(--foreground) / 0.5)"} strokeDasharray="3 3" />
         
-        <Bar dataKey="cashIn" stackId="stack" fill={chartConfig.cashIn.color} isAnimationActive={isAnimationActive} />
-        <Bar dataKey="cashOut" stackId="stack" fill={chartConfig.cashOut.color} isAnimationActive={isAnimationActive} />
+        <Bar dataKey="cashIn" stackId="stack" fill={chartConfig.cashIn.color} isAnimationActive={!isPrint} />
+        <Bar dataKey="cashOut" stackId="stack" fill={chartConfig.cashOut.color} isAnimationActive={!isPrint} />
 
         <Line 
           type="monotone" 
           dataKey="cumulativeCash" 
           stroke={chartConfig.cumulativeCash.color}
           strokeWidth={3} 
-          dot={{ r: 4 }} 
+          dot={{ r: isPrint ? 0 : 4, strokeWidth: 0 }} 
           activeDot={{ r: 6 }} 
-          isAnimationActive={isAnimationActive}
+          isAnimationActive={!isPrint}
         />
 
       </ComposedChart>

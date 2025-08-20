@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback, useEffect } from 'react';
@@ -18,6 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { HealthPanel } from '@/components/app/summary/HealthPanel';
 import { DownloadReportButton } from '@/components/app/summary/DownloadReportButton';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 
 // =================================================================
@@ -152,6 +154,12 @@ function SummaryPageContent({ data, inputs, t, isPrint = false }: { data: Engine
   const handleRecalculate = useCallback(() => {
     router.push('/inputs');
   }, [router]);
+  
+  useEffect(() => {
+    if (isPrint) {
+      seedPrintColorMap(inputs.products.map(p => p.productName));
+    }
+  }, [isPrint, inputs.products]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">

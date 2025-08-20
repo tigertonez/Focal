@@ -109,7 +109,9 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
     </ul>
   );
   
-  if (isPrint) return null;
+  if (isPrint && (!insights || !hasInsights)) {
+    return null;
+  }
 
   if (isLoading) {
     return <InsightsLoader t={t} />;

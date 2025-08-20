@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
-import { getPrintPalette, buildSeriesColorRegistry, legendWrapperStylePrint } from "@/lib/printColors"
+import { colorFor, palette, seedPrintColorMap } from "@/lib/printColorMap";
 
 interface MonthlyTimelineChartProps {
   data: any[];
@@ -21,23 +21,19 @@ interface MonthlyTimelineChartProps {
   configOverrides?: Record<string, { label: string }>;
   formatAs?: 'currency' | 'number';
   isAnimationActive?: boolean;
+  isPrint?: boolean;
+  seriesKeys?: string[];
 }
 
-export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true }: MonthlyTimelineChartProps) {
+export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [] }: MonthlyTimelineChartProps) {
   const { inputs, t } = useForecast();
-  const P = getPrintPalette();
-  const isPrint = !isAnimationActive;
   
-  const getColorForKey = React.useMemo(() => {
-    if (!isPrint) return () => undefined;
-    const costCategories = ['Deposits', 'Final Payments', ...inputs.fixedCosts.map(fc => fc.name)];
-    return buildSeriesColorRegistry({
-        products: inputs.products.map(p => p.productName),
-        costCategories: costCategories,
-    });
-  }, [isPrint, inputs]);
+  React.useEffect(() => {
+    if (isPrint && seriesKeys.length > 0) {
+      seedPrintColorMap(seriesKeys);
+    }
+  }, [isPrint, seriesKeys]);
 
-  
   const { chartConfig, costKeys } = React.useMemo(() => {
     const newConfig: ChartConfig = {};
     const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month' && data.some(d => d[key] > 0)) : [];
@@ -45,7 +41,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
     allKeys.forEach((key) => {
         newConfig[key] = {
             label: key,
-            color: isPrint ? getColorForKey(key) : `hsl(var(--${key}))`, // Fallback for non-print
+            color: isPrint ? colorFor(key) : `hsl(var(--${key}))`, // Fallback for non-print
         };
     });
 
@@ -63,12 +59,14 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
         chartConfig: newConfig, 
         costKeys: allKeys,
     };
-  }, [data, configOverrides, t, isPrint, getColorForKey]);
+  }, [data, configOverrides, t, isPrint]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
   }
   
+  const p = palette();
+
   const valueFormatter = (value: number) => {
     if (formatAs === 'number') {
       return formatNumber(value);
@@ -82,7 +80,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
   
   const tooltipFormatter = (value: number, name: string) => {
     const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
-    const color = isPrint ? getColorForKey(name) : chartConfig[name]?.color;
+    const color = isPrint ? colorFor(name) : chartConfig[name]?.color;
     return (
         <div className="flex items-center">
             <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }}/>
@@ -100,6 +98,8 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
       return newMonthData;
   });
 
+  const legendWrapperStylePrint = { width:'100%', textAlign:'center', whiteSpace:'nowrap' } as const;
+
   return (
       <ChartContainer config={chartConfig} className="h-full w-full" data-chart>
         <BarChart 
@@ -109,20 +109,22 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
           stackOffset="sign"
           barCategoryGap="20%"
         >
-          <CartesianGrid vertical={false} stroke={isPrint ? P.muted : undefined} />
+          <CartesianGrid vertical={false} stroke={isPrint ? p.grid : undefined} />
           <XAxis
             dataKey="month"
             tickLine={false}
             tickMargin={10}
             axisLine={false}
-            stroke={isPrint ? '#0F172A' : undefined}
+            stroke={isPrint ? p.text : undefined}
+            tick={isPrint ? { fill: p.text } : {}}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
             tickMargin={10}
             tickFormatter={(value) => valueFormatter(Number(value))}
-            stroke={isPrint ? '#0F172A' : undefined}
+            stroke={isPrint ? p.text : undefined}
+            tick={isPrint ? { fill: p.text } : {}}
           />
           <ChartTooltip
             cursor={!isPrint}
@@ -140,11 +142,11 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
                  <Bar
                     key={key}
                     dataKey={key}
-                    fill={isPrint ? getColorForKey(key) : itemConfig?.color}
+                    fill={isPrint ? colorFor(key) : itemConfig?.color}
                     stackId="a"
                     name={itemConfig?.label || key}
                     barSize={20}
-                    isAnimationActive={isAnimationActive}
+                    isAnimationActive={!isPrint}
                   />
               )
           })}

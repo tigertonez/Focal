@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -34,6 +35,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import InputsSnapshot from '@/components/print/InputsSnapshot';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string, icon?: React.ReactNode, defaultOpen?: boolean, tooltip?: string, proFeature?: boolean }> = ({ title, children, className, icon, defaultOpen = false, tooltip, proFeature = false }) => (
@@ -243,7 +245,17 @@ function InputsPageContent() {
 
 export default function InputsPage() {
     const { isPrint, lang } = usePrintMode();
-    const { ensureForecastReady } = useForecast();
+    const { ensureForecastReady, inputs } = useForecast();
+
+    React.useEffect(() => {
+        if (isPrint && inputs) {
+            seedPrintColorMap(inputs.products.map(p => ({
+                id: p.id,
+                name: p.productName,
+                hex: (p.color && p.color.startsWith("#")) ? p.color : undefined,
+            })));
+        }
+    }, [isPrint, inputs]);
 
     React.useEffect(() => {
         if (!isPrint) return;

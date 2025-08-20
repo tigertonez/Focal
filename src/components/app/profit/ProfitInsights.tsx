@@ -158,7 +158,9 @@ export function ProfitInsights({
     );
   }
   
-  if (isPrint) return null;
+  if (isPrint && (!insights || !hasInsights)) {
+    return null;
+  }
 
   if (!hasInsights && !isLoading && !isPrint) {
      return (

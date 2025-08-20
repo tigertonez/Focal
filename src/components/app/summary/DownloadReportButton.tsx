@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Download, Loader2, FileJson } from 'lucide-react';
+import { Download, Loader2, FileJson, Copy, FileDown } from 'lucide-react';
 import { captureRouteAsA4Pages, DEFAULT_A4, type ImageSlice, popLastRouteDiag } from '@/lib/pdfCapture';
 import { useForecast } from '@/context/ForecastContext';
 
@@ -16,6 +16,10 @@ const stopAll = (e: React.MouseEvent) => {
 const ROUTES = ['/inputs','/revenue','/costs','/profit','/cash-flow','/summary'] as const;
 
 type RouteStatus = 'waiting'|'capturing'|'sliced'|'done'|'failed';
+
+function generateRunId() {
+  return 'run_' + Math.random().toString(36).substr(2, 9);
+}
 
 export function DownloadReportButton() {
   const [busy, setBusy] = React.useState(false);
@@ -64,10 +68,12 @@ export function DownloadReportButton() {
     setProgress(0);
     setLog([]);
     setRouteStates(Object.fromEntries(ROUTES.map(r=>[r,'waiting'])) as any);
+    const runId = generateRunId();
+
     try {
       const allSlices: ImageSlice[] = [];
       const lang = (locale ?? 'en') as 'en'|'de';
-      const clientDiag = { startTs: new Date().toISOString(), routes: [] as any[], totals: { slices: 0, kb: 0 } };
+      const clientDiag = { runId, startTs: new Date().toISOString(), routes: [] as any[], totals: { slices: 0, kb: 0 } };
 
       const routeWeight = 100 / ROUTES.length;
       for (const route of ROUTES) {
@@ -115,7 +121,7 @@ export function DownloadReportButton() {
 
       setProgress(100);
       Object.keys(routeStates).forEach(r => setState(r,'done'));
-      setOpen(!isProbe); // bei PDF schließen, bei Probe offen lassen
+      if (!isProbe) setOpen(false);
     } catch (err:any) {
       toast({ variant:'destructive', title:'Full Report Error', description: err.message });
     } finally {
@@ -127,10 +133,19 @@ export function DownloadReportButton() {
     try { await navigator.clipboard.writeText(jsonText); toast({ title:'Copied JSON to clipboard' }); }
     catch { toast({ variant:'destructive', title:'Copy failed' }); }
   };
-  const openAsJson = () => {
-    const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonText);
-    window.open(url, '_blank');
+
+  const downloadJson = () => {
+    const blob = new Blob([jsonText], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `probe-report-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -141,17 +156,15 @@ export function DownloadReportButton() {
       </DialogTrigger>
       <DialogContent onPointerDown={(e)=>e.stopPropagation()} className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Export</DialogTitle>
-          <DialogDescription>Full PDF or rich Probe JSON with per-route diagnostics.</DialogDescription>
+          <DialogTitle>Export Full Report</DialogTitle>
+          <DialogDescription>Generate a multi-page PDF of your forecast or a detailed JSON for diagnostics.</DialogDescription>
         </DialogHeader>
 
-        {/* Progress */}
         <div className="space-y-3">
           <div className="h-2 w-full rounded bg-muted relative overflow-hidden">
             <div className="h-2 absolute left-0 top-0 rounded bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
 
-          {/* Per-route status */}
           <ul className="grid grid-cols-2 gap-2 text-sm">
             {ROUTES.map(r => (
               <li key={r} className="flex items-center justify-between rounded border px-2 py-1">
@@ -163,7 +176,6 @@ export function DownloadReportButton() {
             ))}
           </ul>
 
-          {/* Log */}
           <div className="h-28 overflow-auto rounded border bg-muted/30 p-2 text-xs font-mono">
             {log.map((l,i)=><div key={i}>{l}</div>)}
           </div>
@@ -183,20 +195,21 @@ export function DownloadReportButton() {
         </DialogFooter>
       </DialogContent>
 
-      {/* JSON Viewer */}
       <Dialog open={jsonOpen} onOpenChange={setJsonOpen}>
         <DialogContent className="sm:max-w-[720px]">
           <DialogHeader>
             <DialogTitle>Probe Result</DialogTitle>
-            <DialogDescription>Server echo + client diagnostics.</DialogDescription>
+            <DialogDescription>Server echo + client diagnostics. Useful for debugging.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
-            <Button size="sm" onClick={copyJson}>Copy JSON</Button>
-            <Button size="sm" variant="outline" onClick={openAsJson}>Open as JSON</Button>
+            <Button size="sm" variant="outline" onClick={copyJson}><Copy className="mr-2 h-4 w-4" /> Copy JSON</Button>
+            <Button size="sm" variant="outline" onClick={downloadJson}><FileDown className="mr-2 h-4 w-4" /> Download JSON</Button>
           </div>
-          <pre className="mt-2 max-h-[60vh] overflow-auto rounded border bg-muted/30 p-3 text-xs leading-snug whitespace-pre-wrap break-words">
-{jsonText}
-          </pre>
+          <textarea
+            readOnly
+            className="mt-2 w-full h-[60vh] overflow-auto rounded border bg-muted/30 p-3 text-xs leading-snug font-mono whitespace-pre break-words"
+            value={jsonText}
+          />
           <DialogFooter>
             <Button variant="secondary" type="button" onClick={()=>setJsonOpen(false)}>Close</Button>
           </DialogFooter>

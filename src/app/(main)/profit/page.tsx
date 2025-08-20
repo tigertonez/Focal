@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { ProfitPageSkeleton } from '@/components/app/profit/ProfitPageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { ProfitInsights } from '@/components/app/profit/ProfitInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
+import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
   const router = useRouter();
@@ -33,6 +35,12 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
 
   const netMarginTitle = t.pages.profit.kpi.margin;
   const netMarginTooltip = t.pages.profit.kpi.marginHelp;
+
+  useEffect(() => {
+    if (isPrint) {
+      seedPrintColorMap(inputs.products.map(p => p.productName));
+    }
+  }, [isPrint, inputs.products]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -88,7 +96,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
             </CardHeader>
             <CardContent className="h-[350px] w-full pl-0">
-               <ProfitBreakdownChart data={data} currency={currency} isAnimationActive={!isPrint} />
+               <ProfitBreakdownChart data={data} currency={currency} isAnimationActive={!isPrint} isPrint={isPrint} />
             </CardContent>
         </Card>
       </section>
