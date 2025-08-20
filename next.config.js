@@ -19,19 +19,9 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer', 'handlebars'],
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer', 'handlebars', '@opentelemetry/exporter-jaeger'],
   env: {
     NEXT_PUBLIC_BASE_PATH: '',
-  },
-  webpack: (config, { isServer }) => {
-    config.watchOptions = {
-      ...config.watchOptions,
-      ignored: [
-        ...(config.watchOptions.ignored || []),
-        '**/next.config.js',
-      ]
-    }
-    return config;
   },
 };
 
