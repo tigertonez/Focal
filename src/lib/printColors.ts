@@ -1,5 +1,7 @@
 // src/lib/printColors.ts
 
+import type { Product } from "./types";
+
 // Convert CSS var hsl to hex once and cache (called in print iframe context)
 const cache = new Map<string, string>();
 
@@ -63,6 +65,63 @@ export function getPrintPalette() {
     muted: '#94A3B8',
     green: "hsl(140, 70%, 40%)",
     lightRed: "hsl(0, 70%, 70%)",
-    categorical: ['#324E98', '#EF4444', '#10B981', '#F59E0B', '#A855F7', '#0EA5E9', '#F43F5E', '#22C55E']
+    categorical: ['#324E98', '#10B981', '#F59E0B', '#A855F7', '#0EA5E9', '#F43F5E', '#22C55E', '#8B5CF6']
   };
 }
+
+export type SeriesKey = string; // e.g. 'Hoodie', 'Shorts', 'Shirts', 'Deposits', 'Final Payments', 'Marketing', 'Equip', 'Overhead + Software', etc.
+
+/**
+ * Builds a registry function that returns a consistent HEX color for a given series key.
+ * This ensures that colors are deterministic across different charts and print runs.
+ */
+export function buildSeriesColorRegistry(opts: {
+  products?: string[];
+  costCategories?: string[];
+  revenueCategories?: string[];
+}): (key: SeriesKey) => string {
+  const colorMap = new Map<SeriesKey, string>();
+  const palette = getPrintPalette().categorical;
+  let colorIndex = 0;
+
+  // 1. Assign colors to fixed cost categories first to ensure they are always the same.
+  const fixedOrderCostCategories = ['Deposits','Final Payments','Marketing','Equip','Overhead + Software'];
+  (opts.costCategories || []).sort((a,b) => {
+    const aIndex = fixedOrderCostCategories.indexOf(a);
+    const bIndex = fixedOrderCostCategories.indexOf(b);
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  }).forEach(key => {
+    if (!colorMap.has(key)) {
+      colorMap.set(key, palette[colorIndex % palette.length]);
+      colorIndex++;
+    }
+  });
+
+  // 2. Assign colors to products, sorted alphabetically for consistency.
+  (opts.products || []).sort((a,b) => a.localeCompare(b)).forEach(key => {
+    if (!colorMap.has(key)) {
+      colorMap.set(key, palette[colorIndex % palette.length]);
+      colorIndex++;
+    }
+  });
+  
+  // 3. (Optional) Assign colors to any other revenue categories
+  (opts.revenueCategories || []).sort((a,b) => a.localeCompare(b)).forEach(key => {
+    if (!colorMap.has(key)) {
+      colorMap.set(key, palette[colorIndex % palette.length]);
+      colorIndex++;
+    }
+  });
+
+
+  // Return a function that can be used to look up colors.
+  return (key: SeriesKey): string => {
+    return colorMap.get(key) || palette[palette.length - 1]; // Fallback to the last color
+  };
+}
+
+
+export const legendWrapperStylePrint = { width:'100%', textAlign:'center', whiteSpace:'nowrap' } as const;

@@ -3,11 +3,9 @@
 
 import * as React from "react"
 import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
-import { getProductColor } from "@/lib/utils";
 import type { FixedCostItem, Product } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { getPrintPalette } from "@/lib/printColors";
-
+import { formatCurrency, getProductColor } from "@/lib/utils";
+import { getPrintPalette, legendWrapperStylePrint } from "@/lib/printColors";
 
 interface InvestmentPieChartProps {
     data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
@@ -57,7 +55,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     const printPalette = isPrint ? getPrintPalette() : null;
 
     return (
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" style={{minHeight: isPrint ? 380 : undefined, overflow: isPrint ? 'visible' : 'hidden'}}>
             <PieChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
@@ -76,7 +74,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cy="45%"
                     labelLine={false}
                     label={<CustomLabel />}
-                    outerRadius="80%"
+                    outerRadius={isPrint ? "80%" : 100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
@@ -97,11 +95,11 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     })}
                 </Pie>
                 <Legend 
-                    iconSize={8} 
+                    iconSize={isPrint ? 10 : 8} 
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={isPrint ? { width: '100%', textAlign: 'center' } : legendStyle}
+                    wrapperStyle={isPrint ? legendWrapperStylePrint : legendStyle}
                 />
             </PieChart>
         </ResponsiveContainer>

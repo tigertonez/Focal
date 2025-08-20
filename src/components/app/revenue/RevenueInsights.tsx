@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -55,6 +56,7 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
   const hasInsights = insights && (insights.insights.length > 0 || insights.recommendations.length > 0);
 
   const getInsights = useCallback(async () => {
+    if (isPrint) return; // Don't run AI for print
     setIsLoading(true);
     setError(null);
     try {
@@ -72,13 +74,7 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
     } finally {
       setIsLoading(false);
     }
-  }, [revenueSummary, currency, locale, inputs, ensureForecastReady]);
-
-  useEffect(() => {
-    if (isPrint && !insights) {
-      getInsights();
-    }
-  }, [isPrint, insights, getInsights]);
+  }, [isPrint, revenueSummary, currency, locale, inputs, ensureForecastReady]);
 
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -112,6 +108,8 @@ export function RevenueInsights({ revenueSummary, currency, isPrint = false }: R
         ))}
     </ul>
   );
+  
+  if (isPrint) return null;
 
   if (isLoading) {
     return <InsightsLoader t={t} />;

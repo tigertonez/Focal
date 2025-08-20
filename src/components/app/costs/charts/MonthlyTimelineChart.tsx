@@ -11,10 +11,9 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
+import { formatCurrency, formatNumber } from "@/lib/utils"
 import { useForecast } from "@/context/ForecastContext"
-import { generateCssId } from "@/lib/generate-css-id"
-import { getPrintPalette } from "@/lib/printColors"
+import { getPrintPalette, buildSeriesColorRegistry, legendWrapperStylePrint } from "@/lib/printColors"
 
 interface MonthlyTimelineChartProps {
   data: any[];
@@ -26,34 +25,28 @@ interface MonthlyTimelineChartProps {
 
 export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true }: MonthlyTimelineChartProps) {
   const { inputs, t } = useForecast();
-  const printPalette = getPrintPalette();
+  const P = getPrintPalette();
   const isPrint = !isAnimationActive;
   
-  const { chartConfig, costKeys, styleContent } = React.useMemo(() => {
-    const newConfig: ChartConfig = {};
-    const styleLines: string[] = [];
-    
-    const allItems = [
-      ...inputs.products, 
-      ...inputs.fixedCosts, 
-      { id: 'Deposits', name: 'Deposits'}, 
-      { id: 'Final Payments', name: 'Final Payments'}
-    ];
-    
-    allItems.forEach((item, index) => {
-        const name = 'productName' in item ? item.productName : item.name;
-        if (!name) return;
+  const getColorForKey = React.useMemo(() => {
+    if (!isPrint) return () => undefined;
+    const costCategories = ['Deposits', 'Final Payments', ...inputs.fixedCosts.map(fc => fc.name)];
+    return buildSeriesColorRegistry({
+        products: inputs.products.map(p => p.productName),
+        costCategories: costCategories,
+    });
+  }, [isPrint, inputs]);
 
-        const color = isPrint ? printPalette.categorical[index % printPalette.categorical.length] : getProductColor(item);
-        const cssId = generateCssId(name);
-        
-        newConfig[name] = {
-          label: name,
-          color: isPrint ? color : `var(--color-${cssId})`,
+  
+  const { chartConfig, costKeys } = React.useMemo(() => {
+    const newConfig: ChartConfig = {};
+    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month' && data.some(d => d[key] > 0)) : [];
+    
+    allKeys.forEach((key) => {
+        newConfig[key] = {
+            label: key,
+            color: isPrint ? getColorForKey(key) : `hsl(var(--${key}))`, // Fallback for non-print
         };
-        if (!isPrint) {
-            styleLines.push(`--color-${cssId}: ${color};`);
-        }
     });
 
     if (configOverrides) {
@@ -66,14 +59,11 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
         });
     }
 
-    const allKeys = (data && data.length > 0) ? Object.keys(data[0]).filter(key => key !== 'month' && data.some(d => d[key] > 0)) : [];
-
     return { 
         chartConfig: newConfig, 
         costKeys: allKeys,
-        styleContent: `[data-chart] { ${styleLines.join(' ')} }`
     };
-  }, [data, configOverrides, inputs.products, inputs.fixedCosts, t, isPrint, printPalette]);
+  }, [data, configOverrides, t, isPrint, getColorForKey]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>
@@ -92,9 +82,10 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
   
   const tooltipFormatter = (value: number, name: string) => {
     const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
+    const color = isPrint ? getColorForKey(name) : chartConfig[name]?.color;
     return (
         <div className="flex items-center">
-            <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartConfig[name]?.color }}/>
+            <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }}/>
             <div className="flex flex-1 justify-between">
                 <span>{chartConfig[name]?.label || name}</span>
                 <span className="ml-4 font-bold">{formattedValue}</span>
@@ -110,8 +101,6 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
   });
 
   return (
-    <>
-      {!isPrint && <style>{styleContent}</style>}
       <ChartContainer config={chartConfig} className="h-full w-full" data-chart>
         <BarChart 
           accessibilityLayer 
@@ -120,7 +109,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
           stackOffset="sign"
           barCategoryGap="20%"
         >
-          <CartesianGrid vertical={false} stroke={isPrint ? printPalette.muted : undefined} />
+          <CartesianGrid vertical={false} stroke={isPrint ? P.muted : undefined} />
           <XAxis
             dataKey="month"
             tickLine={false}
@@ -143,7 +132,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
               formatter={tooltipFormatter}
           />}
           />
-          <ChartLegend wrapperStyle={isPrint ? { width: '100%', textAlign: 'center' } : undefined} />
+          <ChartLegend {...(isPrint ? { layout: "horizontal", align: "center", verticalAlign: "bottom", wrapperStyle: legendWrapperStylePrint } : {})} />
           
           {costKeys.map((key) => {
               const itemConfig = chartConfig[key];
@@ -151,7 +140,7 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
                  <Bar
                     key={key}
                     dataKey={key}
-                    fill={itemConfig?.color}
+                    fill={isPrint ? getColorForKey(key) : itemConfig?.color}
                     stackId="a"
                     name={itemConfig?.label || key}
                     barSize={20}
@@ -162,6 +151,5 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
 
         </BarChart>
       </ChartContainer>
-    </>
   )
 }

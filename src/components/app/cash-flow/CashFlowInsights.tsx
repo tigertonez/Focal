@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -51,7 +52,7 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
   const currency = inputs.parameters.currency;
 
   const getInsights = useCallback(async () => {
-    if (!cashFlowSummary) return;
+    if (isPrint || !cashFlowSummary) return; // Don't run for print
 
     setIsLoading(true);
     setError(null);
@@ -69,13 +70,7 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
     } finally {
       setIsLoading(false);
     }
-  }, [cashFlowSummary, currency, locale, inputs.company, ensureForecastReady]);
-  
-  useEffect(() => {
-    if (isPrint && !insights) {
-      getInsights();
-    }
-  }, [isPrint, insights, getInsights]);
+  }, [isPrint, cashFlowSummary, currency, locale, inputs.company, ensureForecastReady]);
   
   const itemColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -110,6 +105,8 @@ export function CashFlowInsights({ isPrint = false }: { isPrint?: boolean }) {
         ))}
     </ul>
   );
+  
+  if (isPrint) return null;
 
   if (isLoading) {
     return <InsightsLoader t={t} />;

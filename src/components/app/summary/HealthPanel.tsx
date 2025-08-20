@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -70,7 +71,7 @@ export const HealthPanel = ({
     const hasAiInsights = aiInsights && Object.values(aiInsights).some(v => Array.isArray(v) ? v.length > 0 : !!v);
     
     const handleStrategize = useCallback(async () => {
-        if (!healthData) return;
+        if (isPrint || !healthData) return; // Don't run for print
         setIsLoading(true);
         setError(null);
         setAiInsights(null);
@@ -91,14 +92,7 @@ export const HealthPanel = ({
         } finally {
             setIsLoading(false);
         }
-    }, [healthData, financialSummaries, inputs, locale, ensureForecastReady]);
-
-    useEffect(() => {
-        if (isPrint && !aiInsights && healthData) {
-            handleStrategize();
-        }
-    }, [isPrint, aiInsights, healthData, handleStrategize]);
-
+    }, [isPrint, healthData, financialSummaries, inputs, locale, ensureForecastReady]);
 
     const itemColorMap = useMemo(() => {
         const map = new Map<string, string>();
@@ -223,7 +217,7 @@ export const HealthPanel = ({
                        </div>
                     )}
                     
-                    {hasAiInsights && (
+                    {hasAiInsights && !isPrint && (
                          <div className="space-y-6">
                             <div className="flex justify-between items-start">
                                  <div>
