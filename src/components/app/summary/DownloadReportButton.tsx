@@ -88,7 +88,15 @@ export function DownloadReportButton() {
         allSlices.push(...pages);
       }
       
-      const valid = allSlices.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
+      const seen = new Set<string>();
+      const deduped: ImageSlice[] = [];
+      for (const s of allSlices) {
+        if (!s?.md5 || seen.has(s.md5)) continue;
+        seen.add(s.md5);
+        deduped.push(s);
+      }
+      const valid = deduped.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
+      
       if (valid.length === 0) throw new Error('No printable content was captured (0 slices).');
 
       await handlePdfRequest({ images: valid, page:'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt }, isProbe, 'FullForecastReport');

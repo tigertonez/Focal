@@ -107,17 +107,25 @@ export async function signalWhenReady(opts: {
   ensureForecastReady: () => Promise<void>;
   root: Document;
 }): Promise<void> {
+  try {
     await opts.ensureForecastReady();
     await expandAllInteractive(opts.root);
     await opts.root.fonts.ready.catch(()=>{});
-    
-    // Dispatch resize events and wait for layout to settle
+
+    // Resize-Handshake
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     window.dispatchEvent(new Event('resize'));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    
-    await waitForVisibleCharts(opts.root);
+
+    // Charts prüfen – darf NICHT blockieren
+    try {
+      await waitForVisibleCharts(opts.root, { timeoutMs: 8000 });
+    } catch (e) {
+      console.warn('[print] waitForVisibleCharts timeout – continue anyway:', (e as Error).message);
+    }
+  } finally {
     await settleLayout(opts.root);
     signalPrintReady();
+  }
 }

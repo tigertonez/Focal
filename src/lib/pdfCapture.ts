@@ -9,6 +9,7 @@ export type ImageSlice = { imageBase64: string; wPx: number; hPx: number; routeN
 
 const A4_PT = { w: 595.28, h: 841.89 };
 const PT_PER_IN = 72;
+const CAPTURE_WIDTH = 1280;
 
 const sleep = (ms:number)=>new Promise(r=>setTimeout(r,ms));
 const rawFromDataUrl = (url:string)=> {
@@ -41,7 +42,7 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   iframe.style.position = 'fixed';
   iframe.style.left = '-10000px';
   iframe.style.top = '-10000px';
-  iframe.width = '1400';
+  iframe.width = String(CAPTURE_WIDTH);
   iframe.height = '2400';
   iframe.src = `${path}${path.includes('?') ? '&' : '?'}print=1&lang=${locale}`;
   document.body.appendChild(iframe);
@@ -55,6 +56,15 @@ export async function loadRouteInIframe(path: string, locale: 'en'|'de'): Promis
   const win = iframe.contentWindow;
   await waitIframeReady(win);
   const doc = iframe.contentDocument!;
+  doc.documentElement.style.backgroundColor = '#fff';
+  doc.body.style.backgroundColor = '#fff';
+  doc.documentElement.style.width = `${CAPTURE_WIDTH}px`;
+  doc.body.style.width = `${CAPTURE_WIDTH}px`;
+  doc.body.style.margin = '0 auto';
+  doc.body.style.overflow = 'visible';
+  const style = doc.createElement('style');
+  style.textContent = `::-webkit-scrollbar{display:none} *{scrollbar-width:none !important}`;
+  doc.head.appendChild(style);
   doc.documentElement.setAttribute('data-print','1');
   if (document.documentElement.className) {
     doc.documentElement.className = document.documentElement.className;
