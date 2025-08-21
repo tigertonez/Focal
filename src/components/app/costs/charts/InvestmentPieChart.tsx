@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, LabelList } from "recharts"
+import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, Label, LabelList } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
 import { palette, colorFor } from "@/lib/printColorMap";
@@ -16,7 +16,7 @@ interface InvestmentPieChartProps {
 const RADIAN = Math.PI / 180;
 
 const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    if (percent < 0.05) return null; // Don't render label for small slices
+    if (typeof percent !== 'number' || percent < 0.05) return null; // Guard against missing/small percent
     
     const radius = innerRadius + (outerRadius - innerRadius) * 0.8;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -73,18 +73,17 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cx="50%"
                     cy="45%"
                     labelLine={false}
-                    label={isPrint ? undefined : <CustomLabel />}
+                    label={<CustomLabel />}
                     outerRadius={isPrint ? "80%" : 100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
                     isAnimationActive={!isPrint}
                 >
-                    {isPrint && <LabelList dataKey="value" formatter={(v:any, it:any) => `${Math.round(it.percent*100)}%`} position="outside" />}
                     {data.map((entry, index) => {
                         let color;
                         if (entry.name === 'Total Variable Costs') {
-                            color = '#6b7280'; // Use a neutral grey for the total
+                            color = '#6b7280'; // neutral grey
                         } else if (isPrint) {
                             color = colorFor(entry.name);
                         } else if (entry.color) {

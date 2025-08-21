@@ -32,7 +32,7 @@ type RouteDiag = {
   missingRoot: boolean;
   contentWidthPx: number;
   rechartsCount: number;
-  toggleClicks: number;
+  readyMs: number;
   durationMs: number;
   pages: number;
   slices: number;
@@ -59,6 +59,41 @@ async function waitIframeReady(win: Window) {
   try { await (win.document as any).fonts?.ready; } catch {}
 }
 
+async function settleInIframe(doc: Document, root: HTMLElement): Promise<number> {
+    const started = performance.now();
+    try { await doc.fonts?.ready; } catch {}
+
+    const checkStability = async (
+        getValue: () => number,
+        checks: number = 3,
+        interval: number = 150
+    ): Promise<boolean> => {
+        let lastValue = getValue();
+        let stableChecks = 0;
+        for (let i = 0; i < checks; i++) {
+            await sleep(interval);
+            const currentValue = getValue();
+            if (currentValue > 0 && currentValue === lastValue) {
+                stableChecks++;
+            } else {
+                stableChecks = 0;
+            }
+            lastValue = currentValue;
+        }
+        return stableChecks >= checks -1;
+    };
+
+    const isLayoutStable = await checkStability(() => root.scrollHeight);
+    const areChartsStable = await checkStability(() => doc.querySelectorAll('svg.recharts-surface').length);
+
+    if (!isLayoutStable || !areChartsStable) {
+        console.warn(`[settle] Layout or chart stability not reached for ${doc.location.pathname}`);
+    }
+    
+    return performance.now() - started;
+}
+
+
 function injectPrintCSS(doc: Document) {
   const style = doc.createElement('style');
   style.textContent = `
@@ -74,58 +109,49 @@ function injectPrintCSS(doc: Document) {
   doc.head.appendChild(style);
 }
 
-/**
- * Freezes computed SVG styles as inline attributes to ensure they are captured by html-to-image.
- * @param doc The document or root element to process.
- * @returns The number of nodes that were modified.
- */
-function freezeSvgColors(doc: Document | HTMLElement, phase: 'pre-freeze' | 'apply-freeze'): number {
+function freezeSvgColors(doc: Document | HTMLElement): number {
   let frozenNodeCount = 0;
   const svgs = doc.querySelectorAll('svg.recharts-surface');
   svgs.forEach(svg => {
     const elements = svg.querySelectorAll('path, rect, circle, line, text, g');
     elements.forEach(el => {
       const element = el as HTMLElement;
+      const computed = getComputedStyle(element);
       
-      if (phase === 'apply-freeze') {
-        const frozenFill = element.dataset.printFill;
-        const frozenStroke = element.dataset.printStroke;
-        const frozenOpacity = element.dataset.printOpacity;
-
-        if (frozenFill) element.setAttribute('fill', frozenFill);
-        if (frozenStroke) element.setAttribute('stroke', frozenStroke);
-        if (frozenOpacity) element.setAttribute('opacity', frozenOpacity);
-        if (frozenFill || frozenStroke || frozenOpacity) frozenNodeCount++;
-      } else { // 'pre-freeze'
-        const computed = getComputedStyle(element);
-        const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
-        const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
-        const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
-
-        if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') element.dataset.printStroke = finalStroke;
-        if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') element.dataset.printFill = finalFill;
-        if (finalOpacity) element.dataset.printOpacity = finalOpacity;
+      const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
+      const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
+      const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
+      
+      if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') {
+          element.setAttribute('fill', finalFill);
+          frozenNodeCount++;
+      }
+      if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') {
+          element.setAttribute('stroke', finalStroke);
+          frozenNodeCount++;
+      }
+      if (finalOpacity) {
+          element.setAttribute('opacity', finalOpacity);
+          frozenNodeCount++;
       }
     });
   });
   return frozenNodeCount;
 }
 
-
-/** Load route in same-origin iframe; set print flags + width */
 export async function loadRouteInIframe(path: string, locale: 'en'|'de'):
 Promise<{win:Window,doc:Document,cleanup:()=>void}> {
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.left = '-10000px';
-  iframe.style.top = '0px'; // Keep in layout flow
-  iframe.width = String(CAPTURE_WIDTH + 20); // Add scrollbar buffer
+  iframe.style.top = '0px';
+  iframe.width = String(CAPTURE_WIDTH + 20);
   iframe.height = '2400';
   iframe.src = `${path}${path.includes('?') ? '&' : '?'}print=1&lang=${locale}`;
   document.body.appendChild(iframe);
 
   await new Promise<void>(res => {
-    const t = setTimeout(res, 8000); // Increased timeout
+    const t = setTimeout(res, 8000);
     iframe.onload = () => { clearTimeout(t); res(); };
   });
 
@@ -138,30 +164,23 @@ Promise<{win:Window,doc:Document,cleanup:()=>void}> {
   doc.documentElement.setAttribute('data-print','1');
   doc.documentElement.classList.add('pdf-mode');
 
-  // sync className from host (for theme)
   if (document.documentElement.className) {
     doc.documentElement.className = document.documentElement.className;
   }
   return { win, doc, cleanup: () => iframe.remove() };
 }
 
-/** Attached pagination to keep Recharts measurements correct */
 function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:number,h:number}) {
+  if (sourceRoot === doc.body) {
+      throw new Error("Paginator guard: sourceRoot must not be <body>.");
+  }
   const stage = doc.createElement('div');
   stage.id = '__print_stage__';
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
   
-  if (doc.body.contains(stage) || stage.contains(doc.body)) {
-      throw new Error("Staging area conflict: stage already in body.");
-  }
-  // Paginator Guard
-  if (doc.body.contains(sourceRoot) || sourceRoot.contains(doc.body)) {
-      throw new Error("Paginator guard: trying to append body into itself.");
-  }
-
   doc.body.appendChild(stage);
 
-  const working = sourceRoot; // Use the original node to preserve chart state
+  const working = sourceRoot;
   stage.appendChild(working);
 
   const container = doc.createElement('div');
@@ -257,7 +276,6 @@ async function captureElementToPng(el: HTMLElement): Promise<string> {
 }
 
 async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:number}) {
-  // Fallback Normalization: force the root to the standard capture width.
   root.style.width = `${CAPTURE_WIDTH}px`;
   root.style.margin = '0 auto';
 
@@ -267,7 +285,7 @@ async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:n
   const canvas = doc.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
   const sliceH = a4Px.h;
-  canvas.width = img.naturalWidth || CAPTURE_WIDTH * 2; // Use DPR of 2
+  canvas.width = img.naturalWidth || CAPTURE_WIDTH * 2;
   canvas.height = sliceH;
 
   const out: {url:string; h:number}[] = [];
@@ -291,50 +309,32 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
   const started = performance.now();
   const diag: RouteDiag = {
     route: path, seq: diagExtras.seq, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
-    rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
+    rechartsCount: 0, readyMs: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
     colorsFrozen: false, frozenNodeCount: 0, paletteSource: 'iframe-computed', errors: [],
   };
   
-  // Phase 1: Pre-freeze colors on the live DOM by writing to data attributes
-  const liveRoot = document.querySelector(`[data-report-root]`);
-  if (liveRoot) {
-      freezeSvgColors(liveRoot as HTMLElement, 'pre-freeze');
-      diag.paletteSource = 'live-dom';
-  }
-
-
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
-    // Try open toggles (best-effort)
-    doc.querySelectorAll('details').forEach((d: any) => { if (!d.open) { d.open = true; diag.toggleClicks++; } });
-    doc.querySelectorAll<HTMLElement>('[aria-expanded="false"],[data-state="closed"]').forEach(btn => {
-      try { (btn as any).click?.(); diag.toggleClicks++; } catch {}
-    });
-
-    // Replace RAF-based settlement with a more robust sleep
-    await sleep(250);
-    
-    // Root lookup
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
     diag.anchorFound = !!root;
     if (!root) { diag.missingRoot = true; root = doc.body; }
 
-    // Phase 2: Apply frozen colors from data attributes before capture
+    diag.readyMs = await settleInIframe(doc, root);
+    
     try {
-        diag.frozenNodeCount = freezeSvgColors(root, 'apply-freeze');
+        diag.frozenNodeCount = freezeSvgColors(root);
         diag.colorsFrozen = diag.frozenNodeCount > 0;
     } catch (e: any) {
         diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
     }
 
-    // Count Recharts
     diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
 
     let pagesEl: HTMLElement[] = [];
     let stage: HTMLElement | null = null;
     let usedDom: 'clone' | 'original' = 'clone';
     try {
-      if (diag.anchorFound) { // Only paginate if we have a proper root
+      if (diag.anchorFound) {
           const pg = paginateAttached(doc, root!, a4Px);
           pagesEl = pg.pages; stage = pg.stage; usedDom = pg.usedDom;
           diag.usedDom = usedDom;
@@ -349,7 +349,6 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     const seen = new Set<string>();
 
     if (pagesEl.length === 0) {
-      // Tall fallback
       diag.usedFallback = 'tall';
       const chunks = await tallFallback(doc, root!, a4Px);
       for (let i=0;i<chunks.length;i++) {
@@ -363,7 +362,6 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
         diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: chunks[i].h, kb: Math.round(raw.length*3/4/1024), md5 });
       }
     } else {
-      // Normal per-page capture
       for (const [i,p] of pagesEl.entries()) {
         let url = '';
         try { url = await captureElementToPng(p); }

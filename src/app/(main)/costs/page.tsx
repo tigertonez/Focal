@@ -223,7 +223,7 @@ export default function CostsPage() {
 
 
     if (financials.isLoading && !isPrint) {
-        return <CostsPageSkeleton t={t} />;
+        return <div data-report-root><CostsPageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {

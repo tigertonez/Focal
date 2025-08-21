@@ -218,7 +218,7 @@ export default function RevenuePage() {
     }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
-        return <RevenuePageSkeleton t={t} />;
+        return <div data-report-root><RevenuePageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {
