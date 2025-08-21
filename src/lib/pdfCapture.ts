@@ -56,7 +56,6 @@ async function waitIframeReady(win: Window) {
     await sleep(50); tries++;
   }
   if (!win.document?.body) throw new Error('Iframe body timeout');
-  try { await (win.document as any).fonts?.ready; } catch {}
 }
 
 async function settleInIframe(doc: Document, root: HTMLElement): Promise<number> {

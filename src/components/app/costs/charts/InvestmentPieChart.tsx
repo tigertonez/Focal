@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, Label, LabelList } from "recharts"
+import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, LabelList } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
 import { palette, colorFor } from "@/lib/printColorMap";
