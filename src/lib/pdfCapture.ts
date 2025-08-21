@@ -1,4 +1,3 @@
-
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
@@ -25,6 +24,7 @@ const rawFromDataUrl = (url:string)=> {
 // ---------- DIAG ------------
 type RouteDiag = {
   route: string;
+  seq: number;
   anchorFound: boolean;
   usedDom: 'clone' | 'original';
   usedFallback: 'none' | 'tall' | 'html2canvas';
@@ -78,7 +78,7 @@ function injectPrintCSS(doc: Document) {
  * @param doc The document or root element to process.
  * @returns The number of nodes that were modified.
  */
-function freezeSvgColors(doc: Document | HTMLElement): number {
+function freezeSvgColors(doc: Document | HTMLElement, phase: 'pre-freeze' | 'apply-freeze'): number {
   let frozenNodeCount = 0;
   const svgs = doc.querySelectorAll('svg.recharts-surface');
   svgs.forEach(svg => {
@@ -86,38 +86,24 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
     elements.forEach(el => {
       const element = el as HTMLElement;
       
-      // Phase 1: Apply frozen colors from data attributes if they exist
-      const frozenFill = element.dataset.printFill;
-      const frozenStroke = element.dataset.printStroke;
-      const frozenOpacity = element.dataset.printOpacity;
+      if (phase === 'apply-freeze') {
+        const frozenFill = element.dataset.printFill;
+        const frozenStroke = element.dataset.printStroke;
+        const frozenOpacity = element.dataset.printOpacity;
 
-      if (frozenFill) {
-        element.setAttribute('fill', frozenFill);
-        frozenNodeCount++;
-      }
-      if (frozenStroke) {
-        element.setAttribute('stroke', frozenStroke);
-        frozenNodeCount++;
-      }
-      if (frozenOpacity) {
-        element.setAttribute('opacity', frozenOpacity);
-        frozenNodeCount++;
-      }
-      
-      // Phase 2: Pre-freeze colors by storing them in data attributes
-      const computed = getComputedStyle(element);
-      const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
-      const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
-      const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
+        if (frozenFill) element.setAttribute('fill', frozenFill);
+        if (frozenStroke) element.setAttribute('stroke', frozenStroke);
+        if (frozenOpacity) element.setAttribute('opacity', frozenOpacity);
+        if (frozenFill || frozenStroke || frozenOpacity) frozenNodeCount++;
+      } else { // 'pre-freeze'
+        const computed = getComputedStyle(element);
+        const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
+        const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
+        const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
 
-      if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') {
-        element.dataset.printStroke = finalStroke;
-      }
-      if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') {
-         element.dataset.printFill = finalFill;
-      }
-      if (finalOpacity) {
-        element.dataset.printOpacity = finalOpacity;
+        if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') element.dataset.printStroke = finalStroke;
+        if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') element.dataset.printFill = finalFill;
+        if (finalOpacity) element.dataset.printOpacity = finalOpacity;
       }
     });
   });
@@ -293,7 +279,7 @@ async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:n
   return out;
 }
 
-export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}): Promise<ImageSlice[]> {
+export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}, diagExtras: { seq: number }): Promise<ImageSlice[]> {
   const o = { ...DEFAULT_A4, ...opts };
   const pxPerPt = o.dpi / PT_PER_IN;
   const a4Px = {
@@ -303,7 +289,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
   const started = performance.now();
   const diag: RouteDiag = {
-    route: path, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
+    route: path, seq: diagExtras.seq, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
     rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
     colorsFrozen: false, frozenNodeCount: 0, paletteSource: 'iframe-computed', errors: [],
   };
@@ -311,7 +297,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
   // Phase 1: Pre-freeze colors on the live DOM by writing to data attributes
   const liveRoot = document.querySelector(`[data-report-root]`);
   if (liveRoot) {
-      freezeSvgColors(liveRoot as HTMLElement);
+      freezeSvgColors(liveRoot as HTMLElement, 'pre-freeze');
       diag.paletteSource = 'live-dom';
   }
 
@@ -336,7 +322,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
     // Phase 2: Apply frozen colors from data attributes before capture
     try {
-        diag.frozenNodeCount = freezeSvgColors(root);
+        diag.frozenNodeCount = freezeSvgColors(root, 'apply-freeze');
         diag.colorsFrozen = diag.frozenNodeCount > 0;
     } catch (e: any) {
         diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
@@ -405,5 +391,3 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     cleanup();
   }
 }
-
-    

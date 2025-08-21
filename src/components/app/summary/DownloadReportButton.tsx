@@ -84,18 +84,18 @@ export function DownloadReportButton() {
       const clientDiag = { runId, startTs: new Date().toISOString(), routes: [] as any[], totals: { slices: 0, kb: 0 } };
 
       const routeWeight = 100 / ROUTES.length;
-      for (const route of ROUTES) {
+      for (const [i, route] of ROUTES.entries()) {
         setState(route, 'capturing');
         appendLog(`→ Capturing ${route} ...`);
 
         let pages: ImageSlice[] = [];
         try {
           const t0 = performance.now();
-          pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+          pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4, { seq: i + 1 });
           if (pages.length === 0) {
             appendLog(`   (retrying ${route})`);
             await new Promise(r=>setTimeout(r, 200));
-            pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4);
+            pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4, { seq: i + 1 });
           }
           const meta = popLastRouteDiag() || null;
           clientDiag.routes.push(meta ? { ...meta } : { route, note:'no-meta' });
