@@ -37,7 +37,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
       {
         name: 'Total Variable Costs',
         value: costSummary.totalVariable,
-        color: '#6b7280',
+        color: '#6b7280', // neutral grey
       },
       ...costSummary.fixedCosts.map(cost => ({
           name: cost.name,
@@ -249,7 +249,7 @@ export default function CostsPage() {
     }
 
     return (
-        <div data-report-root>
+        <div data-report-root id="report-root-costs">
             <CostsPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
         </div>
     );
