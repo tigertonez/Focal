@@ -44,6 +44,11 @@ type RouteDiag = {
   errors: string[];
   specialSeriesLocked?: string[];
   specialColorsApplied?: boolean;
+  revenueColorLock?: {
+    locked: boolean;
+    series: string[];
+    nodes: number;
+  }
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
 export function popLastRouteDiag(): RouteDiag | null {
@@ -157,6 +162,58 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
   });
   return frozenNodeCount;
 }
+
+async function lockRevenueColorsInIframe(doc: Document) {
+  const result = { locked: false, series: [] as string[], map: {} as Record<string, string>, nodes: 0 };
+  const root = doc.querySelector('[data-report-root]');
+  if (!root) return result;
+
+  // Poll for legend readiness
+  let legendReady = false;
+  for (let i = 0; i < 40; i++) {
+    if (doc.querySelector('svg.recharts-surface') && doc.querySelector('.recharts-legend-item')) {
+      legendReady = true;
+      break;
+    }
+    await sleep(50);
+  }
+  if (!legendReady) return result;
+
+  // Build map from legend
+  const legendItems = doc.querySelectorAll('.recharts-legend-item');
+  legendItems.forEach(item => {
+    const labelEl = item.querySelector('span');
+    const iconEl = item.querySelector('.recharts-legend-icon');
+    if (labelEl?.textContent && iconEl) {
+      const color = getComputedStyle(iconEl).fill;
+      if (color && color !== 'none' && color !== 'transparent') {
+        result.map[labelEl.textContent.trim()] = color;
+      }
+    }
+  });
+
+  if (Object.keys(result.map).length === 0) return result;
+  result.series = Object.keys(result.map);
+
+  // Apply colors to bar charts
+  const barCharts = root.querySelectorAll('.recharts-bar');
+  barCharts.forEach(bar => {
+    const seriesName = (bar as any).__data__?.name; // Recharts internal prop
+    const color = result.map[seriesName];
+    if (color) {
+      bar.querySelectorAll('path').forEach(path => {
+        path.setAttribute('fill', color);
+        result.nodes++;
+      });
+    }
+  });
+  
+  // No revenue pie chart exists, so we don't need to handle it.
+
+  result.locked = result.nodes > 0;
+  return result;
+}
+
 
 export async function loadRouteInIframe(path: string, locale: 'en'|'de'):
 Promise<{win:Window,doc:Document,cleanup:()=>void}> {
@@ -340,19 +397,27 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
     diag.readyMs = await settleInIframe(doc, root);
     
-    try {
-        diag.frozenNodeCount = freezeSvgColors(root);
-        diag.colorsFrozen = diag.frozenNodeCount > 0;
-        diag.paletteSource = 'iframe-computed';
-        
-        if (path.includes('/costs')) {
-            diag.specialSeriesLocked = Object.keys(SPECIAL_SERIES_LOCK);
-            diag.specialColorsApplied = true;
-        }
+    await sleep(100);
 
-    } catch (e: any) {
-        diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
+    if (path === '/revenue') {
+        const rc = await lockRevenueColorsInIframe(doc);
+        diag.revenueColorLock = { locked: rc.locked, series: rc.series, nodes: rc.nodes };
+    } else {
+        try {
+            diag.frozenNodeCount = freezeSvgColors(root);
+            diag.colorsFrozen = diag.frozenNodeCount > 0;
+            diag.paletteSource = 'iframe-computed';
+            
+            if (path.includes('/costs')) {
+                diag.specialSeriesLocked = Object.keys(SPECIAL_SERIES_LOCK);
+                diag.specialColorsApplied = true;
+            }
+
+        } catch (e: any) {
+            diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
+        }
     }
+
 
     diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
 
