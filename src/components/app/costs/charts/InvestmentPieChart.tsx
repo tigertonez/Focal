@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -67,7 +66,16 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
           textAlign: 'center',
     };
     
-    const legendStylePrint: React.CSSProperties = { width: '100%', textAlign: 'center', marginTop: 4, lineHeight: '16px' };
+    const legendStylePrint: React.CSSProperties = { 
+        width: '100%',
+        display: 'flex',
+        flexWrap: 'nowrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '1rem',
+        marginTop: 4,
+        fontSize: 11,
+    };
     const OUTER_PRINT = "88%";
     const OUTER_UI    = 100;
     const CY_PRINT    = "47%";
