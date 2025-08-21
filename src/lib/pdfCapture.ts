@@ -83,7 +83,7 @@ function freezeSvgColors(doc: Document | HTMLElement, phase: 'pre-freeze' | 'app
   let frozenNodeCount = 0;
   const svgs = doc.querySelectorAll('svg.recharts-surface');
   svgs.forEach(svg => {
-    const elements = svg.querySelectorAll('path, rect, circle, line, text');
+    const elements = svg.querySelectorAll('path, rect, circle, line, text, g');
     elements.forEach(el => {
       const element = el as HTMLElement;
       
@@ -151,7 +151,7 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   stage.id = '__print_stage__';
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
   
-  if (doc.body.contains(stage)) {
+  if (doc.body.contains(stage) || stage.contains(doc.body)) {
       throw new Error("Staging area conflict: stage already in body.");
   }
   // Paginator Guard
