@@ -84,7 +84,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     {data.map((entry, index) => {
                         let color;
                         if (entry.name === 'Total Variable Costs') {
-                            color = 'hsl(var(--primary))';
+                            color = '#6b7280'; // Use a neutral grey for the total
                         } else if (isPrint) {
                             color = colorFor(entry.name);
                         } else if (entry.color) {
