@@ -40,22 +40,28 @@ export function formatNumber(value: number) {
  * @returns A CSS color string.
  */
 export function getProductColor(item: { id: string, color?: string, name?: string, productName?: string }): string {
-    if (item.color) {
+    // 1. Prioritize the user-defined color if it exists and is a valid hex code.
+    if (item.color && /^#[0-9A-F]{6}$/i.test(item.color)) {
         return item.color;
     }
 
-    // Fallback to a deterministic color based on the ID if no color is specified.
+    // 2. If no valid color is set, use a deterministic fallback based on the item's ID.
+    // This ensures the color is consistent for this item across all charts and sessions.
     const palette = [
         "#2563eb", "#d946ef", "#f97316", "#0d9488",
-        "#ec4899", "#8b5cf6", "#65a30d", "#f59e0b"
+        "#ec4899", "#8b5cf6", "#65a30d", "#f59e0b",
+        '#3b82f6', '#14b8a6', '#f43f5e', '#a855f7'
     ];
     
     let hash = 0;
+    // Use a simple and stable hashing algorithm on the item's ID.
     for (let i = 0; i < item.id.length; i++) {
         const char = item.id.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
         hash |= 0; // Convert to 32bit integer
     }
     
+    // Use the hash to pick a color from the palette.
     return palette[Math.abs(hash) % palette.length];
 }
+
