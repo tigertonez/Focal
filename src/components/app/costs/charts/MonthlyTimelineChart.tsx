@@ -18,7 +18,6 @@ import { EngineInput } from "@/lib/types";
 interface MonthlyTimelineChartProps {
   data: any[];
   currency?: string;
-  configOverrides?: Record<string, { label: string, color?: string }>;
   formatAs?: 'currency' | 'number';
   isAnimationActive?: boolean;
   isPrint?: boolean;
@@ -26,7 +25,7 @@ interface MonthlyTimelineChartProps {
   inputs?: EngineInput;
 }
 
-export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [], inputs }: MonthlyTimelineChartProps) {
+export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [], inputs }: MonthlyTimelineChartProps) {
   
   React.useEffect(() => {
     if (isPrint && seriesKeys.length > 0) {
@@ -38,24 +37,34 @@ export function MonthlyTimelineChart({ data, currency, configOverrides, formatAs
 
   const chartConfig = React.useMemo(() => {
     const newConfig: ChartConfig = {};
-    
+    if (!inputs || !seriesKeys) return newConfig;
+
     seriesKeys.forEach(key => {
+        let name = key;
         let color;
-        if (inputs) {
-            const product = inputs.products.find(p => p.productName === key);
-            const fixedCost = inputs.fixedCosts.find(fc => fc.name === key);
-            if (product) color = getProductColor(product);
-            else if (fixedCost) color = getProductColor(fixedCost);
+        
+        const product = inputs.products.find(p => p.id === key);
+        const fixedCost = inputs.fixedCosts.find(fc => fc.name === key); // Costs are keyed by name
+        
+        if (product) {
+            name = product.productName;
+            color = getProductColor(product);
+        } else if (fixedCost) {
+            name = fixedCost.name;
+            color = getProductColor(fixedCost);
+        } else {
+            // Fallback for keys like "Deposits"
+            color = getProductColor({ id: key, name: key });
         }
 
         newConfig[key] = {
-            label: configOverrides?.[key]?.label || key,
-            color: color || colorFor(key),
+            label: name,
+            color: color,
         };
     });
 
     return newConfig;
-  }, [seriesKeys, configOverrides, inputs]);
+  }, [seriesKeys, inputs]);
   
   if (!data || data.length === 0) {
     return <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display.</div>

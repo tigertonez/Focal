@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { SectionHeader } from '@/components/app/SectionHeader';
 import { RevenuePageSkeleton } from '@/components/app/revenue/RevenuePageSkeleton';
 import { KpiCard } from '@/components/app/KpiCard';
@@ -9,7 +9,7 @@ import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
-import type { EngineOutput, EngineInput, Product } from '@/lib/types';
+import type { EngineOutput, EngineInput, Product, MonthlyRevenue, MonthlyUnitsSold } from '@/lib/types';
 import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimelineChart';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -25,20 +25,34 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     const router = useRouter();
     const currency = inputs.parameters.currency;
     const { revenueSummary, monthlyRevenue, monthlyUnitsSold } = data;
-
-    const productChartConfig: Record<string, { label: string, color: string }> = {};
-    inputs.products.forEach((p: Product) => {
-        productChartConfig[p.productName] = { 
-            label: p.productName,
-            color: getProductColor(p),
-        };
-    });
     
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
     
-    const seriesKeys = inputs.products.map(p => p.productName);
-    
+    // --- START: Data Transformation for Charts ---
+    // This maps the data to use product IDs as keys, which is more robust for color mapping.
+    const { monthlyRevenueById, monthlyUnitsSoldById, seriesKeys } = useMemo(() => {
+        const idKeys = inputs.products.map(p => p.id);
+        
+        const mapDataToId = <T extends MonthlyRevenue | MonthlyUnitsSold>(data: T[]) => {
+            return data.map(monthData => {
+                const newMonth: Record<string, any> = { month: monthData.month };
+                inputs.products.forEach(p => {
+                    // Use product ID as the new key, get value from old key (productName)
+                    newMonth[p.id] = monthData[p.productName] ?? 0;
+                });
+                return newMonth;
+            });
+        };
+
+        return {
+            monthlyRevenueById: mapDataToId(monthlyRevenue),
+            monthlyUnitsSoldById: mapDataToId(monthlyUnitsSold),
+            seriesKeys: idKeys,
+        };
+    }, [monthlyRevenue, monthlyUnitsSold, inputs.products]);
+    // --- END: Data Transformation for Charts ---
+
     useEffect(() => {
         if (isPrint) {
             seedPrintColorMap(seriesKeys);
@@ -102,7 +116,14 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyRevenue} currency={currency} configOverrides={productChartConfig} isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
+                        <MonthlyTimelineChart 
+                            data={monthlyRevenueById} 
+                            currency={currency} 
+                            isAnimationActive={!isPrint} 
+                            isPrint={isPrint} 
+                            seriesKeys={seriesKeys} 
+                            inputs={inputs} 
+                        />
                         </CardContent>
                     </Card>
                     <Card>
@@ -110,7 +131,14 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[350px] w-full pl-0">
-                        <MonthlyTimelineChart data={monthlyUnitsSold} configOverrides={productChartConfig} formatAs="number" isAnimationActive={!isPrint} isPrint={isPrint} seriesKeys={seriesKeys} />
+                        <MonthlyTimelineChart 
+                            data={monthlyUnitsSoldById} 
+                            formatAs="number" 
+                            isAnimationActive={!isPrint} 
+                            isPrint={isPrint} 
+                            seriesKeys={seriesKeys} 
+                            inputs={inputs} 
+                        />
                         </CardContent>
                     </Card>
                 </div>

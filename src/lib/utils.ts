@@ -2,8 +2,6 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { chartColorVars, semanticColorMap, productColorVars } from "./engine/chart-colors"
-import type { FixedCostItem, Product } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -53,10 +51,14 @@ export function getProductColor(item: { id: string, color?: string, name?: strin
         '#3b82f6', '#14b8a6', '#f43f5e', '#a855f7'
     ];
     
+    // Use product/cost name as part of the hash to ensure stability for items without a persistent ID
+    const name = item.name || item.productName || '';
+    const hashKey = `${item.id}-${name}`;
+    
     let hash = 0;
-    // Use a simple and stable hashing algorithm on the item's ID.
-    for (let i = 0; i < item.id.length; i++) {
-        const char = item.id.charCodeAt(i);
+    // Use a simple and stable hashing algorithm on the hash key.
+    for (let i = 0; i < hashKey.length; i++) {
+        const char = hashKey.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
         hash |= 0; // Convert to 32bit integer
     }
@@ -64,4 +66,3 @@ export function getProductColor(item: { id: string, color?: string, name?: strin
     // Use the hash to pick a color from the palette.
     return palette[Math.abs(hash) % palette.length];
 }
-
