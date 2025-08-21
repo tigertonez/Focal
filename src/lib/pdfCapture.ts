@@ -25,7 +25,7 @@ const rawFromDataUrl = (url:string)=> {
 // ---------- DIAG ------------
 type RouteDiag = {
   route: string;
-  anchorFound: boolean; // NEW
+  anchorFound: boolean;
   usedDom: 'clone' | 'original';
   usedFallback: 'none' | 'tall' | 'html2canvas';
   missingRoot: boolean;
@@ -38,6 +38,7 @@ type RouteDiag = {
   sliceDims: Array<{w:number;h:number;kb:number;md5:string}>;
   colorsFrozen: boolean;
   frozenNodeCount: number;
+  paletteSource: 'live-dom' | 'iframe-computed';
   errors: string[];
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
@@ -84,22 +85,39 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
     const elements = svg.querySelectorAll('path, rect, circle, line, text');
     elements.forEach(el => {
       const element = el as HTMLElement;
+      
+      // Phase 1: Apply frozen colors from data attributes if they exist
+      const frozenFill = element.dataset.printFill;
+      const frozenStroke = element.dataset.printStroke;
+      const frozenOpacity = element.dataset.printOpacity;
+
+      if (frozenFill) {
+        element.setAttribute('fill', frozenFill);
+        frozenNodeCount++;
+      }
+      if (frozenStroke) {
+        element.setAttribute('stroke', frozenStroke);
+        frozenNodeCount++;
+      }
+      if (frozenOpacity) {
+        element.setAttribute('opacity', frozenOpacity);
+        frozenNodeCount++;
+      }
+      
+      // Phase 2: Pre-freeze colors by storing them in data attributes
       const computed = getComputedStyle(element);
       const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
       const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
       const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
 
       if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') {
-        element.setAttribute('stroke', finalStroke);
-        frozenNodeCount++;
+        element.dataset.printStroke = finalStroke;
       }
       if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') {
-        element.setAttribute('fill', finalFill);
-        frozenNodeCount++;
+         element.dataset.printFill = finalFill;
       }
       if (finalOpacity) {
-        element.setAttribute('opacity', finalOpacity);
-        frozenNodeCount++;
+        element.dataset.printOpacity = finalOpacity;
       }
     });
   });
@@ -287,8 +305,16 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
   const diag: RouteDiag = {
     route: path, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
     rechartsCount: 0, toggleClicks: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
-    colorsFrozen: false, frozenNodeCount: 0, errors: [],
+    colorsFrozen: false, frozenNodeCount: 0, paletteSource: 'iframe-computed', errors: [],
   };
+  
+  // Phase 1: Pre-freeze colors on the live DOM by writing to data attributes
+  const liveRoot = document.querySelector(`[data-report-root]`);
+  if (liveRoot) {
+      freezeSvgColors(liveRoot as HTMLElement);
+      diag.paletteSource = 'live-dom';
+  }
+
 
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
@@ -308,7 +334,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     diag.anchorFound = !!root;
     if (!root) { diag.missingRoot = true; root = doc.body; }
 
-    // Freeze computed colors into inline attributes (ALWAYS run this before capture)
+    // Phase 2: Apply frozen colors from data attributes before capture
     try {
         diag.frozenNodeCount = freezeSvgColors(root);
         diag.colorsFrozen = diag.frozenNodeCount > 0;
@@ -379,3 +405,5 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     cleanup();
   }
 }
+
+    
