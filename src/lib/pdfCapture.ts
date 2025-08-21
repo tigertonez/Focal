@@ -1,3 +1,4 @@
+
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';

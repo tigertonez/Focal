@@ -46,7 +46,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
     <div className="p-4 md:p-8 space-y-6">
       <SectionHeader title={t.pages.profit.title} description={t.pages.profit.description} />
       
-      <section>
+      <section style={{ breakInside: 'avoid' }}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KpiCard 
             label={t.pages.profit.kpi.gross}
@@ -90,7 +90,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
         )}
       </section>
 
-      <section>
+      <section style={{ breakInside: 'avoid' }}>
          <Card>
             <CardHeader>
                 <CardTitle>{t.pages.profit.charts.breakdown}</CardTitle>
@@ -101,7 +101,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
         </Card>
       </section>
 
-       <section>
+       <section style={{ breakInside: 'avoid' }}>
           <Card>
             <CardHeader>
               <CardTitle>{t.pages.profit.table.title}</CardTitle>
@@ -112,7 +112,7 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
           </Card>
         </section>
 
-        <section className="pt-4" data-no-print={isPrint}>
+        <section className="pt-4" data-no-print={isPrint} style={{ breakInside: 'avoid' }}>
             <ProfitInsights data={data} currency={currency} isPrint={isPrint} />
         </section>
 

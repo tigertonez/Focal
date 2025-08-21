@@ -40,7 +40,7 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
     <div className="p-4 md:p-8 space-y-6">
       <SectionHeader title={t.pages.cashFlow.title} description={t.pages.cashFlow.description} />
       
-      <section>
+      <section style={{ breakInside: 'avoid' }}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KpiCard 
             label={t.pages.cashFlow.kpi.ending} 
@@ -84,7 +84,7 @@ function CashFlowPageContent({ data, inputs, t, isPrint = false }: { data: Engin
         )}
       </section>
 
-      <section className="space-y-8">
+      <section className="space-y-8" style={{ breakInside: 'avoid' }}>
         <Card>
             <CardHeader>
                 <CardTitle>{t.pages.cashFlow.charts.cumulative}</CardTitle>
