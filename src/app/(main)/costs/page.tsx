@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, {useEffect} from 'react';
@@ -21,7 +20,6 @@ import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
-import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -55,13 +53,6 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
         'Final Payments', 
         ...inputs.fixedCosts.map(fc => fc.name)
     ];
-
-    useEffect(() => {
-        if (isPrint) {
-          seedPrintColorMap(seriesKeys);
-        }
-    }, [isPrint, seriesKeys]);
-
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -212,7 +203,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
 
 export default function CostsPage() {
     const { t, financials, inputs, ensureForecastReady } = useForecast();
-    const { isPrint, lang } = usePrintMode();
+    const { isPrint } = usePrintMode();
 
     React.useEffect(() => {
         if (!isPrint) return;

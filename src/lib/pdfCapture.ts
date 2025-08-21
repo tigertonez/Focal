@@ -107,7 +107,8 @@ function injectPrintCSS(doc: Document) {
     html[data-print="1"] .hidden { display: block !important; }
     .recharts-responsive-container, .recharts-wrapper { width: 100% !important; height: 100% !important; }
     section { break-inside: avoid; }
-    [data-radix-select-trigger]{ min-height: 32px; line-height: 1.2; }
+    [data-radix-collapsible-trigger] { cursor: default !important; }
+    [data-radix-collapsible-content][data-state="closed"] { display: block !important; }
   `;
   doc.head.appendChild(style);
 }
@@ -180,9 +181,9 @@ Promise<{win:Window,doc:Document,cleanup:()=>void}> {
 }
 
 function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:number,h:number}) {
-  if (sourceRoot === doc.body) {
+    if (sourceRoot === doc.body) {
       throw new Error("Paginator guard: sourceRoot must not be <body>.");
-  }
+    }
   const stage = doc.createElement('div');
   stage.id = '__print_stage__';
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });

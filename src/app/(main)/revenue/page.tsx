@@ -196,7 +196,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
 export default function RevenuePage() {
     const { t, financials, inputs, ensureForecastReady } = useForecast();
     const router = useRouter();
-    const { isPrint, lang } = usePrintMode();
+    const { isPrint } = usePrintMode();
 
     React.useEffect(() => {
         if (!isPrint) return;
