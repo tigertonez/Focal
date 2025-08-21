@@ -84,8 +84,8 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
 
 
     return (
-        <ResponsiveContainer width="100%" height="100%" style={{ minHeight: isPrint ? 420 : undefined, overflow: isPrint ? 'visible' : 'hidden' }}>
-            <PieChart margin={isPrint ? { top: 12, right: 16, bottom: 4, left: 16 } : { top: 16, right: 16, bottom: 24, left: 16 }}>
+        <ResponsiveContainer width="100%" height="100%" style={{ minHeight: isPrint ? 440 : undefined, overflow: isPrint ? 'visible' : 'hidden' }}>
+            <PieChart margin={isPrint ? { top: 12, right: 16, bottom: 0, left: 16 } : { top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
                     wrapperStyle={isPrint ? { display: 'none' } : {}}
@@ -127,4 +127,3 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
         </ResponsiveContainer>
     );
 }
-
