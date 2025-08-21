@@ -15,6 +15,10 @@ import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
 import { colorFor, palette, seedPrintColorMap } from "@/lib/printColorMap";
 import { EngineInput } from "@/lib/types";
 
+// Define hardcoded colors for specific cost categories as requested.
+const DEPOSITS_COLOR = "#9CA3AF";     // lighter grey
+const FINAL_PAYMENTS_COLOR = "#4B5563"; // dark grey
+
 interface MonthlyTimelineChartProps {
   data: any[];
   currency?: string;
@@ -43,18 +47,25 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
         let name = key;
         let color;
         
-        const product = inputs.products.find(p => p.id === key);
-        const fixedCost = inputs.fixedCosts.find(fc => fc.name === key); // Costs are keyed by name
-        
-        if (product) {
-            name = product.productName;
-            color = getProductColor(product);
-        } else if (fixedCost) {
-            name = fixedCost.name;
-            color = getProductColor(fixedCost);
+        // --- START: Enforce hardcoded colors for specific keys ---
+        if (key === 'Deposits') {
+            color = DEPOSITS_COLOR;
+        } else if (key === 'Final Payments') {
+            color = FINAL_PAYMENTS_COLOR;
         } else {
-            // Fallback for keys like "Deposits"
-            color = getProductColor({ id: key, name: key });
+        // --- END: Enforce hardcoded colors ---
+            const product = inputs.products.find(p => p.id === key);
+            const fixedCost = inputs.fixedCosts.find(fc => fc.name === key);
+            
+            if (product) {
+                name = product.productName;
+                color = getProductColor(product);
+            } else if (fixedCost) {
+                name = fixedCost.name;
+                color = getProductColor(fixedCost);
+            } else {
+                color = getProductColor({ id: key, name: key });
+            }
         }
 
         newConfig[key] = {
@@ -83,7 +94,7 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
   
   const tooltipFormatter = (value: number, name: string) => {
     const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
-    const color = isPrint ? colorFor(name) : chartConfig[name]?.color;
+    const color = chartConfig[name]?.color;
     return (
         <div className="flex items-center">
             <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }}/>
