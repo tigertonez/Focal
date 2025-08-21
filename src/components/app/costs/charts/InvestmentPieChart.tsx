@@ -83,8 +83,10 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     {isPrint && <LabelList dataKey="value" formatter={(v:any, it:any) => `${Math.round(it.percent*100)}%`} position="outside" />}
                     {data.map((entry, index) => {
                         let color;
-                        if (isPrint) {
-                            color = entry.name === 'Total Variable Costs' ? palette().primary : colorFor(entry.name);
+                        if (entry.name === 'Total Variable Costs') {
+                            color = 'hsl(var(--primary))';
+                        } else if (isPrint) {
+                            color = colorFor(entry.name);
                         } else if (entry.color) {
                             color = entry.color;
                         } else if (entry.item) {
