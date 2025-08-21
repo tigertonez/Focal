@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -73,7 +74,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
         justifyContent: 'center',
         alignItems: 'center',
         gap: '1rem',
-        marginTop: 4,
+        marginTop: 0,
         fontSize: 11,
     };
     const OUTER_PRINT = "88%";
@@ -84,7 +85,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
 
     return (
         <ResponsiveContainer width="100%" height="100%" style={{ minHeight: isPrint ? 420 : undefined, overflow: isPrint ? 'visible' : 'hidden' }}>
-            <PieChart margin={isPrint ? { top: 12, right: 16, bottom: 8, left: 16 } : { top: 16, right: 16, bottom: 24, left: 16 }}>
+            <PieChart margin={isPrint ? { top: 12, right: 16, bottom: 4, left: 16 } : { top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
                     wrapperStyle={isPrint ? { display: 'none' } : {}}
@@ -126,3 +127,4 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
         </ResponsiveContainer>
     );
 }
+
