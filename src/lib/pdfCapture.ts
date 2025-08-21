@@ -311,10 +311,8 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
       try { (btn as any).click?.(); diag.toggleClicks++; } catch {}
     });
 
-    // Resize-Handshake to settle layout
-    win.dispatchEvent(new Event('resize'));
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    await sleep(120);
+    // Replace RAF-based settlement with a more robust sleep
+    await sleep(250);
     
     // Root lookup
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
