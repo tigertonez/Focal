@@ -7,7 +7,7 @@ import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
 
 export function RevenuePageSkeleton({ t }: {t: any}) {
   return (
-    <div className="p-4 md:p-8 space-y-8 animate-pulse">
+    <div className="p-4 md:p-8 space-y-6 animate-pulse">
       <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
 
       <section>
@@ -24,8 +24,8 @@ export function RevenuePageSkeleton({ t }: {t: any}) {
           <CardHeader>
             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-72 w-full flex items-end gap-2">
+          <CardContent className="h-[320px]">
+            <div className="h-full w-full flex items-end gap-2 p-4">
                 <Skeleton className="h-1/3 w-full" />
                 <Skeleton className="h-2/3 w-full" />
                 <Skeleton className="h-1/2 w-full" />
@@ -39,8 +39,8 @@ export function RevenuePageSkeleton({ t }: {t: any}) {
             <CardHeader>
                 <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="h-72 w-full flex items-end gap-2">
+            <CardContent className="h-[320px]">
+                <div className="h-full w-full flex items-end gap-2 p-4">
                     <Skeleton className="h-1/3 w-full" />
                     <Skeleton className="h-2/3 w-full" />
                     <Skeleton className="h-1/2 w-full" />
@@ -53,8 +53,10 @@ export function RevenuePageSkeleton({ t }: {t: any}) {
       </section>
       
       <section>
-        <h2 className="text-xl font-semibold mb-4">{t.pages.revenue.table.title}</h2>
         <Card>
+            <CardHeader>
+                <CardTitle>{t.pages.revenue.table.title}</CardTitle>
+            </CardHeader>
             <CardContent className="p-2">
                 <Skeleton className="h-40 w-full" />
             </CardContent>
