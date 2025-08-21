@@ -141,6 +141,10 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   const stage = doc.createElement('div');
   stage.id = '__print_stage__';
   Object.assign(stage.style, { width:`${a4Px.w}px`, margin:'0 auto', boxSizing:'border-box', overflow:'visible' });
+  
+  if (doc.body.contains(stage)) {
+      throw new Error("Staging area conflict: stage already in body.");
+  }
   doc.body.appendChild(stage);
 
   const working = sourceRoot; // Use the original node to preserve chart state
@@ -285,10 +289,14 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     win.dispatchEvent(new Event('resize'));
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     await sleep(120);
+    
+    // Root lookup
+    let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
+    if (!root) { diag.missingRoot = true; root = doc.body; }
 
-    // Freeze computed colors into inline attributes
+    // Freeze computed colors into inline attributes (ALWAYS run this before capture)
     try {
-        diag.frozenNodeCount = freezeSvgColors(doc);
+        diag.frozenNodeCount = freezeSvgColors(root);
         diag.colorsFrozen = diag.frozenNodeCount > 0;
     } catch (e: any) {
         diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
@@ -297,17 +305,15 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     // Count Recharts
     diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
 
-    // Root lookup
-    let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
-    if (!root) { diag.missingRoot = true; root = doc.body; }
-
     let pagesEl: HTMLElement[] = [];
     let stage: HTMLElement | null = null;
     let usedDom: 'clone' | 'original' = 'clone';
     try {
-      const pg = paginateAttached(doc, root!, a4Px);
-      pagesEl = pg.pages; stage = pg.stage; usedDom = pg.usedDom;
-      diag.usedDom = usedDom;
+      if (!diag.missingRoot) {
+          const pg = paginateAttached(doc, root!, a4Px);
+          pagesEl = pg.pages; stage = pg.stage; usedDom = pg.usedDom;
+          diag.usedDom = usedDom;
+      }
     } catch (e:any) {
       diag.errors.push(`paginate: ${e.message||String(e)}`);
     }

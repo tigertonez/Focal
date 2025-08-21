@@ -37,7 +37,7 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
       {
         name: 'Total Variable Costs',
         value: costSummary.totalVariable,
-        color: 'hsl(var(--primary))',
+        color: '#6b7280',
       },
       ...costSummary.fixedCosts.map(cost => ({
           name: cost.name,

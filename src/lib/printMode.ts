@@ -31,7 +31,7 @@ function collectChartColorDiag(root: Document | HTMLElement, runName: string) {
     const surfaces = root.querySelectorAll('svg.recharts-surface');
     const results: any[] = [];
     surfaces.forEach((svg, chartIndex) => {
-        const shapes = svg.querySelectorAll('path, rect, circle, g.recharts-legend-item text');
+        const shapes = svg.querySelectorAll('path, rect, circle, g.recharts-legend-item text, .recharts-label, .recharts-text');
         shapes.forEach(el => {
             const computed = getComputedStyle(el);
             results.push({
@@ -99,7 +99,7 @@ export function usePrintMode() {
     };
   }, [isPrint, lang, locale, setLocale]);
 
-  return { isPrint, lang: (lang ?? locale ?? 'en') as 'en' | 'de' };
+  return { isPrint, isDebug, lang: (lang ?? locale ?? 'en') as 'en' | 'de' };
 }
 
 /** Expand accordions/details and any [aria-expanded="false"] toggles */
