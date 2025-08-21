@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -19,7 +18,6 @@ import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
-import { seedPrintColorMap } from '@/lib/printColorMap';
 
 function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -29,8 +27,6 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
     
-    // --- START: Data Transformation for Charts ---
-    // This maps the data to use product IDs as keys, which is more robust for color mapping.
     const { monthlyRevenueById, monthlyUnitsSoldById, seriesKeys } = useMemo(() => {
         const idKeys = inputs.products.map(p => p.id);
         
@@ -38,7 +34,6 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
             return data.map(monthData => {
                 const newMonth: Record<string, any> = { month: monthData.month };
                 inputs.products.forEach(p => {
-                    // Use product ID as the new key, get value from old key (productName)
                     newMonth[p.id] = monthData[p.productName] ?? 0;
                 });
                 return newMonth;
@@ -51,13 +46,6 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
             seriesKeys: idKeys,
         };
     }, [monthlyRevenue, monthlyUnitsSold, inputs.products]);
-    // --- END: Data Transformation for Charts ---
-
-    useEffect(() => {
-        if (isPrint) {
-            seedPrintColorMap(seriesKeys);
-        }
-    }, [isPrint, seriesKeys]);
 
 
     return (

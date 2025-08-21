@@ -1,11 +1,9 @@
-
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, LabelList } from "recharts"
+import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
-import { palette, colorFor } from "@/lib/printColorMap";
 
 interface InvestmentPieChartProps {
     data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
@@ -39,9 +37,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     const isMobile = !isPrint && (typeof window !== 'undefined') && window.innerWidth < 768;
     const manyItems = data.length > 4;
     
-    const legendStyle: React.CSSProperties = isPrint ? 
-        { width:'100%', textAlign:'center', fontSize:12, lineHeight:'16px', whiteSpace:'nowrap', overflow: 'hidden' }
-      : {
+    const legendStyle: React.CSSProperties = {
           lineHeight: '1.5',
           bottom: 0,
           display: 'flex',
@@ -55,7 +51,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     };
 
     return (
-        <ResponsiveContainer width="100%" height="100%" style={{minHeight: isPrint ? 400 : undefined, overflow: isPrint ? 'visible' : 'hidden'}}>
+        <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
@@ -74,7 +70,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cy="45%"
                     labelLine={false}
                     label={<CustomLabel />}
-                    outerRadius={isPrint ? "80%" : 100}
+                    outerRadius={100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
@@ -83,9 +79,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     {data.map((entry, index) => {
                         let color;
                         if (entry.name === 'Total Variable Costs') {
-                            color = '#6b7280'; // neutral grey
-                        } else if (isPrint) {
-                            color = colorFor(entry.name);
+                            color = 'hsl(var(--primary))';
                         } else if (entry.color) {
                             color = entry.color;
                         } else if (entry.item) {
@@ -97,7 +91,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     })}
                 </Pie>
                 <Legend 
-                    iconSize={isPrint ? 10 : 8} 
+                    iconSize={8}
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"

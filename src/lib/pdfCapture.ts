@@ -1,4 +1,3 @@
-
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
@@ -58,6 +57,10 @@ async function waitIframeReady(win: Window) {
   if (!win.document?.body) throw new Error('Iframe body timeout');
 }
 
+/**
+ * Robustly waits for the iframe content to be ready for capture.
+ * It waits for fonts and polls for chart and layout stability.
+ */
 async function settleInIframe(doc: Document, root: HTMLElement): Promise<number> {
     const started = performance.now();
     try { await doc.fonts?.ready; } catch {}
@@ -104,10 +107,17 @@ function injectPrintCSS(doc: Document) {
     html[data-print="1"] .hidden { display: block !important; }
     .recharts-responsive-container, .recharts-wrapper { width: 100% !important; height: 100% !important; }
     section { break-inside: avoid; }
+    [data-radix-select-trigger]{ min-height: 32px; line-height: 1.2; }
   `;
   doc.head.appendChild(style);
 }
 
+/**
+ * Freezes computed SVG styles as inline attributes to ensure they are captured by html-to-image.
+ * This should run in the iframe, after settling and before capture.
+ * @param doc The document or root element to process.
+ * @returns The number of nodes that were modified.
+ */
 function freezeSvgColors(doc: Document | HTMLElement): number {
   let frozenNodeCount = 0;
   const svgs = doc.querySelectorAll('svg.recharts-surface');
@@ -117,7 +127,7 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
       const element = el as HTMLElement;
       const computed = getComputedStyle(element);
       
-      const finalFill = computed.fill !== 'none' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
+      const finalFill = computed.fill !== 'none' && computed.fill !== 'rgb(0, 0, 0)' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
       const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
       const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
       
@@ -323,6 +333,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     try {
         diag.frozenNodeCount = freezeSvgColors(root);
         diag.colorsFrozen = diag.frozenNodeCount > 0;
+        diag.paletteSource = 'iframe-computed';
     } catch (e: any) {
         diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
     }

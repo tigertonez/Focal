@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -12,12 +11,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { formatCurrency, formatNumber, getProductColor } from "@/lib/utils"
-import { colorFor, palette, seedPrintColorMap } from "@/lib/printColorMap";
 import { EngineInput } from "@/lib/types";
-
-// Define hardcoded colors for specific cost categories as requested.
-const DEPOSITS_COLOR = "#9CA3AF";     // lighter grey
-const FINAL_PAYMENTS_COLOR = "#4B5563"; // dark grey
 
 interface MonthlyTimelineChartProps {
   data: any[];
@@ -31,14 +25,6 @@ interface MonthlyTimelineChartProps {
 
 export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', isAnimationActive = true, isPrint = false, seriesKeys = [], inputs }: MonthlyTimelineChartProps) {
   
-  React.useEffect(() => {
-    if (isPrint && seriesKeys.length > 0) {
-      seedPrintColorMap(seriesKeys);
-    }
-  }, [isPrint, seriesKeys]);
-  
-  const p = palette();
-
   const chartConfig = React.useMemo(() => {
     const newConfig: ChartConfig = {};
     if (!inputs || !seriesKeys) return newConfig;
@@ -47,25 +33,17 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
         let name = key;
         let color;
         
-        // --- START: Enforce hardcoded colors for specific keys ---
-        if (key === 'Deposits') {
-            color = DEPOSITS_COLOR;
-        } else if (key === 'Final Payments') {
-            color = FINAL_PAYMENTS_COLOR;
+        const product = inputs.products.find(p => p.id === key);
+        const fixedCost = inputs.fixedCosts.find(fc => fc.name === key);
+        
+        if (product) {
+            name = product.productName;
+            color = getProductColor(product);
+        } else if (fixedCost) {
+            name = fixedCost.name;
+            color = getProductColor(fixedCost);
         } else {
-        // --- END: Enforce hardcoded colors ---
-            const product = inputs.products.find(p => p.id === key);
-            const fixedCost = inputs.fixedCosts.find(fc => fc.name === key);
-            
-            if (product) {
-                name = product.productName;
-                color = getProductColor(product);
-            } else if (fixedCost) {
-                name = fixedCost.name;
-                color = getProductColor(fixedCost);
-            } else {
-                color = getProductColor({ id: key, name: key });
-            }
+            color = getProductColor({ id: key, name: key });
         }
 
         newConfig[key] = {
@@ -112,8 +90,6 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
       return newMonthData;
   });
 
-  const legendWrapperStylePrint = { width:'100%', textAlign:'center', whiteSpace:'nowrap' } as const;
-
   return (
       <ChartContainer config={chartConfig} className="h-full w-full" data-chart>
         <BarChart 
@@ -123,22 +99,18 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
           stackOffset="sign"
           barCategoryGap="20%"
         >
-          <CartesianGrid vertical={false} stroke={isPrint ? p.grid : undefined} />
+          <CartesianGrid vertical={false} />
           <XAxis
             dataKey="month"
             tickLine={false}
             tickMargin={10}
             axisLine={false}
-            stroke={isPrint ? p.text : undefined}
-            tick={isPrint ? { fill: p.text } : {}}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
             tickMargin={10}
             tickFormatter={(value) => valueFormatter(Number(value))}
-            stroke={isPrint ? p.text : undefined}
-            tick={isPrint ? { fill: p.text } : {}}
           />
           <ChartTooltip
             cursor={!isPrint}
@@ -148,7 +120,7 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
               formatter={tooltipFormatter}
           />}
           />
-          <ChartLegend {...(isPrint ? { layout: "horizontal", align: "center", verticalAlign: "bottom", wrapperStyle: legendWrapperStylePrint } : {})} />
+          <ChartLegend />
           
           {seriesKeys.map((key) => {
               const itemConfig = chartConfig[key];
@@ -156,7 +128,7 @@ export function MonthlyTimelineChart({ data, currency, formatAs = 'currency', is
                  <Bar
                     key={key}
                     dataKey={key}
-                    fill={isPrint ? colorFor(key) : itemConfig?.color}
+                    fill={itemConfig?.color}
                     stackId="a"
                     name={itemConfig?.label || key}
                     barSize={20}
