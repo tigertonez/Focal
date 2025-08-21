@@ -20,9 +20,9 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
     const { t } = useForecast();
     
     const currency = watch('parameters.currency');
-    const cost = watch(`fixedCosts.${index}`);
+    const costItem = watch(`fixedCosts.${index}`);
     const colorInputRef = React.useRef<HTMLInputElement>(null);
-    const assignedColor = React.useMemo(() => getProductColor(cost), [cost]);
+    const assignedColor = getProductColor(costItem);
 
     // State to detect mobile view for currency symbol
     const [isMobile, setIsMobile] = React.useState(false);
@@ -42,7 +42,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
 
     const currencySymbol = isMobile ? (currency === 'EUR' ? '€' : '$') : currency;
 
-    const isPlanningBuffer = cost.name?.toLowerCase().includes('planning buffer');
+    const isPlanningBuffer = costItem.name?.toLowerCase().includes('planning buffer');
     
     const helpTrigger = (
       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
@@ -106,7 +106,7 @@ export const FixedCostForm: React.FC<{ index: number; removeFixedCost: (index: n
                             <>
                                 <div 
                                     className="h-5 w-5 rounded-full cursor-pointer border" 
-                                    style={{ backgroundColor: assignedColor }}
+                                    style={{ backgroundColor: field.value || assignedColor }}
                                     onClick={() => colorInputRef.current?.click()}
                                 />
                                 <input 
