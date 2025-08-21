@@ -1,9 +1,12 @@
+
 "use client"
 
 import * as React from "react"
-import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip, Label } from "recharts"
+import { Pie, PieChart, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import type { FixedCostItem, Product } from "@/lib/types";
 import { formatCurrency, getProductColor } from "@/lib/utils";
+import { palette, colorFor } from "@/lib/printColorMap";
+import { specialColorFor } from "@/lib/specialSeries";
 
 interface InvestmentPieChartProps {
     data: { name: string; value: number; color?: string, item?: Product | FixedCostItem }[];
@@ -37,7 +40,9 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     const isMobile = !isPrint && (typeof window !== 'undefined') && window.innerWidth < 768;
     const manyItems = data.length > 4;
     
-    const legendStyle: React.CSSProperties = {
+    const legendStyle: React.CSSProperties = isPrint ? 
+        { width:'100%', textAlign:'center', fontSize:12, lineHeight:'16px', whiteSpace:'nowrap', overflow: 'hidden' }
+      : {
           lineHeight: '1.5',
           bottom: 0,
           display: 'flex',
@@ -51,7 +56,7 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
     };
 
     return (
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" style={{minHeight: isPrint ? 400 : undefined, overflow: isPrint ? 'visible' : 'hidden'}}>
             <PieChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                 <Tooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
@@ -69,29 +74,20 @@ export function InvestmentPieChart({ data, currency, isPrint = false }: Investme
                     cx="50%"
                     cy="45%"
                     labelLine={false}
-                    label={<CustomLabel />}
-                    outerRadius={100}
+                    label={isPrint ? undefined : <CustomLabel />}
+                    outerRadius={isPrint ? "80%" : 100}
                     innerRadius={0}
                     dataKey="value"
                     strokeWidth={0}
                     isAnimationActive={!isPrint}
                 >
                     {data.map((entry, index) => {
-                        let color;
-                        if (entry.name === 'Total Variable Costs') {
-                            color = 'hsl(var(--primary))';
-                        } else if (entry.color) {
-                            color = entry.color;
-                        } else if (entry.item) {
-                            color = getProductColor(entry.item);
-                        } else {
-                            color = 'hsl(var(--muted-foreground))';
-                        }
+                        const color = specialColorFor(entry.name) ?? (isPrint ? colorFor(entry.name) : (entry.color || (entry.item ? getProductColor(entry.item) : 'hsl(var(--muted-foreground))')));
                         return <Cell key={`cell-${index}`} fill={color} />;
                     })}
                 </Pie>
                 <Legend 
-                    iconSize={8}
+                    iconSize={isPrint ? 10 : 8} 
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"

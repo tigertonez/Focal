@@ -1,8 +1,10 @@
+
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import { Md5 } from 'ts-md5';
+import { isSpecialSeries, SPECIAL_SERIES_LOCK } from './specialSeries';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
@@ -40,6 +42,8 @@ type RouteDiag = {
   frozenNodeCount: number;
   paletteSource: 'live-dom' | 'iframe-computed';
   errors: string[];
+  specialSeriesLocked?: string[];
+  specialColorsApplied?: boolean;
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
 export function popLastRouteDiag(): RouteDiag | null {
@@ -64,6 +68,11 @@ async function waitIframeReady(win: Window) {
 async function settleInIframe(doc: Document, root: HTMLElement): Promise<number> {
     const started = performance.now();
     try { await doc.fonts?.ready; } catch {}
+
+    if (doc.visibilityState === 'hidden') {
+      await sleep(800);
+      return performance.now() - started;
+    }
 
     const checkStability = async (
         getValue: () => number,
@@ -335,6 +344,12 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
         diag.frozenNodeCount = freezeSvgColors(root);
         diag.colorsFrozen = diag.frozenNodeCount > 0;
         diag.paletteSource = 'iframe-computed';
+        
+        if (path.includes('/costs')) {
+            diag.specialSeriesLocked = Object.keys(SPECIAL_SERIES_LOCK);
+            diag.specialColorsApplied = true;
+        }
+
     } catch (e: any) {
         diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
     }
