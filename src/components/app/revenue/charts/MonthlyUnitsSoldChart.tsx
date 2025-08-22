@@ -122,7 +122,6 @@ export function MonthlyUnitsSoldChart({
               iconType="circle"
               iconSize={10}
               wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 8, position: 'relative' }}
-              content={isPrint ? undefined : (props => <Legend.defaultProps.content {...props} />)}
             />
             
             {seriesKeys.map(key => {
