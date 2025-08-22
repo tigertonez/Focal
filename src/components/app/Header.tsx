@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -50,13 +51,18 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
 
 export function Header() {
     const { setIsCopilotOpen, t, setLocale, locale, inputs } = useForecast();
+    
+    // Shorten label for mobile view
+    const cashFlowLabel = t.nav.cashFlow;
+    const isMobile = (typeof window !== 'undefined') && window.innerWidth < 768;
+    const finalCashFlowLabel = isMobile ? 'Cashfl.' : cashFlowLabel;
 
     const navItems = [
       { href: '/inputs', icon: LineChart, label: t.nav.inputs },
       { href: '/revenue', icon: DollarSign, label: t.nav.revenue },
       { href: '/costs', icon: ShoppingCart, label: t.nav.costs },
       { href: '/profit', icon: Landmark, label: t.nav.profit },
-      { href: '/cash-flow', icon: Wallet, label: t.nav.cashFlow },
+      { href: '/cash-flow', icon: Wallet, label: cashFlowLabel }, // Always full label for desktop
       { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
     ];
     
