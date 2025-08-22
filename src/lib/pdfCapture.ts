@@ -50,7 +50,6 @@ async function waitTabVisible(topDoc: Document = document, onStatus?: (s: string
   onStatus?.('Resumed — continuing export.');
 }
 
-
 async function waitIframeLoad(iframe: HTMLIFrameElement) {
   return new Promise<void>(res => {
     const t = setTimeout(() => { console.warn('Iframe load timeout'); res(); }, 8000);
@@ -65,6 +64,9 @@ function injectPrintCSS(doc: Document) {
     [data-report-root] { width:${CAPTURE_WIDTH_PX}px !important; margin:0 auto !important; }
     .container { max-width: 100% !important; }
     [data-no-print="true"] { display: none !important; }
+    .pdf-freeze, .pdf-freeze * { animation: none !important; transition: none !important; }
+    .pdf-freeze, .pdf-freeze * { transform: none !important; will-change: auto !important; }
+    .recharts-wrapper, .recharts-responsive-container, .recharts-surface { transform: none !important; }
   `;
   doc.head.appendChild(style);
 }
@@ -96,7 +98,7 @@ function createPlaceholder(route: Route): ImageSlice {
     };
 }
 
-export async function captureFullReport({ lang = 'en', onLog, onProgress, onStatus }: { lang: 'en' | 'de', onLog?: (msg: string) => void, onProgress?: (p: number) => void, onStatus?: (msg: string) => void }) {
+export async function captureFullReport({ lang = 'en', onLog, onProgress, onStatus }: { lang: 'en' | 'de', onLog?: (msg: string) => void, onProgress?: (p: number) => void, onStatus?: (s: string)=>void }) {
     const diag: Diag = {
       runId: 'run_' + Math.random().toString(36).substr(2, 9),
       startTs: new Date().toISOString(),
@@ -133,18 +135,27 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
         const stamp = document.createElement('span');
         let rootNode: HTMLElement | null = null;
         let prevMinH: string | null = null;
+        let doc: Document;
+        let win: Window;
+        let patchedNodes: { el: HTMLElement, prevMinHeight: string, prevHeight: string }[] = [];
         
         try {
             iframe.src = `${route}?print=1&lang=${lang}&ts=${Date.now()}`;
             await waitIframeLoad(iframe);
-            const win = iframe.contentWindow!; const doc = win.document;
+            win = iframe.contentWindow!; 
+            doc = win.document;
             injectPrintCSS(doc);
             
-            try { await (doc as any).fonts?.ready; } catch {}
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-            await new Promise(r => setTimeout(r, 80));
+            try { doc.documentElement.classList.add('pdf-freeze'); } catch {}
 
             rootNode = getRouteRoot(win);
+
+            try { await doc.fonts?.ready; } catch {}
+            try { win.dispatchEvent(new Event('resize')); } catch {}
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            try { win.dispatchEvent(new Event('resize')); } catch {}
+            await new Promise(r => setTimeout(r, 100));
+
             if (rootNode.getBoundingClientRect().height < 1000) {
               prevMinH = rootNode.style.minHeight;
               rootNode.style.minHeight = '1800px';
@@ -158,69 +169,86 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
             rootNode.appendChild(stamp);
             
             let dataUrl: string = '';
-            let method = 'none';
-            let attempts = 0;
-            let isValid = false;
+            let method = 'html-to-image';
+            
+            let svgs: SVGSVGElement[] = [];
+            try { svgs = Array.from(doc.querySelectorAll<SVGSVGElement>('svg.recharts-surface')); } catch {}
+            routeDiag.svgCount = svgs.length || 0;
+            
+            try {
+              const sels = ['.recharts-responsive-container', '.recharts-wrapper'];
+              const candidates = Array.from(doc.querySelectorAll<HTMLElement>(sels.join(',')));
+              const toPatch = candidates.filter(el => {
+                const h = el.offsetHeight || el.getBoundingClientRect().height || 0;
+                return h < 120; // clearly too small to render bars/lines
+              });
+              for (const el of toPatch) {
+                patchedNodes.push({ el, prevMinHeight: el.style.minHeight, prevHeight: el.style.height });
+                el.style.minHeight = '360px';
+                el.style.height = '360px';
+              }
+              routeDiag.patchedContainers = toPatch.length;
+            } catch { routeDiag.patchedContainers = 0; }
 
             // Attempt 1
-            attempts++;
             dataUrl = await capturePrimary(rootNode);
+
+            let retriedSvgEmpty = false;
+            try {
+              const svgLooksEmpty = svgs.length > 0 && svgs.every(svg => {
+                try {
+                  const box = svg.getBBox();
+                  const hasShapes = svg.querySelector('path,rect,circle,line,polyline,polygon');
+                  return (box.width > 0 && box.height > 0) && !hasShapes;
+                } catch { return true; } // if getBBox throws, treat as not ready
+              });
+              if (svgLooksEmpty) {
+                // short settle and retry primary exactly once
+                retriedSvgEmpty = true;
+                try { win.dispatchEvent(new Event('resize')); } catch {}
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                await new Promise(r => setTimeout(r, 80));
+                dataUrl = await capturePrimary(rootNode);
+              }
+            } catch {}
+            routeDiag.retriedSvgEmpty = retriedSvgEmpty;
+
+
             let raw = rawFromDataUrl(dataUrl);
             let kb = Math.round(raw.length * 3 / 4 / 1024);
-            isValid = kb >= MIN_KB_OK;
-            method = 'html-to-image';
+            let isValid = kb >= MIN_KB_OK;
             
-            if (isValid) {
-              onStatus?.(`✓ Captured ${route}`);
-            } else {
-              // Attempt 2 (if first failed)
-              onLog?.(`   - Retrying ${route} after reflow...`);
+            // Fallback
+            if (!isValid) {
               await ensureVisiblePoint();
-              await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-              await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-              try { await (doc as any).fonts?.ready; } catch {}
-              await new Promise(r => setTimeout(r, 100));
-
-              attempts++;
-              dataUrl = await capturePrimary(rootNode);
-              raw = rawFromDataUrl(dataUrl);
-              kb = Math.round(raw.length * 3/4/1024);
-              isValid = kb >= MIN_KB_OK;
-            
-              // Attempt 3 (fallback if still invalid)
-              if (!isValid) {
-                onLog?.(`   - Fallback to html2canvas for ${route}`);
-                onStatus?.(`↻ Fallback (html2canvas) for ${route}`);
-                await ensureVisiblePoint();
-                try {
-                    const freshNode = getRouteRoot(win);
-                    const localH2C = (freshNode.ownerDocument?.defaultView as any)?.html2canvas || html2canvas;
-                    const canvas = await localH2C(freshNode, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                    dataUrl = canvas.toDataURL('image/png');
-                    raw = rawFromDataUrl(dataUrl);
-                    kb = Math.round(raw.length * 3/4/1024);
-                    isValid = kb >= MIN_KB_OK;
-                    method = 'html2canvas';
-                } catch (e: any) {
-                    onLog?.(`   - Fallback failed for ${route}: ${e.message}`);
-                    method = 'fallback-error';
-                    dataUrl = '';
-                }
-                attempts++;
+              onLog?.(`   - Fallback to html2canvas for ${route}`);
+              onStatus?.(`↻ Fallback (html2canvas) for ${route}`);
+              try {
+                  const freshNode = getRouteRoot(win);
+                  const localH2C = (freshNode.ownerDocument?.defaultView as any)?.html2canvas || html2canvas;
+                  const canvas = await localH2C(freshNode, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                  dataUrl = canvas.toDataURL('image/png');
+                  raw = rawFromDataUrl(dataUrl);
+                  kb = Math.round(raw.length * 3/4/1024);
+                  isValid = kb >= MIN_KB_OK;
+                  method = 'html2canvas';
+              } catch (e: any) {
+                  onLog?.(`   - Fallback failed for ${route}: ${e.message}`);
+                  method = 'fallback-error';
+                  dataUrl = '';
               }
             }
-
-
-            routeDiag.capture = { attempts, method, dataUrlKB: kb };
-
+            
             if (dataUrl && isValid) {
+                onStatus?.(`✓ Captured ${route}`);
                 const md5 = Md5.hashStr(raw);
                 const w = CAPTURE_WIDTH_PX;
                 const h = Math.round(w / A4_ASPECT_RATIO);
+                routeDiag.capture = { method, dataUrlKB: kb };
                 return { imageBase64: raw, wPx: w, hPx: h, routeName: route, pageIndex: 0, md5 };
             }
 
-            return null;
+            return null; // Return null if all attempts failed to produce a valid image
 
         } catch (e: any) {
             onLog?.(`   - Capture error for ${route}: ${e.message}`);
@@ -231,6 +259,13 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
               if (stamp.parentNode) rootNode.removeChild(stamp);
               if (prevMinH !== null) rootNode.style.minHeight = prevMinH;
             }
+            try {
+              for (const p of patchedNodes) {
+                p.el.style.minHeight = p.prevMinHeight;
+                p.el.style.height = p.prevHeight;
+              }
+            } catch {}
+            try { doc?.documentElement.classList.remove('pdf-freeze'); } catch {}
             diag.routes.push(routeDiag);
         }
     }
@@ -247,6 +282,7 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
             seenRouteFirstSlice.add(route);
             seenMd5s.add(dedupeKey);
           } else if (!seenMd5s.has(dedupeKey)) {
+             // In a multi-slice per route scenario, this would add more, but we only capture one.
           }
         }
         onProgress?.((i + 1) / ROUTES.length);
@@ -279,7 +315,7 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
       slices: finalSlices.length,
       kb: Math.round(finalSlices.reduce((a,s)=>a + s.imageBase64.length,0) * 3/4/1024)
     };
-    diag.visibility = { pauses: paused.cnt, pausedMs: Math.round(paused.ms) };
+    (diag as any).visibility = { pauses: paused.cnt, pausedMs: Math.round(paused.ms) };
     
     finalSlices.forEach(slice => {
         const d = diag.routes.find(r => r.route === slice.routeName && !r.final);
