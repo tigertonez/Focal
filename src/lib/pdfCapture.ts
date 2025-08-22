@@ -40,14 +40,8 @@ type RouteDiag = {
   pages: number;
   slices: number;
   sliceDims: Array<{w:number;h:number;kb:number;md5:string}>;
-  colorsFrozen: boolean;
-  frozenNodeCount: number;
-  paletteSource: 'live-dom' | 'iframe-computed';
   errors: string[];
-  specialSeriesLocked?: string[];
-  specialColorsApplied?: boolean;
   revenuePrintDiag?: { svgCount: number, containerHeights: number[], seriesKeys: string[], resolvedHex: Record<string,string>, waitSucceeded: boolean, waitMs: number };
-  revenueColorLock?: any;
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
 export function popLastRouteDiag(): RouteDiag | null {
@@ -126,43 +120,6 @@ function injectPrintCSS(doc: Document) {
   doc.head.appendChild(style);
 }
 
-/**
- * Freezes computed SVG styles as inline attributes to ensure they are captured by html-to-image.
- * This should run in the iframe, after settling and before capture.
- * @param doc The document or root element to process.
- * @returns The number of nodes that were modified.
- */
-function freezeSvgColors(doc: Document | HTMLElement): number {
-  let frozenNodeCount = 0;
-  const svgs = doc.querySelectorAll('svg.recharts-surface');
-  svgs.forEach(svg => {
-    const elements = svg.querySelectorAll('path, rect, circle, line, text, g');
-    elements.forEach(el => {
-      const element = el as HTMLElement;
-      if (element.dataset.colorLocked === '1') return;
-
-      const computed = getComputedStyle(element);
-      
-      const finalFill = computed.fill !== 'none' && computed.fill !== 'rgb(0, 0, 0)' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
-      const finalStroke = computed.stroke !== 'none' ? (computed.stroke === 'currentColor' ? computed.color : computed.stroke) : '';
-      const finalOpacity = computed.opacity !== '1' ? computed.opacity : '';
-      
-      if (finalFill && finalFill !== 'rgba(0, 0, 0, 0)') {
-          element.setAttribute('fill', finalFill);
-          frozenNodeCount++;
-      }
-      if (finalStroke && finalStroke !== 'rgba(0, 0, 0, 0)') {
-          element.setAttribute('stroke', finalStroke);
-          frozenNodeCount++;
-      }
-      if (finalOpacity) {
-          element.setAttribute('opacity', finalOpacity);
-          frozenNodeCount++;
-      }
-    });
-  });
-  return frozenNodeCount;
-}
 
 async function loadRouteInIframe(path: string, locale: 'en'|'de'):
 Promise<{win:Window,doc:Document,cleanup:()=>void}> {
@@ -288,16 +245,27 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
 }
 
 async function captureElementToPng(el: HTMLElement): Promise<string> {
+  let dataUrl = '';
   try {
-    return await toPng(el, {
+    dataUrl = await toPng(el, {
       cacheBust: true, pixelRatio: 2, style: { transform: 'none' },
       skipFonts: false, useCORS: true,
       filter: (node) => !(node as HTMLElement).closest?.('[data-no-print="true"]'),
     });
   } catch (e) {
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-    return canvas.toDataURL('image/png');
+     console.warn('[pdfCapture] toPng failed, falling back to html2canvas.', e);
   }
+  
+  if (!dataUrl) {
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      dataUrl = canvas.toDataURL('image/png');
+    } catch(e) {
+      console.error('[pdfCapture] html2canvas fallback also failed.', e);
+    }
+  }
+
+  return dataUrl;
 }
 
 async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:number}) {
@@ -323,37 +291,6 @@ async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:n
   return out;
 }
 
-async function waitForRevenueCharts(doc: Document, timeoutMs = 3500): Promise<{succeeded: boolean, duration: number}> {
-    const started = performance.now();
-    let attempts = 0;
-    const interval = 60;
-    const maxAttempts = timeoutMs / interval;
-
-    const check = () => {
-        const svgs = Array.from(doc.querySelectorAll('[data-report-root] svg.recharts-surface'));
-        if (svgs.length < 2) return false;
-        return svgs.every(s => {
-            try {
-                const box = s.getBBox();
-                return box.width > 0 && box.height > 0;
-            } catch {
-                return false;
-            }
-        });
-    };
-
-    while (attempts < maxAttempts) {
-        if (check()) {
-            return { succeeded: true, duration: performance.now() - started };
-        }
-        await sleep(interval);
-        attempts++;
-    }
-    console.warn('[pdfCapture] Timeout waiting for revenue charts to be ready.');
-    return { succeeded: false, duration: performance.now() - started };
-}
-
-
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}, diagExtras: { seq: number }): Promise<ImageSlice[]> {
   const o = { ...DEFAULT_A4, ...opts };
   const pxPerPt = o.dpi / PT_PER_IN;
@@ -365,8 +302,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
   const started = performance.now();
   const diag: RouteDiag = {
     route: path, seq: diagExtras.seq, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
-    rechartsCount: 0, readyMs: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [],
-    colorsFrozen: false, frozenNodeCount: 0, paletteSource: 'iframe-computed', errors: [],
+    rechartsCount: 0, readyMs: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [], errors: [],
   };
   
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
@@ -375,30 +311,31 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     diag.anchorFound = !!root;
     if (!root) { diag.missingRoot = true; root = doc.body; }
 
-    diag.readyMs = await settleInIframe(doc, root);
-    
-    // Route-specific wait for Revenue page charts
     if (path === '/revenue') {
-        const { succeeded, duration } = await waitForRevenueCharts(doc);
-        const inputs = (win as any)?.['__NEXT_DATA__']?.props?.pageProps?.inputs;
-        const products = inputs?.products || [];
-        const seriesKeys = products.map((p: any) => p.productName);
-        const resolvedHex = seriesKeys.reduce((acc: Record<string, string>, name: string) => {
-            const product = products.find((p:any) => p.productName === name);
-            if (product) {
-                acc[name] = resolveToHex(getProductColor(product));
-            }
-            return acc;
-        }, {});
+        const t0 = performance.now();
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        win.dispatchEvent(new Event('resize'));
+        
+        let isReady = false;
+        let elapsed = 0;
+        const interval = 60;
+        const timeout = 4000;
+        
+        while(!isReady && elapsed < timeout) {
+            isReady = (win as any).__REVENUE_READY__ === true;
+            if (isReady) break;
+            await sleep(interval);
+            elapsed += interval;
+        }
 
+        const diagData = (win as any).__REVENUE_PRINT_DIAG__ || {};
         diag.revenuePrintDiag = {
-            svgCount: doc.querySelectorAll('[data-report-root] svg.recharts-surface').length,
-            containerHeights: Array.from(doc.querySelectorAll('[data-revenue-chart] > div')).map(el => (el as HTMLElement).offsetHeight),
-            seriesKeys: seriesKeys,
-            resolvedHex: resolvedHex,
-            waitSucceeded: succeeded,
-            waitMs: Math.round(duration),
+            waitSucceeded: isReady,
+            waitMs: Math.round(performance.now() - t0),
+            ...diagData,
         };
+    } else {
+        diag.readyMs = await settleInIframe(doc, root);
     }
     
     await sleep(100);
@@ -421,7 +358,7 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     }
 
     let slices: ImageSlice[] = [];
-    const seen = new Set<string>();
+    const seenOnRoute = new Set<string>();
 
     if (pagesEl.length === 0) {
       diag.usedFallback = 'tall';
@@ -431,23 +368,41 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
         if (!url?.startsWith('data:image/png;base64,')) continue;
         const raw = rawFromDataUrl(url);
         const md5 = Md5.hashStr(raw);
+        if (seenOnRoute.has(md5)) continue; seenOnRoute.add(md5);
         const tmpImg = new Image(); tmpImg.src = url; await tmpImg.decode().catch(()=>{});
-        if (seen.has(md5)) continue; seen.add(md5);
         slices.push({ imageBase64: raw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: chunks[i].h, routeName: path, pageIndex: i, md5 });
         diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: chunks[i].h, kb: Math.round(raw.length*3/4/1024), md5 });
       }
     } else {
       for (const [i,p] of pagesEl.entries()) {
-        let url = '';
-        try { url = await captureElementToPng(p); }
+        let dataUrl = '';
+        const h = p.getBoundingClientRect().height;
+        try { 
+            dataUrl = await captureElementToPng(p); 
+            if (h < 300 && !dataUrl) { // Retry once for short elements
+              await sleep(200);
+              dataUrl = await captureElementToPng(p);
+            }
+        }
         catch (e:any) { diag.errors.push(`capture:${i} ${e.message||String(e)}`); diag.usedFallback = 'html2canvas'; continue; }
-        if (!url?.startsWith('data:image/png;base64,')) continue;
-        const raw = rawFromDataUrl(url);
-        const md5 = Md5.hashStr(raw);
-        if (seen.has(md5)) continue; seen.add(md5);
-        const tmpImg = new Image(); tmpImg.src = url; await tmpImg.decode().catch(()=>{});
-        slices.push({ imageBase64: raw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: tmpImg.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
-        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: tmpImg.naturalHeight||a4Px.h, kb: Math.round(raw.length*3/4/1024), md5 });
+        if (!dataUrl?.startsWith('data:image/png;base64,')) continue;
+        const raw = rawFromDataUrl(dataUrl);
+        
+        if(raw.length < 50 * 1024 && h < 300) { // Retry for small, short slices
+             await sleep(200);
+             win.dispatchEvent(new Event('resize'));
+             await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+             const retryUrl = await captureElementToPng(p);
+             if (retryUrl.length > raw.length) dataUrl = retryUrl;
+        }
+        
+        const finalRaw = rawFromDataUrl(dataUrl);
+        const md5 = Md5.hashStr(finalRaw);
+        if (seenOnRoute.has(md5)) continue; seenOnRoute.add(md5);
+
+        const tmpImg = new Image(); tmpImg.src = dataUrl; await tmpImg.decode().catch(()=>{});
+        slices.push({ imageBase64: finalRaw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: tmpImg.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
+        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: tmpImg.naturalHeight||a4Px.h, kb: Math.round(finalRaw.length*3/4/1024), md5 });
       }
     }
 

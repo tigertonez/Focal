@@ -10,14 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput, Product, MonthlyRevenue, MonthlyUnitsSold } from '@/lib/types';
-import { MonthlyTimelineChart } from '@/components/app/revenue/charts/MonthlyRevenueTimeline';
+import { MonthlyRevenueTimeline } from '@/components/app/revenue/charts/MonthlyRevenueTimeline';
+import { MonthlyUnitsSoldChart } from '@/components/app/revenue/charts/MonthlyUnitsSoldChart';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { usePrintMode } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
 import { resolveToHex } from '@/lib/printColors';
 
@@ -30,9 +31,16 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     const potentialRevenue = inputs.products.reduce((acc, p) => acc + (p.plannedUnits! * p.sellPrice!), 0);
     const revenueProgress = potentialRevenue > 0 ? (revenueSummary.totalRevenue / potentialRevenue) * 100 : 0;
     
-    const { monthlyRevenueById, monthlyUnitsSoldById, seriesKeys } = useMemo(() => {
+    const { monthlyRevenueById, monthlyUnitsSoldById, seriesKeys, seriesHexColors } = useMemo(() => {
         const idKeys = inputs.products.map(p => p.id);
         
+        const hexColors: Record<string, string> = {};
+        if (isPrint) {
+          inputs.products.forEach(p => {
+            hexColors[p.id] = resolveToHex(getProductColor(p));
+          });
+        }
+
         const mapDataToId = <T extends MonthlyRevenue | MonthlyUnitsSold>(data: T[]) => {
             return data.map(monthData => {
                 const newMonth: Record<string, any> = { month: monthData.month };
@@ -47,20 +55,12 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
             monthlyRevenueById: mapDataToId(monthlyRevenue),
             monthlyUnitsSoldById: mapDataToId(monthlyUnitsSold),
             seriesKeys: idKeys,
+            seriesHexColors: hexColors,
         };
-    }, [monthlyRevenue, monthlyUnitsSold, inputs.products]);
-    
-    const seriesColors = useMemo(() => {
-        if (!isPrint) return {};
-        const colorMap: Record<string, string> = {};
-        inputs.products.forEach(p => {
-            colorMap[p.productName] = resolveToHex(getProductColor(p));
-        });
-        return colorMap;
-    }, [isPrint, inputs.products]);
+    }, [isPrint, monthlyRevenue, monthlyUnitsSold, inputs.products]);
 
     return (
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6" data-revenue-root>
             <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
 
             <section>
@@ -115,13 +115,13 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-auto">
-                        <MonthlyTimelineChart 
+                        <MonthlyRevenueTimeline 
                             data={monthlyRevenueById} 
                             currency={currency} 
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
-                            inputs={inputs} 
-                            seriesColors={seriesColors}
+                            inputs={inputs}
+                            seriesHexColors={seriesHexColors}
                         />
                         </CardContent>
                     </Card>
@@ -130,13 +130,12 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-auto">
-                        <MonthlyTimelineChart 
-                            data={monthlyUnitsSoldById} 
-                            formatAs="number" 
+                        <MonthlyUnitsSoldChart 
+                            data={monthlyUnitsSoldById}
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
                             inputs={inputs} 
-                            seriesColors={seriesColors}
+                            seriesHexColors={seriesHexColors}
                         />
                         </CardContent>
                     </Card>
@@ -204,6 +203,35 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
     );
 }
 
+async function waitForRechartsReady(rootSelector: string, timeoutMs: number): Promise<boolean> {
+  const root = document.querySelector(rootSelector);
+  if (!root) return false;
+
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const interval = 60;
+    const maxAttempts = timeoutMs / interval;
+
+    const check = () => {
+      const svgs = Array.from(root.querySelectorAll('svg.recharts-surface'));
+      const allVisible = svgs.length >= 2 && svgs.every(s => {
+        try {
+          const box = s.getBBox();
+          return box.width > 0 && box.height > 0;
+        } catch { return false; }
+      });
+
+      if (allVisible || attempts >= maxAttempts) {
+        clearInterval(timer);
+        if (!allVisible) console.warn(`[waitForRechartsReady] Timeout for selector "${rootSelector}"`);
+        resolve(allVisible);
+      }
+      attempts++;
+    };
+    const timer = setInterval(check, interval);
+  });
+}
+
 export default function RevenuePage() {
     const { t, financials, inputs, ensureForecastReady } = useForecast();
     const router = useRouter();
@@ -212,9 +240,16 @@ export default function RevenuePage() {
     React.useEffect(() => {
         if (!isPrint) return;
         (async () => {
-            await signalWhenReady({ ensureForecastReady, root: document });
+            await ensureForecastReady();
+            await document.fonts?.ready;
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            window.dispatchEvent(new Event('resize'));
+            
+            const ok = await waitForRechartsReady('[data-revenue-root]', 4000);
+            (window as any).__REVENUE_READY__ = ok;
         })();
     }, [isPrint, ensureForecastReady]);
+
 
     if (financials.isLoading && !isPrint) {
         return <div data-report-root><RevenuePageSkeleton t={t} /></div>;
@@ -263,3 +298,4 @@ export default function RevenuePage() {
         </div>
     );
 }
+

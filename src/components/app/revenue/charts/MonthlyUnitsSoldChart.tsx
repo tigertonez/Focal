@@ -12,12 +12,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { formatCurrency } from '@/lib/utils';
+import { formatNumber } from '@/lib/utils';
 import type { EngineInput } from '@/lib/types';
 
-interface MonthlyRevenueTimelineProps {
+interface MonthlyUnitsSoldChartProps {
   data: any[];
-  currency?: string;
   isPrint?: boolean;
   seriesKeys: string[];
   inputs: EngineInput;
@@ -25,15 +24,14 @@ interface MonthlyRevenueTimelineProps {
   legendFontPx?: number;
 }
 
-export function MonthlyRevenueTimeline({
+export function MonthlyUnitsSoldChart({
   data,
-  currency,
   isPrint = false,
   seriesKeys,
   inputs,
   seriesHexColors = {},
   legendFontPx = 12,
-}: MonthlyRevenueTimelineProps) {
+}: MonthlyUnitsSoldChartProps) {
   const chartData = React.useMemo(
     () =>
       data.map(monthData => ({
@@ -62,11 +60,7 @@ export function MonthlyRevenueTimeline({
   }, [seriesKeys, products, isPrint, seriesHexColors]);
 
   const valueFormatter = (value: number) => {
-    const currencySymbol = currency === 'EUR' ? '€' : '$';
-    if (Math.abs(value) >= 1000) {
-      return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
-    }
-    return formatCurrency(Number(value), currency || 'USD', true);
+    return formatNumber(value);
   };
   
   const tooltipFormatter = (value: number, name: string) => {
@@ -74,7 +68,7 @@ export function MonthlyRevenueTimeline({
     const productName = product?.productName || name;
     const color = isPrint ? seriesHexColors[name] : product?.color;
 
-    const formattedValue = formatCurrency(Number(value), currency || 'USD');
+    const formattedValue = formatNumber(value);
     return (
         <div className="flex items-center">
             <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }}/>
@@ -98,7 +92,7 @@ export function MonthlyRevenueTimeline({
   const chartKey = isPrint ? 'print' : 'live';
 
   return (
-    <div data-revenue-chart="revenue-timeline" style={{height: chartHeight, width: '100%', overflow: 'visible'}}>
+    <div data-revenue-chart="units-sold" style={{height: chartHeight, width: '100%', overflow: 'visible'}}>
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
