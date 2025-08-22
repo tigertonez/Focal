@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Download, Loader2, FileJson, Copy, FileDown } from 'lucide-react';
-import { captureRouteAsA4Pages, DEFAULT_A4, type ImageSlice, popLastRouteDiag } from '@/lib/pdfCapture';
+import { captureFullReport } from '@/lib/pdfCapture';
 import { useForecast } from '@/context/ForecastContext';
 
 const stopAll = (e: React.MouseEvent) => {
@@ -13,29 +13,26 @@ const stopAll = (e: React.MouseEvent) => {
   (e.nativeEvent as any)?.stopImmediatePropagation?.();
 };
 
-const ROUTES = ['/inputs','/revenue','/costs','/profit','/cash-flow','/summary'] as const;
-
-type RouteStatus = 'waiting'|'capturing'|'sliced'|'done'|'failed';
-
-function generateRunId() {
-  return 'run_' + Math.random().toString(36).substr(2, 9);
-}
-
 export function DownloadReportButton() {
   const [busy, setBusy] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [jsonOpen, setJsonOpen] = React.useState(false);
   const [jsonText, setJsonText] = React.useState<string>('');
-  const [routeStates, setRouteStates] = React.useState<Record<string, RouteStatus>>(
-    Object.fromEntries(ROUTES.map(r=>[r,'waiting'])) as any
-  );
   const [progress, setProgress] = React.useState<number>(0);
   const [log, setLog] = React.useState<string[]>([]);
   const { toast } = useToast();
   const { locale } = useForecast();
+  const [status, setStatus] = React.useState<string>('');
+  const [isPaused, setIsPaused] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    const h = () => setIsPaused(document.visibilityState === 'hidden');
+    h();
+    document.addEventListener('visibilitychange', h);
+    return () => document.removeEventListener('visibilitychange', h);
+  }, []);
 
   const appendLog = (s:string)=> setLog(l => [...l, s].slice(-100));
-  const setState = (r:string, st:RouteStatus) => setRouteStates(s => ({...s, [r]: st}));
 
   async function handlePdfRequest(payload: any, isProbe: boolean, title: string) {
     const response = await fetch('/api/print/pdf', {
@@ -75,69 +72,34 @@ export function DownloadReportButton() {
     setBusy(true);
     setProgress(0);
     setLog([]);
-    setRouteStates(Object.fromEntries(ROUTES.map(r=>[r,'waiting'])) as any);
-    const runId = generateRunId();
+    setStatus('Starting export...');
 
     try {
-      const allSlices: ImageSlice[] = [];
-      const lang = (locale ?? 'en') as 'en'|'de';
-      const clientDiag = { runId, startTs: new Date().toISOString(), routes: [] as any[], totals: { slices: 0, kb: 0 } };
+      const { slices, diag } = await captureFullReport({
+        lang: (locale ?? 'en') as 'en'|'de',
+        onProgress: (p) => setProgress(p * 100),
+        onLog: appendLog,
+        onStatus: (s) => setStatus(s),
+      });
 
-      const routeWeight = 100 / ROUTES.length;
-      for (const [i, route] of ROUTES.entries()) {
-        setState(route, 'capturing');
-        appendLog(`→ Capturing ${route} ...`);
-
-        let pages: ImageSlice[] = [];
-        try {
-          const t0 = performance.now();
-          pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4, { seq: i + 1 });
-          if (pages.length === 0) {
-            appendLog(`   (retrying ${route})`);
-            await new Promise(r=>setTimeout(r, 200));
-            pages = await captureRouteAsA4Pages(route, lang, DEFAULT_A4, { seq: i + 1 });
-          }
-          const meta = popLastRouteDiag() || null;
-          clientDiag.routes.push(meta ? { ...meta } : { route, note:'no-meta' });
-          setState(route, pages.length > 0 ? 'sliced' : 'failed');
-          const dt = Math.round(performance.now() - t0);
-          appendLog(`   ${route}: ${pages.length} slices (${dt}ms)`);
-        } catch (e:any) {
-          setState(route, 'failed');
-          appendLog(`   ${route} failed: ${e.message}`);
-        }
-
-        allSlices.push(...pages);
-        setProgress(p => Math.min(100, p + routeWeight));
-      }
-
-      const seen = new Set<string>();
-      const deduped: ImageSlice[] = [];
-      for (const s of allSlices) {
-        if (!s?.md5 || seen.has(s.md5)) continue;
-        seen.add(s.md5);
-        deduped.push(s);
-      }
-      const valid = deduped.filter(s => s?.imageBase64 && s.imageBase64.length > 2000);
-      clientDiag.totals.slices = valid.length;
-      clientDiag.totals.kb = Math.round(valid.reduce((a,s)=>a + s.imageBase64.length,0) * 3/4/1024);
-
-      if (valid.length === 0) {
+      if (slices.length === 0) {
         if(isProbe) {
-          const payload = { images: valid, page: 'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt, clientDiag };
-          await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+          await handlePdfRequest({ images: slices, clientDiag: diag }, isProbe, 'FullForecastReport');
         }
         throw new Error('No printable content captured from any route.');
       }
-
-      const payload = { images: valid, page: 'A4', dpi: DEFAULT_A4.dpi, marginPt: DEFAULT_A4.marginPt, clientDiag };
-      await handlePdfRequest(payload, isProbe, 'FullForecastReport');
+      
+      setStatus('Finalizing PDF...');
+      await handlePdfRequest({ images: slices, clientDiag: diag }, isProbe, 'FullForecastReport');
 
       setProgress(100);
-      Object.keys(routeStates).forEach(r => setState(r,'done'));
-      if (!isProbe) setOpen(false);
+      setStatus('Done!');
+      if (!isProbe) {
+        setTimeout(() => setOpen(false), 1000);
+      }
     } catch (err:any) {
       toast({ variant:'destructive', title:'Full Report Error', description: err.message });
+      setStatus(`Error: ${err.message}`);
     } finally {
       setBusy(false);
     }
@@ -175,20 +137,21 @@ export function DownloadReportButton() {
         </DialogHeader>
 
         <div className="space-y-3">
+          <div className="text-xs text-muted-foreground">
+            {isPaused
+              ? (locale === 'de'
+                  ? 'Pausiert: Bitte diesen Tab wieder in den Vordergrund bringen, damit der Export fortgesetzt wird.'
+                  : 'Paused: Please bring this tab to the front to resume export.')
+              : (locale === 'de'
+                  ? 'Hinweis: Bitte diesen Tab während des Exports im Vordergrund lassen. Wir pausieren automatisch, wenn Sie wegklicken.'
+                  : 'Tip: Keep this tab visible during export. We pause automatically if you switch away.')}
+          </div>
           <div className="h-2 w-full rounded bg-muted relative overflow-hidden">
             <div className="h-2 absolute left-0 top-0 rounded bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
-
-          <ul className="grid grid-cols-2 gap-2 text-sm">
-            {ROUTES.map(r => (
-              <li key={r} className="flex items-center justify-between rounded border px-2 py-1">
-                <span className="truncate">{r}</span>
-                <span className="text-xs rounded px-2 py-0.5 bg-muted">
-                  {routeStates[r]}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="text-xs h-4">
+            {status}
+          </div>
 
           <div className="h-28 overflow-auto rounded border bg-muted/30 p-2 text-xs font-mono">
             {log.map((l,i)=><div key={i}>{l}</div>)}
@@ -205,7 +168,7 @@ export function DownloadReportButton() {
         </div>
 
         <DialogFooter>
-          <Button variant="secondary" type="button" onClick={(e)=>{ stopAll(e); setOpen(false); }}>Close</Button>
+          <Button variant="secondary" type="button" disabled={busy} onClick={(e)=>{ stopAll(e); setOpen(false); }}>Close</Button>
         </DialogFooter>
       </DialogContent>
 
