@@ -98,6 +98,51 @@ function createPlaceholder(route: Route): ImageSlice {
     };
 }
 
+async function isImageMostlyBlank(dataUrl: string): Promise<boolean> {
+  if (!dataUrl) return true;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) { resolve(false); return; }
+        ctx.drawImage(img, 0, 0);
+
+        // sample 100 random pixels (fast, robust)
+        let blank = 0, samples = 100;
+        for (let i = 0; i < samples; i++) {
+          const x = (Math.random() * img.width) | 0;
+          const y = (Math.random() * img.height) | 0;
+          const p = ctx.getImageData(x, y, 1, 1).data;
+          const white = (p[0] > 250 && p[1] > 250 && p[2] > 250);
+          const transparent = (p[3] < 10);
+          if (white || transparent) blank++;
+        }
+        resolve(blank / samples > 0.98);
+      } catch { resolve(true); }
+    };
+    img.onerror = () => resolve(true);
+    img.src = dataUrl;
+  });
+}
+
+async function waitForSummaryReady(doc: Document, { timeoutMs = 1600 } = {}) {
+  try {
+    const root = doc.querySelector('[data-report-root]') as HTMLElement || doc.body;
+    const t0 = performance.now();
+    while (performance.now() - t0 < timeoutMs) {
+      const rect = root.getBoundingClientRect();
+      const h = Math.max(rect.height, (root as any).scrollHeight || 0);
+      const textLen = (root.innerText || '').trim().length;
+      if (h >= 1300 && textLen >= 400) break;
+      await new Promise(r => setTimeout(r, 120));
+    }
+  } catch {}
+}
+
+
 export async function captureFullReport({ lang = 'en', onLog, onProgress, onStatus }: { lang: 'en' | 'de', onLog?: (msg: string) => void, onProgress?: (p: number) => void, onStatus?: (s: string)=>void }) {
     const diag: Diag = {
       runId: 'run_' + Math.random().toString(36).substr(2, 9),
@@ -149,12 +194,16 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
             try { doc.documentElement.classList.add('pdf-freeze'); } catch {}
 
             rootNode = getRouteRoot(win);
-
+            
             try { await doc.fonts?.ready; } catch {}
             try { win.dispatchEvent(new Event('resize')); } catch {}
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
             try { win.dispatchEvent(new Event('resize')); } catch {}
             await new Promise(r => setTimeout(r, 100));
+
+            if (route === '/summary') {
+              try { await waitForSummaryReady(doc, { timeoutMs: 1600 }); } catch {}
+            }
 
             if (rootNode.getBoundingClientRect().height < 1000) {
               prevMinH = rootNode.style.minHeight;
@@ -190,62 +239,69 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
               routeDiag.patchedContainers = toPatch.length;
             } catch { routeDiag.patchedContainers = 0; }
 
-            // Attempt 1
             dataUrl = await capturePrimary(rootNode);
 
-            let retriedSvgEmpty = false;
+            let bad = false;
             try {
-              const svgLooksEmpty = svgs.length > 0 && svgs.every(svg => {
-                try {
-                  const box = svg.getBBox();
-                  const hasShapes = svg.querySelector('path,rect,circle,line,polyline,polygon');
-                  return (box.width > 0 && box.height > 0) && !hasShapes;
-                } catch { return true; } // if getBBox throws, treat as not ready
-              });
-              if (svgLooksEmpty) {
-                // short settle and retry primary exactly once
-                retriedSvgEmpty = true;
+                const raw = rawFromDataUrl(dataUrl);
+                const kb = Math.round(raw.length * 3/4/1024);
+                const looksBlank = await isImageMostlyBlank(dataUrl);
+                bad = (kb < MIN_KB_OK) || looksBlank;
+                routeDiag.blankPrimary = !!looksBlank;
+            } catch { bad = true; }
+
+            if (bad) {
+                await ensureVisiblePoint();
+                // one deterministic mini-settle + retry primary
                 try { win.dispatchEvent(new Event('resize')); } catch {}
                 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
                 await new Promise(r => setTimeout(r, 80));
                 dataUrl = await capturePrimary(rootNode);
-              }
-            } catch {}
-            routeDiag.retriedSvgEmpty = retriedSvgEmpty;
 
+                // re-validate
+                try {
+                    const raw2 = rawFromDataUrl(dataUrl);
+                    const kb2 = Math.round(raw2.length * 3/4/1024);
+                    const blank2 = await isImageMostlyBlank(dataUrl);
+                    routeDiag.blankPrimaryRetry = !!blank2;
+                    bad = (kb2 < MIN_KB_OK) || blank2;
+                } catch { bad = true; }
+            }
 
-            let raw = rawFromDataUrl(dataUrl);
-            let kb = Math.round(raw.length * 3 / 4 / 1024);
-            let isValid = kb >= MIN_KB_OK;
-            
-            // Fallback
-            if (!isValid) {
-              await ensureVisiblePoint();
-              onLog?.(`   - Fallback to html2canvas for ${route}`);
-              onStatus?.(`↻ Fallback (html2canvas) for ${route}`);
-              try {
-                  const freshNode = getRouteRoot(win);
-                  const localH2C = (freshNode.ownerDocument?.defaultView as any)?.html2canvas || html2canvas;
-                  const canvas = await localH2C(freshNode, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                  dataUrl = canvas.toDataURL('image/png');
-                  raw = rawFromDataUrl(dataUrl);
-                  kb = Math.round(raw.length * 3/4/1024);
-                  isValid = kb >= MIN_KB_OK;
-                  method = 'html2canvas';
-              } catch (e: any) {
-                  onLog?.(`   - Fallback failed for ${route}: ${e.message}`);
-                  method = 'fallback-error';
-                  dataUrl = '';
-              }
+            // if still bad, fall back to html2canvas (as you already do)
+            if (bad) {
+                await ensureVisiblePoint();
+                onLog?.(`   - Fallback to html2canvas for ${route}`);
+                onStatus?.(`↻ Fallback (html2canvas) for ${route}`);
+                try {
+                    const freshNode = getRouteRoot(win);
+                    const localH2C = (freshNode.ownerDocument?.defaultView as any)?.html2canvas || html2canvas;
+                    const canvas = await localH2C(freshNode, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                    dataUrl = canvas.toDataURL('image/png');
+
+                    // validate fallback once
+                    const raw3 = rawFromDataUrl(dataUrl);
+                    const kb3 = Math.round(raw3.length * 3/4/1024);
+                    const blank3 = await isImageMostlyBlank(dataUrl);
+                    routeDiag.blankFallback = !!blank3;
+                    bad = (kb3 < MIN_KB_OK) || blank3;
+                    method = 'html2canvas';
+                } catch (e: any) {
+                    onLog?.(`   - Fallback failed for ${route}: ${e.message}`);
+                    method = 'fallback-error';
+                    dataUrl = '';
+                    bad = true;
+                }
             }
             
-            if (dataUrl && isValid) {
+            if (dataUrl && !bad) {
                 onStatus?.(`✓ Captured ${route}`);
-                const md5 = Md5.hashStr(raw);
+                const finalRaw = rawFromDataUrl(dataUrl);
+                const md5 = Md5.hashStr(finalRaw);
                 const w = CAPTURE_WIDTH_PX;
                 const h = Math.round(w / A4_ASPECT_RATIO);
-                routeDiag.capture = { method, dataUrlKB: kb };
-                return { imageBase64: raw, wPx: w, hPx: h, routeName: route, pageIndex: 0, md5 };
+                routeDiag.capture = { method, dataUrlKB: Math.round(finalRaw.length * 3 / 4 / 1024) };
+                return { imageBase64: finalRaw, wPx: w, hPx: h, routeName: route, pageIndex: 0, md5 };
             }
 
             return null; // Return null if all attempts failed to produce a valid image
@@ -307,6 +363,34 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
             if (routeDiag) routeDiag.placeholder = true;
         }
         byRoute[route] = slice;
+    }
+
+    const suspect: Route[] = [];
+    for (const r of ROUTES) {
+      const s = byRoute[r];
+      if (!s) continue;
+      try {
+        const url = 'data:image/png;base64,' + s.imageBase64;
+        const blank = await isImageMostlyBlank(url);
+        if (blank) suspect.push(r);
+      } catch {}
+    }
+
+    if (suspect.length > 0) {
+      await ensureVisiblePoint();
+      for (const r of suspect) {
+        onLog?.(`! Sanity re-capture for ${r} (looked blank)`);
+        onStatus?.(`↻ Re-capturing ${r} (blank)`);
+        const again = await captureSingleRoute(r, 3);
+        if (again) {
+          byRoute[r] = again;
+        } else if (!byRoute[r]) {
+          byRoute[r] = createPlaceholder(r);
+          diag.guarantee?.placeholdersAdded?.push?.(r);
+          const d = diag.routes.find(x => x.route === r);
+          if (d) d.placeholder = true;
+        }
+      }
     }
 
     const finalSlices = ROUTES.map(r => byRoute[r]).filter((s): s is ImageSlice => !!s);
