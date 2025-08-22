@@ -128,7 +128,7 @@ export function MonthlyRevenueTimeline({
               align="center"
               iconType="square"
               iconSize={10}
-              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 4, position: 'relative' }}
+              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 0, position: 'relative' }}
             />
             
             {seriesKeys.map(key => {
