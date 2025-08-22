@@ -239,18 +239,17 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
               />
           </div>
             <div className="space-y-1 md:col-span-2">
-              <Label className="text-xs flex items-center gap-1.5">
-                  {t.inputs.products.costModel.title}
+              <div className="flex items-center gap-1.5 h-5 mb-1">
+                  <Label className="text-xs">{t.inputs.products.costModel.title}</Label>
                   {renderHelpIcon('costModel', 'costModel')}
-              </Label>
+              </div>
               <Controller
                 name={`products.${index}.costModel`}
                 control={control}
                 defaultValue="batch"
                 render={({ field }) => (
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-2 h-9">
-                        <div
-                          onClick={() => field.onChange('batch')}
+                        <Label
                           className={cn(
                             "flex items-center justify-center gap-2 rounded-md border p-2 text-sm font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground",
                             field.value === 'batch' && "bg-primary text-primary-foreground"
@@ -258,9 +257,8 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                         >
                             <RadioGroupItem value="batch" id={`costModel-batch-${index}`} className="sr-only" />
                             {t.inputs.products.costModel.batch}
-                        </div>
-                        <div
-                          onClick={() => field.onChange('monthly')}
+                        </Label>
+                        <Label
                           className={cn(
                             "flex items-center justify-center gap-2 rounded-md border p-2 text-sm font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground",
                             field.value === 'monthly' && "bg-primary text-primary-foreground"
@@ -268,7 +266,7 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                         >
                             <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} className="sr-only" />
                              {t.inputs.products.costModel.monthly}
-                        </div>
+                        </Label>
                     </RadioGroup>
                 )}
               />
