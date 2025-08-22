@@ -250,21 +250,23 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 render={({ field }) => (
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-2 h-9">
                         <Label
+                          htmlFor={`costModel-batch-${index}`}
                           className={cn(
                             "flex items-center justify-center gap-2 rounded-md border p-2 text-sm font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground",
                             field.value === 'batch' && "bg-primary text-primary-foreground"
                           )}
                         >
-                            <RadioGroupItem value="batch" id={`costModel-batch-${index}`} className="sr-only" />
+                            <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
                             {t.inputs.products.costModel.batch}
                         </Label>
                         <Label
+                          htmlFor={`costModel-monthly-${index}`}
                           className={cn(
                             "flex items-center justify-center gap-2 rounded-md border p-2 text-sm font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground",
                             field.value === 'monthly' && "bg-primary text-primary-foreground"
                           )}
                         >
-                            <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} className="sr-only" />
+                            <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
                              {t.inputs.products.costModel.monthly}
                         </Label>
                     </RadioGroup>
