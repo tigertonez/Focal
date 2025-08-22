@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import type { EngineInput } from '@/lib/types';
+import { resolveToHex } from '@/lib/printColors';
 
 interface MonthlyRevenueTimelineProps {
   data: any[];
@@ -128,7 +129,9 @@ export function MonthlyRevenueTimeline({
               iconType="circle"
               iconSize={10}
               wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 8, position: 'relative' }}
-              content={isPrint ? undefined : (props => <Legend.defaultProps.content {...props} />)}
+              // In print mode, we let Recharts render the default legend content based on the Bar props.
+              // In the live UI, we also let it render the default, as providing 'undefined' achieves this.
+              // The previous code `(props => <Legend.defaultProps.content {...props} />)` was incorrect.
             />
             
             {seriesKeys.map(key => {
