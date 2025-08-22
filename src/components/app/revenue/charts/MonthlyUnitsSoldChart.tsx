@@ -67,7 +67,6 @@ export function MonthlyUnitsSoldChart({
     const product = products.find(p => p.id === name);
     const productName = product?.productName || name;
     const color = isPrint ? seriesHexColors[name] : product?.color;
-
     const formattedValue = formatNumber(value);
     return (
         <div className="flex items-center">
@@ -96,7 +95,7 @@ export function MonthlyUnitsSoldChart({
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
-            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 8 }}
+            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 0 }}
             barCategoryGap="20%"
         >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -122,6 +121,7 @@ export function MonthlyUnitsSoldChart({
               iconType="square"
               iconSize={10}
               wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 0, position: 'relative' }}
+              payload={legendPayload}
             />
             
             {seriesKeys.map(key => {
