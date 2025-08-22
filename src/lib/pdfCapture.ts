@@ -1,3 +1,4 @@
+
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
@@ -44,6 +45,7 @@ type RouteDiag = {
   errors: string[];
   specialSeriesLocked?: string[];
   specialColorsApplied?: boolean;
+  revenuePrintDiag?: { svgCount: number, containerHeights: number[], seriesKeys: string[], resolvedHex: Record<string,string>, waitSucceeded: boolean, waitMs: number };
   revenueColorLock?: any;
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
@@ -53,44 +55,6 @@ export function popLastRouteDiag(): RouteDiag | null {
   return d;
 }
 // ----------------------------
-
-async function lockRevenueBarColors(doc: Document) {
-  const root = doc.querySelector('[data-report-root]');
-  if (!root) return { locked: false, charts: 0, nodes: 0, samples: [] };
-
-  const charts = Array.from(root.querySelectorAll('[data-revenue-chart="bars"]'));
-  if (charts.length === 0) return { locked: false, charts: 0, nodes: 0, samples: [] };
-
-  let nodes = 0;
-  const samples: any[] = [];
-  const colorMap = getRevenueSeriesHexMap(doc);
-
-  for (const chartEl of charts) {
-    const seriesGroups = Array.from(chartEl.querySelectorAll('g.recharts-layer.recharts-bar'));
-    
-    const chartKey = (chartEl as HTMLElement).dataset.chartKey || 'unknown';
-    const names = seriesGroups.map(g => g.getAttribute('aria-label') || '').filter(Boolean);
-    const hex = names.map(name => colorMap[name] || '#777777');
-    samples.push({ key: chartKey, names, hex });
-
-    seriesGroups.forEach((g, i) => {
-      const seriesName = g.getAttribute('aria-label');
-      if (!seriesName) return;
-
-      const color = colorMap[seriesName];
-      if (!color) return;
-      
-      g.querySelectorAll('g.recharts-bar-rectangle rect, g.recharts-bar-rectangle path').forEach(el => {
-        el.setAttribute('fill', color);
-        el.setAttribute('data-color-locked', '1');
-        nodes++;
-      });
-    });
-  }
-
-  return { locked: nodes > 0, charts: charts.length, nodes, samples };
-}
-
 
 async function waitIframeReady(win: Window) {
   let tries = 0;
@@ -199,90 +163,7 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
   return frozenNodeCount;
 }
 
-async function lockRevenueColorsInIframe(doc: Document): Promise<{ locked: boolean; series: string[]; nodes: number; legendItemsFound: number; barGroupsFound: number; legendScope: 'scoped' }> {
-    const root = doc.querySelector('[data-report-root]');
-    if (!root) {
-      return { locked: false, series: [], nodes: 0, legendItemsFound: 0, barGroupsFound: 0, legendScope: 'scoped' };
-    }
-  
-    // Polling wait for charts to be ready
-    let attempts = 0;
-    while (attempts < 40) {
-      const surfaces = root.querySelectorAll('svg.recharts-surface');
-      const legends = root.querySelectorAll('.recharts-legend-item');
-      if (surfaces.length > 0 && legends.length > 0 && Array.from(surfaces).every(s => s.getBoundingClientRect().height > 0)) {
-        break;
-      }
-      await sleep(50);
-      attempts++;
-    }
-  
-    let nodes = 0;
-    let totalLegendItemsFound = 0;
-    let totalBarGroupsFound = 0;
-    const allLegendTexts: string[] = [];
-  
-    const containers = root.querySelectorAll('.recharts-wrapper');
-  
-    for (const container of Array.from(containers)) {
-      const legendItems = container.querySelectorAll('.recharts-default-legend .recharts-legend-item, .recharts-legend-item');
-      totalLegendItemsFound += legendItems.length;
-  
-      const legendColors: string[] = [];
-      const legendTexts: string[] = [];
-  
-      legendItems.forEach(item => {
-        const icon = item.querySelector('path, rect, circle, svg, .recharts-legend-icon') || item;
-        const c = getComputedStyle(icon);
-        const color = c.fill !== 'none' && c.fill !== 'transparent' ? c.fill : (c.stroke !== 'none' ? c.stroke : getComputedStyle(item).color || getComputedStyle(item).backgroundColor);
-        if (color && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') {
-          legendColors.push(color);
-        }
-        const textEl = item.querySelector('span');
-        if (textEl?.textContent) {
-            legendTexts.push(textEl.textContent.trim());
-        }
-      });
-  
-      if (legendColors.length === 0) continue;
-      
-      if(!allLegendTexts.length) allLegendTexts.push(...legendTexts);
-  
-      const barGroups = container.querySelectorAll('g.recharts-bar');
-      totalBarGroupsFound += barGroups.length;
-      barGroups.forEach((g, i) => {
-        const color = legendColors[i % legendColors.length];
-        g.querySelectorAll('path, rect').forEach(el => {
-          el.setAttribute('fill', color);
-          nodes++;
-        });
-      });
-  
-      const pieSectors = container.querySelectorAll('.recharts-pie .recharts-pie-sector path');
-      pieSectors.forEach((p, i) => {
-        const color = legendColors[i % legendColors.length];
-        p.setAttribute('fill', color);
-        nodes++;
-      });
-    }
-  
-    if (nodes > 0) {
-      // Safety net freeze after locking
-      freezeSvgColors(root as HTMLElement);
-    }
-  
-    return {
-      locked: nodes > 0,
-      series: allLegendTexts,
-      nodes,
-      legendItemsFound: totalLegendItemsFound,
-      barGroupsFound: totalBarGroupsFound,
-      legendScope: 'scoped'
-    };
-}
-
-
-export async function loadRouteInIframe(path: string, locale: 'en'|'de'):
+async function loadRouteInIframe(path: string, locale: 'en'|'de'):
 Promise<{win:Window,doc:Document,cleanup:()=>void}> {
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
@@ -441,6 +322,37 @@ async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:n
   return out;
 }
 
+async function waitForRevenueCharts(doc: Document, timeoutMs = 3000): Promise<{succeeded: boolean, duration: number}> {
+    const started = performance.now();
+    let attempts = 0;
+    const interval = 100;
+    const maxAttempts = timeoutMs / interval;
+
+    const check = () => {
+        const svgs = Array.from(doc.querySelectorAll('[data-chart="revenue-timeline"] svg.recharts-surface, [data-chart="units-sold"] svg.recharts-surface'));
+        if (svgs.length < 2) return false;
+        return svgs.every(s => {
+            try {
+                const box = s.getBBox();
+                return box.width > 0 && box.height > 0;
+            } catch {
+                return false;
+            }
+        });
+    };
+
+    while (attempts < maxAttempts) {
+        if (check()) {
+            return { succeeded: true, duration: performance.now() - started };
+        }
+        await sleep(interval);
+        attempts++;
+    }
+    console.warn('[pdfCapture] Timeout waiting for revenue charts to be ready.');
+    return { succeeded: false, duration: performance.now() - started };
+}
+
+
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}, diagExtras: { seq: number }): Promise<ImageSlice[]> {
   const o = { ...DEFAULT_A4, ...opts };
   const pxPerPt = o.dpi / PT_PER_IN;
@@ -464,31 +376,33 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
 
     diag.readyMs = await settleInIframe(doc, root);
     
-    await sleep(100);
-
+    // Route-specific wait for Revenue page charts
     if (path === '/revenue') {
-        const rc = await lockRevenueBarColors(doc);
-        diag.revenueColorLock = {
-          locked: rc.locked,
-          charts: rc.charts,
-          nodes: rc.nodes,
-          samples: rc.samples,
+        const { succeeded, duration } = await waitForRevenueCharts(doc);
+        const { resolveToHex } = await import('@/lib/printColors');
+        const { getProductColor } = await import('@/lib/utils');
+        const productData = (win as any)?.__NEXT_DATA__?.props?.pageProps?.inputs?.products || [];
+        
+        const seriesKeys = productData.map((p: any) => p.productName);
+        const resolvedHex = seriesKeys.reduce((acc: Record<string, string>, name: string) => {
+            const product = productData.find((p:any) => p.productName === name);
+            if (product) {
+                acc[name] = resolveToHex(getProductColor(product));
+            }
+            return acc;
+        }, {});
+
+        diag.revenuePrintDiag = {
+            svgCount: doc.querySelectorAll('[data-report-root] svg.recharts-surface').length,
+            containerHeights: Array.from(doc.querySelectorAll('[data-revenue-chart] > div')).map(el => (el as HTMLElement).offsetHeight),
+            seriesKeys: seriesKeys,
+            resolvedHex: resolvedHex,
+            waitSucceeded: succeeded,
+            waitMs: Math.round(duration),
         };
     }
     
-    // Fallback/general color freeze
-    try {
-        diag.frozenNodeCount = freezeSvgColors(root);
-        diag.colorsFrozen = diag.frozenNodeCount > 0;
-        diag.paletteSource = 'iframe-computed';
-        
-        if (path.includes('/costs')) {
-            diag.specialSeriesLocked = Object.keys(SPECIAL_SERIES_LOCK);
-            diag.specialColorsApplied = true;
-        }
-    } catch (e: any) {
-        diag.errors.push(`ColorFreezeFailed: ${e.message || String(e)}`);
-    }
+    await sleep(100);
 
     diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
 
@@ -550,5 +464,3 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     cleanup();
   }
 }
-
-    

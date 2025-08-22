@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Users, Target, ArrowRight, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
 import type { EngineOutput, EngineInput, Product, MonthlyRevenue, MonthlyUnitsSold } from '@/lib/types';
-import { MonthlyTimelineChart } from '@/components/app/costs/charts/MonthlyTimelineChart';
+import { MonthlyTimelineChart } from '@/components/app/revenue/charts/MonthlyRevenueTimeline';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
@@ -18,6 +19,8 @@ import { RevenueInsights } from '@/components/app/revenue/RevenueInsights';
 import { useForecast } from '@/context/ForecastContext';
 import { usePrintMode, signalWhenReady } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
+import { resolveToHex } from '@/lib/printColors';
+
 
 function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput; inputs: EngineInput, t: any, isPrint?: boolean }) {
     const router = useRouter();
@@ -46,14 +49,15 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
             seriesKeys: idKeys,
         };
     }, [monthlyRevenue, monthlyUnitsSold, inputs.products]);
-
-    // Pass inputs to the window for the print utility to access them.
-    useEffect(() => {
-        if (isPrint) {
-            (window as any).__NEXT_DATA__.props.pageProps.inputs = inputs;
-        }
-    }, [isPrint, inputs]);
-
+    
+    const seriesColors = useMemo(() => {
+        if (!isPrint) return {};
+        const colorMap: Record<string, string> = {};
+        inputs.products.forEach(p => {
+            colorMap[p.productName] = resolveToHex(getProductColor(p));
+        });
+        return colorMap;
+    }, [isPrint, inputs.products]);
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -118,6 +122,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
                             inputs={inputs} 
+                            seriesColors={seriesColors}
                         />
                         </CardContent>
                     </Card>
@@ -133,6 +138,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
                             inputs={inputs} 
+                            seriesColors={seriesColors}
                         />
                         </CardContent>
                     </Card>
@@ -259,5 +265,3 @@ export default function RevenuePage() {
         </div>
     );
 }
-
-    

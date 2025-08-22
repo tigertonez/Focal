@@ -16,10 +16,8 @@ import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import type { EngineInput, Product } from '@/lib/types';
 import { useForecast } from '@/context/ForecastContext';
 
-interface MonthlyRevenueTimelineProps {
+interface MonthlyUnitsSoldChartProps {
   data: any[];
-  currency?: string;
-  formatAs?: 'currency' | 'number';
   isAnimationActive?: boolean;
   isPrint?: boolean;
   seriesKeys: string[];
@@ -27,16 +25,14 @@ interface MonthlyRevenueTimelineProps {
   seriesColors?: Record<string, string>;
 }
 
-export function MonthlyTimelineChart({
+export function MonthlyUnitsSoldChart({
   data,
-  currency,
-  formatAs = 'currency',
   isAnimationActive = true,
   isPrint = false,
   seriesKeys,
   inputs,
   seriesColors = {},
-}: MonthlyRevenueTimelineProps) {
+}: MonthlyUnitsSoldChartProps) {
   const { t } = useForecast();
 
   const chartData = React.useMemo(
@@ -67,14 +63,7 @@ export function MonthlyTimelineChart({
   }, [seriesKeys, products, isPrint, seriesColors]);
 
   const valueFormatter = (value: number) => {
-    if (formatAs === 'number') {
-      return formatNumber(value);
-    }
-    const currencySymbol = currency === 'EUR' ? '€' : '$';
-    if (Math.abs(value) >= 1000) {
-      return `${currencySymbol}${(value / 1000).toFixed(0)}k`;
-    }
-    return formatCurrency(Number(value), currency || 'USD', true);
+    return formatNumber(value);
   };
   
   const tooltipFormatter = (value: number, name: string) => {
@@ -82,7 +71,7 @@ export function MonthlyTimelineChart({
     const productName = product?.productName || name;
     const color = isPrint ? seriesColors[productName] : getProductColor(product || {id: name});
 
-    const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
+    const formattedValue = formatNumber(value);
     return (
         <div className="flex items-center">
             <div className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }}/>
@@ -105,7 +94,7 @@ export function MonthlyTimelineChart({
   const chartHeight = isPrint ? 380 : 320;
 
   return (
-    <div data-revenue-chart="bars" data-chart-key={formatAs === 'currency' ? 'revenue-timeline' : 'units-sold'} style={{height: chartHeight, overflow: isPrint ? 'visible' : 'hidden'}}>
+    <div data-revenue-chart="bars" data-chart-key="units-sold" style={{height: chartHeight, overflow: isPrint ? 'visible' : 'hidden'}}>
         <ResponsiveContainer width="100%" height={chartHeight}>
         <BarChart
             data={chartData}
@@ -115,10 +104,10 @@ export function MonthlyTimelineChart({
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis
-            tickLine={false}
-            axisLine={false}
-            fontSize={12}
-            tickFormatter={valueFormatter}
+              tickLine={false}
+              axisLine={false}
+              fontSize={12}
+              tickFormatter={valueFormatter}
             />
             <Tooltip 
               contentStyle={{
