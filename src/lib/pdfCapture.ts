@@ -1,12 +1,8 @@
-
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import { Md5 } from 'ts-md5';
-import { isSpecialSeries, SPECIAL_SERIES_LOCK } from './specialSeries';
-import { getProductColor } from './utils';
-import { resolveToHex } from './printColors';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
@@ -29,22 +25,23 @@ const rawFromDataUrl = (url:string)=> {
 type RouteDiag = {
   route: string;
   seq: number;
-  anchorFound: boolean;
-  usedDom: 'clone' | 'original';
-  usedFallback: 'none' | 'tall' | 'html2canvas';
-  missingRoot: boolean;
-  contentWidthPx: number;
-  rechartsCount: number;
-  readyMs: number;
-  durationMs: number;
-  pages: number;
-  slices: number;
-  sliceDims: Array<{w:number;h:number;kb:number;md5:string}>;
-  errors: string[];
-  revenuePrintDiag?: { svgCount: number, containerHeights: number[], seriesKeys: string[], resolvedHex: Record<string,string>, waitSucceeded: boolean, waitMs: number };
+  usedHandshake: boolean;
+  ready: boolean;
+  waitMs: number;
+  svgCount: number;
+  rechartsHeights: number[];
+  patchedContainers: number;
+  capture: {
+    attempts: number;
+    method: 'html-to-image' | 'html2canvas' | 'failed';
+    dataUrlKB: number;
+  };
+  dedupe: {
+    withinRouteDropped: number;
+  };
 };
-let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
-export function popLastRouteDiag(): RouteDiag | null {
+let __LAST_ROUTE_DIAG__: Partial<RouteDiag> | null = null;
+export function popLastRouteDiag(): Partial<RouteDiag> | null {
   const d = __LAST_ROUTE_DIAG__;
   __LAST_ROUTE_DIAG__ = null;
   return d;
@@ -61,45 +58,67 @@ async function waitIframeReady(win: Window) {
 
 /**
  * Robustly waits for the iframe content to be ready for capture.
- * It waits for fonts and polls for chart and layout stability.
  */
-async function settleInIframe(doc: Document, root: HTMLElement): Promise<number> {
-    const started = performance.now();
-    try { await doc.fonts?.ready; } catch {}
+async function settleInIframe(win: Window, doc: Document, { timeoutMs = 2500 } = {}): Promise<Partial<RouteDiag>> {
+  const started = performance.now();
+  const diag: Partial<RouteDiag> = {
+    usedHandshake: false,
+    ready: false,
+    waitMs: 0,
+    svgCount: 0,
+    rechartsHeights: [],
+    patchedContainers: 0,
+  };
 
-    if (doc.visibilityState === 'hidden') {
-      await sleep(800);
-      return performance.now() - started;
+  try {
+    await (doc as any).fonts?.ready;
+  } catch {}
+
+  win.dispatchEvent(new Event('resize'));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await new Promise(r => setTimeout(r, 120));
+
+  const check = () => {
+    if ((win as any).__ROUTE_PRINT__?.ready) {
+      diag.usedHandshake = true;
+      return true;
     }
+    const root = doc.querySelector('[data-report-root]');
+    if (!root) return false;
 
-    const checkStability = async (
-        getValue: () => number,
-        checks: number = 3,
-        interval: number = 150
-    ): Promise<boolean> => {
-        let lastValue = getValue();
-        let stableChecks = 0;
-        for (let i = 0; i < checks; i++) {
-            await sleep(interval);
-            const currentValue = getValue();
-            if (currentValue > 0 && currentValue === lastValue) {
-                stableChecks++;
-            } else {
-                stableChecks = 0;
-            }
-            lastValue = currentValue;
-        }
-        return stableChecks >= checks -1;
-    };
-
-    const isLayoutStable = await checkStability(() => root.scrollHeight);
-    const areChartsStable = await checkStability(() => doc.querySelectorAll('svg.recharts-surface').length);
-
-    if (!isLayoutStable || !areChartsStable) {
-        console.warn(`[settle] Layout or chart stability not reached for ${doc.location.pathname}`);
-    }
+    const svgs = Array.from(root.querySelectorAll('svg.recharts-surface'));
+    diag.svgCount = svgs.length;
+    const hasVisibleSvg = svgs.some(s => {
+      try { const b = s.getBBox(); return b.width > 0 && b.height > 0; } catch { return false; }
+    });
+    if (hasVisibleSvg) return true;
     
-    return performance.now() - started;
+    const containers = Array.from(root.querySelectorAll<HTMLElement>('.recharts-responsive-container'));
+    diag.rechartsHeights = containers.map(c => c.offsetHeight);
+    containers.forEach(c => {
+      if (c.offsetHeight <= 1) {
+        c.style.minHeight = '360px';
+        c.setAttribute('data-print-patched', '1');
+        diag.patchedContainers = (diag.patchedContainers || 0) + 1;
+      }
+    });
+
+    return containers.some(c => c.offsetHeight > 1);
+  };
+  
+  let elapsed = 0;
+  const interval = 100;
+  while(elapsed < timeoutMs) {
+    if (check()) {
+      diag.ready = true;
+      break;
+    }
+    await sleep(interval);
+    elapsed += interval;
+  }
+
+  diag.waitMs = Math.round(performance.now() - started);
+  return diag;
 }
 
 
@@ -129,7 +148,7 @@ Promise<{win:Window,doc:Document,cleanup:()=>void}> {
   iframe.style.top = '0px';
   iframe.width = String(CAPTURE_WIDTH + 20);
   iframe.height = '2400';
-  iframe.src = `${path}${path.includes('?') ? '&' : '?'}print=1&lang=${locale}`;
+  iframe.src = `${path}${path.includes('?') ? '&' : '?'}print=1&lang=${locale}&ts=${Date.now()}`;
   document.body.appendChild(iframe);
 
   await new Promise<void>(res => {
@@ -241,54 +260,43 @@ function paginateAttached(doc: Document, sourceRoot: HTMLElement, a4Px: {w:numbe
   const pages = Array.from(container.children) as HTMLElement[];
   if (pages.length === 0) throw new Error('Pagination produced 0 pages');
   pages.forEach(p => { if (!p.style.height) p.style.height = `${a4Px.h}px`; });
-  return { pages, stage, usedDom: 'original' as const };
+  return { pages, stage };
 }
 
-async function captureElementToPng(el: HTMLElement): Promise<string> {
+
+async function capturePageWithFallback(pageEl: HTMLElement, win: Window): Promise<{ method: 'html-to-image' | 'html2canvas', dataUrl: string }> {
   let dataUrl = '';
+  let method: 'html-to-image' | 'html2canvas' = 'html-to-image';
+  
+  // Attempt 1: html-to-image
   try {
-    dataUrl = await toPng(el, {
-      cacheBust: true, pixelRatio: 2, style: { transform: 'none' },
-      skipFonts: false, useCORS: true,
-      filter: (node) => !(node as HTMLElement).closest?.('[data-no-print="true"]'),
-    });
-  } catch (e) {
-     console.warn('[pdfCapture] toPng failed, falling back to html2canvas.', e);
+    dataUrl = await toPng(pageEl, { cacheBust: true, pixelRatio: 2, style: { transform: 'none' } });
+  } catch {}
+
+  // Check if retry is needed
+  if (!dataUrl || rawFromDataUrl(dataUrl).length < 20000) {
+    win.dispatchEvent(new Event('resize'));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 120));
+    // Attempt 2: html-to-image again
+    try {
+        const retryUrl = await toPng(pageEl, { cacheBust: true, pixelRatio: 2, style: { transform: 'none' } });
+        if(retryUrl.length > dataUrl.length) dataUrl = retryUrl;
+    } catch {}
   }
   
-  if (!dataUrl) {
+  // Fallback to html2canvas
+  if (!dataUrl || rawFromDataUrl(dataUrl).length < 20000) {
     try {
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      method = 'html2canvas';
+      const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
       dataUrl = canvas.toDataURL('image/png');
-    } catch(e) {
+    } catch (e) {
       console.error('[pdfCapture] html2canvas fallback also failed.', e);
     }
   }
 
-  return dataUrl;
-}
-
-async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:number}) {
-  root.style.width = `${CAPTURE_WIDTH}px`;
-  root.style.margin = '0 auto';
-
-  const url = await captureElementToPng(root);
-  const img = new Image();
-  img.src = url; await img.decode().catch(()=>{});
-  const canvas = doc.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  const sliceH = a4Px.h;
-  canvas.width = img.naturalWidth || CAPTURE_WIDTH * 2;
-  canvas.height = sliceH;
-
-  const out: {url:string; h:number}[] = [];
-  for (let y = 0; y < (img.naturalHeight || a4Px.h); y += sliceH) {
-    const h = Math.min(sliceH, (img.naturalHeight || a4Px.h) - y);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img, 0, y, canvas.width, h, 0, 0, canvas.width, h);
-    out.push({ url: canvas.toDataURL('image/png'), h });
-  }
-  return out;
+  return { method, dataUrl };
 }
 
 export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opts: A4Opts = {}, diagExtras: { seq: number }): Promise<ImageSlice[]> {
@@ -299,120 +307,60 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     h: Math.floor((A4_PT.h - o.marginPt * 2) * pxPerPt),
   };
 
-  const started = performance.now();
-  const diag: RouteDiag = {
-    route: path, seq: diagExtras.seq, anchorFound: false, usedDom: 'clone', usedFallback: 'none', missingRoot: false, contentWidthPx: CAPTURE_WIDTH,
-    rechartsCount: 0, readyMs: 0, durationMs: 0, pages: 0, slices: 0, sliceDims: [], errors: [],
-  };
+  const routeDiag: Partial<RouteDiag> = { route: path, seq: diagExtras.seq };
   
   const { win, doc, cleanup } = await loadRouteInIframe(path, locale);
   try {
     let root = doc.querySelector('[data-report-root]') as HTMLElement | null;
-    diag.anchorFound = !!root;
-    if (!root) { diag.missingRoot = true; root = doc.body; }
+    if (!root) { root = doc.body; }
 
-    if (path === '/revenue') {
-        const t0 = performance.now();
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        win.dispatchEvent(new Event('resize'));
-        
-        let isReady = false;
-        let elapsed = 0;
-        const interval = 60;
-        const timeout = 4000;
-        
-        while(!isReady && elapsed < timeout) {
-            isReady = (win as any).__REVENUE_READY__ === true;
-            if (isReady) break;
-            await sleep(interval);
-            elapsed += interval;
-        }
-
-        const diagData = (win as any).__REVENUE_PRINT_DIAG__ || {};
-        diag.revenuePrintDiag = {
-            waitSucceeded: isReady,
-            waitMs: Math.round(performance.now() - t0),
-            ...diagData,
-        };
-    } else {
-        diag.readyMs = await settleInIframe(doc, root);
-    }
-    
-    await sleep(100);
-
-    diag.rechartsCount = doc.querySelectorAll('svg.recharts-surface').length;
+    const settleDiag = await settleInIframe(win, doc);
+    Object.assign(routeDiag, settleDiag);
 
     let pagesEl: HTMLElement[] = [];
     let stage: HTMLElement | null = null;
-    let usedDom: 'clone' | 'original' = 'clone';
     try {
-      if (diag.anchorFound) {
-          const pg = paginateAttached(doc, root!, a4Px);
-          pagesEl = pg.pages; stage = pg.stage; usedDom = pg.usedDom;
-          diag.usedDom = usedDom;
-      } else {
-        throw new Error("Pagination skipped: no data-report-root found.");
-      }
+        if (root !== doc.body) {
+            const pg = paginateAttached(doc, root, a4Px);
+            pagesEl = pg.pages; stage = pg.stage;
+        } else {
+            pagesEl = [doc.body];
+        }
     } catch (e:any) {
-      diag.errors.push(`paginate: ${e.message||String(e)}`);
+       console.warn(`[pdfCapture] Pagination failed for ${path}, capturing body.`, e);
+       pagesEl = [doc.body];
     }
+    
+    const slices: ImageSlice[] = [];
+    for (const [i, p] of pagesEl.entries()) {
+      const { method, dataUrl } = await capturePageWithFallback(p, win);
+      if (!dataUrl?.startsWith('data:image/png;base64,')) continue;
+      
+      const raw = rawFromDataUrl(dataUrl);
+      const md5 = Md5.hashStr(raw);
 
-    let slices: ImageSlice[] = [];
-    const seenOnRoute = new Set<string>();
+      const tmpImg = new Image(); tmpImg.src = dataUrl; await tmpImg.decode().catch(()=>{});
+      
+      const slice: ImageSlice = { 
+        imageBase64: raw, 
+        wPx: tmpImg.naturalWidth || a4Px.w, 
+        hPx: tmpImg.naturalHeight || a4Px.h, 
+        routeName: path, 
+        pageIndex: i, 
+        md5 
+      };
 
-    if (pagesEl.length === 0) {
-      diag.usedFallback = 'tall';
-      const chunks = await tallFallback(doc, root!, a4Px);
-      for (let i=0;i<chunks.length;i++) {
-        const url = chunks[i].url;
-        if (!url?.startsWith('data:image/png;base64,')) continue;
-        const raw = rawFromDataUrl(url);
-        const md5 = Md5.hashStr(raw);
-        if (seenOnRoute.has(md5)) continue; seenOnRoute.add(md5);
-        const tmpImg = new Image(); tmpImg.src = url; await tmpImg.decode().catch(()=>{});
-        slices.push({ imageBase64: raw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: chunks[i].h, routeName: path, pageIndex: i, md5 });
-        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: chunks[i].h, kb: Math.round(raw.length*3/4/1024), md5 });
-      }
-    } else {
-      for (const [i,p] of pagesEl.entries()) {
-        let dataUrl = '';
-        const h = p.getBoundingClientRect().height;
-        try { 
-            dataUrl = await captureElementToPng(p); 
-            if (h < 300 && !dataUrl) { // Retry once for short elements
-              await sleep(200);
-              dataUrl = await captureElementToPng(p);
-            }
-        }
-        catch (e:any) { diag.errors.push(`capture:${i} ${e.message||String(e)}`); diag.usedFallback = 'html2canvas'; continue; }
-        if (!dataUrl?.startsWith('data:image/png;base64,')) continue;
-        const raw = rawFromDataUrl(dataUrl);
-        
-        if(raw.length < 50 * 1024 && h < 300) { // Retry for small, short slices
-             await sleep(200);
-             win.dispatchEvent(new Event('resize'));
-             await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-             const retryUrl = await captureElementToPng(p);
-             if (retryUrl.length > raw.length) dataUrl = retryUrl;
-        }
-        
-        const finalRaw = rawFromDataUrl(dataUrl);
-        const md5 = Md5.hashStr(finalRaw);
-        if (seenOnRoute.has(md5)) continue; seenOnRoute.add(md5);
+      routeDiag.capture = {
+        attempts: 1, // Simplified for now
+        method,
+        dataUrlKB: Math.round(raw.length * 3/4 / 1024)
+      };
 
-        const tmpImg = new Image(); tmpImg.src = dataUrl; await tmpImg.decode().catch(()=>{});
-        slices.push({ imageBase64: finalRaw, wPx: tmpImg.naturalWidth || a4Px.w, hPx: tmpImg.naturalHeight || a4Px.h, routeName: path, pageIndex: i, md5 });
-        diag.sliceDims.push({ w: tmpImg.naturalWidth||a4Px.w, h: tmpImg.naturalHeight||a4Px.h, kb: Math.round(finalRaw.length*3/4/1024), md5 });
-      }
+      slices.push(slice);
     }
-
+    
     if (stage) stage.remove();
-
-    diag.pages = pagesEl.length || slices.length;
-    diag.slices = slices.length;
-    diag.durationMs = Math.round(performance.now() - started);
-    __LAST_ROUTE_DIAG__ = diag;
-
+    __LAST_ROUTE_DIAG__ = routeDiag;
     return slices;
   } finally {
     cleanup();
