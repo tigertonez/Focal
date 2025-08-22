@@ -1,3 +1,4 @@
+
 // src/app/api/print/pdf/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, PageSizes } from 'pdf-lib';
@@ -49,30 +50,52 @@ export async function POST(req: NextRequest) {
     const skipped: { index: number; reason: string }[] = [];
 
     if (isMulti) {
-      const { images: rawImages, page, marginPt } = body as MultiPayload;
-      const pagePt = page === 'Letter' ? { w: 612, h: 792 } : { w: 595.28, h: 841.89 };
+      const { images: rawImages, clientDiag } = body as MultiPayload;
+      const pagePt = PageSizes.A4;
+      const marginPt = 24;
+
       const images = rawImages
         .map((it:any)=> typeof it === 'string' ? { imageBase64: it } : it)
         .filter((it:any)=> it?.imageBase64 && it.imageBase64.length > 500);
 
-      const diagnostics = images.map((s:any,i:number)=>({
-        idx: i, kb: Math.round(s.imageBase64.length*3/4/1024),
-        w: s.wPx, h: s.hPx, md5: s.md5, route: s.routeName
-      }));
-
       images.forEach(s => routesSeen.set(s.routeName||'?', (routesSeen.get(s.routeName||'?')||0)+1));
 
-      for (const [i,slice] of images.entries()) {
+      for (const [i, slice] of images.entries()) {
         try {
           const { bytes, type } = decodeImageBase64(slice.imageBase64);
           const img = type === 'png' ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-          const frameW = pagePt.w - marginPt*2;
-          const scale = frameW / img.width;
-          const drawH = img.height * scale;
-          const pageObj = pdf.addPage([pagePt.w, pagePt.h]);
-          pageObj.drawImage(img, { x: marginPt, y: pagePt.h - marginPt - drawH, width: frameW, height: drawH });
-        } catch (e:any) {
-          skipped.push({ index: i, reason: e.message || 'embed failed' });
+
+          // --- sanitize image dimensions
+          const iw = Number(img.width) > 0 ? Number(img.width) : 1;
+          const ih = Number(img.height) > 0 ? Number(img.height) : 1;
+
+          const pageW = pagePt[0];
+          const pageH = pagePt[1];
+          const frameW = pageW - marginPt * 2;
+          const frameH = pageH - marginPt * 2;
+
+          // contain fit (keeps aspect), fully numeric & finite
+          const s = Math.min(frameW / iw, frameH / ih);
+          const drawW = Math.max(1, iw * s);
+          const drawH = Math.max(1, ih * s);
+          const x = marginPt + (frameW - drawW) / 2;
+          const y = marginPt + (frameH - drawH) / 2;
+
+          // final guard: skip if anything is not finite
+          if (![x, y, drawW, drawH].every(Number.isFinite)) {
+            skipped.push({
+              index: i,
+              reason: `BAD_DIMS iw=${iw},ih=${ih},frameW=${frameW},frameH=${frameH},s=${s}`,
+            });
+            continue; // do NOT add a page
+          }
+
+          // add a page only when we know we can draw successfully
+          const pageObj = pdf.addPage([pageW, pageH]);
+          pageObj.drawImage(img, { x, y, width: drawW, height: drawH });
+        } catch (e: any) {
+          // draw/embed failed → record & move on; do NOT add a blank page
+          skipped.push({ index: i, reason: e.message || 'embed/draw failed' });
         }
       }
 
@@ -83,8 +106,7 @@ export async function POST(req: NextRequest) {
           slices: images.length,
           routesSeen: Object.fromEntries(routesSeen.entries()),
           skipped,
-          diagnostics,
-          clientDiag: (body as any).clientDiag ?? null
+          clientDiag: clientDiag ?? null
         });
       }
     } else {
@@ -117,3 +139,5 @@ export async function POST(req: NextRequest) {
     return json({ ok:false, code: err.code || 'UNKNOWN', message: err.message || 'Server error' }, 500);
   }
 }
+
+    
