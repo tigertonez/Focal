@@ -114,11 +114,10 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                         <CardHeader>
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-[350px] w-full pl-0">
+                        <CardContent className="h-auto">
                         <MonthlyTimelineChart 
                             data={monthlyRevenueById} 
                             currency={currency} 
-                            isAnimationActive={!isPrint} 
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
                             inputs={inputs} 
@@ -130,11 +129,10 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                         <CardHeader>
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-[350px] w-full pl-0">
+                        <CardContent className="h-auto">
                         <MonthlyTimelineChart 
                             data={monthlyUnitsSoldById} 
                             formatAs="number" 
-                            isAnimationActive={!isPrint} 
                             isPrint={isPrint} 
                             seriesKeys={seriesKeys} 
                             inputs={inputs} 

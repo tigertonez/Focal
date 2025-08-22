@@ -12,15 +12,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
-import type { EngineInput, Product } from '@/lib/types';
-import { useForecast } from '@/context/ForecastContext';
+import { formatCurrency, formatNumber } from '@/lib/utils';
+import type { EngineInput } from '@/lib/types';
 
-interface MonthlyRevenueTimelineProps {
+interface MonthlyTimelineChartProps {
   data: any[];
   currency?: string;
   formatAs?: 'currency' | 'number';
-  isAnimationActive?: boolean;
   isPrint?: boolean;
   seriesKeys: string[];
   inputs: EngineInput;
@@ -31,14 +29,11 @@ export function MonthlyTimelineChart({
   data,
   currency,
   formatAs = 'currency',
-  isAnimationActive = true,
   isPrint = false,
   seriesKeys,
   inputs,
   seriesColors = {},
-}: MonthlyRevenueTimelineProps) {
-  const { t } = useForecast();
-
+}: MonthlyTimelineChartProps) {
   const chartData = React.useMemo(
     () =>
       data.map(monthData => ({
@@ -60,10 +55,10 @@ export function MonthlyTimelineChart({
           value: product.productName,
           type: 'square',
           id: key,
-          color: isPrint ? seriesColors[product.productName] : getProductColor(product),
+          color: isPrint ? seriesColors[product.productName] : product.color,
         };
       })
-      .filter(Boolean);
+      .filter((p): p is NonNullable<typeof p> => p !== null);
   }, [seriesKeys, products, isPrint, seriesColors]);
 
   const valueFormatter = (value: number) => {
@@ -80,7 +75,7 @@ export function MonthlyTimelineChart({
   const tooltipFormatter = (value: number, name: string) => {
     const product = products.find(p => p.id === name);
     const productName = product?.productName || name;
-    const color = isPrint ? seriesColors[productName] : getProductColor(product || {id: name});
+    const color = isPrint ? seriesColors[productName] : product?.color;
 
     const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
     return (
@@ -105,8 +100,8 @@ export function MonthlyTimelineChart({
   const chartHeight = isPrint ? 380 : 320;
 
   return (
-    <div data-revenue-chart="bars" data-chart-key={formatAs === 'currency' ? 'revenue-timeline' : 'units-sold'} style={{height: chartHeight, overflow: isPrint ? 'visible' : 'hidden'}}>
-        <ResponsiveContainer width="100%" height={chartHeight}>
+    <div data-revenue-chart="bars" data-chart-key={formatAs === 'currency' ? 'revenue-timeline' : 'units-sold'} style={{height: chartHeight, overflow: 'visible'}}>
+        <ResponsiveContainer width="100%" height="100%" key={isPrint ? 'print' : 'live'}>
         <BarChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: isPrint ? 20 : 5 }}
@@ -129,15 +124,22 @@ export function MonthlyTimelineChart({
               formatter={tooltipFormatter}
               isAnimationActive={!isPrint}
             />
-            <Legend 
-              payload={legendPayload as any[]}
-              {...(isPrint && { layout: "horizontal", align: "center", verticalAlign: "bottom", wrapperStyle: { width: '100%', textAlign: 'center', bottom: 0 } })}
-            />
+            {isPrint ? (
+                <Legend
+                    payload={legendPayload}
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                    wrapperStyle={{ width: '100%', textAlign: 'center', bottom: 0 }}
+                />
+            ) : (
+                <Legend payload={legendPayload} />
+            )}
             
             {seriesKeys.map(key => {
                 const product = products.find(p => p.id === key);
                 if (!product) return null;
-                const color = getProductColor(product);
+                const color = isPrint ? seriesColors[product.productName] : product.color;
 
                 return (
                     <Bar
@@ -146,13 +148,11 @@ export function MonthlyTimelineChart({
                         name={product.productName}
                         aria-label={product.productName}
                         stackId="a"
-                        fill={isPrint ? seriesColors[product.productName] : color}
+                        fill={color}
                         isAnimationActive={!isPrint}
-                        {...(isPrint && { 'data-color-locked': '1' })}
                     />
                 )
             })}
-
         </BarChart>
         </ResponsiveContainer>
     </div>

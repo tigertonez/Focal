@@ -5,7 +5,8 @@ import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import { Md5 } from 'ts-md5';
 import { isSpecialSeries, SPECIAL_SERIES_LOCK } from './specialSeries';
-import { getRevenueSeriesHexMap } from './printColors';
+import { getProductColor } from './utils';
+import { resolveToHex } from './printColors';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
@@ -322,14 +323,14 @@ async function tallFallback(doc: Document, root: HTMLElement, a4Px:{w:number,h:n
   return out;
 }
 
-async function waitForRevenueCharts(doc: Document, timeoutMs = 3000): Promise<{succeeded: boolean, duration: number}> {
+async function waitForRevenueCharts(doc: Document, timeoutMs = 3500): Promise<{succeeded: boolean, duration: number}> {
     const started = performance.now();
     let attempts = 0;
-    const interval = 100;
+    const interval = 60;
     const maxAttempts = timeoutMs / interval;
 
     const check = () => {
-        const svgs = Array.from(doc.querySelectorAll('[data-chart="revenue-timeline"] svg.recharts-surface, [data-chart="units-sold"] svg.recharts-surface'));
+        const svgs = Array.from(doc.querySelectorAll('[data-report-root] svg.recharts-surface'));
         if (svgs.length < 2) return false;
         return svgs.every(s => {
             try {
@@ -379,13 +380,11 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     // Route-specific wait for Revenue page charts
     if (path === '/revenue') {
         const { succeeded, duration } = await waitForRevenueCharts(doc);
-        const { resolveToHex } = await import('@/lib/printColors');
-        const { getProductColor } = await import('@/lib/utils');
-        const productData = (win as any)?.__NEXT_DATA__?.props?.pageProps?.inputs?.products || [];
-        
-        const seriesKeys = productData.map((p: any) => p.productName);
+        const inputs = (win as any)?.['__NEXT_DATA__']?.props?.pageProps?.inputs;
+        const products = inputs?.products || [];
+        const seriesKeys = products.map((p: any) => p.productName);
         const resolvedHex = seriesKeys.reduce((acc: Record<string, string>, name: string) => {
-            const product = productData.find((p:any) => p.productName === name);
+            const product = products.find((p:any) => p.productName === name);
             if (product) {
                 acc[name] = resolveToHex(getProductColor(product));
             }
