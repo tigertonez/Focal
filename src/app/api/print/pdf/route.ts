@@ -52,7 +52,10 @@ export async function POST(req: NextRequest) {
     if (isMulti) {
       const { images: rawImages, clientDiag } = body as MultiPayload;
       const pagePt = PageSizes.A4;
-      const marginPt = 24;
+      const marginLeftPt = 24;
+      const marginRightPt = 24;
+      const marginTopPt = 12;
+      const marginBottomPt = 24;
 
       const images = rawImages
         .map((it:any)=> typeof it === 'string' ? { imageBase64: it } : it)
@@ -71,15 +74,15 @@ export async function POST(req: NextRequest) {
 
           const pageW = pagePt[0];
           const pageH = pagePt[1];
-          const frameW = pageW - marginPt * 2;
-          const frameH = pageH - marginPt * 2;
+          const frameW = pageW - (marginLeftPt + marginRightPt);
+          const frameH = pageH - (marginTopPt + marginBottomPt);
 
           // contain fit (keeps aspect), fully numeric & finite
           const s = Math.min(frameW / iw, frameH / ih);
           const drawW = Math.max(1, iw * s);
           const drawH = Math.max(1, ih * s);
-          const x = marginPt + (frameW - drawW) / 2;
-          const y = marginPt + (frameH - drawH) / 2;
+          const x = marginLeftPt + (frameW - drawW) / 2;
+          const y = pageH - marginTopPt - drawH;
 
           // final guard: skip if anything is not finite
           if (![x, y, drawW, drawH].every(Number.isFinite)) {
@@ -139,5 +142,3 @@ export async function POST(req: NextRequest) {
     return json({ ok:false, code: err.code || 'UNKNOWN', message: err.message || 'Server error' }, 500);
   }
 }
-
-    
