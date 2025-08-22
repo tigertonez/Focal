@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import React from 'react';
 import {
   BarChart,
   Bar,
@@ -11,8 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { palette, normKey } from '@/lib/palette';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber, getProductColor } from '@/lib/utils';
 import type { EngineInput } from '@/lib/types';
 import { useForecast } from '@/context/ForecastContext';
 
@@ -37,7 +36,7 @@ export function MonthlyTimelineChart({
 }: MonthlyTimelineChartProps) {
   const { t } = useForecast();
 
-  const chartData = useMemo(
+  const chartData = React.useMemo(
     () =>
       data.map(monthData => ({
         ...monthData,
@@ -48,20 +47,17 @@ export function MonthlyTimelineChart({
   
   const products = inputs.products || [];
 
-  const legendPayload = useMemo(() => {
+  const legendPayload = React.useMemo(() => {
     return seriesKeys
       .map(key => {
         const product = products.find(p => p.id === key);
         if (!product) return null;
-        const normalizedName = normKey(product.productName);
-        const color = (palette.revenue as any)[normalizedName];
-        if (!color) return null;
         
         return {
           value: product.productName,
           type: 'square',
           id: key,
-          color: color,
+          color: getProductColor(product),
         };
       })
       .filter(Boolean);
@@ -81,8 +77,7 @@ export function MonthlyTimelineChart({
   const tooltipFormatter = (value: number, name: string) => {
     const product = products.find(p => p.id === name);
     const productName = product?.productName || name;
-    const normalizedName = normKey(productName);
-    const color = (palette.revenue as any)[normalizedName];
+    const color = getProductColor(product || {id: name});
 
     const formattedValue = formatAs === 'number' ? formatNumber(value) : formatCurrency(Number(value), currency || 'USD');
     return (
@@ -107,51 +102,52 @@ export function MonthlyTimelineChart({
   const chartHeight = 320;
 
   return (
-    <ResponsiveContainer width="100%" height={chartHeight}>
-      <BarChart
-        data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        barCategoryGap="20%"
-      >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          fontSize={12}
-          tickFormatter={valueFormatter}
-        />
-        <Tooltip contentStyle={{
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "var(--radius)",
-        }}
-        formatter={tooltipFormatter}
-        />
-        <Legend payload={legendPayload as any[]} />
-        
-        {seriesKeys.map(key => {
-            const product = products.find(p => p.id === key);
-            if (!product) return null;
-            const normalizedName = normKey(product.productName);
-            const color = (palette.revenue as any)[normalizedName];
-            if (!color) return null;
+    <div data-revenue-chart="bars" data-chart-key={formatAs === 'currency' ? 'revenue-timeline' : 'units-sold'}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
+        <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            barCategoryGap="20%"
+        >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            tickFormatter={valueFormatter}
+            />
+            <Tooltip contentStyle={{
+                background: "hsl(var(--background))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "var(--radius)",
+            }}
+            formatter={tooltipFormatter}
+            />
+            <Legend payload={legendPayload as any[]} />
+            
+            {seriesKeys.map(key => {
+                const product = products.find(p => p.id === key);
+                if (!product) return null;
+                const color = getProductColor(product);
 
-            return (
-                <Bar
-                    key={key}
-                    dataKey={key}
-                    name={product.productName}
-                    stackId="a"
-                    fill={color}
-                    isAnimationActive={!isPrint && isAnimationActive}
-                    className={`series series-${normalizedName}`}
-                    data-series={normalizedName}
-                />
-            )
-        })}
+                return (
+                    <Bar
+                        key={key}
+                        dataKey={key}
+                        name={product.productName}
+                        aria-label={product.productName}
+                        stackId="a"
+                        fill={color}
+                        isAnimationActive={!isPrint && isAnimationActive}
+                    />
+                )
+            })}
 
-      </BarChart>
-    </ResponsiveContainer>
+        </BarChart>
+        </ResponsiveContainer>
+    </div>
   );
 }
+
+    

@@ -47,6 +47,13 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
         };
     }, [monthlyRevenue, monthlyUnitsSold, inputs.products]);
 
+    // Pass inputs to the window for the print utility to access them.
+    useEffect(() => {
+        if (isPrint) {
+            (window as any).__NEXT_DATA__.props.pageProps.inputs = inputs;
+        }
+    }, [isPrint, inputs]);
+
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -252,3 +259,5 @@ export default function RevenuePage() {
         </div>
     );
 }
+
+    

@@ -4,6 +4,7 @@ import { toPng } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import { Md5 } from 'ts-md5';
 import { isSpecialSeries, SPECIAL_SERIES_LOCK } from './specialSeries';
+import { getRevenueSeriesHexMap } from './printColors';
 
 export type A4Opts = { marginPt?: number; dpi?: number };
 export const DEFAULT_A4: Required<A4Opts> = { marginPt: 24, dpi: 150 };
@@ -43,14 +44,7 @@ type RouteDiag = {
   errors: string[];
   specialSeriesLocked?: string[];
   specialColorsApplied?: boolean;
-  revenueColorLock?: {
-    locked: boolean;
-    series: string[];
-    nodes: number;
-    legendItemsFound: number;
-    barGroupsFound: number;
-    legendScope: 'scoped';
-  }
+  revenueColorLock?: any;
 };
 let __LAST_ROUTE_DIAG__: RouteDiag | null = null;
 export function popLastRouteDiag(): RouteDiag | null {
@@ -59,6 +53,44 @@ export function popLastRouteDiag(): RouteDiag | null {
   return d;
 }
 // ----------------------------
+
+async function lockRevenueBarColors(doc: Document) {
+  const root = doc.querySelector('[data-report-root]');
+  if (!root) return { locked: false, charts: 0, nodes: 0, samples: [] };
+
+  const charts = Array.from(root.querySelectorAll('[data-revenue-chart="bars"]'));
+  if (charts.length === 0) return { locked: false, charts: 0, nodes: 0, samples: [] };
+
+  let nodes = 0;
+  const samples: any[] = [];
+  const colorMap = getRevenueSeriesHexMap(doc);
+
+  for (const chartEl of charts) {
+    const seriesGroups = Array.from(chartEl.querySelectorAll('g.recharts-layer.recharts-bar'));
+    
+    const chartKey = (chartEl as HTMLElement).dataset.chartKey || 'unknown';
+    const names = seriesGroups.map(g => g.getAttribute('aria-label') || '').filter(Boolean);
+    const hex = names.map(name => colorMap[name] || '#777777');
+    samples.push({ key: chartKey, names, hex });
+
+    seriesGroups.forEach((g, i) => {
+      const seriesName = g.getAttribute('aria-label');
+      if (!seriesName) return;
+
+      const color = colorMap[seriesName];
+      if (!color) return;
+      
+      g.querySelectorAll('g.recharts-bar-rectangle rect, g.recharts-bar-rectangle path').forEach(el => {
+        el.setAttribute('fill', color);
+        el.setAttribute('data-color-locked', '1');
+        nodes++;
+      });
+    });
+  }
+
+  return { locked: nodes > 0, charts: charts.length, nodes, samples };
+}
+
 
 async function waitIframeReady(win: Window) {
   let tries = 0;
@@ -142,6 +174,8 @@ function freezeSvgColors(doc: Document | HTMLElement): number {
     const elements = svg.querySelectorAll('path, rect, circle, line, text, g');
     elements.forEach(el => {
       const element = el as HTMLElement;
+      if (element.dataset.colorLocked === '1') return;
+
       const computed = getComputedStyle(element);
       
       const finalFill = computed.fill !== 'none' && computed.fill !== 'rgb(0, 0, 0)' ? (computed.fill === 'currentColor' ? computed.color : computed.fill) : '';
@@ -433,8 +467,13 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     await sleep(100);
 
     if (path === '/revenue') {
-        const rc = await lockRevenueColorsInIframe(doc);
-        diag.revenueColorLock = { locked: rc.locked, series: rc.series, nodes: rc.nodes, legendItemsFound: rc.legendItemsFound, barGroupsFound: rc.barGroupsFound, legendScope: 'scoped' };
+        const rc = await lockRevenueBarColors(doc);
+        diag.revenueColorLock = {
+          locked: rc.locked,
+          charts: rc.charts,
+          nodes: rc.nodes,
+          samples: rc.samples,
+        };
     }
     
     // Fallback/general color freeze
@@ -511,3 +550,5 @@ export async function captureRouteAsA4Pages(path: string, locale: 'en'|'de', opt
     cleanup();
   }
 }
+
+    
