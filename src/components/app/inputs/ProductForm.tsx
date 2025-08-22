@@ -248,15 +248,15 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 control={control}
                 defaultValue="batch"
                 render={({ field }) => (
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 h-9">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="batch" id={`costModel-batch-${index}`} />
-                            <Label htmlFor={`costModel-batch-${index}`} className="text-sm font-normal cursor-pointer">{t.inputs.products.costModel.batch}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} />
-                            <Label htmlFor={`costModel-monthly-${index}`} className="text-sm font-normal cursor-pointer">{t.inputs.products.costModel.monthly}</Label>
-                        </div>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-2">
+                        <Label htmlFor={`costModel-batch-${index}`} className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-background has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary transition-colors">
+                            <RadioGroupItem value="batch" id={`costModel-batch-${index}`} className="border-muted-foreground" />
+                            <span className="text-xs font-medium">{t.inputs.products.costModel.batch}</span>
+                        </Label>
+                        <Label htmlFor={`costModel-monthly-${index}`} className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-background has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary transition-colors">
+                            <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} className="border-muted-foreground" />
+                            <span className="text-xs font-medium">{t.inputs.products.costModel.monthly}</span>
+                        </Label>
                     </RadioGroup>
                 )}
               />
