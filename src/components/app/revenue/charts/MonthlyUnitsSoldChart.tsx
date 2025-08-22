@@ -51,7 +51,7 @@ export function MonthlyUnitsSoldChart({
         
         return {
           value: product.productName,
-          type: 'circle',
+          type: 'square',
           id: key,
           color: isPrint ? seriesHexColors[key] : product.color,
         };
@@ -96,7 +96,7 @@ export function MonthlyUnitsSoldChart({
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
-            margin={{ top: 8, right: 16, bottom: isPrint ? 28 : 5, left: 8 }}
+            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 8 }}
             barCategoryGap="20%"
         >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -119,9 +119,9 @@ export function MonthlyUnitsSoldChart({
             <Legend
               verticalAlign="bottom"
               align="center"
-              iconType="circle"
+              iconType="square"
               iconSize={10}
-              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 8, position: 'relative' }}
+              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 4, position: 'relative' }}
             />
             
             {seriesKeys.map(key => {
