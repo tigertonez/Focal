@@ -249,11 +249,11 @@ export const ProductForm: React.FC<{ index: number; removeProduct: (index: numbe
                 defaultValue="batch"
                 render={({ field }) => (
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-2">
-                        <Label htmlFor={`costModel-batch-${index}`} className="flex items-center justify-center rounded-md border p-2 cursor-pointer hover:bg-background has-[input:checked]:bg-primary has-[input:checked]:text-primary-foreground has-[input:checked]:border-primary transition-colors">
+                        <Label className="flex items-center justify-center rounded-md border p-2 cursor-pointer hover:bg-background has-[input:checked]:bg-primary has-[input:checked]:text-primary-foreground has-[input:checked]:border-primary transition-colors">
                             <RadioGroupItem value="batch" id={`costModel-batch-${index}`} className="sr-only" />
                             <span className="text-xs font-medium">{t.inputs.products.costModel.batch}</span>
                         </Label>
-                        <Label htmlFor={`costModel-monthly-${index}`} className="flex items-center justify-center rounded-md border p-2 cursor-pointer hover:bg-background has-[input:checked]:bg-primary has-[input:checked]:text-primary-foreground has-[input:checked]:border-primary transition-colors">
+                        <Label className="flex items-center justify-center rounded-md border p-2 cursor-pointer hover:bg-background has-[input:checked]:bg-primary has-[input:checked]:text-primary-foreground has-[input:checked]:border-primary transition-colors">
                             <RadioGroupItem value="monthly" id={`costModel-monthly-${index}`} className="sr-only" />
                             <span className="text-xs font-medium">{t.inputs.products.costModel.monthly}</span>
                         </Label>
