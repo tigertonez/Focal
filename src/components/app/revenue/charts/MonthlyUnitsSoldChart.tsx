@@ -95,7 +95,7 @@ export function MonthlyUnitsSoldChart({
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
-            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 0 }}
+            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 8 }}
             barCategoryGap="20%"
         >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
