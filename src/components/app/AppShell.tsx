@@ -45,7 +45,7 @@ function MobileNav() {
       { href: '/revenue', icon: DollarSign, label: t.nav.revenue },
       { href: '/costs', icon: ShoppingCart, label: t.nav.costs },
       { href: '/profit', icon: Landmark, label: t.nav.profit },
-      { href: '/cash-flow', icon: Wallet, label: t.nav.cashFlow },
+      { href: '/cash-flow', icon: Wallet, label: 'Cash' },
       { href: '/summary', icon: LayoutGrid, label: t.nav.summary },
     ];
 
