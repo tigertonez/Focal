@@ -121,6 +121,7 @@ export function MonthlyRevenueTimeline({
               }}
               formatter={tooltipFormatter}
               isAnimationActive={!isPrint}
+              payloadUniqBy={(entry) => entry.dataKey}
             />
             <Legend
               verticalAlign="bottom"
