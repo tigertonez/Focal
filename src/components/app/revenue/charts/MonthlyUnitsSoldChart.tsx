@@ -95,7 +95,7 @@ export function MonthlyUnitsSoldChart({
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
-            margin={{ top: 8, right: isPrint ? 16 : 8, bottom: isPrint ? 20 : 5, left: isPrint ? 0 : -16 }}
+            margin={{ top: 8, right: 8, bottom: 5, left: 0 }}
             barCategoryGap="20%"
         >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -121,7 +121,7 @@ export function MonthlyUnitsSoldChart({
               align="center"
               iconType="square"
               iconSize={10}
-              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, marginTop: 0, position: 'relative' }}
+              wrapperStyle={{ width: '100%', textAlign: 'center', fontSize: legendFontPx, position: 'relative', marginTop: '10px', paddingBottom: '5px' }}
               payload={legendPayload}
             />
             
