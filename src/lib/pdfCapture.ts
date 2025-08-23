@@ -1,4 +1,3 @@
-
 // src/lib/pdfCapture.ts
 'use client';
 import { toPng } from 'html-to-image';
@@ -9,6 +8,8 @@ const CAPTURE_WIDTH_PX = 1280;
 const A4_ASPECT_RATIO = 8.27 / 11.69;
 const MIN_KB_OK = 50;
 const ROUTES: Route[] = ['/inputs','/revenue','/costs','/profit','/cash-flow','/summary'] as const;
+const LKG: Map<Route, ImageSlice> = ((window as any).__PDF_LKG__ ||= new Map<Route, ImageSlice>());
+
 
 export type Route = '/inputs'|'/revenue'|'/costs'|'/profit'|'/cash-flow'|'/summary';
 export type ImageSlice = {
@@ -16,16 +17,13 @@ export type ImageSlice = {
   routeName: Route; pageIndex: number; md5: string;
 };
 
-// Use a top-level in-memory cache for Last-Known-Good slices across runs
-const LKG: Map<Route, ImageSlice> = (window as any).__PDF_GOOD_CACHE || ((window as any).__PDF_GOOD_CACHE = new Map());
-
-
 type Diag = {
   runId: string; startTs: string; routes: any[];
   totals: { slices: number; kb: number };
   guarantee: { before: number; after: number; missingBefore: string[]; placeholdersAdded: string[] };
   visibility: { pauses: number; pausedMs: number };
   invariants: { dupesFound: number, dupesStillPresent: Route[] };
+  md5ByRoute: Record<Route, string | null>;
 };
 
 const rawFromDataUrl = (url:string)=> {
@@ -58,7 +56,34 @@ async function waitIframeLoad(iframe: HTMLIFrameElement) {
   return new Promise<void>(res => {
     const t = setTimeout(() => { console.warn('Iframe load timeout'); res(); }, 8000);
     iframe.onload = () => { clearTimeout(t); res(); };
+    iframe.onerror = () => { clearTimeout(t); res(); };
   });
+}
+
+function createIsolatedFrame(routeUrl: string) {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.left = '-20000px';
+  iframe.style.top = '0px';
+  iframe.width = `${CAPTURE_WIDTH_PX + 40}`;
+  iframe.height = '4000';
+  document.body.appendChild(iframe);
+
+  const t0 = performance.now();
+  iframe.src = routeUrl;
+
+  return {
+    iframe,
+    async ready() {
+      await waitIframeLoad(iframe);
+      return {
+        win: iframe.contentWindow!,
+        doc: iframe.contentDocument || iframe.contentWindow!.document,
+        tLoadMs: Math.round(performance.now() - t0),
+      };
+    },
+    cleanup() { try { iframe.remove(); } catch {} },
+  };
 }
 
 function injectPrintCSS(doc: Document) {
@@ -71,10 +96,8 @@ function injectPrintCSS(doc: Document) {
     .pdf-freeze, .pdf-freeze * { animation: none !important; transition: none !important; }
     .pdf-freeze, .pdf-freeze * { transform: none !important; will-change: auto !important; }
     .recharts-wrapper, .recharts-responsive-container, .recharts-surface { transform: none !important; }
-    /* --- ADDED RULES TO HIDE AI --- */
     [data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"] {
-      display: none !important;
-      visibility: hidden !important;
+      display: none !important; visibility: hidden !important;
     }
   `;
   doc.head.appendChild(style);
@@ -132,74 +155,6 @@ async function isImageMostlyBlank(dataUrl: string): Promise<boolean> {
   });
 }
 
-async function withRouteIframe<T>(
-  route: Route,
-  lang: 'en'|'de',
-  diag: any,
-  fn: (win: Window, doc: Document, root: HTMLElement, diag: any) => Promise<T>
-): Promise<T> {
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.left = '-20000px';
-  iframe.style.top = '0px';
-  iframe.width = `${CAPTURE_WIDTH_PX + 40}`;
-  iframe.height = '4000';
-  document.body.appendChild(iframe);
-  let rootNode: HTMLElement | null = null;
-  let prevMinH: string | null = null;
-  
-  try {
-    iframe.src = `${route}?print=1&lang=${lang}&ts=${Date.now()}`;
-    await waitIframeLoad(iframe);
-    
-    const win = iframe.contentWindow!;
-    const doc = win.document;
-    diag.url = win.location.href;
-
-    // Route sanity gate
-    let pathOk = false;
-    for (let i = 0; i < 5; i++) {
-      if (win.location.pathname === route) { pathOk = true; break; }
-      await new Promise(r => setTimeout(r, 100));
-    }
-    if (!pathOk) {
-      iframe.src = `${route}?print=1&lang=${lang}&ts=${Date.now()}`;
-      await waitIframeLoad(iframe);
-      for (let i = 0; i < 5; i++) {
-        if (win.location.pathname === route) { pathOk = true; break; }
-        await new Promise(r => setTimeout(r, 100));
-      }
-    }
-    diag.pathOk = pathOk;
-
-    injectPrintCSS(doc);
-    
-    // Hard-hide and remove AI nodes
-    const aiSelectors = '[data-ai-insight],[data-ai-report],.ai-insights,.ai-insight,#ai-insights,#get-strategic-analysis,[data-print-hide="ai"]';
-    const aiNodes = doc.querySelectorAll(aiSelectors);
-    aiNodes.forEach(n => n.remove());
-    diag.aiHidden = aiNodes.length || 0;
-
-    await (doc as any).fonts?.ready?.catch(() => {});
-    win.dispatchEvent(new Event('resize'));
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    win.dispatchEvent(new Event('resize'));
-    await new Promise(r => setTimeout(r, 100));
-
-    rootNode = getRouteRoot(win);
-    const bodyH = Math.max(rootNode.getBoundingClientRect().height, (rootNode as any).scrollHeight || 0);
-    if (bodyH < 1000) {
-      prevMinH = rootNode.style.minHeight;
-      rootNode.style.minHeight = '1800px';
-    }
-
-    return await fn(win, doc, rootNode, diag);
-  } finally {
-    if (rootNode && prevMinH !== null) rootNode.style.minHeight = prevMinH;
-    iframe.remove();
-  }
-}
-
 export async function captureFullReport({ lang = 'en', onLog, onProgress, onStatus }: { lang: 'en' | 'de', onLog?: (msg: string) => void, onProgress?: (p: number) => void, onStatus?: (s: string)=>void }) {
     const diag: Diag = {
       runId: 'run_' + Math.random().toString(36).substr(2, 9),
@@ -209,9 +164,10 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
       guarantee: { before: 0, after: 0, missingBefore: [], placeholdersAdded: [] },
       visibility: { pauses: 0, pausedMs: 0 },
       invariants: { dupesFound: 0, dupesStillPresent: [] },
+      md5ByRoute: {} as Record<Route, string | null>,
     };
 
-    onStatus?.('Beta: AI insights are excluded from the PDF. Keep this tab visible until done.');
+    onStatus?.('Beta: PDF export currently ignores AI insights. Keep this tab visible until done.');
 
     const byRoute: Partial<Record<Route, ImageSlice>> = {};
     const paused = { ms: 0, cnt: 0, t0: 0 };
@@ -225,150 +181,176 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
       }
     }
 
-    async function captureSingleRoute(route: Route, attemptNo = 1, preferHtml2Canvas = false): Promise<ImageSlice | null> {
+    async function captureSingleRoute(route: Route, attemptNum = 1): Promise<ImageSlice | null> {
       await ensureVisiblePoint();
-      onStatus?.(`Exporting ${route} — attempt ${attemptNo}`);
-      const routeDiag: any = { route, attempt: attemptNo };
+      onStatus?.(`Exporting ${route} — attempt ${attemptNum}`);
+      const routeDiag: any = { route, attempt: attemptNum, capture: {} };
+      
+      const frame = createIsolatedFrame(`${route}?print=1&lang=${lang}&ts=${Date.now()}`);
+      let win: Window, doc: Document;
 
-      return await withRouteIframe(route, lang, routeDiag, async (win, doc, root, diag) => {
-        const heading = (doc.querySelector('h1,h2')?.textContent || '').trim().slice(0, 120);
-        diag.headingText = heading;
-        diag.headingHash = Md5.hashStr(heading || route);
+      try {
+        const readyState = await frame.ready();
+        win = readyState.win;
+        doc = readyState.doc;
+        routeDiag.iframeLoadMs = readyState.tLoadMs;
+        routeDiag.url = win.location.href;
 
-        const bodyH = Math.max(root.getBoundingClientRect().height, (root as any).scrollHeight || 0);
-        const innerTextLen = (root.innerText || '').trim().length;
-        const svgs = Array.from(doc.querySelectorAll<SVGSVGElement>('svg.recharts-surface'));
-        const svgShapesCount = svgs.reduce((a, s) => a + (s.querySelectorAll('path,rect,circle,line,polyline,polygon').length), 0);
-        Object.assign(diag, { bodyH, innerTextLen, svgCount: svgs.length, svgShapesCount });
-
-        let readinessOk = true;
-        for (let i = 0; i < 5; i++) {
-          readinessOk = true;
-          if (route === '/summary' && (innerTextLen < 400 || bodyH < 1300)) readinessOk = false;
-          if ((route === '/revenue' || route === '/costs') && svgs.length > 0 && svgShapesCount === 0) readinessOk = false;
-          if (readinessOk) break;
-          await new Promise(r => setTimeout(r, 200));
-        }
-        diag.readinessOk = readinessOk;
-        
-        let dataUrl = '';
-        let isSuspicious = true;
-        let captureMethod = '';
-
-        const capturePrimary = async () => {
-          captureMethod = 'html-to-image';
-          return await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
-        };
-        const captureFallback = async () => {
-          captureMethod = 'html2canvas';
-          diag.fallbackRealm = 'iframe';
-          const h2c = (win as any).html2canvas || html2canvas;
-          const canvas = await h2c(root, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-          return canvas.toDataURL('image/png');
-        };
-
-        const tryPrimary = async (diagKey: 'blankPrimary' | 'blankPrimaryRetry') => {
-          dataUrl = await capturePrimary();
-          isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
-          diag[diagKey] = isSuspicious;
-          return !isSuspicious;
-        };
-
-        const tryFallback = async () => {
-          diag.fallbackUsed = 'html2canvas';
-          dataUrl = await captureFallback();
-          isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
-          diag.blankFallback = isSuspicious;
-          return !isSuspicious;
-        };
-        
-        if (preferHtml2Canvas) {
-            if (!(await tryFallback())) await tryPrimary('blankPrimary');
-        } else {
-            if (!(await tryPrimary('blankPrimary'))) {
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-                await new Promise(r => setTimeout(r, 80));
-                if (!(await tryPrimary('blankPrimaryRetry'))) await tryFallback();
+        // Route Sanity Gate
+        let pathOk = false;
+        for (let k = 0; k < 6; k++) {
+            const currentPath = (() => { try { return new URL(win.location.href).pathname; } catch { return ''; } })();
+            if (currentPath.endsWith(route)) {
+                pathOk = true;
+                break;
             }
+            await new Promise(r => setTimeout(r, 80));
+        }
+        routeDiag.pathOk = pathOk;
+        if (!pathOk) {
+            // Try reloading once if path is wrong
+            win.location.href = `${route}?print=1&lang=${lang}&ts=${Date.now()}`;
+            await waitIframeLoad(frame.iframe);
+            const currentPath = (() => { try { return new URL(win.location.href).pathname; } catch { return ''; } })();
+            routeDiag.pathOk = currentPath.endsWith(route);
         }
 
-        diag.suspiciousPrimary = !!diag.blankPrimary;
-        diag.captureMethod = captureMethod;
-        diag.finalSuccess = !isSuspicious;
-        
-        diag.routes = diag.routes || [];
-        diag.routes.push(routeDiag);
+        injectPrintCSS(doc);
+        const aiNodes = doc.querySelectorAll('[data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"]');
+        aiNodes.forEach(n => n.remove());
+        routeDiag.aiHidden = aiNodes.length || 0;
 
+        // Readiness Checks
+        const root = getRouteRoot(win);
+        routeDiag.bodyH = Math.max(root.getBoundingClientRect().height, (root as any).scrollHeight || 0);
+        routeDiag.innerTextLen = (root.innerText || '').trim().length;
+        const svgs = Array.from(doc.querySelectorAll<SVGSVGElement>('svg.recharts-surface'));
+        routeDiag.svgCount = svgs.length;
+        routeDiag.svgShapesCount = svgs.reduce((a, s) => a + (s.querySelectorAll('path,rect,circle,line,polyline,polygon').length), 0);
+        const heading = (doc.querySelector('h1,h2')?.textContent || '').trim().slice(0, 120);
+        routeDiag.headingText = heading;
+        routeDiag.headingHash = Md5.hashStr(heading || route);
+
+        let readinessOk = false;
+        for(let i = 0; i < 5; i++) {
+            readinessOk = true;
+            if ((route === '/revenue' || route === '/costs') && routeDiag.svgCount > 0 && routeDiag.svgShapesCount === 0) readinessOk = false;
+            if (route === '/summary' && (routeDiag.innerTextLen < 400 || routeDiag.bodyH < 1300)) readinessOk = false;
+            if (readinessOk) break;
+            await new Promise(r => setTimeout(r, 150));
+            // re-check metrics
+            routeDiag.bodyH = Math.max(root.getBoundingClientRect().height, (root as any).scrollHeight || 0);
+            routeDiag.innerTextLen = (root.innerText || '').trim().length;
+            routeDiag.svgShapesCount = svgs.reduce((a, s) => a + (s.querySelectorAll('path,rect,circle,line,polyline,polygon').length), 0);
+        }
+
+        // Capture logic
+        let dataUrl = '';
+        let method = '';
+        let isSuspicious = true;
+        const forceFallback = attemptNum === 99;
+
+        const tryPrimary = async () => {
+          method = 'html-to-image';
+          dataUrl = await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
+          isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
+          return !isSuspicious;
+        };
+        const tryFallback = async () => {
+          method = 'html2canvas';
+          const localH2C = (win as any).html2canvas || html2canvas;
+          const canvas = await localH2C(root, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+          dataUrl = canvas.toDataURL('image/png');
+          routeDiag.fallbackRealm = 'iframe';
+          isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
+          return !isSuspicious;
+        };
+
+        if (forceFallback) {
+          await tryFallback();
+        } else {
+          if (!(await tryPrimary())) {
+            routeDiag.suspiciousPrimary = true;
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            await new Promise(r => setTimeout(r, 80));
+            if (!(await tryPrimary())) await tryFallback();
+          }
+        }
+        
         if (!isSuspicious) {
-          const raw = rawFromDataUrl(dataUrl);
-          return { imageBase64: raw, wPx: CAPTURE_WIDTH_PX, hPx: Math.round(CAPTURE_WIDTH_PX / A4_ASPECT_RATIO), routeName: route, pageIndex: 0, md5: Md5.hashStr(raw) };
+          const finalRaw = rawFromDataUrl(dataUrl);
+          return { imageBase64: finalRaw, wPx: CAPTURE_WIDTH_PX, hPx: Math.round(CAPTURE_WIDTH_PX / A4_ASPECT_RATIO), routeName: route, pageIndex: 0, md5: Md5.hashStr(finalRaw) };
         }
         return null;
-      });
+
+      } catch (e: any) {
+        routeDiag.capture.error = e.message;
+        return null;
+      } finally {
+        diag.routes.push(routeDiag);
+        frame.cleanup();
+      }
     }
 
-    const seenMd5s = new Map<string, Route>();
-
-    // --- MAIN CAPTURE LOOP ---
+    // --- Main Capture Loop ---
     for (const [i, route] of ROUTES.entries()) {
-      let slice = await captureSingleRoute(route, 1);
-      if (slice) {
-        if (seenMd5s.has(slice.md5)) {
-            const collisionRoute = seenMd5s.get(slice.md5)!;
-            const d = diag.routes.find(r => r.route === route);
-            if (d) { d.dupCollided = true; d.recapture = true; }
-            slice = await captureSingleRoute(route, 2);
-        }
-        if (slice && !seenMd5s.has(slice.md5)) {
-            byRoute[route] = slice;
-            seenMd5s.set(slice.md5, route);
-        }
-      }
-      onProgress?.((i + 1) / ROUTES.length);
+        const slice = await captureSingleRoute(route);
+        if (slice) { byRoute[route] = slice; }
+        onProgress?.((i + 1) / ROUTES.length);
     }
     
-    // --- POST-PASS: BLANK/MISSING GUARANTEE ---
+    // --- Post-Pass 1: Duplicate-across-routes check ---
+    const md5Map = new Map<string, Route[]>();
+    for (const r of ROUTES) {
+        if (byRoute[r]) {
+            const list = md5Map.get(byRoute[r]!.md5) || [];
+            list.push(r);
+            md5Map.set(byRoute[r]!.md5, list);
+        }
+    }
+    const dupesToRecapture: Route[] = [];
+    for (const routes of md5Map.values()) {
+        if (routes.length > 1) {
+            diag.invariants.dupesFound++;
+            dupesToRecapture.push(...routes.slice(1));
+        }
+    }
+    if (dupesToRecapture.length > 0) {
+        await ensureVisiblePoint();
+        for (const route of dupesToRecapture) {
+            onLog?.(`! Duplicate image detected for ${route} – recapturing with forced fallback`);
+            const recapturedSlice = await captureSingleRoute(route, 99);
+            if (recapturedSlice) { byRoute[route] = recapturedSlice; }
+            const routeDiag = diag.routes.find(r => r.route === route);
+            if(routeDiag) routeDiag.recaptureDupe = true;
+        }
+    }
+    
+    // --- Post-Pass 2: Blank/Missing Guarantee & LKG ---
     diag.guarantee.before = Object.values(byRoute).filter(Boolean).length;
     diag.guarantee.missingBefore = ROUTES.filter(r => !byRoute[r]);
-    for (const route of diag.guarantee.missingBefore) {
+
+    for (const route of ROUTES) {
+      if (!byRoute[route]) {
+        await ensureVisiblePoint();
         onLog?.(`! Re-capturing missing route: ${route}`);
-        let slice = await captureSingleRoute(route, 3);
-        if (slice && !seenMd5s.has(slice.md5)) {
-            byRoute[route] = slice;
-            seenMd5s.set(slice.md5, route);
-        } else {
-            byRoute[route] = LKG.get(route) || createPlaceholder(route);
-        }
-    }
-
-    // --- POST-PASS: DUPLICATE GUARANTEE ---
-    const md5Map = new Map<string, Route[]>();
-    ROUTES.forEach(r => {
-        const slice = byRoute[r];
+        const slice = await captureSingleRoute(route, 2);
         if (slice) {
-            const list = md5Map.get(slice.md5) || [];
-            list.push(r);
-            md5Map.set(slice.md5, list);
+          byRoute[route] = slice;
+        } else if (LKG.has(route)) {
+          onLog?.(`! Using LKG for missing route ${route}`);
+          byRoute[route] = LKG.get(route);
+          const routeDiag = diag.routes.find(r => r.route === route);
+          if(routeDiag) routeDiag.usedCache = true;
+        } else {
+          onLog?.(`! Generating placeholder for ${route}`);
+          byRoute[route] = createPlaceholder(route);
+          diag.guarantee.placeholdersAdded.push(route);
         }
-    });
-
-    diag.invariants.dupesFound = Array.from(md5Map.values()).filter(v => v.length > 1).length;
-    for (const routesWithDupes of md5Map.values()) {
-        if (routesWithDupes.length > 1) {
-            for (let i = 1; i < routesWithDupes.length; i++) {
-                const routeToRecapture = routesWithDupes[i];
-                onLog?.(`! Re-capturing duplicate route: ${routeToRecapture}`);
-                const slice = await captureSingleRoute(routeToRecapture, 4, true); // Prefer H2C
-                if (slice && !md5Map.has(slice.md5)) {
-                    byRoute[routeToRecapture] = slice;
-                } else if (LKG.has(routeToRecapture)) {
-                    byRoute[routeToRecapture] = LKG.get(routeToRecapture);
-                }
-            }
-        }
+      }
     }
-
-    // --- FINAL ASSEMBLY & LKG UPDATE ---
+    
+    // --- Final Assembly & LKG Update ---
     const finalSlices = ROUTES.map(r => byRoute[r]).filter((s): s is ImageSlice => !!s);
     finalSlices.forEach(s => LKG.set(s.routeName, s)); // Update LKG cache
 
@@ -381,42 +363,54 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
     
     const finalMd5Map = new Map<string, Route[]>();
     finalSlices.forEach(s => {
-        const list = finalMd5Map.get(s.md5) || [];
-        list.push(s.routeName);
-        finalMd5Map.set(s.md5, list);
+        const list = finalMd5Map.get(s.md5) || []; list.push(s.routeName); finalMd5Map.set(s.md5, list);
     });
     diag.invariants.dupesStillPresent = Array.from(finalMd5Map.values()).filter(v=>v.length > 1).flat();
+    diag.md5ByRoute = ROUTES.reduce((acc, r) => { const s = byRoute[r]; acc[r] = s?.md5 || null; return acc; }, {} as Record<Route,string|null>);
 
     return { slices: finalSlices, diag };
 }
 
-// ---- Back-compat shim for legacy callers -----------------------------------
 export async function captureRouteAsA4Pages(
   route: Route,
   opts?: { lang?: 'en' | 'de'; onLog?: (s: string) => void }
 ): Promise<ImageSlice[]> {
-  const lang = opts?.lang ?? 'en';
-  opts?.onLog?.(`→ Compat capture for ${route} ...`);
-  const slice = await captureSingleRoute(route);
-  return slice ? [slice] : [];
-}
-
-// Shim for single route capture, not meant for direct use in new flow
-async function captureSingleRoute(route: Route, attemptNo = 1, preferHtml2Canvas = false): Promise<ImageSlice | null> {
-    const diag: any = {};
-    return await withRouteIframe(route, 'en', diag, async (win, doc, root) => {
-        // This is a simplified version of the logic inside the main function
-        // It won't have the full recapture or LKG logic.
-        const capturePrimary = async () => await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
-        let dataUrl = await capturePrimary();
+    const lang = opts?.lang ?? 'en';
+    onLog?.(`→ Compat capture for ${route} ...`);
+    
+    const frame = createIsolatedFrame(`${route}?print=1&lang=${lang}&ts=${Date.now()}`);
+    
+    try {
+        const { win, doc } = await frame.ready();
+        injectPrintCSS(doc);
+        try { await (doc as any).fonts?.ready; } catch {}
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const root = getRouteRoot(win);
+        
+        let dataUrl = await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
         let isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
+
         if (isSuspicious) {
-            await new Promise(r => setTimeout(r, 200));
-            dataUrl = await capturePrimary();
+            await new Promise(r => setTimeout(r, 100));
+            dataUrl = await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
             isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);
         }
-        if (isSuspicious) return null;
+
+        if (isSuspicious) {
+            const localH2C = (win as any).html2canvas || html2canvas;
+            const canvas = await localH2C(root, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            dataUrl = canvas.toDataURL('image/png');
+        }
+
+        if (!dataUrl || await isImageMostlyBlank(dataUrl)) return [];
+
         const raw = rawFromDataUrl(dataUrl);
-        return { imageBase64: raw, wPx: CAPTURE_WIDTH_PX, hPx: Math.round(CAPTURE_WIDTH_PX / A4_ASPECT_RATIO), routeName: route, pageIndex: 0, md5: Md5.hashStr(raw) };
-    });
+        const w = CAPTURE_WIDTH_PX;
+        const h = Math.round(w / A4_ASPECT_RATIO);
+        return [{ imageBase64: raw, wPx: w, hPx: h, routeName: route, pageIndex: 0, md5: Md5.hashStr(raw) }];
+    } catch {
+        return [];
+    } finally {
+        frame.cleanup();
+    }
 }
