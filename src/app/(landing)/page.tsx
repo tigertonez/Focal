@@ -56,7 +56,7 @@ export default function LandingPage() {
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
               Financial Clarity. <br /> On Demand.
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-white/80">
+            <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-white">
               Go from spreadsheet chaos to an investor-ready forecast in minutes. Plan inventory, master your margins, and never run out of cash.
             </p>
             <div className="mt-16 flex items-center justify-center">
