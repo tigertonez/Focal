@@ -95,7 +95,7 @@ export function MonthlyUnitsSoldChart({
         <ResponsiveContainer width="100%" height={chartHeight} key={chartKey}>
         <BarChart
             data={chartData}
-            margin={{ top: 8, right: 16, bottom: isPrint ? 20 : 5, left: 0 }}
+            margin={{ top: 8, right: isPrint ? 16 : 8, bottom: isPrint ? 20 : 5, left: isPrint ? 0 : -16 }}
             barCategoryGap="20%"
         >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -112,7 +112,7 @@ export function MonthlyUnitsSoldChart({
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "var(--radius)",
               }}
-              formatter={tooltipFormatter}
+              formatter={(value, name) => tooltipFormatter(value as number, name as string)}
               isAnimationActive={!isPrint}
               payloadUniqBy={(entry) => entry.dataKey}
             />

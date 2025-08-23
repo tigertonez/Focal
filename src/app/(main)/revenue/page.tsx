@@ -114,7 +114,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                         <CardHeader>
                             <CardTitle>{t.pages.revenue.charts.timeline}</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-auto">
+                        <CardContent className="h-auto p-0 sm:p-6 sm:pt-0">
                         <MonthlyRevenueTimeline 
                             data={monthlyRevenueById} 
                             currency={currency} 
@@ -129,7 +129,7 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
                         <CardHeader>
                             <CardTitle>{t.pages.revenue.charts.units}</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-auto">
+                        <CardContent className="h-auto p-0 sm:p-6 sm:pt-0">
                         <MonthlyUnitsSoldChart 
                             data={monthlyUnitsSoldById}
                             isPrint={isPrint} 
