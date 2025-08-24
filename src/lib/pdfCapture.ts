@@ -96,17 +96,24 @@ function injectPrintCSS(doc: Document) {
     .pdf-freeze, .pdf-freeze * { animation: none !important; transition: none !important; }
     .pdf-freeze, .pdf-freeze * { transform: none !important; will-change: auto !important; }
     .recharts-wrapper, .recharts-responsive-container, .recharts-surface { transform: none !important; }
-    [data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"] {
+    [data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"], .strategic-cta {
       display: none !important; visibility: hidden !important;
     }
   `;
   doc.head.appendChild(style);
 }
 
-function getRouteRoot(win: Window): HTMLElement {
-  const doc = win.document;
-  return doc.querySelector('[data-report-root]') as HTMLElement || doc.body;
+async function waitForReportRoot(win: Window, { timeoutMs = 6000 } = {}): Promise<HTMLElement> {
+    const doc = win.document;
+    const t0 = performance.now();
+    while (performance.now() - t0 < timeoutMs) {
+        const el = doc.querySelector<HTMLElement>('[data-report-root]');
+        if (el) return el;
+        await new Promise(r => requestAnimationFrame(r));
+    }
+    throw new Error('REPORT_ROOT_NOT_FOUND');
 }
+
 
 function createPlaceholder(route: Route): ImageSlice {
     const w = CAPTURE_WIDTH_PX;
@@ -196,59 +203,46 @@ export async function captureFullReport({ lang = 'en', onLog, onProgress, onStat
         routeDiag.iframeLoadMs = readyState.tLoadMs;
         routeDiag.url = win.location.href;
 
-        // Route Sanity Gate
+        // Route Identity Gate
         let pathOk = false;
-        for (let k = 0; k < 6; k++) {
+        let markerFound = false;
+        for (let k = 0; k < 10; k++) {
             const currentPath = (() => { try { return new URL(win.location.href).pathname; } catch { return ''; } })();
-            if (currentPath.endsWith(route)) {
+            markerFound = !!doc.querySelector(`[data-route="${route}"]`);
+            if (currentPath.endsWith(route) && markerFound) {
                 pathOk = true;
                 break;
             }
-            await new Promise(r => setTimeout(r, 80));
+            await new Promise(r => setTimeout(r, 120));
         }
-        routeDiag.pathOk = pathOk;
+        routeDiag.routeIdentity = { want: route, landed: new URL(win.location.href).pathname, ok: pathOk, markerFound };
         if (!pathOk) {
-            // Try reloading once if path is wrong
-            win.location.href = `${route}?print=1&lang=${lang}&ts=${Date.now()}`;
-            await waitIframeLoad(frame.iframe);
-            const currentPath = (() => { try { return new URL(win.location.href).pathname; } catch { return ''; } })();
-            routeDiag.pathOk = currentPath.endsWith(route);
+            throw new Error(`ROUTE_IDENTITY_MISMATCH: Wanted ${route}, but landed on ${win.location.href}`);
         }
-
+        
         injectPrintCSS(doc);
-        const aiNodes = doc.querySelectorAll('[data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"]');
+        const aiSelectors = '[data-ai-insight], [data-ai-report], .ai-insights, .ai-insight, #ai-insights, #get-strategic-analysis, [data-print-hide="ai"], .strategic-cta';
+        const aiNodes = doc.querySelectorAll(aiSelectors);
         aiNodes.forEach(n => n.remove());
-        routeDiag.aiHidden = aiNodes.length || 0;
+        routeDiag.aiHidden = aiNodes.length;
 
         // Readiness Checks
-        const root = getRouteRoot(win);
+        await doc.fonts?.ready.catch(()=>{});
+        window.dispatchEvent(new Event('resize'));
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        window.dispatchEvent(new Event('resize'));
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise(r => setTimeout(r, 120));
+
+        const root = await waitForReportRoot(win);
         routeDiag.bodyH = Math.max(root.getBoundingClientRect().height, (root as any).scrollHeight || 0);
         routeDiag.innerTextLen = (root.innerText || '').trim().length;
-        const svgs = Array.from(doc.querySelectorAll<SVGSVGElement>('svg.recharts-surface'));
-        routeDiag.svgCount = svgs.length;
-        routeDiag.svgShapesCount = svgs.reduce((a, s) => a + (s.querySelectorAll('path,rect,circle,line,polyline,polygon').length), 0);
-        const heading = (doc.querySelector('h1,h2')?.textContent || '').trim().slice(0, 120);
-        routeDiag.headingText = heading;
-        routeDiag.headingHash = Md5.hashStr(heading || route);
-
-        let readinessOk = false;
-        for(let i = 0; i < 5; i++) {
-            readinessOk = true;
-            if ((route === '/revenue' || route === '/costs') && routeDiag.svgCount > 0 && routeDiag.svgShapesCount === 0) readinessOk = false;
-            if (route === '/summary' && (routeDiag.innerTextLen < 400 || routeDiag.bodyH < 1300)) readinessOk = false;
-            if (readinessOk) break;
-            await new Promise(r => setTimeout(r, 150));
-            // re-check metrics
-            routeDiag.bodyH = Math.max(root.getBoundingClientRect().height, (root as any).scrollHeight || 0);
-            routeDiag.innerTextLen = (root.innerText || '').trim().length;
-            routeDiag.svgShapesCount = svgs.reduce((a, s) => a + (s.querySelectorAll('path,rect,circle,line,polyline,polygon').length), 0);
-        }
 
         // Capture logic
         let dataUrl = '';
         let method = '';
         let isSuspicious = true;
-        const forceFallback = attemptNum === 99;
+        const forceFallback = attemptNum === 99; // Special flag for de-dupe
 
         const tryPrimary = async () => {
           method = 'html-to-image';
@@ -385,7 +379,7 @@ export async function captureRouteAsA4Pages(
         injectPrintCSS(doc);
         try { await (doc as any).fonts?.ready; } catch {}
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        const root = getRouteRoot(win);
+        const root = await waitForReportRoot(win);
         
         let dataUrl = await toPng(root, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
         let isSuspicious = (rawFromDataUrl(dataUrl).length / 1024 * 3/4) < MIN_KB_OK || await isImageMostlyBlank(dataUrl);

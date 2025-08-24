@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -252,12 +253,12 @@ export default function RevenuePage() {
 
 
     if (financials.isLoading && !isPrint) {
-        return <div data-report-root><RevenuePageSkeleton t={t} /></div>;
+        return <div data-report-root data-route="/revenue"><RevenuePageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {
         return (
-            <div className="p-4 md:p-8" data-report-root>
+            <div className="p-4 md:p-8" data-report-root data-route="/revenue">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -271,7 +272,7 @@ export default function RevenuePage() {
     
     if (!financials.data || !inputs) {
         return (
-            <div className="p-4 md:p-8 text-center" data-report-root>
+            <div className="p-4 md:p-8 text-center" data-report-root data-route="/revenue">
                 <Alert><AlertTitle>{t.errors.noData}</AlertTitle></Alert>
             </div>
         );
@@ -279,7 +280,7 @@ export default function RevenuePage() {
 
     if (financials.data.revenueSummary.totalRevenue === 0) {
         return (
-             <div className="p-4 md:p-8" data-report-root>
+             <div className="p-4 md:p-8" data-report-root data-route="/revenue">
                 <SectionHeader title={t.pages.revenue.title} description={t.pages.revenue.description} />
                 <div className="text-center text-muted-foreground mt-16">
                     <p>{t.errors.noRevenue}</p>
@@ -293,7 +294,7 @@ export default function RevenuePage() {
     }
 
     return (
-        <div data-report-root>
+        <div data-report-root data-route="/revenue">
             <RevenuePageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
         </div>
     );

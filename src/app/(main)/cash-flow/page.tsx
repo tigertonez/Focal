@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, {useEffect} from 'react';
@@ -127,12 +128,12 @@ export default function CashFlowPage() {
     }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
-        return <CashFlowPageSkeleton t={t} />;
+        return <div data-report-root data-route="/cash-flow"><CashFlowPageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {
         return (
-            <div className="p-4 md:p-8" data-report-root>
+            <div className="p-4 md:p-8" data-report-root data-route="/cash-flow">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -146,14 +147,14 @@ export default function CashFlowPage() {
 
     if (!financials.data || !inputs) {
         return (
-            <div className="p-4 md:p-8 text-center" data-report-root>
+            <div className="p-4 md:p-8 text-center" data-report-root data-route="/cash-flow">
                 <Alert><AlertTitle>{t.errors.noData}</AlertTitle></Alert>
             </div>
         );
     }
 
     return (
-        <div data-report-root>
+        <div data-report-root data-route="/cash-flow">
             <CashFlowPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
         </div>
     );

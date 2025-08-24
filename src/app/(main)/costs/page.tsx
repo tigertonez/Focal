@@ -214,12 +214,12 @@ export default function CostsPage() {
 
 
     if (financials.isLoading && !isPrint) {
-        return <div data-report-root><CostsPageSkeleton t={t} /></div>;
+        return <div data-report-root data-route="/costs"><CostsPageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {
         return (
-            <div className="p-4 md:p-8" data-report-root>
+            <div className="p-4 md:p-8" data-report-root data-route="/costs">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -233,14 +233,14 @@ export default function CostsPage() {
 
     if (!financials.data || !inputs) {
         return (
-            <div className="p-4 md:p-8 text-center" data-report-root>
+            <div className="p-4 md:p-8 text-center" data-report-root data-route="/costs">
                 <Alert><AlertTitle>{t.errors.noData}</AlertTitle></Alert>
             </div>
         );
     }
 
     return (
-        <div data-report-root id="report-root-costs">
+        <div data-report-root id="report-root-costs" data-route="/costs">
             <CostsPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
         </div>
     );

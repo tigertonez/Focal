@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useCallback, useEffect } from 'react';
@@ -207,12 +208,12 @@ export default function SummaryPage() {
     }, [isPrint, ensureForecastReady]);
 
     if (financials.isLoading && !isPrint) {
-        return <SummaryPageSkeleton t={t} />;
+        return <div data-report-root data-route="/summary"><SummaryPageSkeleton t={t} /></div>;
     }
 
     if (financials.error && !isPrint) {
         return (
-            <div className="p-4 md:p-8" data-report-root>
+            <div className="p-4 md:p-8" data-report-root data-route="/summary">
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.calculationError}</AlertTitle>
@@ -226,7 +227,7 @@ export default function SummaryPage() {
 
     if (!financials.data || !inputs) {
         return (
-            <div className="p-4 md:p-8 text-center" data-report-root>
+            <div className="p-4 md:p-8 text-center" data-report-root data-route="/summary">
                  <Alert>
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>{t.errors.noData}</AlertTitle>
@@ -239,7 +240,7 @@ export default function SummaryPage() {
     }
 
     return (
-        <div data-report-root>
+        <div data-report-root data-route="/summary">
             <SummaryPageContent data={financials.data} inputs={inputs} t={t} isPrint={isPrint} />
         </div>
     );

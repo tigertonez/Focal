@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -266,7 +267,7 @@ export default function InputsPage() {
     }, [isPrint, ensureForecastReady]);
 
     return (
-        <div data-report-root>
+        <div data-report-root data-route="/inputs">
             {isPrint ? <InputsSnapshot /> : <InputsPageContent />}
         </div>
     );
