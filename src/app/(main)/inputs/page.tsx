@@ -247,15 +247,24 @@ function InputsPageContent() {
 
 export default function InputsPage() {
     const { isPrint, lang } = usePrintMode();
-    const { ensureForecastReady, inputs } = useForecast();
+    const { ensureForecastReady, inputs, financials } = useForecast();
 
     React.useEffect(() => {
         if (isPrint && inputs) {
-            seedPrintColorMap(inputs.products.map(p => ({
-                id: p.id,
-                name: p.productName,
-                hex: (p.color && p.color.startsWith("#")) ? p.color : undefined,
-            })));
+            // Seed color map with both products and fixed costs for consistent coloring
+            const colorItems = [
+                ...inputs.products.map(p => ({
+                    id: p.id,
+                    name: p.productName,
+                    color: p.color,
+                })),
+                ...inputs.fixedCosts.map(fc => ({
+                    id: fc.id,
+                    name: fc.name,
+                    color: fc.color,
+                }))
+            ];
+            seedPrintColorMap(colorItems);
         }
     }, [isPrint, inputs]);
 
@@ -268,7 +277,7 @@ export default function InputsPage() {
 
     return (
         <div data-report-root data-route="/inputs">
-            {isPrint ? <InputsSnapshot /> : <InputsPageContent />}
+            {isPrint ? <InputsSnapshot inputs={inputs} financials={financials} /> : <InputsPageContent />}
         </div>
     );
 }

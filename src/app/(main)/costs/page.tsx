@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { InvestmentPieChart } from '@/components/app/costs/charts/InvestmentPieChart';
 import { CostsInsights } from '@/components/app/costs/CostsInsights';
 import { useForecast } from '@/context/ForecastContext';
-import { usePrintMode, signalWhenReady } from '@/lib/printMode';
+import { usePrintMode, signalWhenReady, seedPrintColorMap } from '@/lib/printMode';
 import { StaticProgress } from '@/components/print/StaticProgress';
 
 function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOutput, inputs: EngineInput, t: any, isPrint?: boolean }) {
@@ -53,6 +53,25 @@ function CostsPageContent({ data, inputs, t, isPrint = false }: { data: EngineOu
         'Final Payments', 
         ...inputs.fixedCosts.map(fc => fc.name)
     ];
+
+    useEffect(() => {
+        if (isPrint) {
+            // Seed color map with both products and fixed costs, preserving user colors
+            const colorItems = [
+                ...inputs.products.map(p => ({
+                    id: p.id,
+                    name: p.productName,
+                    color: p.color,
+                })),
+                ...inputs.fixedCosts.map(fc => ({
+                    id: fc.id,
+                    name: fc.name,
+                    color: fc.color,
+                }))
+            ];
+            seedPrintColorMap(colorItems);
+        }
+    }, [isPrint, inputs.products]);
 
     return (
         <div className="p-4 md:p-8 space-y-6">

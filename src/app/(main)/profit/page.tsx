@@ -39,7 +39,20 @@ function ProfitPageContent({ data, inputs, t, isPrint = false }: { data: EngineO
 
   useEffect(() => {
     if (isPrint) {
-      seedPrintColorMap(inputs.products.map(p => p.productName));
+      // Seed color map with both products and fixed costs
+      const colorItems = [
+          ...inputs.products.map(p => ({
+              id: p.id,
+              name: p.productName,
+              color: p.color,
+          })),
+          ...inputs.fixedCosts.map(fc => ({
+              id: fc.id,
+              name: fc.name,
+              color: fc.color,
+          }))
+      ];
+      seedPrintColorMap(colorItems);
     }
   }, [isPrint, inputs.products]);
 

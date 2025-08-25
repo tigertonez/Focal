@@ -37,9 +37,17 @@ function RevenuePageContent({ data, inputs, t, isPrint = false }: { data: Engine
         
         const hexColors: Record<string, string> = {};
         if (isPrint) {
-          inputs.products.forEach(p => {
-            hexColors[p.id] = resolveToHex(getProductColor(p));
-          });
+            // Seed color map first, then resolve colors
+            const colorItems = inputs.products.map(p => ({
+                id: p.id,
+                name: p.productName,
+                color: p.color,
+            }));
+            seedPrintColorMap(colorItems);
+            
+            inputs.products.forEach(p => {
+                hexColors[p.id] = resolveToHex(getProductColor(p));
+            });
         }
 
         const mapDataToId = <T extends MonthlyRevenue | MonthlyUnitsSold>(data: T[]) => {
